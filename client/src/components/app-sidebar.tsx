@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
-import logoImage from "@assets/image_1757851389210.png";
+import logoLight from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (1)_1757853895328.png";
+import logoDark from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (2)_1757853892403.png";
 
 const getMenuItems = (t: (key: string) => string) => [
   {
@@ -67,12 +68,18 @@ export function AppSidebar() {
   return (
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-4">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center py-2">
           <img 
-            src={logoImage} 
-            alt="InsiderTrack Pro"
-            className="h-12 w-auto object-contain"
-            data-testid="app-logo"
+            src={logoLight} 
+            alt="InsiderPulse"
+            className="block dark:hidden h-16 md:h-20 w-auto object-contain"
+            data-testid="app-logo-light"
+          />
+          <img 
+            src={logoDark} 
+            alt="InsiderPulse"
+            className="hidden dark:block h-16 md:h-20 w-auto object-contain"
+            data-testid="app-logo-dark"
           />
         </div>
       </SidebarHeader>
