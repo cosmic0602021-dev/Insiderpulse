@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface TradeListProps {
 }
 
 export default function TradeList({ trades, loading, onLoadMore }: TradeListProps) {
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSignal, setFilterSignal] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'date' | 'score' | 'value'>('date');
@@ -54,6 +56,11 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
   const handleLoadMore = () => {
     console.log('Load more clicked');
     onLoadMore?.();
+  };
+
+  const handleViewDetails = (trade: InsiderTrade) => {
+    console.log('Navigating to trade details:', trade.id);
+    setLocation(`/trade/${trade.id}`);
   };
 
   return (
@@ -135,7 +142,7 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
               <TradeCard
                 key={trade.id}
                 trade={trade}
-                onViewDetails={(trade) => console.log('View details:', trade.companyName)}
+                onViewDetails={handleViewDetails}
               />
             ))}
             

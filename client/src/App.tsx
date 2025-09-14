@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
+import TradeDetail from "@/pages/trade-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/trade/:tradeId" component={TradeDetail} />
       <Route path="/trades" component={() => <div className="p-6">{t('nav.livetrading')} page coming soon...</div>} />
       <Route path="/analytics" component={() => <div className="p-6">{t('nav.analytics')} page coming soon...</div>} />
       <Route path="/alerts" component={() => <div className="p-6">{t('nav.alerts')} page coming soon...</div>} />
