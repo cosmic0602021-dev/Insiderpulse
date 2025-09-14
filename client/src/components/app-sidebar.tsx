@@ -15,9 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
-import { useState, useEffect } from "react";
-import darkLogo from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (2)_1757827332218.png";
-import lightLogo from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (1)_1757827335178.png";
+import logoImage from "@assets/image_1757851389210.png";
 
 const getMenuItems = (t: (key: string) => string) => [
   {
@@ -65,43 +63,17 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { t } = useLanguage();
   const menuItems = getMenuItems(t);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Check initial theme
-    const checkTheme = () => {
-      const isDarkTheme = document.documentElement.classList.contains('dark');
-      setIsDark(isDarkTheme);
-    };
-
-    checkTheme();
-
-    // Listen for theme changes
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, { 
-      attributes: true, 
-      attributeFilter: ['class'] 
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center">
-            <img 
-              src={isDark ? darkLogo : lightLogo} 
-              alt="InsiderTrack Pro Logo"
-              className="h-8 w-8 object-contain"
-              data-testid="app-logo"
-            />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{t('dashboard.title')}</h2>
-            <p className="text-xs text-muted-foreground">Pro Analytics</p>
-          </div>
+        <div className="flex items-center justify-center">
+          <img 
+            src={logoImage} 
+            alt="InsiderTrack Pro"
+            className="h-12 w-auto object-contain"
+            data-testid="app-logo"
+          />
         </div>
       </SidebarHeader>
 
