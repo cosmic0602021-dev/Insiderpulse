@@ -16,14 +16,15 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Insider trading data
-  getInsiderTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
+  getInsiderTrades(limit?: number, offset?: number, verifiedOnly?: boolean): Promise<InsiderTrade[]>;
+  getVerifiedInsiderTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
   getInsiderTradeById(id: string): Promise<InsiderTrade | undefined>;
   createInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
   upsertInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
   updateInsiderTrade(id: string, updates: Partial<InsiderTrade>): Promise<InsiderTrade | undefined>;
   
   // Trading statistics
-  getTradingStats(): Promise<TradingStats>;
+  getTradingStats(verifiedOnly?: boolean): Promise<TradingStats>;
   
   // Stock price management
   getStockPrice(ticker: string): Promise<StockPrice | undefined>;
@@ -76,11 +77,20 @@ export class MemStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
-    const trades = Array.from(this.insiderTrades.values())
+  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false): Promise<InsiderTrade[]> {
+    let trades = Array.from(this.insiderTrades.values());
+    
+    if (verifiedOnly) {
+      trades = trades.filter(trade => trade.isVerified === true);
+    }
+    
+    return trades
       .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
       .slice(offset, offset + limit);
-    return trades;
+  }
+
+  async getVerifiedInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    return this.getInsiderTrades(limit, offset, true);
   }
 
   async getInsiderTradeById(id: string): Promise<InsiderTrade | undefined> {
@@ -92,10 +102,19 @@ export class MemStorage implements IStorage {
     const trade: InsiderTrade = { 
       ...insertTrade, 
       id, 
+      traderName: insertTrade.traderName || 'Unknown Trader',
+      traderTitle: insertTrade.traderTitle || null,
       ticker: insertTrade.ticker || null,
       aiAnalysis: insertTrade.aiAnalysis || null,
       significanceScore: insertTrade.significanceScore || 50,
       signalType: insertTrade.signalType || 'HOLD',
+      // Add verification fields with defaults
+      isVerified: insertTrade.isVerified ?? false,
+      verificationStatus: insertTrade.verificationStatus || 'PENDING',
+      verificationNotes: insertTrade.verificationNotes || null,
+      marketPrice: insertTrade.marketPrice || null,
+      priceVariance: insertTrade.priceVariance || null,
+      secFilingUrl: insertTrade.secFilingUrl || null,
       createdAt: new Date()
     };
     this.insiderTrades.set(id, trade);
@@ -135,16 +154,20 @@ export class MemStorage implements IStorage {
     return updatedTrade;
   }
 
-  async getTradingStats(): Promise<TradingStats> {
+  async getTradingStats(verifiedOnly = true): Promise<TradingStats> {
     const trades = Array.from(this.insiderTrades.values());
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todayTrades = trades.filter(trade => {
+    let todayTrades = trades.filter(trade => {
       const tradeDate = new Date(trade.createdAt!);
       tradeDate.setHours(0, 0, 0, 0);
       return tradeDate.getTime() === today.getTime();
     });
+    
+    if (verifiedOnly) {
+      todayTrades = todayTrades.filter(trade => trade.isVerified === true);
+    }
     
     const totalVolume = todayTrades.reduce((sum, trade) => sum + trade.totalValue, 0);
     
@@ -225,6 +248,8 @@ export class MemStorage implements IStorage {
     const alert: Alert = {
       ...insertAlert,
       id,
+      userId: insertAlert.userId || null,
+      isActive: insertAlert.isActive ?? true,
       createdAt: new Date(),
       lastTriggered: null
     };

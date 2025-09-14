@@ -26,6 +26,13 @@ export const insiderTrades = pgTable("insider_trades", {
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   significanceScore: integer("significance_score").notNull().default(50), // Default neutral score
   signalType: text("signal_type").notNull().default('HOLD'), // Default neutral signal
+  // Data verification fields for accuracy control
+  isVerified: boolean("is_verified").notNull().default(false), // Whether price data has been verified
+  verificationStatus: text("verification_status").notNull().default('PENDING'), // PENDING, VERIFIED, FAILED
+  verificationNotes: text("verification_notes"), // Any notes about verification process
+  marketPrice: real("market_price"), // Actual market price on filing date for comparison
+  priceVariance: real("price_variance"), // Percentage difference between filed and market price
+  secFilingUrl: text("sec_filing_url"), // Direct link to SEC filing for transparency
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   // Add index on accessionNumber for fast duplicate checking
@@ -39,14 +46,21 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   id: true,
-  significanceScore: true, // Use default value
-  signalType: true, // Use default value
   createdAt: true,
+  // Keep verification fields as optional with defaults
+  isVerified: true,
+  verificationStatus: true,
 }).extend({
   traderName: z.string().optional(),
   traderTitle: z.string().optional(),
   tradeType: z.enum(['BUY', 'SELL']).optional(),
   ownershipPercentage: z.number().optional(),
+  significanceScore: z.number().optional(), // Allow override of default
+  signalType: z.enum(['BUY', 'SELL', 'HOLD']).optional(), // Allow override of default
+  verificationNotes: z.string().optional(),
+  marketPrice: z.number().optional(),
+  priceVariance: z.number().optional(),
+  secFilingUrl: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

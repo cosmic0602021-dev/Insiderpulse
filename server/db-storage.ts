@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type StockPriceHistory, type InsertStockPriceHistory, type Alert, type InsertAlert } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@shared/schema";
-import { eq, desc, count, sum, avg, sql, inArray, gte, lte } from "drizzle-orm";
+import { eq, desc, count, sum, avg, sql, inArray, gte, lte, and } from "drizzle-orm";
 import type { IStorage } from "./storage";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -24,14 +24,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
-    const result = await db
+  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false): Promise<InsiderTrade[]> {
+    let query = db
       .select()
-      .from(insiderTrades)
+      .from(insiderTrades);
+    
+    if (verifiedOnly) {
+      query = query.where(eq(insiderTrades.isVerified, true));
+    }
+    
+    const result = await query
       .orderBy(desc(insiderTrades.createdAt))
       .limit(limit)
       .offset(offset);
     return result;
+  }
+
+  async getVerifiedInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    return this.getInsiderTrades(limit, offset, true);
   }
 
   async getInsiderTradeById(id: string): Promise<InsiderTrade | undefined> {
@@ -46,7 +56,14 @@ export class DatabaseStorage implements IStorage {
         ticker: insertTrade.ticker || null,
         aiAnalysis: insertTrade.aiAnalysis || null,
         significanceScore: insertTrade.significanceScore || 50,
-        signalType: insertTrade.signalType || 'HOLD'
+        signalType: insertTrade.signalType || 'HOLD',
+        // Add verification fields with defaults
+        isVerified: insertTrade.isVerified || false,
+        verificationStatus: insertTrade.verificationStatus || 'PENDING',
+        verificationNotes: insertTrade.verificationNotes || null,
+        marketPrice: insertTrade.marketPrice || null,
+        priceVariance: insertTrade.priceVariance || null,
+        secFilingUrl: insertTrade.secFilingUrl || null
       }).returning();
       return result[0];
     } catch (error: any) {
@@ -86,7 +103,14 @@ export class DatabaseStorage implements IStorage {
             filedDate: insertTrade.filedDate,
             aiAnalysis: insertTrade.aiAnalysis || null,
             significanceScore: insertTrade.significanceScore || 50,
-            signalType: insertTrade.signalType || 'HOLD'
+            signalType: insertTrade.signalType || 'HOLD',
+            // Add verification fields
+            isVerified: insertTrade.isVerified || false,
+            verificationStatus: insertTrade.verificationStatus || 'PENDING',
+            verificationNotes: insertTrade.verificationNotes || null,
+            marketPrice: insertTrade.marketPrice || null,
+            priceVariance: insertTrade.priceVariance || null,
+            secFilingUrl: insertTrade.secFilingUrl || null
           })
           .where(eq(insiderTrades.accessionNumber, insertTrade.accessionNumber))
           .returning();
@@ -106,18 +130,30 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getTradingStats(): Promise<TradingStats> {
+  async getTradingStats(verifiedOnly = true): Promise<TradingStats> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Get today's trades count and total volume
+    // Build conditions array and combine with and() - CRITICAL for accurate filtering
+    const conditions = [
+      gte(insiderTrades.createdAt, today),
+      lte(insiderTrades.createdAt, tomorrow)
+    ];
+    
+    if (verifiedOnly) {
+      conditions.push(eq(insiderTrades.isVerified, true));
+    }
+    
+    // Get today's trades count and total volume with properly combined filters
     const todayStats = await db
       .select({
         count: count(),
         totalVolume: sum(insiderTrades.totalValue),
       })
       .from(insiderTrades)
-      .where(sql`DATE(${insiderTrades.createdAt}) = DATE(${today.toISOString().split('T')[0]})`);
+      .where(and(...conditions));
     
     return {
       todayTrades: todayStats[0]?.count || 0,

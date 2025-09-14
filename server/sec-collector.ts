@@ -266,10 +266,11 @@ class SECDataCollector {
   private parseForm4XML(xmlData: any, accessionNumber: string) {
     const doc = xmlData.ownershipDocument || xmlData;
     
-    // Extract issuer information
+    // Extract issuer information - use direct ticker from SEC data
     const issuer = doc.issuer?.[0] || {};
     const companyName = issuer.issuerName?.[0]?.value?.[0] || issuer.issuerName?.[0];
     const ticker = issuer.issuerTradingSymbol?.[0]?.value?.[0] || issuer.issuerTradingSymbol?.[0] || '';
+    const cik = issuer.issuerCik?.[0]?.value?.[0] || issuer.issuerCik?.[0] || '';
     
     // Extract reporting owner information
     const reportingOwner = doc.reportingOwner?.[0] || {};
@@ -277,7 +278,7 @@ class SECDataCollector {
     const traderName = ownerInfo.rptOwnerName?.[0]?.value?.[0] || ownerInfo.rptOwnerName?.[0];
     
     console.log(`🔍 [DEBUG] Parsing accession ${accessionNumber}:`);
-    console.log(`   Company: ${companyName} | Trader: ${traderName} | Ticker: ${ticker}`);
+    console.log(`   Company: ${companyName} | Trader: ${traderName} | Ticker: ${ticker} | CIK: ${cik}`);
     
     // Skip processing if critical data is missing
     if (!companyName || !traderName) {
@@ -289,44 +290,85 @@ class SECDataCollector {
     const relationship = reportingOwner.reportingOwnerRelationship?.[0] || {};
     const traderTitle = this.determineTraderTitle(relationship);
     
-    // Extract transaction information
+    // CRITICAL: Only process nonDerivativeTable for common stock transactions
     const nonDerivativeTable = doc.nonDerivativeTable?.[0];
     const transactions = nonDerivativeTable?.nonDerivativeTransaction || [];
     
     if (transactions.length === 0) {
-      return null; // No transactions to process
+      console.log(`⚠️ No non-derivative transactions found for ${accessionNumber}`);
+      return null;
     }
     
-    // Use the first transaction for simplicity
-    const transaction = transactions[0];
-    const transactionAmounts = transaction.transactionAmounts?.[0] || {};
-    const postTransaction = transaction.postTransactionAmounts?.[0] || {};
+    // Process all transactions and find valid P/S transactions
+    let validTransaction = null;
+    for (const transaction of transactions) {
+      const transactionCoding = transaction.transactionCoding?.[0] || {};
+      const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
+      
+      console.log(`   🔍 Transaction code: ${transactionCode}`);
+      
+      // CRITICAL: Only process P (Purchase) and S (Sale) transactions
+      // Skip A (Award), M (Exercise), G (Gift), etc.
+      if (transactionCode !== 'P' && transactionCode !== 'S') {
+        console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not P or S)`);
+        continue;
+      }
+      
+      const transactionAmounts = transaction.transactionAmounts?.[0] || {};
+      const postTransaction = transaction.postTransactionAmounts?.[0] || {};
+      
+      const shares = parseInt(transactionAmounts.transactionShares?.[0]?.value?.[0] || '0');
+      const pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || '0');
+      const acquiredDisposed = transactionAmounts.transactionAcquiredDisposedCode?.[0]?.value?.[0];
+      const sharesOwned = parseInt(postTransaction.sharesOwnedFollowingTransaction?.[0]?.value?.[0] || '0');
+      
+      // Validate price is reasonable (greater than 0 and less than $10,000 per share)
+      if (pricePerShare <= 0 || pricePerShare > 10000) {
+        console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
+        continue;
+      }
+      
+      // Validate shares count
+      if (shares <= 0) {
+        console.warn(`   ⚠️ Invalid shares count: ${shares} - skipping transaction`);
+        continue;
+      }
+      
+      console.log(`   ✅ Valid transaction found: ${transactionCode} - ${shares} shares at $${pricePerShare}`);
+      
+      // Calculate ownership percentage
+      const ownershipPercentage = sharesOwned > 0 && shares > 0 ? 
+        parseFloat(((shares / sharesOwned) * 100).toFixed(2)) : 0;
+      
+      const tradeType: 'BUY' | 'SELL' = transactionCode === 'P' ? 'BUY' : 'SELL';
+      const transactionDate = transaction.transactionDate?.[0]?.value?.[0];
+      
+      validTransaction = {
+        company: companyName,
+        ticker: ticker || null,
+        cik: cik,
+        traderName: traderName,
+        traderTitle: traderTitle,
+        tradeType: tradeType,
+        shares: shares,
+        price: pricePerShare,
+        ownershipPercentage: ownershipPercentage,
+        accession: accessionNumber,
+        date: transactionDate || new Date().toISOString(),
+        transactionCode: transactionCode,
+        link: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`
+      };
+      
+      // Use the first valid P/S transaction
+      break;
+    }
     
-    const shares = parseInt(transactionAmounts.transactionShares?.[0]?.value?.[0] || '0');
-    const pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || '0');
-    const acquiredDisposed = transactionAmounts.transactionAcquiredDisposedCode?.[0]?.value?.[0];
-    const sharesOwned = parseInt(postTransaction.sharesOwnedFollowingTransaction?.[0]?.value?.[0] || '0');
+    if (!validTransaction) {
+      console.log(`   ⚠️ No valid P/S transactions found for ${accessionNumber}`);
+      return null;
+    }
     
-    // Calculate ownership percentage
-    const ownershipPercentage = sharesOwned > 0 && shares > 0 ? 
-      parseFloat(((shares / sharesOwned) * 100).toFixed(2)) : 0;
-    
-    const tradeType: 'BUY' | 'SELL' = acquiredDisposed === 'A' ? 'BUY' : 'SELL';
-    const transactionDate = transaction.transactionDate?.[0]?.value?.[0];
-    
-    return {
-      company: companyName,
-      ticker: ticker,
-      traderName: traderName,
-      traderTitle: traderTitle,
-      tradeType: tradeType,
-      shares: shares,
-      price: pricePerShare,
-      ownershipPercentage: ownershipPercentage,
-      accession: accessionNumber,
-      date: transactionDate || new Date().toISOString(),
-      link: ''
-    };
+    return validTransaction;
   }
 
   private async parseFilingPage(filingUrl: string, accessionNumber: string) {
@@ -504,6 +546,49 @@ class SECDataCollector {
 
         const tradeValue = filing.shares * filing.price;
         
+        // CRITICAL: Validate price against market data
+        let isVerified = false;
+        let verificationStatus = 'PENDING';
+        let verificationNotes = '';
+        let marketPrice: number | null = null;
+        let priceVariance: number | null = null;
+        
+        // Get market price for validation if ticker exists
+        if (filing.ticker) {
+          try {
+            console.log(`🔍 Validating price for ${filing.ticker}: SEC price $${filing.price}`);
+            const marketData = await this.getMarketPriceForValidation(filing.ticker, filing.date);
+            
+            if (marketData) {
+              marketPrice = marketData.price;
+              const variance = Math.abs((filing.price - marketPrice) / marketPrice) * 100;
+              priceVariance = parseFloat(variance.toFixed(2));
+              
+              console.log(`   📊 Market price: $${marketPrice}, SEC price: $${filing.price}, Variance: ${priceVariance}%`);
+              
+              // Mark as verified if price is within reasonable range (±10%)
+              if (priceVariance <= 10) {
+                isVerified = true;
+                verificationStatus = 'VERIFIED';
+                verificationNotes = `Price validated against market data (variance: ${priceVariance}%)`;
+                console.log(`   ✅ Price verified - within acceptable range`);
+              } else {
+                verificationStatus = 'FAILED';
+                verificationNotes = `Price significantly differs from market data (variance: ${priceVariance}%). Possible option exercise or award.`;
+                console.warn(`   ❌ Price verification failed - variance too high: ${priceVariance}%`);
+              }
+            } else {
+              verificationNotes = 'Could not retrieve market data for validation';
+              console.log(`   ⚠️ No market data available for validation`);
+            }
+          } catch (error) {
+            verificationNotes = `Market validation error: ${error.message}`;
+            console.warn(`   ⚠️ Market validation failed: ${error.message}`);
+          }
+        } else {
+          verificationNotes = 'No ticker symbol available for market validation';
+        }
+        
         // Generate AI analysis for the trade
         console.log(`🧠 Generating AI analysis for ${filing.traderName} at ${filing.company}...`);
         const aiResult = await aiAnalysisService.analyzeInsiderTrade({
@@ -518,7 +603,7 @@ class SECDataCollector {
           ownershipPercentage: filing.ownershipPercentage
         });
 
-        // Create insider trade record with AI-powered analysis
+        // Create insider trade record with AI-powered analysis and verification data
         const tradeData: InsertInsiderTrade = {
           accessionNumber: filing.accession,
           companyName: filing.company,
@@ -533,38 +618,70 @@ class SECDataCollector {
           filedDate: new Date(filing.date),
           aiAnalysis: null, // Deprecated field
           significanceScore: aiResult.significanceScore,
-          signalType: aiResult.signalType
+          signalType: aiResult.signalType,
+          // Add verification data
+          isVerified: isVerified,
+          verificationStatus: verificationStatus,
+          verificationNotes: verificationNotes,
+          marketPrice: marketPrice,
+          priceVariance: priceVariance,
+          secFilingUrl: filing.link
         };
 
         // Use upsert to handle duplicates gracefully
         const trade = await storage.upsertInsiderTrade(tradeData);
         
-        console.log(`✅ Trade processed with AI analysis: ${filing.tradeType} - ${filing.traderName} (${filing.traderTitle}) at ${filing.company}`);
+        const statusIcon = isVerified ? '✅' : '⚠️';
+        console.log(`${statusIcon} Trade processed with verification: ${filing.tradeType} - ${filing.traderName} (${filing.traderTitle}) at ${filing.company}`);
         console.log(`   💡 AI Signal: ${aiResult.signalType} (Score: ${aiResult.significanceScore}/100)`);
         console.log(`   📊 Value: ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
+        console.log(`   🔍 Verification: ${verificationStatus}${priceVariance ? ` (${priceVariance}% variance)` : ''}`);
         
-        // Broadcast to WebSocket clients with AI insights
-        broadcastUpdate('NEW_TRADE', {
-          trade: trade,
-          aiInsights: {
-            significanceScore: aiResult.significanceScore,
-            signalType: aiResult.signalType,
-            keyInsights: aiResult.keyInsights,
-            riskLevel: aiResult.riskLevel,
-            recommendation: aiResult.recommendation
-          }
-        });
+        // Only broadcast verified trades to WebSocket clients
+        if (isVerified) {
+          broadcastUpdate('NEW_TRADE', {
+            trade: trade,
+            aiInsights: {
+              significanceScore: aiResult.significanceScore,
+              signalType: aiResult.signalType,
+              keyInsights: aiResult.keyInsights,
+              riskLevel: aiResult.riskLevel,
+              recommendation: aiResult.recommendation
+            }
+          });
+        } else {
+          console.log(`   🚫 Trade not broadcasted - verification failed`);
+        }
         
         // Delay to avoid overwhelming OpenAI API and SEC servers
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-      } catch (error) {
+      } catch (error: any) {
         console.error(`❌ Error processing filing for ${filing.company}:`, error);
         if (error.message?.includes('rate limit')) {
           console.log('⏸️ Rate limit hit, waiting 10 seconds...');
           await new Promise(resolve => setTimeout(resolve, 10000));
         }
       }
+    }
+  }
+
+  private async getMarketPriceForValidation(ticker: string, filingDate: string): Promise<{ price: number } | null> {
+    try {
+      // Import stock price service 
+      const { stockPriceService } = await import('./stock-price-service');
+      
+      // Get current price as a baseline (in production, would get historical price for the filing date)
+      const priceData = await stockPriceService.getStockPrice(ticker);
+      
+      if (priceData && priceData.currentPrice > 0) {
+        return { price: priceData.currentPrice };
+      }
+      
+      return null;
+    } catch (error: any) {
+      console.warn(`Failed to get market price for ${ticker}:`, error.message);
+      return null;
     }
   }
 

@@ -10,10 +10,11 @@ import { z } from "zod";
 let wss: WebSocketServer;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Get trading statistics
+  // Get trading statistics (verified trades only by default)
   app.get('/api/stats', async (req, res) => {
     try {
-      const stats = await storage.getTradingStats();
+      const verifiedOnly = req.query.verified !== 'false'; // Default to true unless explicitly set to false
+      const stats = await storage.getTradingStats(verifiedOnly);
       res.json(stats);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -21,13 +22,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get insider trades with pagination
+  // Get insider trades with pagination (verified trades only by default)
   app.get('/api/trades', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
+      const verifiedOnly = req.query.verified !== 'false'; // Default to true unless explicitly set to false
       
-      const trades = await storage.getInsiderTrades(limit, offset);
+      const trades = await storage.getInsiderTrades(limit, offset, verifiedOnly);
       res.json(trades);
     } catch (error) {
       console.error('Error fetching trades:', error);
@@ -55,8 +57,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertInsiderTradeSchema.parse(req.body);
       const trade = await storage.createInsiderTrade(validatedData);
       
-      // Broadcast new trade to all connected WebSocket clients
-      if (wss) {
+      // CRITICAL: Only broadcast verified trades to WebSocket clients
+      if (wss && trade.isVerified) {
         const message = JSON.stringify({
           type: 'NEW_TRADE',
           data: trade
