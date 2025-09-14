@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, json, decimal, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -57,3 +57,24 @@ export type TradingStats = {
   hotBuys: number;
   avgSignificance: number;
 };
+
+// Stock price information
+export const stockPrices = pgTable("stock_prices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ticker: varchar("ticker", { length: 10 }).notNull().unique(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
+  change: decimal("change", { precision: 10, scale: 2 }).notNull(),
+  changePercent: decimal("change_percent", { precision: 5, scale: 2 }).notNull(),
+  volume: bigint("volume", { mode: "number" }),
+  marketCap: bigint("market_cap", { mode: "number" }),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+});
+
+export const insertStockPriceSchema = createInsertSchema(stockPrices).omit({
+  id: true,
+  lastUpdated: true,
+});
+
+export type InsertStockPrice = z.infer<typeof insertStockPriceSchema>;
+export type StockPrice = typeof stockPrices.$inferSelect;

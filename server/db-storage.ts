@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades } from "@shared/schema";
-import { eq, desc, count, sum, avg, sql } from "drizzle-orm";
+import { users, insiderTrades, stockPrices } from "@shared/schema";
+import { eq, desc, count, sum, avg, sql, inArray } from "drizzle-orm";
 import type { IStorage } from "./storage";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -134,5 +134,59 @@ export class DatabaseStorage implements IStorage {
       hotBuys: hotBuysResult[0]?.count || 0,
       avgSignificance: Math.round(Number(avgSignificanceResult[0]?.avg) || 0)
     };
+  }
+
+  // Stock price methods
+  async getStockPrice(ticker: string): Promise<StockPrice | undefined> {
+    const result = await db
+      .select()
+      .from(stockPrices)
+      .where(eq(stockPrices.ticker, ticker.toUpperCase()))
+      .limit(1);
+    return result[0];
+  }
+
+  async upsertStockPrice(price: InsertStockPrice): Promise<StockPrice> {
+    try {
+      // Try to insert new record
+      const result = await db
+        .insert(stockPrices)
+        .values({
+          ...price,
+          ticker: price.ticker.toUpperCase(),
+        })
+        .returning();
+      return result[0];
+    } catch (error: any) {
+      // If unique constraint violation, update existing record
+      if (error?.code === '23505' || error?.constraint?.includes('ticker')) {
+        const result = await db
+          .update(stockPrices)
+          .set({
+            companyName: price.companyName,
+            currentPrice: price.currentPrice,
+            change: price.change,
+            changePercent: price.changePercent,
+            volume: price.volume,
+            marketCap: price.marketCap,
+            lastUpdated: sql`NOW()`,
+          })
+          .where(eq(stockPrices.ticker, price.ticker.toUpperCase()))
+          .returning();
+        return result[0];
+      }
+      throw error;
+    }
+  }
+
+  async getStockPrices(tickers: string[]): Promise<StockPrice[]> {
+    if (tickers.length === 0) return [];
+    
+    const upperTickers = tickers.map(t => t.toUpperCase());
+    const result = await db
+      .select()
+      .from(stockPrices)
+      .where(inArray(stockPrices.ticker, upperTickers));
+    return result;
   }
 }

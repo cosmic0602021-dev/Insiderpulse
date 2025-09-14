@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades } from "@shared/schema";
+import { users, insiderTrades, stockPrices } from "@shared/schema";
 import { eq, desc, count, sum, avg } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -24,6 +24,11 @@ export interface IStorage {
   
   // Trading statistics
   getTradingStats(): Promise<TradingStats>;
+  
+  // Stock price management
+  getStockPrice(ticker: string): Promise<StockPrice | undefined>;
+  upsertStockPrice(price: InsertStockPrice): Promise<StockPrice>;
+  getStockPrices(tickers: string[]): Promise<StockPrice[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -134,6 +139,20 @@ export class MemStorage implements IStorage {
       hotBuys,
       avgSignificance
     };
+  }
+
+  // Stock price methods (placeholder for MemStorage)
+  async getStockPrice(ticker: string): Promise<StockPrice | undefined> {
+    // MemStorage doesn't implement stock prices, return undefined
+    return undefined;
+  }
+
+  async upsertStockPrice(price: InsertStockPrice): Promise<StockPrice> {
+    throw new Error('Stock prices not supported in MemStorage');
+  }
+
+  async getStockPrices(tickers: string[]): Promise<StockPrice[]> {
+    return [];
   }
 }
 

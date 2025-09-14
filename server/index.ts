@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { stockPriceService } from "./stock-price-service";
 import './sec-collector'; // Initialize SEC data collector
 
 const execAsync = promisify(exec);
@@ -48,7 +49,7 @@ app.use((req, res, next) => {
     await execAsync('npm run db:push');
     log('✅ Database schema is up to date');
   } catch (error) {
-    log('⚠️ Database migration failed, continuing anyway:', error);
+    log(`⚠️ Database migration failed, continuing anyway: ${error}`);
   }
 
   const server = await registerRoutes(app);
@@ -81,5 +82,10 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start stock price service after server is running
+    setTimeout(() => {
+      stockPriceService.startPeriodicUpdates();
+    }, 5000); // Wait 5 seconds for everything to initialize
   });
 })();

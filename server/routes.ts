@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { insertInsiderTradeSchema } from "@shared/schema";
+import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
 
 // Global WebSocket server for real-time updates
@@ -79,6 +80,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.error('Error creating trade:', error);
       res.status(500).json({ error: 'Failed to create insider trade' });
+    }
+  });
+
+  // Get stock price by ticker
+  app.get('/api/stocks/:ticker', async (req, res) => {
+    try {
+      const ticker = req.params.ticker.toUpperCase();
+      const priceData = await stockPriceService.getStockPrice(ticker);
+      res.json(priceData);
+    } catch (error) {
+      console.error('Error fetching stock price:', error);
+      res.status(500).json({ error: 'Failed to fetch stock price' });
+    }
+  });
+
+  // Get multiple stock prices
+  app.get('/api/stocks', async (req, res) => {
+    try {
+      const tickersParam = req.query.tickers as string;
+      if (!tickersParam) {
+        return res.status(400).json({ error: 'Missing tickers parameter' });
+      }
+
+      const tickers = tickersParam.split(',').map(t => t.trim().toUpperCase());
+      const prices = await storage.getStockPrices(tickers);
+      
+      // If no cached prices, fetch from API
+      if (prices.length === 0 && tickers.length > 0) {
+        const freshPrices = [];
+        for (const ticker of tickers.slice(0, 5)) { // Limit to 5 to avoid rate limits
+          try {
+            const priceData = await stockPriceService.getStockPrice(ticker);
+            freshPrices.push(priceData);
+          } catch (error) {
+            console.error(`Failed to fetch price for ${ticker}:`, error);
+          }
+        }
+        return res.json(freshPrices);
+      }
+      
+      res.json(prices);
+    } catch (error) {
+      console.error('Error fetching stock prices:', error);
+      res.status(500).json({ error: 'Failed to fetch stock prices' });
+    }
+  });
+
+  // Search stock by company name
+  app.get('/api/stocks/search/:companyName', async (req, res) => {
+    try {
+      const companyName = req.params.companyName;
+      const priceData = await stockPriceService.getStockPriceByCompanyName(companyName);
+      
+      if (!priceData) {
+        return res.status(404).json({ error: 'Stock not found' });
+      }
+      
+      res.json(priceData);
+    } catch (error) {
+      console.error('Error searching stock:', error);
+      res.status(500).json({ error: 'Failed to search stock' });
     }
   });
 
