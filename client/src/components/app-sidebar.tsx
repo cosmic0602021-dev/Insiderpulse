@@ -15,8 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
-import logoLight from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (1)_1757853895328.png";
-import logoDark from "@assets/Gemini_Generated_Image_nji48fnji48fnji4 (2)_1757853892403.png";
+import logoLight from "@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png";
+import logoDark from "@assets/inverted_with_green_1757888880166.png";
 
 const getMenuItems = (t: (key: string) => string) => [
   {
