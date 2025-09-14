@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type Alert, type InsertAlert } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type StockPriceHistory, type InsertStockPriceHistory, type Alert, type InsertAlert } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades, stockPrices, alerts } from "@shared/schema";
-import { eq, desc, count, sum, avg, sql, inArray } from "drizzle-orm";
+import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@shared/schema";
+import { eq, desc, count, sum, avg, sql, inArray, gte, lte } from "drizzle-orm";
 import type { IStorage } from "./storage";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -176,6 +176,72 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(stockPrices)
       .where(inArray(stockPrices.ticker, upperTickers));
+    return result;
+  }
+
+  // Stock price history methods
+  async getStockPriceHistory(ticker: string, fromDate?: string, toDate?: string): Promise<StockPriceHistory[]> {
+    const upperTicker = ticker.toUpperCase();
+    let query = db
+      .select()
+      .from(stockPriceHistory)
+      .where(eq(stockPriceHistory.ticker, upperTicker))
+      .orderBy(desc(stockPriceHistory.date));
+
+    // Apply date filters if provided
+    if (fromDate && toDate) {
+      const { gte } = await import('drizzle-orm');
+      const { lte } = await import('drizzle-orm');
+      query = query.where(
+        sql`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
+      );
+    }
+
+    return query;
+  }
+
+  async upsertStockPriceHistory(history: InsertStockPriceHistory): Promise<StockPriceHistory> {
+    try {
+      // Try to insert new record
+      const result = await db
+        .insert(stockPriceHistory)
+        .values({
+          ...history,
+          ticker: history.ticker.toUpperCase(),
+        })
+        .returning();
+      return result[0];
+    } catch (error: any) {
+      // If unique constraint violation (ticker + date), update existing record
+      if (error?.code === '23505' || error?.constraint?.includes('ticker_date')) {
+        const result = await db
+          .update(stockPriceHistory)
+          .set({
+            open: history.open,
+            high: history.high,
+            low: history.low,
+            close: history.close,
+            volume: history.volume,
+          })
+          .where(
+            sql`${stockPriceHistory.ticker} = ${history.ticker.toUpperCase()} AND ${stockPriceHistory.date} = ${history.date}`
+          )
+          .returning();
+        return result[0];
+      }
+      throw error;
+    }
+  }
+
+  async getStockPriceHistoryRange(ticker: string, fromDate: string, toDate: string): Promise<StockPriceHistory[]> {
+    const upperTicker = ticker.toUpperCase();
+    const result = await db
+      .select()
+      .from(stockPriceHistory)
+      .where(
+        sql`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
+      )
+      .orderBy(stockPriceHistory.date);
     return result;
   }
 

@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type Alert, type InsertAlert } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type StockPriceHistory, type InsertStockPriceHistory, type Alert, type InsertAlert } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades, stockPrices, alerts } from "@shared/schema";
+import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@shared/schema";
 import { eq, desc, count, sum, avg } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -30,6 +30,11 @@ export interface IStorage {
   upsertStockPrice(price: InsertStockPrice): Promise<StockPrice>;
   getStockPrices(tickers: string[]): Promise<StockPrice[]>;
   
+  // Stock price history management
+  getStockPriceHistory(ticker: string, fromDate?: string, toDate?: string): Promise<StockPriceHistory[]>;
+  upsertStockPriceHistory(history: InsertStockPriceHistory): Promise<StockPriceHistory>;
+  getStockPriceHistoryRange(ticker: string, fromDate: string, toDate: string): Promise<StockPriceHistory[]>;
+  
   // Alert management
   getAlerts(userId?: string): Promise<Alert[]>;
   getAlertById(id: string): Promise<Alert | undefined>;
@@ -42,11 +47,13 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private insiderTrades: Map<string, InsiderTrade>;
+  private stockPriceHistory: Map<string, StockPriceHistory>;
   private alerts: Map<string, Alert>;
 
   constructor() {
     this.users = new Map();
     this.insiderTrades = new Map();
+    this.stockPriceHistory = new Map();
     this.alerts = new Map();
   }
 
@@ -159,6 +166,45 @@ export class MemStorage implements IStorage {
 
   async getStockPrices(tickers: string[]): Promise<StockPrice[]> {
     return [];
+  }
+
+  // Stock price history methods (memory storage)
+  async getStockPriceHistory(ticker: string, fromDate?: string, toDate?: string): Promise<StockPriceHistory[]> {
+    const upperTicker = ticker.toUpperCase();
+    const allHistory = Array.from(this.stockPriceHistory.values())
+      .filter(h => h.ticker === upperTicker);
+    
+    if (!fromDate && !toDate) {
+      return allHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+    
+    return allHistory
+      .filter(h => {
+        const historyDate = new Date(h.date);
+        const from = fromDate ? new Date(fromDate) : new Date('1900-01-01');
+        const to = toDate ? new Date(toDate) : new Date('2100-12-31');
+        return historyDate >= from && historyDate <= to;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
+  async upsertStockPriceHistory(history: InsertStockPriceHistory): Promise<StockPriceHistory> {
+    const key = `${history.ticker}_${history.date}`;
+    const existing = this.stockPriceHistory.get(key);
+    
+    const newHistory: StockPriceHistory = {
+      id: existing?.id || randomUUID(),
+      ...history,
+      ticker: history.ticker.toUpperCase(),
+      createdAt: existing?.createdAt || new Date()
+    };
+    
+    this.stockPriceHistory.set(key, newHistory);
+    return newHistory;
+  }
+
+  async getStockPriceHistoryRange(ticker: string, fromDate: string, toDate: string): Promise<StockPriceHistory[]> {
+    return this.getStockPriceHistory(ticker, fromDate, toDate);
   }
 
   // Alert methods for MemStorage

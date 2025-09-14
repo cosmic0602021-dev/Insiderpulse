@@ -95,6 +95,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get stock price history by ticker
+  app.get('/api/stocks/:ticker/history', async (req, res) => {
+    try {
+      const ticker = req.params.ticker.toUpperCase();
+      const period = (req.query.period as string) || '1y';
+      const fromDate = req.query.from as string;
+      const toDate = req.query.to as string;
+      
+      // First try to get from database
+      let historyData = [];
+      if (fromDate && toDate) {
+        historyData = await storage.getStockPriceHistoryRange(ticker, fromDate, toDate);
+      } else {
+        historyData = await storage.getStockPriceHistory(ticker);
+      }
+      
+      // If no data in database, fetch from service and save
+      if (historyData.length === 0) {
+        console.log(`📈 Fetching historical data for ${ticker} (${period})`);
+        const serviceData = await stockPriceService.getStockPriceHistory(ticker, period);
+        
+        // Save to database for future use
+        if (serviceData.length > 0) {
+          await stockPriceService.updateHistoricalPricesForTicker(ticker, period);
+          // Fetch again from database to get consistent format
+          historyData = await storage.getStockPriceHistory(ticker);
+        }
+      }
+      
+      res.json(historyData);
+    } catch (error) {
+      console.error(`Failed to fetch history for ${req.params.ticker}:`, error);
+      res.status(500).json({ error: 'Failed to fetch stock price history' });
+    }
+  });
+
+  // Trigger historical data collection for a ticker (admin endpoint)
+  app.post('/api/stocks/:ticker/history/collect', async (req, res) => {
+    try {
+      const ticker = req.params.ticker.toUpperCase();
+      const period = (req.body.period as string) || '1y';
+      
+      console.log(`🔄 Manual trigger: Collecting historical data for ${ticker} (${period})`);
+      await stockPriceService.updateHistoricalPricesForTicker(ticker, period);
+      
+      const historyData = await storage.getStockPriceHistory(ticker);
+      res.json({ 
+        success: true, 
+        ticker, 
+        period, 
+        recordsCollected: historyData.length,
+        data: historyData
+      });
+    } catch (error) {
+      console.error(`Failed to collect history for ${req.params.ticker}:`, error);
+      res.status(500).json({ error: 'Failed to collect stock price history' });
+    }
+  });
+
   // Get multiple stock prices
   app.get('/api/stocks', async (req, res) => {
     try {

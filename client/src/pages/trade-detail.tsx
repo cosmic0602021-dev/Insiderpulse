@@ -9,6 +9,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Calendar, User, Buildi
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import PriceComparisonChart from "@/components/price-comparison-chart";
+import StockHistoryChart from "@/components/stock-history-chart";
 import type { InsiderTrade, StockPrice } from "@shared/schema";
 
 export default function TradeDetail() {
@@ -372,6 +373,16 @@ export default function TradeDetail() {
                 : stockPrice?.currentPrice || 0
               }
               filedDate={trade.filedDate}
+            />
+          )}
+
+          {/* Stock Price History Chart */}
+          {(trade.ticker || trade.companyName) && trade.filedDate && trade.pricePerShare && (
+            <StockHistoryChart
+              ticker={trade.ticker || trade.companyName}
+              tradeDate={trade.filedDate}
+              tradePrice={trade.pricePerShare}
+              data-testid="stock-history-chart"
             />
           )}
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, json, decimal, bigint, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -88,6 +88,30 @@ export const insertStockPriceSchema = createInsertSchema(stockPrices).omit({
 
 export type InsertStockPrice = z.infer<typeof insertStockPriceSchema>;
 export type StockPrice = typeof stockPrices.$inferSelect;
+
+// Stock price history for time-series data
+export const stockPriceHistory = pgTable("stock_price_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ticker: varchar("ticker", { length: 10 }).notNull(),
+  date: date("date").notNull(),
+  open: decimal("open", { precision: 10, scale: 2 }).notNull(),
+  high: decimal("high", { precision: 10, scale: 2 }).notNull(),
+  low: decimal("low", { precision: 10, scale: 2 }).notNull(),
+  close: decimal("close", { precision: 10, scale: 2 }).notNull(),
+  volume: bigint("volume", { mode: "number" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Create composite unique index for ticker + date
+export const stockPriceHistoryIndex = sql`CREATE UNIQUE INDEX IF NOT EXISTS "idx_stock_history_ticker_date" ON "stock_price_history" ("ticker", "date")`;
+
+export const insertStockPriceHistorySchema = createInsertSchema(stockPriceHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertStockPriceHistory = z.infer<typeof insertStockPriceHistorySchema>;
+export type StockPriceHistory = typeof stockPriceHistory.$inferSelect;
 
 // Alerts table for user-defined trading alerts
 export const alerts = pgTable("alerts", {

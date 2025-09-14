@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { storage } from './storage';
-import type { InsertStockPrice } from '@shared/schema';
+import type { InsertStockPrice, InsertStockPriceHistory } from '@shared/schema';
 
 export class StockPriceService {
   private cache = new Map<string, { data: any; timestamp: number }>();
@@ -194,6 +194,134 @@ export class StockPriceService {
       console.log('✅ Stock price update completed');
     } catch (error) {
       console.error('❌ Error updating stock prices:', error);
+    }
+  }
+
+  async getStockPriceHistory(ticker: string, period: string = '1y'): Promise<any[]> {
+    const upperTicker = ticker.toUpperCase();
+    const cached = this.cache.get(`${upperTicker}_history`);
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
+    try {
+      // Calculate date range based on period
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      switch (period) {
+        case '1m':
+          startDate.setMonth(endDate.getMonth() - 1);
+          break;
+        case '3m':
+          startDate.setMonth(endDate.getMonth() - 3);
+          break;
+        case '6m':
+          startDate.setMonth(endDate.getMonth() - 6);
+          break;
+        case '1y':
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        case '2y':
+          startDate.setFullYear(endDate.getFullYear() - 2);
+          break;
+        default:
+          startDate.setFullYear(endDate.getFullYear() - 1);
+      }
+
+      // Yahoo Finance historical data API
+      const period1 = Math.floor(startDate.getTime() / 1000);
+      const period2 = Math.floor(endDate.getTime() / 1000);
+      
+      const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`, {
+        params: {
+          period1,
+          period2,
+          interval: '1d'
+        },
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+
+      const result = response.data?.chart?.result?.[0];
+      if (!result || !result.timestamp) {
+        throw new Error('No historical data found');
+      }
+
+      const timestamps = result.timestamp;
+      const ohlc = result.indicators?.quote?.[0];
+      
+      if (!ohlc) {
+        throw new Error('No OHLC data available');
+      }
+
+      const historyData: Array<{
+        date: string;
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        volume: number;
+        ticker: string;
+      }> = timestamps.map((timestamp: number, index: number) => ({
+        date: new Date(timestamp * 1000).toISOString().split('T')[0],
+        open: ohlc.open[index] || 0,
+        high: ohlc.high[index] || 0,
+        low: ohlc.low[index] || 0,
+        close: ohlc.close[index] || 0,
+        volume: ohlc.volume[index] || 0,
+        ticker: upperTicker
+      })).filter((data: any) => data.close > 0); // Filter out invalid data
+
+      // Cache the result
+      this.cache.set(`${upperTicker}_history`, {
+        data: historyData,
+        timestamp: Date.now()
+      });
+
+      return historyData;
+    } catch (error) {
+      console.error(`❌ Failed to fetch historical data for ${upperTicker}:`, error);
+      return [];
+    }
+  }
+
+  async updateHistoricalPricesForTicker(ticker: string, period: string = '1y'): Promise<void> {
+    try {
+      const historyData = await this.getStockPriceHistory(ticker, period);
+      
+      if (historyData.length === 0) {
+        console.log(`⚠️ No historical data available for ${ticker}`);
+        return;
+      }
+
+      console.log(`📈 Updating historical prices for ${ticker} (${historyData.length} days)`);
+
+      for (const dayData of historyData) {
+        try {
+          await storage.upsertStockPriceHistory({
+            ticker: dayData.ticker,
+            date: dayData.date,
+            open: dayData.open.toString(),
+            high: dayData.high.toString(),
+            low: dayData.low.toString(),
+            close: dayData.close.toString(),
+            volume: dayData.volume
+          });
+        } catch (error) {
+          console.error(`❌ Failed to save historical data for ${ticker} on ${dayData.date}:`, error);
+        }
+        
+        // Rate limiting: wait 10ms between inserts
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      console.log(`✅ Updated historical prices for ${ticker}`);
+    } catch (error) {
+      console.error(`❌ Error updating historical prices for ${ticker}:`, error);
     }
   }
 
