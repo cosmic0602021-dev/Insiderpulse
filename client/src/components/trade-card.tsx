@@ -75,14 +75,14 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
               )}
             </div>
             {trade.traderName && (
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-medium text-foreground" data-testid="trader-name">
+              <div className="mb-1">
+                <div className="text-sm font-medium text-foreground" data-testid="trader-name">
                   {trade.traderName}
-                </span>
+                </div>
                 {trade.traderTitle && (
-                  <span className="text-xs text-muted-foreground" data-testid="trader-title">
-                    • {trade.traderTitle}
-                  </span>
+                  <div className="text-xs text-muted-foreground" data-testid="trader-title">
+                    {trade.traderTitle}
+                  </div>
                 )}
               </div>
             )}

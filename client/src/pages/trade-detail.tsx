@@ -213,19 +213,16 @@ export default function TradeDetail() {
                           <h5 className="font-medium text-xs text-muted-foreground">
                             {t('tradeDetail.name')}
                           </h5>
-                          <p className="font-semibold" data-testid="text-trader-name">
-                            {trade.traderName}
-                          </p>
-                        </div>
-                      )}
-                      {trade.traderTitle && (
-                        <div>
-                          <h5 className="font-medium text-xs text-muted-foreground">
-                            {t('tradeDetail.titlePosition')}
-                          </h5>
-                          <p className="font-semibold" data-testid="text-trader-title">
-                            {trade.traderTitle}
-                          </p>
+                          <div className="space-y-1">
+                            <p className="font-semibold" data-testid="text-trader-name">
+                              {trade.traderName}
+                            </p>
+                            {trade.traderTitle && (
+                              <p className="text-sm text-muted-foreground" data-testid="text-trader-title">
+                                {trade.traderTitle}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       )}
                       {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (

@@ -27,21 +27,21 @@ class ApiClient {
   }
 
   // Trading statistics
-  async getTradingStats(): Promise<TradingStats> {
+  getTradingStats = async (): Promise<TradingStats> => {
     return this.request<TradingStats>('/stats');
   }
 
   // Insider trades
-  async getInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+  getInsiderTrades = async (limit = 20, offset = 0): Promise<InsiderTrade[]> => {
     return this.request<InsiderTrade[]>(`/trades?limit=${limit}&offset=${offset}`);
   }
 
-  async getInsiderTradeById(id: string): Promise<InsiderTrade> {
+  getInsiderTradeById = async (id: string): Promise<InsiderTrade> => {
     return this.request<InsiderTrade>(`/trades/${id}`);
   }
 
   // Health check
-  async getHealth() {
+  getHealth = async () => {
     return this.request('/health');
   }
 }
