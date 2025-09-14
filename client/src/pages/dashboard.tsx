@@ -15,16 +15,16 @@ export default function Dashboard() {
   const [allTrades, setAllTrades] = useState<InsiderTrade[]>([]);
   
   // Real API data queries
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  const { data: trades, isLoading: tradesLoading, refetch: refetchTrades } = useQuery({
+  const { data: trades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
     queryKey: queryKeys.trades.list({ limit: 20, offset: 0 }),
     queryFn: () => apiClient.getInsiderTrades(20, 0),
-    refetchInterval: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
   // WebSocket connection for real-time updates
@@ -44,9 +44,11 @@ export default function Dashboard() {
         
       case 'NEW_TRADE':
         console.log('New trade received via WebSocket:', lastMessage.data);
-        // Invalidate and refetch data
-        queryClient.invalidateQueries({ queryKey: queryKeys.stats });
-        queryClient.invalidateQueries({ queryKey: queryKeys.trades.all });
+        // Invalidate and refetch data (but don't spam)
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.stats });
+          queryClient.invalidateQueries({ queryKey: queryKeys.trades.all });
+        }, 1000); // Debounce updates
         break;
         
       case 'SUBSCRIBED':
@@ -126,7 +128,7 @@ export default function Dashboard() {
         <Alert className="border-destructive/50 bg-destructive/10">
           <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertDescription className="text-destructive">
-            Failed to load trading statistics. Please refresh the page.
+            Failed to load trading statistics. {statsError ? `Error: ${statsError.message}` : 'Please refresh the page.'}
           </AlertDescription>
         </Alert>
       )}
