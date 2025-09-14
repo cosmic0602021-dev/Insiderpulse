@@ -93,8 +93,8 @@ export class StockPriceService {
     } catch (error) {
       console.error(`Failed to fetch stock price for ${upperTicker}:`, error);
       
-      // Return mock data if API fails
-      return this.generateMockStockData(upperTicker);
+      // Return null instead of mock data - only use real data
+      return null;
     }
   }
 
@@ -136,21 +136,7 @@ export class StockPriceService {
     return null;
   }
 
-  private generateMockStockData(ticker: string): any {
-    const basePrice = 50 + Math.random() * 200; // $50-$250
-    const change = (Math.random() - 0.5) * 20; // -$10 to +$10
-    const changePercent = (change / basePrice) * 100;
-
-    return {
-      ticker,
-      companyName: `${ticker} Inc`,
-      currentPrice: parseFloat(basePrice.toFixed(2)),
-      change: parseFloat(change.toFixed(2)),
-      changePercent: parseFloat(changePercent.toFixed(2)),
-      volume: Math.floor(Math.random() * 10000000) + 1000000,
-      marketCap: Math.floor(Math.random() * 1000000000000) + 10000000000,
-    };
-  }
+  // REMOVED: generateMockStockData - Only use real market data, no fake data allowed
 
   async updateStockPricesForTrades(): Promise<void> {
     try {
@@ -182,6 +168,8 @@ export class StockPriceService {
 
             await storage.upsertStockPrice(stockPrice);
             console.log(`✅ Updated stock price for ${priceData.ticker}: $${priceData.currentPrice}`);
+          } else {
+            console.log(`⚠️ No real price data available for ${companyName} - skipping (no fake data)`);
           }
         } catch (error) {
           console.error(`❌ Failed to update price for ${companyName}:`, error);
