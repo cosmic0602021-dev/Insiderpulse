@@ -3,6 +3,7 @@ import { parseStringPromise } from 'xml2js';
 import { storage } from './storage';
 import { broadcastUpdate } from './routes';
 import { aiAnalysisService } from './ai-analysis';
+import { SecCamoufoxClient } from './sec-camoufox-client.js';
 import type { InsertInsiderTrade } from '@shared/schema';
 
 // SEC-compliant HTTP client to prevent WAF blocking
@@ -12,8 +13,37 @@ class SecHttpClient {
   private blockUntil = 0;
   private readonly minDelay = 2000; // 2 seconds between requests
   private readonly userAgent = 'InsiderTrack Pro/1.0 (https://insidertrack.pro; contact@insidertrack.pro)';
+  private camoufoxClient = new SecCamoufoxClient();
   
   async get(url: string, expectedContentType?: string): Promise<any> {
+    // Use Camoufox for XML files to bypass WAF
+    if (url.endsWith('.xml') || expectedContentType?.includes('xml')) {
+      console.log('🦊 Using Camoufox for XML request:', url);
+      try {
+        const camoufoxResponse = await this.camoufoxClient.request({
+          url,
+          method: 'GET',
+          headers: {
+            'Accept': expectedContentType || 'application/xml, text/xml, */*'
+          }
+        });
+        
+        // Check if we got valid XML data
+        if (camoufoxResponse.data && typeof camoufoxResponse.data === 'string') {
+          const xmlContent = camoufoxResponse.data.trim();
+          if (xmlContent.startsWith('<?xml') || xmlContent.includes('<ownershipDocument>')) {
+            console.log('✅ Camoufox successfully retrieved XML data');
+            return xmlContent;
+          }
+        }
+        
+        // Fallback to axios if Camoufox doesn't return XML
+        console.log('⚠️ Camoufox response not valid XML, falling back to axios');
+      } catch (error) {
+        console.log('❌ Camoufox failed, falling back to axios:', (error as Error).message);
+        // Continue to axios fallback
+      }
+    }
     // Check if we're in cooldown period
     if (this.isBlocked && Date.now() < this.blockUntil) {
       const remainingMinutes = Math.ceil((this.blockUntil - Date.now()) / 60000);

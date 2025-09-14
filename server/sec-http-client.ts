@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import crypto from "crypto";
+import { SecCamoufoxClient } from './sec-camoufox-client.js';
 
 interface RequestOptions {
   method: 'GET' | 'POST';
@@ -21,13 +22,80 @@ export class SecHttpClient {
   private blocked: boolean = false;
   private blockUntil: number = 0;
   private cooldownDuration: number = 45 * 60 * 1000; // 45 minutes in milliseconds
+  private camoufoxClient: SecCamoufoxClient;
 
   constructor() {
     // Generate a unique user agent for SEC compliance
     this.userAgent = `InsiderTrack Pro Analytics Bot v1.0 (contact@insidertrack.com)`;
+    this.camoufoxClient = new SecCamoufoxClient();
   }
 
   async request(options: RequestOptions): Promise<HttpResponse> {
+    // Use Camoufox for XML files, SEC APIs, and if we've been blocked recently
+    const isXmlRequest = options.url.endsWith('.xml') || 
+                        options.headers?.['Accept']?.includes('xml') ||
+                        options.url.includes('/Archives/edgar/');
+                        
+    const isSecApiRequest = options.url.includes('sec.gov') || 
+                           options.url.includes('efts.sec.gov');
+                        
+    const shouldUseCamoufox = isXmlRequest || isSecApiRequest || this.blocked;
+    
+    if (shouldUseCamoufox) {
+      console.log('🦊 Using Camoufox for request:', options.url);
+      try {
+        const camoufoxResponse = await this.camoufoxClient.request({
+          url: options.url,
+          method: options.method,
+          headers: {
+            'Accept': options.headers?.['Accept'] || 'application/xml, text/xml, application/json, */*',
+            ...options.headers
+          },
+          ...(options.data && { data: options.data })
+        });
+        
+        console.log('✅ Camoufox request successful');
+        console.log('🔍 [DEBUG] Camoufox response type:', typeof camoufoxResponse.data);
+        console.log('🔍 [DEBUG] Camoufox response preview:', 
+          typeof camoufoxResponse.data === 'string' 
+            ? camoufoxResponse.data.substring(0, 200) + '...'
+            : JSON.stringify(camoufoxResponse.data).substring(0, 200) + '...'
+        );
+        
+        // Try to parse JSON if it's a string, handle HTML-wrapped JSON
+        let parsedData = camoufoxResponse.data;
+        if (typeof camoufoxResponse.data === 'string') {
+          try {
+            // Check if it's HTML-wrapped JSON (browser display format)
+            if (camoufoxResponse.data.includes('<pre>') && camoufoxResponse.data.includes('</pre>')) {
+              const preMatch = camoufoxResponse.data.match(/<pre>(.*?)<\/pre>/s);
+              if (preMatch && preMatch[1]) {
+                const jsonString = preMatch[1].trim();
+                parsedData = JSON.parse(jsonString);
+                console.log('✅ Successfully extracted and parsed JSON from HTML wrapper');
+              } else {
+                parsedData = JSON.parse(camoufoxResponse.data);
+              }
+            } else {
+              parsedData = JSON.parse(camoufoxResponse.data);
+            }
+            console.log('✅ Successfully parsed JSON from Camoufox string response');
+          } catch (error) {
+            console.log('⚠️ Camoufox response is not valid JSON, using as-is');
+          }
+        }
+        
+        return {
+          data: parsedData,
+          status: 200,
+          headers: {}
+        };
+      } catch (error) {
+        console.log('❌ Camoufox failed, falling back to axios:', (error as Error).message);
+        // Continue to axios fallback
+      }
+    }
+
     // Check if we're in cooldown period
     if (this.blocked && Date.now() < this.blockUntil) {
       const remainingTime = Math.ceil((this.blockUntil - Date.now()) / 1000 / 60);

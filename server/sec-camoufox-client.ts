@@ -141,39 +141,46 @@ def make_request():
         with Camoufox(
             headless=True,
             humanize=True,  # Add human-like behavior
-            block_webgl=True,  # Block WebGL fingerprinting
+            i_know_what_im_doing=True,  # Suppress WebGL warning
         ) as browser:
             page = browser.new_page()
             
             # Set extra headers
             page.set_extra_http_headers(${JSON.stringify(headers)})
             
-            # Navigate to the URL
-            response = page.goto('${options.url}', wait_until='networkidle')
+            # Navigate to the URL with shorter timeout for XML files
+            response = page.goto('${options.url}', wait_until='domcontentloaded', timeout=30000)
             
-            # Wait a bit for any dynamic content
-            time.sleep(2)
-            
-            # Get the response data
-            content = page.content()
-            
-            # Check if this looks like an XML response (SEC data)
-            if content.strip().startswith('<?xml') or '<form4>' in content.lower():
-                data = content
+            # For XML files, get the raw response
+            if '${options.url}'.endswith('.xml') or 'application/xml' in '${options.headers?.Accept || ''}':
+                # This is likely an XML file, get the raw content
+                raw_content = page.content()
+                
+                # Clean up the content - remove any HTML wrapper
+                if raw_content.strip().startswith('<html'):
+                    # Extract XML from HTML body
+                    start = raw_content.find('<ownershipDocument>')
+                    if start > -1:
+                        end = raw_content.find('</ownershipDocument>') + len('</ownershipDocument>')
+                        raw_content = raw_content[start:end]
+                    else:
+                        # Look for any XML content
+                        start = raw_content.find('<?xml')
+                        if start > -1:
+                            raw_content = raw_content[start:]
+                
+                data = raw_content.strip()
             else:
-                # Try to get JSON if it's a JSON response
-                try:
-                    data = page.evaluate("JSON.stringify(window.__INITIAL_DATA__ || document.body.innerText)")
-                except:
-                    data = content
+                # Regular page content
+                data = page.content()
             
             result = {
                 'data': data,
                 'status': response.status,
-                'headers': dict(response.headers)
+                'headers': dict(response.headers) if response.headers else {}
             }
             
-            print(json.dumps(result))
+            print(json.dumps(result, ensure_ascii=False))
             
     except Exception as e:
         error_result = {
