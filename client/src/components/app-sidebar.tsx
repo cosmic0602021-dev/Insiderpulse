@@ -72,13 +72,13 @@ export function AppSidebar() {
           <img 
             src={logoLight} 
             alt="InsiderPulse"
-            className="block dark:hidden h-16 md:h-20 w-auto object-contain"
+            className="block dark:hidden h-48 md:h-60 w-auto object-contain"
             data-testid="app-logo-light"
           />
           <img 
             src={logoDark} 
             alt="InsiderPulse"
-            className="hidden dark:block h-16 md:h-20 w-auto object-contain"
+            className="hidden dark:block h-48 md:h-60 w-auto object-contain"
             data-testid="app-logo-dark"
           />
         </div>
