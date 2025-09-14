@@ -104,10 +104,10 @@ export default function SearchPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight" data-testid="text-search-title">
-          {t('nav.search')}
+          {t('search.title')}
         </h1>
         <p className="text-muted-foreground">
-          Search and filter insider trading data with advanced criteria
+          {t('search.subtitle')}
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function SearchPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
-            Search & Filter
+            {t('search.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -125,7 +125,7 @@ export default function SearchPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search companies, tickers, traders, or titles..."
+                placeholder={t('page.search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -139,11 +139,11 @@ export default function SearchPage() {
               data-testid="button-toggle-filters"
             >
               <Sliders className="h-4 w-4" />
-              Filters
+              {t('search.filters')}
             </Button>
             {(searchTerm || filterType !== 'all' || dateRange !== 'all' || minValue) && (
               <Button variant="ghost" onClick={clearFilters}>
-                Clear
+                {t('search.clear')}
               </Button>
             )}
           </div>
@@ -154,53 +154,53 @@ export default function SearchPage() {
               <Separator />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Trade Type</label>
+                  <label className="text-sm font-medium">{t('search.tradeType')}</label>
                   <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="BUY">Buy Only</SelectItem>
-                      <SelectItem value="SELL">Sell Only</SelectItem>
+                      <SelectItem value="all">{t('filter.allTypes')}</SelectItem>
+                      <SelectItem value="BUY">{t('filter.buyOnly')}</SelectItem>
+                      <SelectItem value="SELL">{t('filter.sellOnly')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Date Range</label>
+                  <label className="text-sm font-medium">{t('search.dateRange')}</label>
                   <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="7d">Last 7 Days</SelectItem>
-                      <SelectItem value="30d">Last 30 Days</SelectItem>
-                      <SelectItem value="90d">Last 90 Days</SelectItem>
+                      <SelectItem value="all">{t('search.dateRange.all')}</SelectItem>
+                      <SelectItem value="7d">{t('search.dateRange.7d')}</SelectItem>
+                      <SelectItem value="30d">{t('search.dateRange.30d')}</SelectItem>
+                      <SelectItem value="90d">{t('search.dateRange.90d')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Sort By</label>
+                  <label className="text-sm font-medium">{t('search.sortBy')}</label>
                   <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="date">Date (Newest)</SelectItem>
-                      <SelectItem value="value">Value (Highest)</SelectItem>
-                      <SelectItem value="company">Company (A-Z)</SelectItem>
+                      <SelectItem value="date">{t('search.sort.recent')}</SelectItem>
+                      <SelectItem value="value">{t('search.sort.value')}</SelectItem>
+                      <SelectItem value="company">{t('search.sort.company')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Min Value ($)</label>
+                  <label className="text-sm font-medium">{t('search.value')} ($)</label>
                   <Input
                     type="number"
-                    placeholder="1000000"
+                    placeholder={t('search.placeholder.minValue')}
                     value={minValue}
                     onChange={(e) => setMinValue(e.target.value)}
                     data-testid="input-min-value"
@@ -216,20 +216,20 @@ export default function SearchPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Results</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.results')}</CardTitle>
             <Search className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-total-results">
               {searchStats.totalResults}
             </div>
-            <p className="text-xs text-muted-foreground">Total trades found</p>
+            <p className="text-xs text-muted-foreground">{t('search.totalFound')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Buy Trades</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.buyTrades')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -247,7 +247,7 @@ export default function SearchPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sell Trades</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.sellTrades')}</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -265,40 +265,40 @@ export default function SearchPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.totalVolume')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(searchStats.totalVolume)}
             </div>
-            <p className="text-xs text-muted-foreground">Combined value</p>
+            <p className="text-xs text-muted-foreground">{t('search.combinedValue')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Companies</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.companies')}</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {searchStats.uniqueCompanies}
             </div>
-            <p className="text-xs text-muted-foreground">Unique entities</p>
+            <p className="text-xs text-muted-foreground">{t('search.uniqueEntities')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Traders</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('search.traders')}</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {searchStats.uniqueTraders}
             </div>
-            <p className="text-xs text-muted-foreground">Unique insiders</p>
+            <p className="text-xs text-muted-foreground">{t('search.uniqueInsiders')}</p>
           </CardContent>
         </Card>
       </div>
@@ -307,7 +307,7 @@ export default function SearchPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Search Results</span>
+            <span>{t('search.searchResults')}</span>
             <Badge variant="outline">
               {searchStats.totalResults} results
             </Badge>
@@ -323,12 +323,12 @@ export default function SearchPage() {
           ) : filteredTrades.length === 0 ? (
             <div className="text-center py-12">
               <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-semibold mb-2">No trades found</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('search.noTrades')}</h3>
               <p className="text-muted-foreground mb-4">
-                Try adjusting your search criteria or filters
+                {t('liveTrading.adjustFilters')}
               </p>
               <Button variant="outline" onClick={clearFilters}>
-                Clear all filters
+                {t('search.clear')}
               </Button>
             </div>
           ) : (

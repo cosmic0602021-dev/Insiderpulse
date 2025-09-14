@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface PriceComparisonChartProps {
   tradePrice: number;
@@ -14,6 +15,7 @@ export default function PriceComparisonChart({
   currentPrice, 
   filedDate 
 }: PriceComparisonChartProps) {
+  const { t } = useLanguage();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -29,16 +31,16 @@ export default function PriceComparisonChart({
 
   const data = [
     {
-      name: 'Trade Price',
+      name: t('priceChart.tradePrice'),
       price: tradePrice,
       type: 'trade',
       date: new Date(filedDate).toLocaleDateString()
     },
     {
-      name: 'Current Price',
+      name: t('priceChart.currentPrice'),
       price: currentPrice,
       type: 'current',
-      date: 'Today'
+      date: t('priceChart.today')
     }
   ];
 
@@ -67,7 +69,7 @@ export default function PriceComparisonChart({
           ) : (
             <TrendingDown className="w-5 h-5 text-red-500" />
           )}
-          Price Comparison Chart
+          {t('priceChart.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -98,16 +100,16 @@ export default function PriceComparisonChart({
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-1">Trade Price</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('priceChart.tradePrice')}</p>
             <p className="text-lg font-bold" data-testid="chart-trade-price">
               {formatCurrency(tradePrice)}
             </p>
             <Badge variant="outline" className="mt-1">
-              INSIDER TRADE
+              {t('priceChart.insiderTrade')}
             </Badge>
           </div>
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-1">Current Price</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('priceChart.currentPrice')}</p>
             <p className="text-lg font-bold" data-testid="chart-current-price">
               {formatCurrency(currentPrice)}
             </p>
@@ -128,17 +130,17 @@ export default function PriceComparisonChart({
         }`}>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-2">
-              Price Movement Since Trade
+              {t('priceChart.movement')}
             </p>
             <p className={`text-xl font-bold ${
               isProfit 
                 ? 'text-green-600 dark:text-green-400' 
                 : 'text-red-600 dark:text-red-400'
             }`} data-testid="chart-outcome">
-              {isProfit ? 'Price Increased' : 'Price Decreased'}
+              {isProfit ? t('priceChart.increased') : t('priceChart.decreased')}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Trade Price: {formatCurrency(tradePrice)} → Current: {formatCurrency(currentPrice)}
+              {t('priceChart.tradePriceLabel')} {formatCurrency(tradePrice)} → {t('priceChart.currentLabel')} {formatCurrency(currentPrice)}
             </p>
           </div>
         </div>

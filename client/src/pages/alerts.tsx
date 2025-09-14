@@ -150,7 +150,7 @@ export default function Alerts() {
           {t('nav.alerts')}
         </h1>
         <p className="text-muted-foreground">
-          Set up custom alerts for insider trading activity that matters to you
+          {t('alerts.subtitle')}
         </p>
       </div>
 
@@ -162,15 +162,15 @@ export default function Alerts() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BellRing className="h-5 w-5" />
-                Active Alerts ({alerts.filter(a => a.isActive).length})
+                {t('alerts.active')} ({alerts.filter(a => a.isActive).length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {alerts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No alerts configured yet</p>
-                  <p className="text-sm">Create your first alert below</p>
+                  <p>{t('alerts.noAlerts')}</p>
+                  <p className="text-sm">{t('alerts.createFirst')}</p>
                 </div>
               ) : (
                 alerts.map((alert) => (
@@ -196,7 +196,7 @@ export default function Alerts() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={alert.isActive ? "default" : "secondary"}>
-                          {alert.isActive ? 'Active' : 'Paused'}
+                          {alert.isActive ? t('alerts.active') : t('alerts.paused')}
                         </Badge>
                         <Switch
                           checked={alert.isActive}
@@ -209,7 +209,7 @@ export default function Alerts() {
                           onClick={() => deleteAlert(alert.id)}
                           className="text-destructive hover:text-destructive"
                         >
-                          Delete
+                          {t('general.delete')}
                         </Button>
                       </div>
                     </div>
@@ -224,23 +224,23 @@ export default function Alerts() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Create New Alert
+                {t('alerts.createNew')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="alert-name">Alert Name</Label>
+                  <Label htmlFor="alert-name">{t('alerts.alertName')}</Label>
                   <Input
                     id="alert-name"
-                    placeholder="e.g., Large Apple Trades"
+                    placeholder={t('alerts.placeholder.name')}
                     value={newAlert.name}
                     onChange={(e) => setNewAlert({ ...newAlert, name: e.target.value })}
                     data-testid="input-alert-name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="alert-type">Alert Type</Label>
+                  <Label htmlFor="alert-type">{t('alerts.alertType')}</Label>
                   <Select
                     value={newAlert.type}
                     onValueChange={(value: Alert['type']) => setNewAlert({ ...newAlert, type: value })}
@@ -249,9 +249,9 @@ export default function Alerts() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="VOLUME">Trade Volume</SelectItem>
-                      <SelectItem value="COMPANY">Company Name</SelectItem>
-                      <SelectItem value="TRADER">Trader Title</SelectItem>
+                      <SelectItem value="VOLUME">{t('alerts.type.volume')}</SelectItem>
+                      <SelectItem value="COMPANY">{t('alerts.type.company')}</SelectItem>
+                      <SelectItem value="TRADER">{t('alerts.type.trader')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -259,7 +259,7 @@ export default function Alerts() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="alert-condition">Condition</Label>
+                  <Label htmlFor="alert-condition">{t('alerts.condition')}</Label>
                   <Select
                     value={newAlert.condition}
                     onValueChange={(value) => setNewAlert({ ...newAlert, condition: value })}
@@ -270,20 +270,20 @@ export default function Alerts() {
                     <SelectContent>
                       {newAlert.type === 'VOLUME' ? (
                         <>
-                          <SelectItem value="greater_than">Greater than</SelectItem>
-                          <SelectItem value="less_than">Less than</SelectItem>
+                          <SelectItem value="greater_than">{t('alerts.condition.greaterThan')}</SelectItem>
+                          <SelectItem value="less_than">{t('alerts.condition.lessThan')}</SelectItem>
                         </>
                       ) : (
                         <>
-                          <SelectItem value="equals">Equals</SelectItem>
-                          <SelectItem value="contains">Contains</SelectItem>
+                          <SelectItem value="equals">{t('alerts.condition.equals')}</SelectItem>
+                          <SelectItem value="contains">{t('alerts.condition.contains')}</SelectItem>
                         </>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="alert-value">Value</Label>
+                  <Label htmlFor="alert-value">{t('alerts.value')}</Label>
                   <Input
                     id="alert-value"
                     placeholder={
@@ -302,7 +302,7 @@ export default function Alerts() {
 
               <Button onClick={addAlert} className="w-full" data-testid="button-add-alert">
                 <Plus className="h-4 w-4 mr-2" />
-                Create Alert
+                {t('alerts.createNew')}
               </Button>
             </CardContent>
           </Card>
@@ -313,7 +313,7 @@ export default function Alerts() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Recent Matches ({alertMatches.length})
+              {t('alerts.recentMatches')} ({alertMatches.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -326,8 +326,8 @@ export default function Alerts() {
             ) : alertMatches.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No recent matches</p>
-                <p className="text-xs">Set up alerts to see matches here</p>
+                <p className="text-sm">{t('alerts.noMatches')}</p>
+                <p className="text-xs">{t('alerts.setupMatches')}</p>
               </div>
             ) : (
               <div className="space-y-3">

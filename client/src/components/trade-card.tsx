@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 import type { InsiderTrade } from "@shared/schema";
 
 interface TradeCardProps {
@@ -10,6 +11,7 @@ interface TradeCardProps {
 }
 
 export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
+  const { t } = useLanguage();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -85,7 +87,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              Filed {formatDate(trade.filedDate)}
+              {t('tradeCard.filed')} {formatDate(trade.filedDate)}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -100,25 +102,25 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
         
         <div className="grid grid-cols-2 gap-4 mb-3">
           <div>
-            <div className="text-xs text-muted-foreground">Shares</div>
+            <div className="text-xs text-muted-foreground">{t('tradeCard.shares')}</div>
             <div className="text-sm font-mono" data-testid="shares">
               {trade.shares.toLocaleString()}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Avg Price</div>
+            <div className="text-xs text-muted-foreground">{t('tradeCard.avgPrice')}</div>
             <div className="text-sm font-mono" data-testid="price-per-share">
               ${trade.pricePerShare.toFixed(2)}
             </div>
           </div>
           <div className="col-span-2">
-            <div className="text-xs text-muted-foreground">Total Value</div>
+            <div className="text-xs text-muted-foreground">{t('tradeCard.totalValue')}</div>
             <div className="text-lg font-bold" data-testid="total-value">
               {formatCurrency(trade.totalValue)}
             </div>
             {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
-                {trade.ownershipPercentage}% ownership
+                {trade.ownershipPercentage}% {t('tradeCard.ownership')}
               </div>
             )}
           </div>
@@ -134,7 +136,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             data-testid="button-view-details"
           >
             <ExternalLink className="h-3 w-3 mr-1" />
-            Details
+            {t('tradeCard.details')}
           </Button>
         </div>
       </CardContent>

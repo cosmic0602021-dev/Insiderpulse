@@ -61,15 +61,15 @@ export default function TradeDetail() {
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold text-foreground mb-4">
-            Trade Not Found
+            {t('tradeDetail.notFound')}
           </h1>
           <p className="text-muted-foreground mb-6">
-            The requested trade could not be found.
+            {t('tradeDetail.notFoundMessage')}
           </p>
           <Link href="/">
             <Button data-testid="button-back-dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              {t('tradeDetail.backToDashboard')}
             </Button>
           </Link>
         </div>
@@ -125,12 +125,12 @@ export default function TradeDetail() {
         <Link href="/">
           <Button variant="ghost" size="sm" className="mb-4" data-testid="button-back">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            {t('tradeDetail.back')}
           </Button>
         </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-foreground">
-            Trade Details
+            {t('tradeDetail.title')}
           </h1>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function TradeDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
-                Company Information
+                {t('tradeDetail.companyInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -166,7 +166,7 @@ export default function TradeDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
-                    Company
+                    {t('tradeDetail.company')}
                   </h4>
                   <p className="font-semibold" data-testid="text-company-display">
                     {trade.companyName}
@@ -174,7 +174,7 @@ export default function TradeDetail() {
                 </div>
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
-                    Ticker Symbol
+                    {t('tradeDetail.tickerSymbol')}
                   </h4>
                   <p className="font-semibold" data-testid="text-ticker">
                     {trade.ticker || stockPrice?.ticker || 'N/A'}
@@ -182,7 +182,7 @@ export default function TradeDetail() {
                 </div>
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
-                    Trade Type
+                    {t('tradeDetail.tradeType')}
                   </h4>
                   <div className="flex items-center gap-2">
                     {trade.tradeType === 'BUY' ? (
@@ -204,13 +204,13 @@ export default function TradeDetail() {
                   <div className="space-y-4">
                     <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
                       <User className="w-4 h-4" />
-                      Trader Information
+                      {t('tradeDetail.traderInfo')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {trade.traderName && (
                         <div>
                           <h5 className="font-medium text-xs text-muted-foreground">
-                            Name
+                            {t('tradeDetail.name')}
                           </h5>
                           <p className="font-semibold" data-testid="text-trader-name">
                             {trade.traderName}
@@ -220,7 +220,7 @@ export default function TradeDetail() {
                       {trade.traderTitle && (
                         <div>
                           <h5 className="font-medium text-xs text-muted-foreground">
-                            Title/Position
+                            {t('tradeDetail.titlePosition')}
                           </h5>
                           <p className="font-semibold" data-testid="text-trader-title">
                             {trade.traderTitle}
@@ -230,7 +230,7 @@ export default function TradeDetail() {
                       {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
                         <div>
                           <h5 className="font-medium text-xs text-muted-foreground">
-                            Ownership
+                            {t('tradeDetail.ownership')}
                           </h5>
                           <p className="font-semibold" data-testid="text-ownership-percentage">
                             {trade.ownershipPercentage}%
@@ -249,7 +249,7 @@ export default function TradeDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                Transaction Details
+                {t('tradeDetail.transactionDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -257,7 +257,7 @@ export default function TradeDetail() {
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Shares Traded
+                    {t('tradeDetail.sharesTraded')}
                   </h4>
                   <p className="text-xl font-bold" data-testid="text-shares">
                     {trade.shares?.toLocaleString() || 'N/A'}
@@ -266,7 +266,7 @@ export default function TradeDetail() {
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Price per Share
+                    {t('tradeDetail.pricePerShare')}
                   </h4>
                   <p className="text-xl font-bold" data-testid="text-price-per-share">
                     {trade.pricePerShare ? formatCurrency(trade.pricePerShare) : 'N/A'}
@@ -275,7 +275,7 @@ export default function TradeDetail() {
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Total Transaction Value
+                    {t('tradeDetail.totalValue')}
                   </h4>
                   <p className="text-xl font-bold" data-testid="text-total-value">
                     {formatCurrency(trade.totalValue)}
@@ -284,7 +284,7 @@ export default function TradeDetail() {
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Filing Date
+                    {t('tradeDetail.filingDate')}
                   </h4>
                   <p className="font-semibold flex items-center gap-2" data-testid="text-filing-date">
                     <Calendar className="w-4 h-4" />
@@ -305,7 +305,7 @@ export default function TradeDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Current Stock Price
+                  {t('tradeDetail.currentPrice')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -343,13 +343,13 @@ export default function TradeDetail() {
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Volume</span>
+                    <span className="text-muted-foreground">{t('tradeDetail.volume')}</span>
                     <span className="font-medium" data-testid="text-volume">
                       {stockPrice.volume?.toLocaleString() || 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="text-muted-foreground">{t('tradeDetail.lastUpdated')}</span>
                     <span className="font-medium text-xs" data-testid="text-last-updated">
                       {stockPrice.lastUpdated 
                         ? new Date(stockPrice.lastUpdated).toLocaleTimeString()
@@ -384,23 +384,23 @@ export default function TradeDetail() {
                   ) : (
                     <TrendingDown className="w-5 h-5 text-red-500" />
                   )}
-                  Detailed Analysis
+                  {t('tradeDetail.analysis')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Price Comparison
+                    {t('tradeDetail.priceComparison')}
                   </p>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Trade Price:</span>
+                      <span className="text-sm">{t('tradeDetail.tradePrice')}</span>
                       <span className="font-medium" data-testid="text-trade-price">
                         {formatCurrency(trade.pricePerShare)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Current Price:</span>
+                      <span className="text-sm">{t('tradeDetail.currentPriceLabel')}</span>
                       <span className="font-medium" data-testid="text-comparison-current-price">
                         {typeof stockPrice?.currentPrice === 'string' 
                           ? formatCurrency(parseFloat(stockPrice.currentPrice))
@@ -432,7 +432,7 @@ export default function TradeDetail() {
                       ({profitLoss.isProfit ? '+' : ''}{profitLoss.percentChange.toFixed(2)}%)
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Per share comparison
+                      {t('tradeDetail.perShareComparison')}
                     </p>
                   </div>
                 </div>

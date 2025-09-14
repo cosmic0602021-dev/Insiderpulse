@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, SortDesc } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 import TradeCard from './trade-card';
 import type { InsiderTrade } from "@shared/schema";
 
@@ -15,6 +16,7 @@ interface TradeListProps {
 }
 
 export default function TradeList({ trades, loading, onLoadMore }: TradeListProps) {
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'value'>('date');
@@ -58,12 +60,12 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
     <Card data-testid="trade-list">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-lg font-semibold">Recent Insider Trades</CardTitle>
+          <CardTitle className="text-lg font-semibold">{t('tradeList.recentTrades')}</CardTitle>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search companies..."
+                placeholder={t('tradeList.searchCompanies')}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-9 w-48"
@@ -76,10 +78,10 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
             <SortDesc className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Sort:</span>
+            <span className="text-sm text-muted-foreground">{t('tradeList.sort')}</span>
             {[
-              { key: 'date', label: 'Date' },
-              { key: 'value', label: 'Value' }
+              { key: 'date', label: t('tradeList.date') },
+              { key: 'value', label: t('tradeList.value') }
             ].map((sort) => (
               <Badge
                 key={sort.key}
@@ -108,7 +110,7 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
           </div>
         ) : filteredTrades.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground" data-testid="empty-state">
-            <p>No trades found matching your criteria.</p>
+            <p>{t('tradeList.noTradesFound')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -128,7 +130,7 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
                   disabled={loading}
                   data-testid="button-load-more"
                 >
-                  {loading ? 'Loading...' : 'Load More Trades'}
+                  {loading ? t('tradeList.loading') : t('tradeList.loadMore')}
                 </Button>
               </div>
             )}

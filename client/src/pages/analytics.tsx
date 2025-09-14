@@ -109,7 +109,7 @@ export default function Analytics() {
           {t('nav.analytics')}
         </h1>
         <p className="text-muted-foreground">
-          Comprehensive insider trading market analysis and insights
+          {t('analytics.subtitle')}
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export default function Analytics() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.totalTrades')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -125,14 +125,14 @@ export default function Analytics() {
               {analytics.totalTrades.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              Insider transactions recorded
+              {t('analytics.transactionsRecorded')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.totalVolume')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -140,14 +140,14 @@ export default function Analytics() {
               {formatCurrency(analytics.totalVolume)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Combined transaction value
+              {t('analytics.combinedValue')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Trade Size</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.avgTradeSize')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -155,14 +155,14 @@ export default function Analytics() {
               {formatCurrency(analytics.avgTradeSize)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Average transaction value
+              {t('analytics.averageValue')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Companies</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.companies')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -170,7 +170,7 @@ export default function Analytics() {
               {analytics.topCompanies.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Unique companies tracked
+              {t('analytics.uniqueTracked')}
             </p>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export default function Analytics() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChart className="h-5 w-5" />
-              Trade Type Distribution
+              {t('analytics.tradeDistribution')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -224,7 +224,7 @@ export default function Analytics() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Monthly Trading Activity
+              {t('analytics.monthlyActivity')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -254,7 +254,7 @@ export default function Analytics() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Top Companies by Trading Volume
+            {t('analytics.topCompanies')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -268,7 +268,7 @@ export default function Analytics() {
                   <div>
                     <p className="font-medium">{company.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {company.trades} trades
+                      {company.trades} {t('analytics.trades')}
                     </p>
                   </div>
                 </div>

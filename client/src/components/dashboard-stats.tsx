@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, DollarSign } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 import type { TradingStats } from "@shared/schema";
 
 interface DashboardStatsProps {
@@ -7,6 +8,7 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({ stats }: DashboardStatsProps) {
+  const { t } = useLanguage();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -18,14 +20,14 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
 
   const statCards = [
     {
-      title: "Today's Trades",
+      title: t('dashboardStats.todayTrades'),
       value: stats.todayTrades.toLocaleString(),
       icon: TrendingUp,
       change: "+12%",
       positive: true
     },
     {
-      title: "Total Volume", 
+      title: t('dashboardStats.totalVolume'), 
       value: formatCurrency(stats.totalVolume),
       icon: DollarSign,
       change: "+8.2%",
@@ -52,7 +54,7 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
               <p className={`text-xs ${
                 stat.positive ? 'text-chart-2' : 'text-destructive'
               }`}>
-                {stat.change} from last week
+                {stat.change} {t('dashboardStats.fromLastWeek')}
               </p>
             </CardContent>
           </Card>

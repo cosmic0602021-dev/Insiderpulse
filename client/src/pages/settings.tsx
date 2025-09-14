@@ -51,7 +51,7 @@ export default function Settings() {
           {t('settings.title')}
         </h1>
         <p className="text-muted-foreground">
-          Manage your application preferences and settings.
+          {t('settings.description')}
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="language-select">Choose your preferred language</Label>
+            <Label htmlFor="language-select">{t('placeholder.preferredLanguage')}</Label>
             <Select value={language} onValueChange={(value: Language) => setLanguage(value)}>
               <SelectTrigger id="language-select" data-testid="select-language">
                 <SelectValue />
@@ -97,7 +97,7 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="theme-select">Choose your preferred theme</Label>
+            <Label htmlFor="theme-select">{t('settings.themeDescription')}</Label>
             <Select value={theme} onValueChange={handleThemeChange}>
               <SelectTrigger id="theme-select" data-testid="select-theme">
                 <SelectValue />
@@ -130,7 +130,7 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Notification settings will be available in a future update.
+            {t('settings.notificationsFuture')}
           </div>
         </CardContent>
       </Card>

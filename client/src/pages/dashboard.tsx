@@ -7,9 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
+import { useLanguage } from '@/contexts/language-context';
 import type { TradingStats, InsiderTrade, AIAnalysis } from '@shared/schema';
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [currentOffset, setCurrentOffset] = useState(0);
   const [allTrades, setAllTrades] = useState<InsiderTrade[]>([]);
@@ -93,16 +95,16 @@ export default function Dashboard() {
             <WifiOff className="h-4 w-4 text-destructive" />
           )}
           <AlertDescription className={isConnected ? 'text-chart-2' : 'text-destructive'}>
-            {isConnected ? 'Live data feed active - Real-time SEC filing monitoring' : 'Connection lost - Attempting to reconnect...'}
+            {isConnected ? t('connection.liveFeedActive') : t('connection.connectionLost')}
           </AlertDescription>
         </div>
       </Alert>
 
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold" data-testid="page-title">Dashboard</h1>
+        <h1 className="text-3xl font-bold" data-testid="page-title">{t('nav.dashboard')}</h1>
         <p className="text-muted-foreground">
-          Real-time insider trading monitoring and market intelligence
+          {t('page.dashboard.subtitle')}
         </p>
       </div>
 
@@ -119,7 +121,7 @@ export default function Dashboard() {
         <Alert className="border-destructive/50 bg-destructive/10">
           <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertDescription className="text-destructive">
-            Failed to load trading statistics. {statsError ? `Error: ${statsError.message}` : 'Please refresh the page.'}
+            {t('stats.failedLoad')} {statsError ? `Error: ${statsError.message}` : ''}
           </AlertDescription>
         </Alert>
       )}
@@ -150,20 +152,20 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-primary" />
-                Trading Summary
+                {t('stats.tradingSummary')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="p-3 bg-chart-2/10 rounded-md border border-chart-2/20">
-                <div className="text-sm font-medium text-chart-2 mb-1">Recent Activity</div>
+                <div className="text-sm font-medium text-chart-2 mb-1">{t('dashboardStats.recentActivity')}</div>
                 <div className="text-xs text-muted-foreground">
-                  Monitoring insider trades across all major exchanges
+                  {t('dashboardStats.monitoring')}
                 </div>
               </div>
               <div className="p-3 bg-chart-3/10 rounded-md border border-chart-3/20">
-                <div className="text-sm font-medium text-chart-3 mb-1">Market Coverage</div>
+                <div className="text-sm font-medium text-chart-3 mb-1">{t('dashboardStats.marketCoverage')}</div>
                 <div className="text-xs text-muted-foreground">
-                  Real-time SEC filing analysis and trade classification
+                  {t('dashboardStats.realTimeAnalysis')}
                 </div>
               </div>
             </CardContent>
@@ -172,7 +174,7 @@ export default function Dashboard() {
           {/* Top Movers */}
           <Card data-testid="top-movers">
             <CardHeader>
-              <CardTitle className="text-base">Top Movers Today</CardTitle>
+              <CardTitle className="text-base">{t('dashboardStats.topMovers')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

@@ -174,9 +174,9 @@ export default function LiveTrading() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold" data-testid="page-title">Live Trading</h1>
+            <h1 className="text-3xl font-bold" data-testid="page-title">{t('page.livetrading.title')}</h1>
             <p className="text-muted-foreground">
-              Real-time insider trading activity with AI-powered analysis
+              {t('page.livetrading.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default function LiveTrading() {
                   <WifiOff className="h-4 w-4 text-destructive" />
                 )}
                 <AlertDescription className={`text-xs ${isConnected ? 'text-chart-2' : 'text-destructive'}`}>
-                  {isConnected ? 'Live Feed' : 'Disconnected'}
+                  {isConnected ? t('connection.liveFeed') : t('connection.disconnected')}
                 </AlertDescription>
               </div>
             </Alert>
@@ -203,7 +203,7 @@ export default function LiveTrading() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Today's Trades</p>
+                  <p className="text-sm text-muted-foreground">{t('stats.todayTrades')}</p>
                   <p className="text-2xl font-bold">{stats.todayTrades}</p>
                 </div>
                 <Users className="h-8 w-8 text-muted-foreground" />
@@ -214,7 +214,7 @@ export default function LiveTrading() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Volume</p>
+                  <p className="text-sm text-muted-foreground">{t('stats.totalVolume')}</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
@@ -225,7 +225,7 @@ export default function LiveTrading() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Now</p>
+                  <p className="text-sm text-muted-foreground">{t('liveTrading.activeNow')}</p>
                   <p className="text-2xl font-bold">{filteredTrades.length}</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
@@ -236,7 +236,7 @@ export default function LiveTrading() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Alerts Set</p>
+                  <p className="text-sm text-muted-foreground">{t('liveTrading.alertsSet')}</p>
                   <p className="text-2xl font-bold">—</p>
                 </div>
                 <Bell className="h-8 w-8 text-muted-foreground" />
@@ -251,46 +251,46 @@ export default function LiveTrading() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            Filters & Search
+            {t('liveTrading.filtersAndSearch')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Trade Type</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.tradeType')}</label>
               <Select value={filters.tradeType} onValueChange={(value: any) => 
                 setFilters(prev => ({ ...prev, tradeType: value }))}>
                 <SelectTrigger data-testid="select-trade-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Types</SelectItem>
-                  <SelectItem value="BUY">Buy Orders</SelectItem>
-                  <SelectItem value="SELL">Sell Orders</SelectItem>
+                  <SelectItem value="ALL">{t('filter.allTypes')}</SelectItem>
+                  <SelectItem value="BUY">{t('filter.buyOrders')}</SelectItem>
+                  <SelectItem value="SELL">{t('filter.sellOrders')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">AI Signal</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.aiSignal')}</label>
               <Select value={filters.signalType} onValueChange={(value: any) => 
                 setFilters(prev => ({ ...prev, signalType: value }))}>
                 <SelectTrigger data-testid="select-signal-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Signals</SelectItem>
-                  <SelectItem value="BUY">Buy Signal</SelectItem>
-                  <SelectItem value="SELL">Sell Signal</SelectItem>
-                  <SelectItem value="HOLD">Hold Signal</SelectItem>
+                  <SelectItem value="ALL">{t('filter.allSignals')}</SelectItem>
+                  <SelectItem value="BUY">{t('filter.buySignal')}</SelectItem>
+                  <SelectItem value="SELL">{t('filter.sellSignal')}</SelectItem>
+                  <SelectItem value="HOLD">{t('filter.holdSignal')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Company/Ticker</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.companyTicker')}</label>
               <Input
-                placeholder="Search company..."
+                placeholder={t('placeholder.searchCompany')}
                 value={filters.companySearch}
                 onChange={(e) => setFilters(prev => ({ ...prev, companySearch: e.target.value }))}
                 data-testid="input-company-search"
@@ -298,9 +298,9 @@ export default function LiveTrading() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Trader Name</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.traderName')}</label>
               <Input
-                placeholder="Search trader..."
+                placeholder={t('placeholder.searchTrader')}
                 value={filters.traderSearch}
                 onChange={(e) => setFilters(prev => ({ ...prev, traderSearch: e.target.value }))}
                 data-testid="input-trader-search"
@@ -308,7 +308,7 @@ export default function LiveTrading() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Min Value ($)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.minValue')}</label>
               <Input
                 type="number"
                 placeholder="0"
@@ -319,10 +319,10 @@ export default function LiveTrading() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Max Value ($)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.maxValue')}</label>
               <Input
                 type="number"
-                placeholder="No limit"
+                placeholder={t('placeholder.noLimit')}
                 value={filters.maxValue}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxValue: e.target.value }))}
                 data-testid="input-max-value"
@@ -338,10 +338,10 @@ export default function LiveTrading() {
           <CardTitle className="text-base flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Live Trading Feed
+              {t('liveTrading.liveFeed')}
             </div>
             <div className="text-sm text-muted-foreground">
-              {filteredTrades.length} trades shown
+              {filteredTrades.length} {t('liveTrading.tradesShown')}
             </div>
           </CardTitle>
         </CardHeader>
@@ -355,8 +355,8 @@ export default function LiveTrading() {
           ) : filteredTrades.length === 0 ? (
             <div className="text-center py-12">
               <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium">No trades found</p>
-              <p className="text-muted-foreground">Try adjusting your filters</p>
+              <p className="text-lg font-medium">{t('liveTrading.noTrades')}</p>
+              <p className="text-muted-foreground">{t('liveTrading.adjustFilters')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -402,13 +402,13 @@ export default function LiveTrading() {
                         </div>
                         
                         <div>
-                          <p className="text-sm text-muted-foreground">Insider</p>
+                          <p className="text-sm text-muted-foreground">{t('liveTrading.insider')}</p>
                           <p className="font-medium">{trade.traderName}</p>
                           <p className="text-xs text-muted-foreground">{trade.traderTitle}</p>
                         </div>
                         
                         <div>
-                          <p className="text-sm text-muted-foreground">Trade Details</p>
+                          <p className="text-sm text-muted-foreground">{t('liveTrading.tradeDetails')}</p>
                           <p className="font-medium">{trade.shares.toLocaleString()} shares</p>
                           <p className="text-xs text-muted-foreground">
                             ${trade.pricePerShare.toFixed(2)} per share
@@ -416,10 +416,10 @@ export default function LiveTrading() {
                         </div>
                         
                         <div className="text-right">
-                          <p className="text-sm text-muted-foreground">Total Value</p>
+                          <p className="text-sm text-muted-foreground">{t('liveTrading.totalValue')}</p>
                           <p className="text-lg font-bold">{formatCurrency(trade.totalValue)}</p>
                           <p className="text-xs text-muted-foreground">
-                            Score: {trade.significanceScore}/100
+                            {t('liveTrading.score')} {trade.significanceScore}/100
                           </p>
                         </div>
                       </div>
@@ -435,7 +435,7 @@ export default function LiveTrading() {
                     onClick={loadMoreTrades}
                     data-testid="button-load-more"
                   >
-                    Load More Trades
+                    {t('liveTrading.loadMore')}
                   </Button>
                 </div>
               )}
