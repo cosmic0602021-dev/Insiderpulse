@@ -4,7 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, SortDesc } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarIcon, Search, SortDesc, Filter } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import TradeCard from './trade-card';
 import type { InsiderTrade } from "@shared/schema";
@@ -15,13 +16,17 @@ interface TradeListProps {
   loadingMore?: boolean;
   hasMoreData?: boolean;
   onLoadMore?: () => void;
+  onDateRangeChange?: (fromDate?: Date, toDate?: Date) => void;
+  onSortChange?: (sortBy: string) => void;
 }
 
-export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore }: TradeListProps) {
+export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore, onDateRangeChange, onSortChange }: TradeListProps) {
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'value'>('date');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   const filteredTrades = trades
     .filter(trade => {
@@ -46,6 +51,45 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
   const handleSort = (sort: 'date' | 'value') => {
     console.log('Sort changed:', sort);
     setSortBy(sort);
+    // Only pass filedDate for now, as backend doesn't support totalValue sorting yet
+    onSortChange?.(sort === 'date' ? 'filedDate' : 'filedDate');
+  };
+
+  const handleDateFilterChange = (value: string) => {
+    setDateFilter(value);
+    const now = new Date();
+    let fromDate: Date | undefined;
+    let toDate: Date | undefined;
+
+    switch (value) {
+      case 'today':
+        fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        toDate = now;
+        break;
+      case 'month':
+        fromDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        toDate = now;
+        break;
+      case '3months':
+        fromDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        toDate = now;
+        break;
+      case '6months':
+        fromDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        toDate = now;
+        break;
+      case 'all':
+      default:
+        fromDate = undefined;
+        toDate = undefined;
+        break;
+    }
+
+    onDateRangeChange?.(fromDate, toDate);
   };
 
   const handleLoadMore = () => {
@@ -66,6 +110,15 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="text-lg font-semibold">{t('tradeList.recentTrades')}</CardTitle>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              data-testid="button-toggle-filters"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -78,6 +131,32 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
             </div>
           </div>
         </div>
+        
+        {showFilters && (
+          <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-md">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Date Range:</span>
+              <Select value={dateFilter} onValueChange={handleDateFilterChange}>
+                <SelectTrigger className="w-[140px]" data-testid="select-date-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">Last Week</SelectItem>
+                  <SelectItem value="month">Last Month</SelectItem>
+                  <SelectItem value="3months">Last 3 Months</SelectItem>
+                  <SelectItem value="6months">Last 6 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+        )}
         
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">

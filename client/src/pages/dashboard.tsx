@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [allTrades, setAllTrades] = useState<InsiderTrade[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
+  const [dateRange, setDateRange] = useState<{ fromDate?: Date; toDate?: Date }>({});
+  const [sortBy, setSortBy] = useState<string>('filedDate');
   
   // Real API data queries
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -26,8 +28,14 @@ export default function Dashboard() {
   });
   
   const { data: trades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
-    queryKey: queryKeys.trades.list({ limit: 20, offset: 0 }),
-    queryFn: () => apiClient.getInsiderTrades(20, 0),
+    queryKey: queryKeys.trades.list({ 
+      limit: 20, 
+      offset: 0, 
+      from: dateRange.fromDate?.toISOString().split('T')[0],
+      to: dateRange.toDate?.toISOString().split('T')[0],
+      sortBy 
+    }),
+    queryFn: () => apiClient.getInsiderTrades(20, 0, dateRange.fromDate, dateRange.toDate, sortBy),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
@@ -82,7 +90,7 @@ export default function Dashboard() {
     setLoadingMore(true);
     try {
       const newOffset = currentOffset + 20;
-      const moreTrades = await apiClient.getInsiderTrades(20, newOffset);
+      const moreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy);
       
       if (moreTrades.length === 0) {
         setHasMoreData(false);
@@ -102,6 +110,20 @@ export default function Dashboard() {
     } finally {
       setLoadingMore(false);
     }
+  };
+
+  const handleDateRangeChange = (fromDate?: Date, toDate?: Date) => {
+    setDateRange({ fromDate, toDate });
+    setCurrentOffset(0);
+    setAllTrades([]);
+    setHasMoreData(true);
+  };
+
+  const handleSortChange = (newSortBy: string) => {
+    setSortBy(newSortBy);
+    setCurrentOffset(0);
+    setAllTrades([]);
+    setHasMoreData(true);
   };
   
   // No AI analysis - just pass trades directly
@@ -167,6 +189,8 @@ export default function Dashboard() {
               loadingMore={loadingMore}
               hasMoreData={hasMoreData}
               onLoadMore={handleLoadMore}
+              onDateRangeChange={handleDateRangeChange}
+              onSortChange={handleSortChange}
             />
           )}
         </Card>
