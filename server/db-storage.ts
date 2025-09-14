@@ -24,17 +24,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false): Promise<InsiderTrade[]> {
+  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
+    const conditions = [];
+    
+    if (verifiedOnly) {
+      conditions.push(eq(insiderTrades.isVerified, true));
+    }
+    
+    // Apply date filtering
+    if (fromDate) {
+      const sortField = sortBy === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
+      conditions.push(gte(sortField, new Date(fromDate)));
+    }
+    
+    if (toDate) {
+      const sortField = sortBy === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
+      conditions.push(lte(sortField, new Date(toDate)));
+    }
+    
     let query = db
       .select()
       .from(insiderTrades);
     
-    if (verifiedOnly) {
-      query = query.where(eq(insiderTrades.isVerified, true));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
     }
     
+    // Sort by specified field
+    const sortField = sortBy === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
     const result = await query
-      .orderBy(desc(insiderTrades.createdAt))
+      .orderBy(desc(sortField))
       .limit(limit)
       .offset(offset);
     return result;

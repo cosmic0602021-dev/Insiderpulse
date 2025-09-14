@@ -47,9 +47,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   id: true,
   createdAt: true,
-  // Keep verification fields as optional with defaults
-  isVerified: true,
-  verificationStatus: true,
 }).extend({
   traderName: z.string().optional(),
   traderTitle: z.string().optional(),
@@ -57,6 +54,8 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   ownershipPercentage: z.number().optional(),
   significanceScore: z.number().optional(), // Allow override of default
   signalType: z.enum(['BUY', 'SELL', 'HOLD']).optional(), // Allow override of default
+  isVerified: z.boolean().optional(),
+  verificationStatus: z.string().optional(),
   verificationNotes: z.string().optional(),
   marketPrice: z.number().optional(),
   priceVariance: z.number().optional(),

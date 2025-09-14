@@ -22,14 +22,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get insider trades with pagination (verified trades only by default)
+  // Get insider trades with pagination and date filtering (verified trades only by default)
   app.get('/api/trades', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
       const verifiedOnly = req.query.verified !== 'false'; // Default to true unless explicitly set to false
+      const fromDate = req.query.from as string;
+      const toDate = req.query.to as string;
+      const sortBy = (req.query.sortBy as 'createdAt' | 'filedDate') || 'filedDate';
       
-      const trades = await storage.getInsiderTrades(limit, offset, verifiedOnly);
+      const trades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, toDate, sortBy);
       res.json(trades);
     } catch (error) {
       console.error('Error fetching trades:', error);
@@ -202,6 +205,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error searching stock:', error);
       res.status(500).json({ error: 'Failed to search stock' });
+    }
+  });
+
+  // Admin endpoints for historical data collection
+  app.post('/api/admin/collect/historical', async (req, res) => {
+    try {
+      const months = parseInt(req.body.months) || 6;
+      
+      console.log(`🔄 Admin trigger: Starting ${months}-month historical collection`);
+      
+      // Import here to avoid circular dependencies
+      const { historicalCollector } = await import('./sec-historical-collector');
+      
+      // Start collection in background
+      const progressPromise = historicalCollector.collectHistoricalData(months);
+      
+      // Return immediately with job info
+      res.json({
+        success: true,
+        message: `Historical collection started for ${months} months`,
+        months: months,
+        startTime: new Date().toISOString()
+      });
+      
+      // Continue processing in background
+      progressPromise.catch(error => {
+        console.error('Background historical collection failed:', error);
+      });
+      
+    } catch (error) {
+      console.error('Failed to start historical collection:', error);
+      res.status(500).json({ 
+        error: 'Failed to start historical collection',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/collect/status', async (req, res) => {
+    try {
+      const { historicalCollector } = await import('./sec-historical-collector');
+      const progress = historicalCollector.getProgress();
+      
+      res.json({
+        hasActiveCollection: !!progress,
+        progress: progress
+      });
+    } catch (error) {
+      console.error('Failed to get collection status:', error);
+      res.status(500).json({ error: 'Failed to get collection status' });
     }
   });
 

@@ -15,8 +15,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Insider trading data
-  getInsiderTrades(limit?: number, offset?: number, verifiedOnly?: boolean): Promise<InsiderTrade[]>;
+  // Insider trading data with date filtering
+  getInsiderTrades(limit?: number, offset?: number, verifiedOnly?: boolean, fromDate?: string, toDate?: string, sortBy?: 'createdAt' | 'filedDate'): Promise<InsiderTrade[]>;
   getVerifiedInsiderTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
   getInsiderTradeById(id: string): Promise<InsiderTrade | undefined>;
   createInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
@@ -77,15 +77,30 @@ export class MemStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false): Promise<InsiderTrade[]> {
+  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
     
     if (verifiedOnly) {
       trades = trades.filter(trade => trade.isVerified === true);
     }
     
+    // Apply date filtering
+    if (fromDate || toDate) {
+      trades = trades.filter(trade => {
+        const compareDate = new Date(sortBy === 'filedDate' ? trade.filedDate : trade.createdAt!);
+        const from = fromDate ? new Date(fromDate) : new Date('1900-01-01');
+        const to = toDate ? new Date(toDate) : new Date('2100-12-31');
+        return compareDate >= from && compareDate <= to;
+      });
+    }
+    
+    // Sort by specified field
     return trades
-      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+      .sort((a, b) => {
+        const dateA = new Date(sortBy === 'filedDate' ? a.filedDate : a.createdAt!);
+        const dateB = new Date(sortBy === 'filedDate' ? b.filedDate : b.createdAt!);
+        return dateB.getTime() - dateA.getTime();
+      })
       .slice(offset, offset + limit);
   }
 
@@ -104,6 +119,7 @@ export class MemStorage implements IStorage {
       id, 
       traderName: insertTrade.traderName || 'Unknown Trader',
       traderTitle: insertTrade.traderTitle || null,
+      tradeType: insertTrade.tradeType || 'BUY',
       ticker: insertTrade.ticker || null,
       aiAnalysis: insertTrade.aiAnalysis || null,
       significanceScore: insertTrade.significanceScore || 50,
