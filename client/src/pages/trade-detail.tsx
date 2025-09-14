@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Calendar, User, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { InsiderTrade, StockPrice, AIAnalysis } from "@shared/schema";
+import PriceComparisonChart from "@/components/price-comparison-chart";
+import type { InsiderTrade, StockPrice } from "@shared/schema";
 
 interface TradeDetailProps {
   tradeId?: string;
@@ -337,6 +338,19 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
           )}
 
           {/* Profit/Loss Analysis */}
+          {/* Price Comparison Chart */}
+          {trade.pricePerShare && stockPrice && (
+            <PriceComparisonChart
+              tradePrice={trade.pricePerShare}
+              currentPrice={typeof stockPrice?.currentPrice === 'string' 
+                ? parseFloat(stockPrice.currentPrice)
+                : stockPrice?.currentPrice || 0
+              }
+              signalType={trade.signalType}
+              filedDate={trade.filedDate}
+            />
+          )}
+
           {profitLoss && trade.pricePerShare && stockPrice && (
             <Card data-testid="card-profit-loss">
               <CardHeader>
@@ -346,7 +360,7 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
                   ) : (
                     <TrendingDown className="w-5 h-5 text-red-500" />
                   )}
-                  Profit/Loss Analysis
+                  Detailed Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
