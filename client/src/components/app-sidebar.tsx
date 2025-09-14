@@ -67,8 +67,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar data-testid="app-sidebar">
-      <SidebarHeader className="p-1">
-        <div className="flex items-center justify-center py-0">
+      <SidebarHeader className="p-0">
+        <div className="flex items-center justify-center -my-2">
           <img 
             src={logoLight} 
             alt="InsiderPulse"
