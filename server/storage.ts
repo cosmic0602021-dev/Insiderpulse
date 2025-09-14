@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type Alert, type InsertAlert } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades, stockPrices } from "@shared/schema";
+import { users, insiderTrades, stockPrices, alerts } from "@shared/schema";
 import { eq, desc, count, sum, avg } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -29,15 +29,25 @@ export interface IStorage {
   getStockPrice(ticker: string): Promise<StockPrice | undefined>;
   upsertStockPrice(price: InsertStockPrice): Promise<StockPrice>;
   getStockPrices(tickers: string[]): Promise<StockPrice[]>;
+  
+  // Alert management
+  getAlerts(userId?: string): Promise<Alert[]>;
+  getAlertById(id: string): Promise<Alert | undefined>;
+  createAlert(alert: InsertAlert): Promise<Alert>;
+  updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined>;
+  deleteAlert(id: string): Promise<boolean>;
+  triggerAlert(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private insiderTrades: Map<string, InsiderTrade>;
+  private alerts: Map<string, Alert>;
 
   constructor() {
     this.users = new Map();
     this.insiderTrades = new Map();
+    this.alerts = new Map();
   }
 
   // User methods
@@ -77,6 +87,8 @@ export class MemStorage implements IStorage {
       id, 
       ticker: insertTrade.ticker || null,
       aiAnalysis: insertTrade.aiAnalysis || null,
+      significanceScore: insertTrade.significanceScore || 50,
+      signalType: insertTrade.signalType || 'HOLD',
       createdAt: new Date()
     };
     this.insiderTrades.set(id, trade);
@@ -96,6 +108,8 @@ export class MemStorage implements IStorage {
         ...insertTrade,
         ticker: insertTrade.ticker || null,
         aiAnalysis: insertTrade.aiAnalysis || null,
+        significanceScore: insertTrade.significanceScore || 50,
+        signalType: insertTrade.signalType || 'HOLD',
       };
       this.insiderTrades.set(existing.id, updatedTrade);
       return updatedTrade;
@@ -145,6 +159,52 @@ export class MemStorage implements IStorage {
 
   async getStockPrices(tickers: string[]): Promise<StockPrice[]> {
     return [];
+  }
+
+  // Alert methods for MemStorage
+  async getAlerts(userId?: string): Promise<Alert[]> {
+    let alerts = Array.from(this.alerts.values());
+    if (userId) {
+      alerts = alerts.filter(alert => alert.userId === userId);
+    }
+    return alerts.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async getAlertById(id: string): Promise<Alert | undefined> {
+    return this.alerts.get(id);
+  }
+
+  async createAlert(insertAlert: InsertAlert): Promise<Alert> {
+    const id = randomUUID();
+    const alert: Alert = {
+      ...insertAlert,
+      id,
+      createdAt: new Date(),
+      lastTriggered: null
+    };
+    this.alerts.set(id, alert);
+    return alert;
+  }
+
+  async updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined> {
+    const alert = this.alerts.get(id);
+    if (!alert) return undefined;
+
+    const updatedAlert = { ...alert, ...updates };
+    this.alerts.set(id, updatedAlert);
+    return updatedAlert;
+  }
+
+  async deleteAlert(id: string): Promise<boolean> {
+    return this.alerts.delete(id);
+  }
+
+  async triggerAlert(id: string): Promise<void> {
+    const alert = this.alerts.get(id);
+    if (alert) {
+      alert.lastTriggered = new Date();
+      this.alerts.set(id, alert);
+    }
   }
 }
 

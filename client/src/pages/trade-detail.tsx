@@ -11,14 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PriceComparisonChart from "@/components/price-comparison-chart";
 import type { InsiderTrade, StockPrice } from "@shared/schema";
 
-interface TradeDetailProps {
-  tradeId?: string;
-}
-
-export default function TradeDetail({ tradeId }: TradeDetailProps) {
+export default function TradeDetail() {
   const params = useParams<{ tradeId: string }>();
   const { t } = useLanguage();
-  const id = tradeId || params.tradeId;
+  const id = params.tradeId;
 
   // Fetch trade details
   const { data: trades = [], isLoading } = useQuery<InsiderTrade[]>({
@@ -167,7 +163,7 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
               
               <Separator />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground">
                     Company
@@ -184,7 +180,67 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
                     {trade.ticker || stockPrice?.ticker || 'N/A'}
                   </p>
                 </div>
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">
+                    Trade Type
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    {trade.tradeType === 'BUY' ? (
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                    ) : trade.tradeType === 'SELL' ? (
+                      <TrendingDown className="h-4 w-4 text-red-600" />
+                    ) : null}
+                    <p className="font-semibold" data-testid="text-trade-type">
+                      {trade.tradeType || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {(trade.traderName || trade.traderTitle) && (
+                <>
+                  <Separator />
+                  
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Trader Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {trade.traderName && (
+                        <div>
+                          <h5 className="font-medium text-xs text-muted-foreground">
+                            Name
+                          </h5>
+                          <p className="font-semibold" data-testid="text-trader-name">
+                            {trade.traderName}
+                          </p>
+                        </div>
+                      )}
+                      {trade.traderTitle && (
+                        <div>
+                          <h5 className="font-medium text-xs text-muted-foreground">
+                            Title/Position
+                          </h5>
+                          <p className="font-semibold" data-testid="text-trader-title">
+                            {trade.traderTitle}
+                          </p>
+                        </div>
+                      )}
+                      {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
+                        <div>
+                          <h5 className="font-medium text-xs text-muted-foreground">
+                            Ownership
+                          </h5>
+                          <p className="font-semibold" data-testid="text-ownership-percentage">
+                            {trade.ownershipPercentage}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 

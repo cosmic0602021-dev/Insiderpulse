@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, json, decimal, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, json, decimal, bigint, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,9 +15,13 @@ export const insiderTrades = pgTable("insider_trades", {
   accessionNumber: text("accession_number").notNull().unique(),
   companyName: text("company_name").notNull(),
   ticker: text("ticker"),
+  traderName: text("trader_name").notNull().default("Unknown Trader"),
+  traderTitle: text("trader_title").default(""),
+  tradeType: text("trade_type").notNull().default("BUY"), // BUY or SELL
   shares: integer("shares").notNull(),
   pricePerShare: real("price_per_share").notNull(),
   totalValue: real("total_value").notNull(),
+  ownershipPercentage: real("ownership_percentage").default(0), // Percentage of total shares
   filedDate: timestamp("filed_date").notNull(),
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   significanceScore: integer("significance_score").notNull().default(50), // Default neutral score
@@ -38,6 +42,11 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   significanceScore: true, // Use default value
   signalType: true, // Use default value
   createdAt: true,
+}).extend({
+  traderName: z.string().optional(),
+  traderTitle: z.string().optional(),
+  tradeType: z.enum(['BUY', 'SELL']).optional(),
+  ownershipPercentage: z.number().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -79,3 +88,25 @@ export const insertStockPriceSchema = createInsertSchema(stockPrices).omit({
 
 export type InsertStockPrice = z.infer<typeof insertStockPriceSchema>;
 export type StockPrice = typeof stockPrices.$inferSelect;
+
+// Alerts table for user-defined trading alerts
+export const alerts = pgTable("alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'VOLUME', 'PRICE', 'COMPANY', 'TRADER', 'SIGNAL'
+  condition: text("condition").notNull(), // 'greater_than', 'less_than', 'equals', 'contains'
+  value: text("value").notNull(), // The threshold or match value
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastTriggered: timestamp("last_triggered"),
+});
+
+export const insertAlertSchema = createInsertSchema(alerts).omit({
+  id: true,
+  createdAt: true,
+  lastTriggered: true,
+});
+
+export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type Alert = typeof alerts.$inferSelect;

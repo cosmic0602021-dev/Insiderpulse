@@ -1,6 +1,6 @@
-import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice } from "@shared/schema";
+import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type Alert, type InsertAlert } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { users, insiderTrades, stockPrices } from "@shared/schema";
+import { users, insiderTrades, stockPrices, alerts } from "@shared/schema";
 import { eq, desc, count, sum, avg, sql, inArray } from "drizzle-orm";
 import type { IStorage } from "./storage";
 
@@ -44,7 +44,9 @@ export class DatabaseStorage implements IStorage {
       const result = await db.insert(insiderTrades).values({
         ...insertTrade,
         ticker: insertTrade.ticker || null,
-        aiAnalysis: insertTrade.aiAnalysis || null
+        aiAnalysis: insertTrade.aiAnalysis || null,
+        significanceScore: insertTrade.significanceScore || 50,
+        signalType: insertTrade.signalType || 'HOLD'
       }).returning();
       return result[0];
     } catch (error: any) {
@@ -83,6 +85,8 @@ export class DatabaseStorage implements IStorage {
             totalValue: insertTrade.totalValue,
             filedDate: insertTrade.filedDate,
             aiAnalysis: insertTrade.aiAnalysis || null,
+            significanceScore: insertTrade.significanceScore || 50,
+            signalType: insertTrade.signalType || 'HOLD'
           })
           .where(eq(insiderTrades.accessionNumber, insertTrade.accessionNumber))
           .returning();
@@ -173,5 +177,48 @@ export class DatabaseStorage implements IStorage {
       .from(stockPrices)
       .where(inArray(stockPrices.ticker, upperTickers));
     return result;
+  }
+
+  // Alert methods for DatabaseStorage
+  async getAlerts(userId?: string): Promise<Alert[]> {
+    let query = db.select().from(alerts);
+    
+    if (userId) {
+      query = query.where(eq(alerts.userId, userId));
+    }
+    
+    const result = await query.orderBy(desc(alerts.createdAt));
+    return result;
+  }
+
+  async getAlertById(id: string): Promise<Alert | undefined> {
+    const result = await db.select().from(alerts).where(eq(alerts.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createAlert(insertAlert: InsertAlert): Promise<Alert> {
+    const result = await db.insert(alerts).values(insertAlert).returning();
+    return result[0];
+  }
+
+  async updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined> {
+    const result = await db
+      .update(alerts)
+      .set(updates)
+      .where(eq(alerts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAlert(id: string): Promise<boolean> {
+    const result = await db.delete(alerts).where(eq(alerts.id, id));
+    return result.rowCount > 0;
+  }
+
+  async triggerAlert(id: string): Promise<void> {
+    await db
+      .update(alerts)
+      .set({ lastTriggered: sql`NOW()` })
+      .where(eq(alerts.id, id));
   }
 }

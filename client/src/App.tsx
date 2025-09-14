@@ -6,10 +6,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import ThemeToggle from "@/components/theme-toggle";
+import LanguageSelector from "@/components/language-selector";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
 import TradeDetail from "@/pages/trade-detail";
+import Analytics from "@/pages/analytics";
+import Alerts from "@/pages/alerts";
+import Search from "@/pages/search";
+import LiveTrading from "@/pages/live-trading";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,10 +24,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/trade/:tradeId" component={TradeDetail} />
-      <Route path="/trades" component={() => <div className="p-6">{t('nav.livetrading')} page coming soon...</div>} />
-      <Route path="/analytics" component={() => <div className="p-6">{t('nav.analytics')} page coming soon...</div>} />
-      <Route path="/alerts" component={() => <div className="p-6">{t('nav.alerts')} page coming soon...</div>} />
-      <Route path="/search" component={() => <div className="p-6">{t('nav.search')} page coming soon...</div>} />
+      <Route path="/trades" component={LiveTrading} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/alerts" component={Alerts} />
+      <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
@@ -50,7 +55,10 @@ function AppContent() {
                 {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString()}
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             <Router />
