@@ -6,14 +6,12 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 interface PriceComparisonChartProps {
   tradePrice: number;
   currentPrice: number;
-  signalType: string;
   filedDate: Date;
 }
 
 export default function PriceComparisonChart({ 
   tradePrice, 
   currentPrice, 
-  signalType, 
   filedDate 
 }: PriceComparisonChartProps) {
   const formatCurrency = (value: number) => {
@@ -28,14 +26,6 @@ export default function PriceComparisonChart({
   const difference = currentPrice - tradePrice;
   const percentChange = ((currentPrice - tradePrice) / tradePrice) * 100;
   const isProfit = difference > 0;
-  
-  // For BUY trades, profit means current > trade price
-  // For SELL trades, profit means trade > current price  
-  const actualProfit = signalType === 'SELL' ? -difference : difference;
-  const isActualProfit = actualProfit > 0;
-  
-  // Display percentage based on actual trade outcome
-  const displayPercent = signalType === 'SELL' ? -percentChange : percentChange;
 
   const data = [
     {
@@ -72,7 +62,7 @@ export default function PriceComparisonChart({
     <Card data-testid="price-comparison-chart">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {isActualProfit ? (
+          {isProfit ? (
             <TrendingUp className="w-5 h-5 text-green-500" />
           ) : (
             <TrendingDown className="w-5 h-5 text-red-500" />
@@ -99,7 +89,7 @@ export default function PriceComparisonChart({
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="price" radius={[4, 4, 0, 0]}>
                 <Cell fill="hsl(var(--chart-1))" />
-                <Cell fill={isActualProfit ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))"} />
+                <Cell fill={isProfit ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))"} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -113,7 +103,7 @@ export default function PriceComparisonChart({
               {formatCurrency(tradePrice)}
             </p>
             <Badge variant="outline" className="mt-1">
-              {signalType}
+              INSIDER TRADE
             </Badge>
           </div>
           <div className="text-center">
@@ -122,36 +112,33 @@ export default function PriceComparisonChart({
               {formatCurrency(currentPrice)}
             </p>
             <Badge 
-              variant={isActualProfit ? "default" : "destructive"}
-              className={isActualProfit ? "bg-green-500/10 text-green-600 border-green-500/20" : ""}
+              variant={isProfit ? "default" : "destructive"}
+              className={isProfit ? "bg-green-500/10 text-green-600 border-green-500/20" : ""}
             >
-              {isActualProfit ? '+' : ''}{Math.abs(displayPercent).toFixed(2)}% since trade
+              {isProfit ? '+' : ''}{percentChange.toFixed(2)}%
             </Badge>
           </div>
         </div>
 
-        {/* Trade Outcome */}
+        {/* Price Change Summary */}
         <div className={`p-4 rounded-lg border ${
-          isActualProfit 
+          isProfit 
             ? 'bg-green-500/10 border-green-500/20' 
             : 'bg-red-500/10 border-red-500/20'
         }`}>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-2">
-              {signalType === 'SELL' ? 'Insider Sold Before' : 'Insider Bought Before'} Price Change
+              Price Movement Since Trade
             </p>
             <p className={`text-xl font-bold ${
-              isActualProfit 
+              isProfit 
                 ? 'text-green-600 dark:text-green-400' 
                 : 'text-red-600 dark:text-red-400'
             }`} data-testid="chart-outcome">
-              {isActualProfit ? 'Good Timing' : 'Poor Timing'}
+              {isProfit ? 'Price Increased' : 'Price Decreased'}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {signalType === 'SELL' 
-                ? `Sold at ${formatCurrency(tradePrice)}, now ${formatCurrency(currentPrice)}`
-                : `Bought at ${formatCurrency(tradePrice)}, now ${formatCurrency(currentPrice)}`
-              }
+              Trade Price: {formatCurrency(tradePrice)} → Current: {formatCurrency(currentPrice)}
             </p>
           </div>
         </div>

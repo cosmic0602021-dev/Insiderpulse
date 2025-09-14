@@ -86,18 +86,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
     return words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
   };
 
-  const getSignalColor = (signal: string) => {
-    switch (signal?.toLowerCase()) {
-      case 'buy':
-        return 'bg-green-500/10 text-green-700 dark:text-green-300';
-      case 'sell':
-        return 'bg-red-500/10 text-red-700 dark:text-red-300';
-      case 'hold':
-        return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -148,9 +136,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
           <h1 className="text-3xl font-bold text-foreground">
             Trade Details
           </h1>
-          <Badge className={getSignalColor(trade.signalType)} data-testid="badge-signal">
-            {trade.signalType?.toUpperCase() || 'N/A'}
-          </Badge>
         </div>
       </div>
 
@@ -213,14 +198,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Signal Type
-                  </h4>
-                  <Badge className={getSignalColor(trade.signalType)} data-testid="badge-signal-type">
-                    {trade.signalType}
-                  </Badge>
-                </div>
                 
                 <div>
                   <h4 className="font-medium text-sm text-muted-foreground mb-1">
@@ -259,14 +236,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
                   </p>
                 </div>
                 
-                <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
-                    Significance Score
-                  </h4>
-                  <p className="font-semibold" data-testid="text-significance-score">
-                    {trade.significanceScore}/10
-                  </p>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -346,7 +315,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
                 ? parseFloat(stockPrice.currentPrice)
                 : stockPrice?.currentPrice || 0
               }
-              signalType={trade.signalType}
               filedDate={trade.filedDate}
             />
           )}

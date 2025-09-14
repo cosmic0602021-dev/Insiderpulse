@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Minus, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { InsiderTrade } from "@shared/schema";
 
 interface TradeCardProps {
@@ -10,21 +10,6 @@ interface TradeCardProps {
 }
 
 export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
-  const getSignalIcon = (signalType: string) => {
-    switch (signalType) {
-      case 'BUY': return <TrendingUp className="h-3 w-3" />;
-      case 'SELL': return <TrendingDown className="h-3 w-3" />;
-      default: return <Minus className="h-3 w-3" />;
-    }
-  };
-
-  const getSignalColor = (signalType: string) => {
-    switch (signalType) {
-      case 'BUY': return 'bg-chart-2 text-background';
-      case 'SELL': return 'bg-destructive text-destructive-foreground';
-      default: return 'bg-chart-3 text-background';
-    }
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -69,16 +54,6 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
               Filed {formatDate(trade.filedDate)}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className={`text-xs ${getSignalColor(trade.signalType)}`}>
-              {getSignalIcon(trade.signalType)}
-              {trade.signalType}
-            </Badge>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Score</div>
-              <div className="text-sm font-bold">{trade.significanceScore}%</div>
-            </div>
-          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-4 mb-3">
@@ -97,12 +72,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
         </div>
 
 
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              Trade Signal: {trade.signalType}
-            </span>
-          </div>
+        <div className="flex justify-end">
           <Button 
             variant="ghost" 
             size="sm" 

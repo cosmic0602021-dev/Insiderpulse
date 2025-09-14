@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, SortDesc } from "lucide-react";
+import { Search, SortDesc } from "lucide-react";
 import TradeCard from './trade-card';
 import type { InsiderTrade } from "@shared/schema";
 
@@ -17,20 +17,16 @@ interface TradeListProps {
 export default function TradeList({ trades, loading, onLoadMore }: TradeListProps) {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSignal, setFilterSignal] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'date' | 'score' | 'value'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'value'>('date');
 
   const filteredTrades = trades
     .filter(trade => {
       const matchesSearch = trade.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (trade.ticker && trade.ticker.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesSignal = filterSignal === 'ALL' || trade.signalType === filterSignal;
-      return matchesSearch && matchesSignal;
+      return matchesSearch;
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'score':
-          return b.significanceScore - a.significanceScore;
         case 'value':
           return b.totalValue - a.totalValue;
         default:
@@ -43,12 +39,7 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
     setSearchTerm(value);
   };
 
-  const handleFilter = (signal: string) => {
-    console.log('Filter changed:', signal);
-    setFilterSignal(signal);
-  };
-
-  const handleSort = (sort: 'date' | 'score' | 'value') => {
+  const handleSort = (sort: 'date' | 'value') => {
     console.log('Sort changed:', sort);
     setSortBy(sort);
   };
@@ -84,27 +75,10 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
         
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Signal:</span>
-            {['ALL', 'BUY', 'SELL', 'HOLD'].map((signal) => (
-              <Badge
-                key={signal}
-                variant={filterSignal === signal ? 'default' : 'outline'}
-                className="cursor-pointer text-xs hover-elevate"
-                onClick={() => handleFilter(signal)}
-                data-testid={`filter-${signal.toLowerCase()}`}
-              >
-                {signal}
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="flex items-center gap-1">
             <SortDesc className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Sort:</span>
             {[
               { key: 'date', label: 'Date' },
-              { key: 'score', label: 'Score' },
               { key: 'value', label: 'Value' }
             ].map((sort) => (
               <Badge
