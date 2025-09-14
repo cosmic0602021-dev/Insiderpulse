@@ -23,7 +23,10 @@ export const insiderTrades = pgTable("insider_trades", {
   significanceScore: integer("significance_score").notNull(),
   signalType: text("signal_type").notNull(), // BUY, SELL, HOLD
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Add index on accessionNumber for fast duplicate checking
+  accessionNumberIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS "accession_number_idx" ON "insider_trades" ("accession_number")`,
+}));
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,

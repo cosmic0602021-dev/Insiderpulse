@@ -1,0 +1,61 @@
+import type { TradingStats, InsiderTrade } from '@shared/schema';
+
+const API_BASE_URL = '/api';
+
+class ApiClient {
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+        ...options,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`API request to ${endpoint} failed:`, error);
+      throw error;
+    }
+  }
+
+  // Trading statistics
+  async getTradingStats(): Promise<TradingStats> {
+    return this.request<TradingStats>('/stats');
+  }
+
+  // Insider trades
+  async getInsiderTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    return this.request<InsiderTrade[]>(`/trades?limit=${limit}&offset=${offset}`);
+  }
+
+  async getInsiderTradeById(id: string): Promise<InsiderTrade> {
+    return this.request<InsiderTrade>(`/trades/${id}`);
+  }
+
+  // Health check
+  async getHealth() {
+    return this.request('/health');
+  }
+}
+
+export const apiClient = new ApiClient();
+
+// React Query key factory
+export const queryKeys = {
+  stats: ['stats'] as const,
+  trades: {
+    all: ['trades'] as const,
+    list: (params: { limit?: number; offset?: number }) => 
+      ['trades', 'list', params] as const,
+    detail: (id: string) => ['trades', 'detail', id] as const,
+  },
+  health: ['health'] as const,
+};

@@ -1,133 +1,93 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DashboardStats from '@/components/dashboard-stats';
 import TradeList from '@/components/trade-list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { apiClient, queryKeys } from '@/lib/api';
+import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import type { TradingStats, InsiderTrade, AIAnalysis } from '@shared/schema';
 
 export default function Dashboard() {
-  // Mock data for prototype - todo: replace with real API calls
-  const [stats, setStats] = useState<TradingStats>({
-    todayTrades: 127,
-    totalVolume: 45600000,
-    hotBuys: 8,
-    avgSignificance: 82
+  const queryClient = useQueryClient();
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [allTrades, setAllTrades] = useState<InsiderTrade[]>([]);
+  
+  // Real API data queries
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: queryKeys.stats,
+    queryFn: apiClient.getTradingStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
-
-  const [trades, setTrades] = useState<(InsiderTrade & { aiAnalysis: AIAnalysis })[]>([
-    {
-      id: 'trade-1',
-      accessionNumber: '0001234567-24-000123',
-      companyName: 'Apple Inc',
-      ticker: 'AAPL',
-      shares: 25000,
-      pricePerShare: 182.50,
-      totalValue: 4562500,
-      filedDate: new Date('2024-01-15T10:30:00Z'),
-      significanceScore: 87,
-      signalType: 'BUY',
-      createdAt: new Date(),
-      aiAnalysis: {
-        significance_score: 87,
-        signal_type: 'BUY',
-        key_insights: ['Large institutional purchase indicates strong confidence', 'Timing aligns with positive earnings outlook'],
-        risk_level: 'LOW',
-        recommendation: 'Strong buy signal based on insider confidence and market conditions'
-      }
-    },
-    {
-      id: 'trade-2',
-      accessionNumber: '0001234567-24-000124',
-      companyName: 'Microsoft Corporation',
-      ticker: 'MSFT',
-      shares: 15000,
-      pricePerShare: 420.75,
-      totalValue: 6311250,
-      filedDate: new Date('2024-01-14T14:20:00Z'),
-      significanceScore: 92,
-      signalType: 'BUY',
-      createdAt: new Date(),
-      aiAnalysis: {
-        significance_score: 92,
-        signal_type: 'BUY',
-        key_insights: ['Executive confidence signal', 'Cloud growth momentum'],
-        risk_level: 'LOW',
-        recommendation: 'Very strong buy signal'
-      }
-    },
-    {
-      id: 'trade-3',
-      accessionNumber: '0001234567-24-000125',
-      companyName: 'Tesla Inc',
-      ticker: 'TSLA',
-      shares: 5000,
-      pricePerShare: 248.30,
-      totalValue: 1241500,
-      filedDate: new Date('2024-01-13T09:15:00Z'),
-      significanceScore: 65,
-      signalType: 'HOLD',
-      createdAt: new Date(),
-      aiAnalysis: {
-        significance_score: 65,
-        signal_type: 'HOLD',
-        key_insights: ['Mixed market signals', 'Regulatory uncertainty'],
-        risk_level: 'MEDIUM',
-        recommendation: 'Wait and see approach'
-      }
-    },
-    {
-      id: 'trade-4',
-      accessionNumber: '0001234567-24-000126',
-      companyName: 'NVIDIA Corporation',
-      ticker: 'NVDA',
-      shares: 8000,
-      pricePerShare: 875.20,
-      totalValue: 7001600,
-      filedDate: new Date('2024-01-12T16:45:00Z'),
-      significanceScore: 94,
-      signalType: 'BUY',
-      createdAt: new Date(),
-      aiAnalysis: {
-        significance_score: 94,
-        signal_type: 'BUY',
-        key_insights: ['AI sector momentum building', 'Strategic insider positioning'],
-        risk_level: 'LOW',
-        recommendation: 'Exceptional buy signal - AI sector leader'
-      }
-    }
-  ]);
-
-  const [loading, setLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
-
-  // Simulate live updates for prototype
+  
+  const { data: trades, isLoading: tradesLoading, refetch: refetchTrades } = useQuery({
+    queryKey: queryKeys.trades.list({ limit: 20, offset: 0 }),
+    queryFn: () => apiClient.getInsiderTrades(20, 0),
+    refetchInterval: 30000,
+  });
+  
+  // WebSocket connection for real-time updates
+  const wsUrl = getWebSocketUrl();
+  const { isConnected, lastMessage, sendMessage } = useWebSocket(wsUrl);
+  
+  // Handle WebSocket messages
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate new trade updates
-      if (Math.random() > 0.7) {
-        console.log('Simulated live trade update');
-        setStats(prev => ({
-          ...prev,
-          todayTrades: prev.todayTrades + 1,
-          totalVolume: prev.totalVolume + Math.floor(Math.random() * 1000000)
-        }));
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleLoadMore = () => {
-    console.log('Loading more trades...');
-    setLoading(true);
+    if (!lastMessage) return;
     
-    // Simulate API call delay
-    setTimeout(() => {
-      setLoading(false);
-      console.log('More trades loaded');
-    }, 1500);
+    switch (lastMessage.type) {
+      case 'WELCOME':
+        console.log('Connected to InsiderTrack Pro live feed');
+        // Subscribe to trade updates
+        sendMessage({ type: 'SUBSCRIBE_TRADES' });
+        break;
+        
+      case 'NEW_TRADE':
+        console.log('New trade received via WebSocket:', lastMessage.data);
+        // Invalidate and refetch data
+        queryClient.invalidateQueries({ queryKey: queryKeys.stats });
+        queryClient.invalidateQueries({ queryKey: queryKeys.trades.all });
+        break;
+        
+      case 'SUBSCRIBED':
+        console.log('Subscribed to', lastMessage.channel);
+        break;
+        
+      default:
+        console.log('Unknown WebSocket message:', lastMessage.type);
+    }
+  }, [lastMessage, sendMessage, queryClient]);
+  
+  // Initialize trades list
+  useEffect(() => {
+    if (trades) {
+      setAllTrades(trades);
+    }
+  }, [trades]);
+  
+  const handleLoadMore = async () => {
+    console.log('Loading more trades...');
+    try {
+      const newOffset = currentOffset + 20;
+      const moreTrades = await apiClient.getInsiderTrades(20, newOffset);
+      setAllTrades(prev => [...prev, ...moreTrades]);
+      setCurrentOffset(newOffset);
+    } catch (error) {
+      console.error('Failed to load more trades:', error);
+    }
   };
+  
+  // Transform trades to include aiAnalysis for compatibility
+  const tradesWithAnalysis = allTrades?.map(trade => ({
+    ...trade,
+    aiAnalysis: typeof trade.aiAnalysis === 'object' ? trade.aiAnalysis as AIAnalysis : {
+      significance_score: trade.significanceScore,
+      signal_type: trade.signalType as 'BUY' | 'SELL' | 'HOLD',
+      key_insights: ['Analysis in progress'],
+      risk_level: 'MEDIUM' as const,
+      recommendation: 'Analysis pending'
+    }
+  })) || [];
 
   return (
     <div className="space-y-6 p-6" data-testid="dashboard">
@@ -154,16 +114,41 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <DashboardStats stats={stats} />
+      {statsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-muted/50 rounded-md animate-pulse" />
+          ))}
+        </div>
+      ) : stats ? (
+        <DashboardStats stats={stats} />
+      ) : (
+        <Alert className="border-destructive/50 bg-destructive/10">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive">
+            Failed to load trading statistics. Please refresh the page.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Recent Activity Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
-          <TradeList 
-            trades={trades}
-            loading={loading}
-            onLoadMore={handleLoadMore}
-          />
+          {tradesLoading ? (
+            <div className="p-6">
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-24 bg-muted/50 rounded-md animate-pulse" />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <TradeList 
+              trades={tradesWithAnalysis}
+              loading={false}
+              onLoadMore={handleLoadMore}
+            />
+          )}
         </Card>
         
         <div className="space-y-4">

@@ -1,5 +1,10 @@
 import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/neon-http";
+import { users, insiderTrades } from "@shared/schema";
+import { eq, desc, count, sum, avg } from "drizzle-orm";
+
+const db = drizzle(process.env.DATABASE_URL!);
 
 // modify the interface with any CRUD methods
 // you might need
@@ -14,6 +19,7 @@ export interface IStorage {
   getInsiderTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
   getInsiderTradeById(id: string): Promise<InsiderTrade | undefined>;
   createInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
+  upsertInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
   updateInsiderTrade(id: string, updates: Partial<InsiderTrade>): Promise<InsiderTrade | undefined>;
   
   // Trading statistics
@@ -65,10 +71,33 @@ export class MemStorage implements IStorage {
       ...insertTrade, 
       id, 
       ticker: insertTrade.ticker || null,
+      aiAnalysis: insertTrade.aiAnalysis || null,
       createdAt: new Date()
     };
     this.insiderTrades.set(id, trade);
     return trade;
+  }
+
+  async upsertInsiderTrade(insertTrade: InsertInsiderTrade): Promise<InsiderTrade> {
+    // Check if a trade with this accession number already exists
+    const existing = Array.from(this.insiderTrades.values()).find(
+      trade => trade.accessionNumber === insertTrade.accessionNumber
+    );
+    
+    if (existing) {
+      // Update existing trade
+      const updatedTrade: InsiderTrade = {
+        ...existing,
+        ...insertTrade,
+        ticker: insertTrade.ticker || null,
+        aiAnalysis: insertTrade.aiAnalysis || null,
+      };
+      this.insiderTrades.set(existing.id, updatedTrade);
+      return updatedTrade;
+    } else {
+      // Create new trade
+      return this.createInsiderTrade(insertTrade);
+    }
   }
 
   async updateInsiderTrade(id: string, updates: Partial<InsiderTrade>): Promise<InsiderTrade | undefined> {
@@ -108,4 +137,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { DatabaseStorage } from "./db-storage";
+
+// Use database storage instead of memory storage for production
+export const storage = process.env.NODE_ENV === 'test' ? new MemStorage() : new DatabaseStorage();

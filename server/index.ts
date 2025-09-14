@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { exec } from "child_process";
+import { promisify } from "util";
+import './sec-collector'; // Initialize SEC data collector
+
+const execAsync = promisify(exec);
 
 const app = express();
 app.use(express.json());
@@ -37,6 +42,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure database schema is up to date on startup
+  try {
+    log('🔄 Checking database schema...');
+    await execAsync('npm run db:push');
+    log('✅ Database schema is up to date');
+  } catch (error) {
+    log('⚠️ Database migration failed, continuing anyway:', error);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
