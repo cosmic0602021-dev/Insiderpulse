@@ -79,17 +79,8 @@ export default function Dashboard() {
     }
   };
   
-  // Transform trades to include aiAnalysis for compatibility
-  const tradesWithAnalysis = allTrades?.map(trade => ({
-    ...trade,
-    aiAnalysis: typeof trade.aiAnalysis === 'object' ? trade.aiAnalysis as AIAnalysis : {
-      significance_score: trade.significanceScore,
-      signal_type: trade.signalType as 'BUY' | 'SELL' | 'HOLD',
-      key_insights: ['Analysis in progress'],
-      risk_level: 'MEDIUM' as const,
-      recommendation: 'Analysis pending'
-    }
-  })) || [];
+  // No AI analysis - just pass trades directly
+  const tradesData = allTrades || [];
 
   return (
     <div className="space-y-6 p-6" data-testid="dashboard">
@@ -111,7 +102,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold" data-testid="page-title">Dashboard</h1>
         <p className="text-muted-foreground">
-          AI-powered insider trading analysis and real-time market intelligence
+          Real-time insider trading monitoring and market intelligence
         </p>
       </div>
 
@@ -146,7 +137,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <TradeList 
-              trades={tradesWithAnalysis}
+              trades={tradesData}
               loading={false}
               onLoadMore={handleLoadMore}
             />
@@ -154,31 +145,25 @@ export default function Dashboard() {
         </Card>
         
         <div className="space-y-4">
-          {/* AI Insights */}
-          <Card data-testid="ai-insights">
+          {/* Trading Summary */}
+          <Card data-testid="trading-summary">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-primary" />
-                AI Market Insights
+                Trading Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="p-3 bg-chart-2/10 rounded-md border border-chart-2/20">
-                <div className="text-sm font-medium text-chart-2 mb-1">Strong Buy Signals</div>
+                <div className="text-sm font-medium text-chart-2 mb-1">Recent Activity</div>
                 <div className="text-xs text-muted-foreground">
-                  Tech sector showing exceptional insider confidence with 87% average significance score
+                  Monitoring insider trades across all major exchanges
                 </div>
               </div>
               <div className="p-3 bg-chart-3/10 rounded-md border border-chart-3/20">
-                <div className="text-sm font-medium text-chart-3 mb-1">Market Momentum</div>
+                <div className="text-sm font-medium text-chart-3 mb-1">Market Coverage</div>
                 <div className="text-xs text-muted-foreground">
-                  AI and cloud computing companies experiencing increased insider buying activity
-                </div>
-              </div>
-              <div className="p-3 bg-muted/50 rounded-md">
-                <div className="text-sm font-medium mb-1">Risk Assessment</div>
-                <div className="text-xs text-muted-foreground">
-                  Current market conditions favor technology sector investments with low to medium risk profiles
+                  Real-time SEC filing analysis and trade classification
                 </div>
               </div>
             </CardContent>

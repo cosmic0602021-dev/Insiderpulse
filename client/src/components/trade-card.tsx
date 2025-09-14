@@ -2,10 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from "lucide-react";
-import type { InsiderTrade, AIAnalysis } from "@shared/schema";
+import type { InsiderTrade } from "@shared/schema";
 
 interface TradeCardProps {
-  trade: InsiderTrade & { aiAnalysis: AIAnalysis };
+  trade: InsiderTrade;
   onViewDetails?: (trade: InsiderTrade) => void;
 }
 
@@ -96,31 +96,11 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
           </div>
         </div>
 
-        {trade.aiAnalysis && (
-          <div className="mb-3">
-            <div className="text-xs text-muted-foreground mb-1">분석 결과</div>
-            <div className="space-y-1">
-              {trade.aiAnalysis.key_insights.slice(0, 2).map((insight, index) => (
-                <div key={index} className={`text-xs rounded px-2 py-1 ${
-                  insight.includes('⚠️') || insight.includes('임시') ? 
-                  'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800' : 
-                  'bg-muted/50'
-                }`}>
-                  {insight}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              trade.aiAnalysis?.risk_level === 'LOW' ? 'bg-chart-2' :
-              trade.aiAnalysis?.risk_level === 'MEDIUM' ? 'bg-chart-3' : 'bg-destructive'
-            }`}></div>
             <span className="text-xs text-muted-foreground">
-              {trade.aiAnalysis?.risk_level || 'UNKNOWN'} Risk
+              Trade Signal: {trade.signalType}
             </span>
           </div>
           <Button 

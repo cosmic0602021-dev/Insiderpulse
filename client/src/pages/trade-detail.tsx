@@ -402,24 +402,6 @@ export default function TradeDetail({ tradeId }: TradeDetailProps) {
             </Card>
           )}
 
-          {/* AI Analysis */}
-          {trade.aiAnalysis && (
-            <Card data-testid="card-ai-analysis">
-              <CardHeader>
-                <CardTitle>AI Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm leading-relaxed text-muted-foreground" data-testid="text-analysis">
-                  {typeof trade.aiAnalysis === 'string' 
-                    ? trade.aiAnalysis 
-                    : trade.aiAnalysis 
-                      ? JSON.stringify(trade.aiAnalysis, null, 2)
-                      : 'No analysis available'
-                  }
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

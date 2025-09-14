@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, SortDesc } from "lucide-react";
 import TradeCard from './trade-card';
-import type { InsiderTrade, AIAnalysis } from "@shared/schema";
+import type { InsiderTrade } from "@shared/schema";
 
 interface TradeListProps {
-  trades: (InsiderTrade & { aiAnalysis: AIAnalysis })[];
+  trades: InsiderTrade[];
   loading?: boolean;
   onLoadMore?: () => void;
 }

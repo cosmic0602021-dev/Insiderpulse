@@ -19,7 +19,7 @@ export const insiderTrades = pgTable("insider_trades", {
   pricePerShare: real("price_per_share").notNull(),
   totalValue: real("total_value").notNull(),
   filedDate: timestamp("filed_date").notNull(),
-  aiAnalysis: json("ai_analysis"),
+  aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   significanceScore: integer("significance_score").notNull(),
   signalType: text("signal_type").notNull(), // BUY, SELL, HOLD
   createdAt: timestamp("created_at").defaultNow(),
@@ -43,13 +43,14 @@ export type User = typeof users.$inferSelect;
 export type InsertInsiderTrade = z.infer<typeof insertInsiderTradeSchema>;
 export type InsiderTrade = typeof insiderTrades.$inferSelect;
 
+// Deprecated - AI analysis no longer used
 export type AIAnalysis = {
   significance_score: number;
   signal_type: 'BUY' | 'SELL' | 'HOLD';
   key_insights: string[];
   risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
   recommendation: string;
-};
+} | null;
 
 export type TradingStats = {
   todayTrades: number;

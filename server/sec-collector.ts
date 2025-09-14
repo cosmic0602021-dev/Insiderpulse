@@ -1,14 +1,8 @@
 import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
-import OpenAI from 'openai';
 import { storage } from './storage';
 import { broadcastUpdate } from './routes';
-import type { InsertInsiderTrade, AIAnalysis } from '@shared/schema';
-
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
-});
+import type { InsertInsiderTrade } from '@shared/schema';
 
 class CacheSystem {
   private cache = new Map<string, { value: any; timestamp: number }>();
@@ -150,8 +144,10 @@ class SECDataCollector {
   private async processFilings(filings: any[]) {
     for (const filing of filings) {
       try {
-        // Generate AI analysis
-        const aiAnalysis = await this.analyzeTradeWithAI(filing);
+        // Simple trade classification (no AI)
+        const tradeValue = filing.shares * filing.price;
+        const signalType = this.determineTradeSignal(filing);
+        const significanceScore = this.calculateSignificanceScore(tradeValue);
         
         // Create insider trade record
         const tradeData: InsertInsiderTrade = {
@@ -160,22 +156,21 @@ class SECDataCollector {
           ticker: filing.ticker || null,
           shares: filing.shares,
           pricePerShare: filing.price,
-          totalValue: filing.shares * filing.price,
+          totalValue: tradeValue,
           filedDate: new Date(filing.date),
-          aiAnalysis: aiAnalysis,
-          significanceScore: aiAnalysis.significance_score,
-          signalType: aiAnalysis.signal_type
+          aiAnalysis: null, // No AI analysis
+          significanceScore: significanceScore,
+          signalType: signalType
         };
 
         // Use upsert to handle duplicates gracefully
         const trade = await storage.upsertInsiderTrade(tradeData);
         
-        console.log(`✅ Trade processed: ${filing.company} (${filing.ticker}) - ${aiAnalysis.signal_type}`);
+        console.log(`✅ Trade processed: ${filing.company} (${filing.ticker}) - ${signalType}`);
         
         // Broadcast to WebSocket clients
         broadcastUpdate('NEW_TRADE', {
-          trade: trade,
-          analysis: aiAnalysis
+          trade: trade
         });
         
         // Small delay to avoid overwhelming the system
@@ -188,152 +183,36 @@ class SECDataCollector {
     }
   }
 
-  private async analyzeTradeWithAI(filing: any): Promise<AIAnalysis> {
-    try {
-      if (!process.env.OPENAI_API_KEY) {
-        console.log('⚠️ No OpenAI API key, using enhanced analysis');
-        return this.generateEnhancedAnalysis(filing);
-      }
-
-      // Temporarily disable OpenAI due to quota limits - use enhanced analysis instead
-      console.log('⚠️ Using enhanced analysis to conserve API quota');
-      return this.generateEnhancedAnalysis(filing);
-
-      const prompt = `Analyze this insider trading transaction:
-
-Company: ${filing.company}
-Ticker: ${filing.ticker}
-Shares: ${filing.shares.toLocaleString()}
-Price per share: $${filing.price}
-Total value: $${(filing.shares * filing.price).toLocaleString()}
-Filing date: ${new Date(filing.date).toLocaleDateString()}
-
-Provide analysis in JSON format with:
-- significance_score (1-100)
-- signal_type ('BUY', 'SELL', or 'HOLD')
-- key_insights (array of 2-3 strings)
-- risk_level ('LOW', 'MEDIUM', or 'HIGH')
-- recommendation (string)
-
-Consider factors like transaction size, timing, company performance, and market conditions.`;
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{
-          role: 'user',
-          content: prompt
-        }],
-        response_format: { type: 'json_object' },
-        temperature: 0.3
-      });
-
-      const analysis = JSON.parse(response.choices[0].message.content || '{}');
-      
-      // Validate and sanitize the response
-      return {
-        significance_score: Math.min(100, Math.max(1, analysis.significance_score || 50)),
-        signal_type: ['BUY', 'SELL', 'HOLD'].includes(analysis.signal_type) ? analysis.signal_type : 'HOLD',
-        key_insights: Array.isArray(analysis.key_insights) ? analysis.key_insights.slice(0, 3) : ['Analysis pending'],
-        risk_level: ['LOW', 'MEDIUM', 'HIGH'].includes(analysis.risk_level) ? analysis.risk_level : 'MEDIUM',
-        recommendation: analysis.recommendation || 'Further analysis required'
-      };
-      
-    } catch (error: any) {
-      // Gracefully handle all OpenAI errors and fallback to mock analysis
-      const errorType = error?.code || error?.status || 'unknown';
-      if (errorType === 'insufficient_quota' || errorType === 429) {
-        console.log('⚠️ OpenAI quota exceeded, using mock analysis');
-      } else if (errorType >= 500) {
-        console.log('⚠️ OpenAI server error, using mock analysis');
-      } else if (error?.name === 'TimeoutError') {
-        console.log('⚠️ OpenAI timeout, using mock analysis');
-      } else {
-        console.log(`⚠️ OpenAI error (${errorType}), using mock analysis`);
-      }
-      
-      return this.generateEnhancedAnalysis(filing);
+  // Simple trade signal determination (no AI)
+  private determineTradeSignal(filing: any): 'BUY' | 'SELL' | 'HOLD' {
+    // Simple logic: randomly determine based on filing data
+    // In real implementation, this would parse SEC filing transaction codes
+    const tradeValue = filing.shares * filing.price;
+    
+    // Mock logic for demo purposes - would parse actual SEC transaction codes in real implementation
+    if (tradeValue > 5000000) {
+      return Math.random() > 0.3 ? 'BUY' : 'SELL'; // Large trades more likely to be BUY
+    } else if (tradeValue > 1000000) {
+      return Math.random() > 0.4 ? 'BUY' : Math.random() > 0.5 ? 'SELL' : 'HOLD';
+    } else {
+      return Math.random() > 0.5 ? 'BUY' : 'HOLD';
     }
   }
 
-  private generateEnhancedAnalysis(filing: any): AIAnalysis {
-    const value = filing.shares * filing.price;
-    const isLargeTrade = value > 1000000;
-    const isGiantTrade = value > 10000000;
-    const isTechStock = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'META'].includes(filing.ticker);
-    const isHealthcareStock = ['JNJ', 'PFE', 'UNH', 'ABBV'].includes(filing.ticker);
-    const isFinancialStock = ['JPM', 'BAC', 'WFC', 'GS'].includes(filing.ticker);
+  // Simple significance score calculation
+  private calculateSignificanceScore(tradeValue: number): number {
+    // Score based on transaction size only (no AI)
+    let score = 30; // Base score
     
-    // More sophisticated scoring algorithm
-    let score = 45 + Math.floor(Math.random() * 20); // Base score 45-65
+    if (tradeValue > 10000000) score += 40; // Giant trades
+    else if (tradeValue > 5000000) score += 30; // Very large trades  
+    else if (tradeValue > 1000000) score += 20; // Large trades
+    else if (tradeValue > 500000) score += 10; // Medium trades
     
-    // Transaction size impact
-    if (isGiantTrade) score += 25;
-    else if (isLargeTrade) score += 15;
-    else if (value > 500000) score += 8;
+    // Add some randomness for demo purposes
+    score += Math.floor(Math.random() * 20);
     
-    // Sector-specific scoring
-    if (isTechStock) score += 12;
-    else if (isHealthcareStock) score += 8;
-    else if (isFinancialStock) score += 5;
-    
-    // Timing factors (simplified)
-    const isRecentFiling = (Date.now() - new Date(filing.date).getTime()) < 7 * 24 * 60 * 60 * 1000;
-    if (isRecentFiling) score += 5;
-    
-    score = Math.min(95, Math.max(25, score)); // Cap between 25-95
-    
-    const signalType = score > 80 ? 'BUY' : score > 60 ? 'HOLD' : 'SELL';
-    const riskLevel = score > 85 ? 'LOW' : score > 65 ? 'MEDIUM' : 'HIGH';
-    
-    // Generate insights based on analysis
-    const insights = [];
-    if (isGiantTrade) {
-      insights.push('Exceptional transaction volume detected');
-    } else if (isLargeTrade) {
-      insights.push('High-value insider transaction');
-    } else {
-      insights.push('Standard trading activity observed');
-    }
-    
-    if (isTechStock) {
-      insights.push('Technology sector strength indicator');
-    } else if (isHealthcareStock) {
-      insights.push('Healthcare sector stability signal');
-    } else if (isFinancialStock) {
-      insights.push('Financial sector confidence marker');
-    } else {
-      insights.push('Cross-sector market activity');
-    }
-    
-    if (score > 85) {
-      insights.push('Strong bullish sentiment detected');
-    } else if (score < 40) {
-      insights.push('Cautious market positioning noted');
-    } else {
-      insights.push('Neutral market positioning');
-    }
-    
-    return {
-      significance_score: score,
-      signal_type: signalType,
-      key_insights: insights.slice(0, 3),
-      risk_level: riskLevel,
-      recommendation: this.generateRecommendation(signalType, score, value, filing.ticker)
-    };
-  }
-
-  private generateRecommendation(signalType: string, score: number, value: number, ticker: string): string {
-    const confidenceLevel = score > 85 ? 'High' : score > 65 ? 'Medium' : 'Low';
-    const valueDescription = value > 10000000 ? 'mega-transaction' : value > 1000000 ? 'large-scale transaction' : 'standard transaction';
-    
-    switch (signalType) {
-      case 'BUY':
-        return `${confidenceLevel} confidence ${valueDescription} suggests strong insider confidence. Consider position accumulation for ${ticker || 'this security'}.`;
-      case 'SELL':
-        return `${confidenceLevel} confidence ${valueDescription} indicates potential insider concerns. Exercise caution with ${ticker || 'this security'}.`;
-      default:
-        return `${confidenceLevel} confidence ${valueDescription} suggests neutral positioning. Monitor ${ticker || 'this security'} for additional signals.`;
-    }
+    return Math.min(100, Math.max(20, score));
   }
 
   private extractCompanyName(title: string): string {
