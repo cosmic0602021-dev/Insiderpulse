@@ -15,6 +15,8 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [currentOffset, setCurrentOffset] = useState(0);
   const [allTrades, setAllTrades] = useState<InsiderTrade[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
   
   // Real API data queries
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -62,22 +64,43 @@ export default function Dashboard() {
     }
   }, [lastMessage, sendMessage, queryClient]);
   
-  // Initialize trades list
+  // Initialize trades list (only on first load, not on WebSocket updates)
   useEffect(() => {
-    if (trades) {
+    if (trades && currentOffset === 0) {
       setAllTrades(trades);
+      // Set hasMoreData based on first page size
+      setHasMoreData(trades.length >= 20);
     }
-  }, [trades]);
+  }, [trades, currentOffset]);
   
   const handleLoadMore = async () => {
+    console.log('Load more clicked');
     console.log('Loading more trades...');
+    
+    if (loadingMore || !hasMoreData) return;
+    
+    setLoadingMore(true);
     try {
       const newOffset = currentOffset + 20;
       const moreTrades = await apiClient.getInsiderTrades(20, newOffset);
-      setAllTrades(prev => [...prev, ...moreTrades]);
-      setCurrentOffset(newOffset);
+      
+      if (moreTrades.length === 0) {
+        setHasMoreData(false);
+      } else {
+        setAllTrades(prev => [...prev, ...moreTrades]);
+        setCurrentOffset(newOffset);
+        
+        // If we got less than requested amount, probably no more data
+        if (moreTrades.length < 20) {
+          setHasMoreData(false);
+        }
+      }
     } catch (error) {
       console.error('Failed to load more trades:', error);
+      // TODO: Show user-friendly error notification
+      alert('더 많은 거래를 불러오는데 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setLoadingMore(false);
     }
   };
   
@@ -141,6 +164,8 @@ export default function Dashboard() {
             <TradeList 
               trades={tradesData}
               loading={false}
+              loadingMore={loadingMore}
+              hasMoreData={hasMoreData}
               onLoadMore={handleLoadMore}
             />
           )}

@@ -12,10 +12,12 @@ import type { InsiderTrade } from "@shared/schema";
 interface TradeListProps {
   trades: InsiderTrade[];
   loading?: boolean;
+  loadingMore?: boolean;
+  hasMoreData?: boolean;
   onLoadMore?: () => void;
 }
 
-export default function TradeList({ trades, loading, onLoadMore }: TradeListProps) {
+export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore }: TradeListProps) {
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,7 +50,9 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
 
   const handleLoadMore = () => {
     console.log('Load more clicked');
-    onLoadMore?.();
+    if (!loadingMore && hasMoreData) {
+      onLoadMore?.();
+    }
   };
 
   const handleViewDetails = (trade: InsiderTrade) => {
@@ -124,14 +128,20 @@ export default function TradeList({ trades, loading, onLoadMore }: TradeListProp
             
             {onLoadMore && (
               <div className="flex justify-center pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  data-testid="button-load-more"
-                >
-                  {loading ? t('tradeList.loading') : t('tradeList.loadMore')}
-                </Button>
+                {!hasMoreData ? (
+                  <div className="text-center text-muted-foreground py-2">
+                    <p className="text-sm">{t('tradeList.noMoreData')}</p>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    data-testid="button-load-more"
+                  >
+                    {loadingMore ? t('tradeList.loading') : t('tradeList.loadMore')}
+                  </Button>
+                )}
               </div>
             )}
           </div>
