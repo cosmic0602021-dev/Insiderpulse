@@ -5,6 +5,85 @@ import { broadcastUpdate } from './routes';
 import { aiAnalysisService } from './ai-analysis';
 import type { InsertInsiderTrade } from '@shared/schema';
 
+// SEC-compliant HTTP client to prevent WAF blocking
+class SecHttpClient {
+  private lastRequestTime = 0;
+  private isBlocked = false;
+  private blockUntil = 0;
+  private readonly minDelay = 2000; // 2 seconds between requests
+  private readonly userAgent = 'InsiderTrack Pro/1.0 (https://insidertrack.pro; contact@insidertrack.pro)';
+  
+  async get(url: string, expectedContentType?: string): Promise<any> {
+    // Check if we're in cooldown period
+    if (this.isBlocked && Date.now() < this.blockUntil) {
+      const remainingMinutes = Math.ceil((this.blockUntil - Date.now()) / 60000);
+      throw new Error(`SEC_BLOCKED: In cooldown for ${remainingMinutes} more minutes`);
+    }
+    
+    // Reset block status if cooldown expired
+    if (this.isBlocked && Date.now() >= this.blockUntil) {
+      this.isBlocked = false;
+      console.log('🟢 SEC cooldown expired, resuming requests');
+    }
+    
+    // Implement rate limiting with jitter
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    if (timeSinceLastRequest < this.minDelay) {
+      const delay = this.minDelay - timeSinceLastRequest + Math.random() * 1000; // Add jitter
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    this.lastRequestTime = Date.now();
+    
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': this.userAgent,
+          'Accept': expectedContentType || 'application/json,application/xml,text/xml,*/*',
+          'Accept-Encoding': 'gzip,deflate',
+          'Connection': 'keep-alive'
+        },
+        timeout: 15000
+      });
+      
+      // Check if SEC returned a block page instead of expected content
+      const responseText = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+      if (responseText.includes('<!DOCTYPE html') || responseText.includes('Your Request Originates from an Undeclared Automated Tool')) {
+        console.warn('🔴 SEC WAF blocked request - entering 45 minute cooldown');
+        this.isBlocked = true;
+        this.blockUntil = Date.now() + (45 * 60 * 1000); // 45 minute cooldown
+        throw new Error('SEC_BLOCKED: Request blocked by WAF');
+      }
+      
+      // Validate Content-Type if specified
+      if (expectedContentType) {
+        const contentType = response.headers['content-type'] || '';
+        if (expectedContentType.includes('json') && !contentType.includes('json')) {
+          console.warn(`⚠️ Expected JSON but got: ${contentType} - throwing SEC_UNEXPECTED_CONTENT`);
+          throw new Error('SEC_UNEXPECTED_CONTENT: Expected JSON but received different content type');
+        } else if (expectedContentType.includes('xml') && !contentType.includes('xml')) {
+          console.warn(`⚠️ Expected XML but got: ${contentType} - throwing SEC_UNEXPECTED_CONTENT`);
+          throw new Error('SEC_UNEXPECTED_CONTENT: Expected XML but received different content type');
+        }
+      }
+      
+      return response.data;
+      
+    } catch (error: any) {
+      if (error.response?.status === 429 || error.response?.status === 403) {
+        console.warn('🔴 SEC rate limit or access denied - entering 30 minute cooldown');
+        this.isBlocked = true;
+        this.blockUntil = Date.now() + (30 * 60 * 1000); // 30 minute cooldown
+        throw new Error('SEC_BLOCKED: Rate limited or access denied');
+      }
+      throw error;
+    }
+  }
+}
+
+const secHttpClient = new SecHttpClient();
+
 class CacheSystem {
   private cache = new Map<string, { value: any; timestamp: number }>();
   private ttl = 600000; // 10 minutes
@@ -84,23 +163,17 @@ class SECDataCollector {
 
   private async fetchSECData() {
     try {
-      // First, get the RSS feed to find recent Form 4 filings
-      const response = await axios.get(
-        'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom',
-        { 
-          headers: { 
-            'User-Agent': 'InsiderTrack Pro 1.0 (contact@insidertrack.pro)' 
-          }, 
-          timeout: 15000 
-        }
+      // First, get the RSS feed to find recent Form 4 filings using SEC-compliant client
+      const response = await secHttpClient.get(
+        'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=4&output=atom'
       );
 
-      const result = await parseStringPromise(response.data);
+      const result = await parseStringPromise(response);
       const entries = result.feed?.entry || [];
       
-      // Process each entry to fetch the actual Form 4 XML
+      // Process fewer entries to reduce API load and avoid triggering WAF
       const filings = [];
-      for (const entry of entries.slice(0, 8)) { // Process fewer to avoid rate limits
+      for (const entry of entries.slice(0, 3)) { // Reduced from 8 to 3
         try {
           const filingUrl = entry.link?.[0]?.$.href;
           if (!filingUrl) continue;
@@ -115,9 +188,12 @@ class SECDataCollector {
             filings.push(filing);
           }
           
-          // Small delay to be respectful to SEC servers
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // No additional delay needed - secHttpClient handles rate limiting
         } catch (error) {
+          if (error.message.includes('SEC_BLOCKED')) {
+            console.log('🔴 SEC blocked - stopping collection cycle');
+            break; // Stop processing more filings if blocked
+          }
           console.warn('Failed to process individual filing:', error.message);
         }
       }
@@ -125,34 +201,65 @@ class SECDataCollector {
       return filings;
       
     } catch (error) {
+      if (error.message.includes('SEC_BLOCKED')) {
+        console.log('⚠️ SEC blocked - will retry after cooldown period');
+        return []; // Return empty array instead of throwing
+      }
       console.log('⚠️ SEC API unavailable - no data to process');
       throw error;
     }
   }
 
   private async fetchForm4Data(filingUrl: string, accessionNumber: string) {
-    try {
-      // Try to construct the direct XML URL from the filing URL
-      const xmlUrl = filingUrl.replace('-index.htm', '/form4.xml');
-      
-      const xmlResponse = await axios.get(xmlUrl, {
-        headers: { 
-          'User-Agent': 'InsiderTrack Pro 1.0 (contact@insidertrack.pro)' 
-        },
-        timeout: 10000
-      });
+    // Extract CIK and accession from URL for proper base directory
+    const urlParts = filingUrl.match(/edgar\/data\/(\d+)\/\d+\/(\d{10}-\d{2}-\d{6})-index\.htm/);
+    if (!urlParts) {
+      console.warn(`⚠️ Cannot extract CIK/accession from URL: ${filingUrl}`);
+      return null;
+    }
 
-      const xmlData = await parseStringPromise(xmlResponse.data);
-      return this.parseForm4XML(xmlData, accessionNumber);
-      
-    } catch (error) {
-      // If direct XML fails, try to parse from the main filing page
+    const [, cik, accession] = urlParts;
+    const accessionNoDashes = accession.replace(/-/g, '');
+    const baseDir = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNoDashes}`;
+    
+    // Try deterministic XML paths first (recommended by architect)
+    const xmlCandidates = [
+      `${baseDir}/ownership.xml`,
+      `${baseDir}/primary_doc.xml`,
+      `${baseDir}/form4.xml`,
+      // Try common xslF345X patterns
+      `${baseDir}/xslF345X01/ownership.xml`,
+      `${baseDir}/xslF345X02/ownership.xml`,
+      `${baseDir}/xslF345X03/ownership.xml`,
+      `${baseDir}/xslF345X04/ownership.xml`,
+      `${baseDir}/xslF345X05/ownership.xml`
+    ];
+    
+    for (const xmlUrl of xmlCandidates) {
       try {
-        return await this.parseFilingPage(filingUrl, accessionNumber);
-      } catch (parseError) {
-        console.warn(`Failed to parse filing ${accessionNumber}:`, parseError.message);
-        return null;
+        console.log(`🔍 Trying direct XML path: ${xmlUrl}`);
+        const xmlData = await secHttpClient.get(xmlUrl, 'application/xml');
+        const parsedData = await parseStringPromise(xmlData);
+        const result = this.parseForm4XML(parsedData, accessionNumber);
+        if (result) {
+          console.log(`✅ Successfully found XML at: ${xmlUrl}`);
+          return result;
+        }
+      } catch (error) {
+        if (error.message.includes('SEC_BLOCKED')) {
+          throw error; // Propagate blocking immediately
+        }
+        // Continue to next candidate if this path doesn't exist
+        console.log(`⚠️ XML not found at ${xmlUrl}, trying next path...`);
       }
+    }
+    
+    // Fallback to index.json approach if deterministic paths fail
+    try {
+      return await this.parseFilingPage(filingUrl, accessionNumber);
+    } catch (parseError) {
+      console.warn(`Failed to parse filing ${accessionNumber} via all methods:`, parseError.message);
+      return null;
     }
   }
 
@@ -223,9 +330,102 @@ class SECDataCollector {
   }
 
   private async parseFilingPage(filingUrl: string, accessionNumber: string) {
-    // NO FAKE DATA GENERATION - Only return null when real parsing fails
-    console.warn(`⚠️ Cannot parse filing page ${accessionNumber} - skipping fake data generation`);
-    return null;
+    try {
+      console.log(`🔍 Finding XML document for ${accessionNumber}...`);
+      
+      // Extract CIK and accession info from filing URL
+      // URL format: https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{accession}-index.htm
+      const urlParts = filingUrl.match(/edgar\/data\/(\d+)\/\d+\/(\d{10}-\d{2}-\d{6})-index\.htm/);
+      if (!urlParts) {
+        console.warn(`⚠️ Cannot extract CIK/accession from URL: ${filingUrl}`);
+        return null;
+      }
+
+      const [, cik, accession] = urlParts;
+      const accessionNoDashes = accession.replace(/-/g, '');
+      
+      // Use SEC's index.json API for reliable document discovery
+      const baseUrl = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNoDashes}`;
+      const indexUrl = `${baseUrl}/index.json`;
+      
+      console.log(`📋 Fetching filing index: ${indexUrl}`);
+      
+      const index = await secHttpClient.get(indexUrl, 'application/json');
+      const directory = index.directory || {};
+      
+      // directory.item is an array, not an object
+      const items = directory.item || [];
+      if (!Array.isArray(items)) {
+        console.warn(`⚠️ Unexpected directory.item structure for ${accessionNumber}`);
+        return null;
+      }
+      
+      let xmlFileName = null;
+      
+      // Look for direct XML files first
+      const xmlCandidates = ['ownership.xml', 'primary_doc.xml', 'form4.xml'];
+      for (const candidate of xmlCandidates) {
+        const found = items.find(item => item.name === candidate);
+        if (found) {
+          xmlFileName = candidate;
+          console.log(`📄 Found XML document: ${candidate}`);
+          break;
+        }
+      }
+      
+      // If not found, look for xslF345X directories
+      if (!xmlFileName) {
+        const xslDirs = items.filter(item => 
+          item.type === 'dir' && item.name && item.name.startsWith('xslF345X')
+        );
+        
+        for (const dir of xslDirs) {
+          // Try ownership.xml in this subdirectory
+          const candidatePath = `${dir.name}/ownership.xml`;
+          xmlFileName = candidatePath;
+          console.log(`📄 Trying XML in subdirectory: ${candidatePath}`);
+          break; // Try first xsl directory found
+        }
+      }
+
+      if (!xmlFileName) {
+        console.warn(`⚠️ No suitable XML document found in index for ${accessionNumber}`);
+        return null;
+      }
+
+      // Construct full XML URL
+      const xmlUrl = `${baseUrl}/${xmlFileName}`;
+      
+      // Fetch and parse the XML using SEC-compliant client
+      const xmlResponse = await secHttpClient.get(xmlUrl, 'application/xml');
+
+      // Parse XML directly without manual entity decoding (that corrupts valid XML)
+      const xmlData = await parseStringPromise(xmlResponse, {
+        explicitArray: true,
+        strict: true
+      });
+      
+      return this.parseForm4XML(xmlData, accessionNumber);
+
+    } catch (error) {
+      // Fallback to less strict parsing if needed
+      if (error.message.includes('Unexpected') || error.message.includes('Non-whitespace')) {
+        try {
+          console.log(`📄 Retrying XML parse with relaxed settings for ${accessionNumber}...`);
+          const xmlData = await parseStringPromise(error.data || '', {
+            explicitArray: true,
+            strict: false,
+            trim: true
+          });
+          return this.parseForm4XML(xmlData, accessionNumber);
+        } catch (retryError) {
+          console.warn(`⚠️ Failed to parse XML for ${accessionNumber} even with relaxed settings:`, retryError.message);
+        }
+      }
+      
+      console.warn(`⚠️ Failed to find/parse XML document for ${accessionNumber}:`, error.message);
+      return null;
+    }
   }
 
   private determineTraderTitle(relationship: any): string {
