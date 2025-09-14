@@ -13,35 +13,41 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
+import { useLanguage } from "@/contexts/language-context";
 
-const menuItems = [
+const getMenuItems = (t: (key: string) => string) => [
   {
-    title: "Dashboard",
+    title: t('nav.dashboard'),
     url: "/",
     icon: Home,
+    key: 'dashboard'
   },
   {
-    title: "Live Trades",
+    title: t('nav.livetrading'),
     url: "/trades",
     icon: TrendingUp,
-    badge: "12"
+    badge: "12",
+    key: 'live-trades'
   },
   {
-    title: "Analytics",
+    title: t('nav.analytics'),
     url: "/analytics",
     icon: BarChart3,
+    key: 'analytics'
   },
   {
-    title: "Alerts",
+    title: t('nav.alerts'),
     url: "/alerts",
     icon: Bell,
-    badge: "3"
+    badge: "3",
+    key: 'alerts'
   },
   {
-    title: "Search",
+    title: t('nav.search'),
     url: "/search",
     icon: Search,
+    key: 'search'
   },
 ];
 
@@ -54,6 +60,8 @@ const watchlistItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { t } = useLanguage();
+  const menuItems = getMenuItems(t);
 
   return (
     <Sidebar data-testid="app-sidebar">
@@ -63,7 +71,7 @@ export function AppSidebar() {
             <BarChart3 className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">InsiderTrack</h2>
+            <h2 className="text-lg font-semibold">{t('dashboard.title')}</h2>
             <p className="text-xs text-muted-foreground">Pro Analytics</p>
           </div>
         </div>
@@ -75,14 +83,13 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton 
                     asChild 
                     data-active={location === item.url}
-                    data-testid={`sidebar-nav-${item.title.toLowerCase().replace(' ', '-')}`}
+                    data-testid={`sidebar-nav-${item.key}`}
                   >
-                    <a href={item.url} onClick={(e) => {
-                      e.preventDefault();
+                    <Link href={item.url} onClick={() => {
                       console.log(`Navigation to ${item.title} clicked`);
                     }}>
                       <item.icon className="h-4 w-4" />
@@ -92,7 +99,7 @@ export function AppSidebar() {
                           {item.badge}
                         </Badge>
                       )}
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -142,11 +149,13 @@ export function AppSidebar() {
           variant="ghost" 
           size="sm" 
           className="justify-start text-xs"
-          onClick={() => console.log('Settings clicked')}
+          asChild
           data-testid="button-settings"
         >
-          <Settings className="h-3 w-3 mr-2" />
-          Settings
+          <Link href="/settings" onClick={() => console.log('Settings clicked')}>
+            <Settings className="h-3 w-3 mr-2" />
+            {t('nav.settings')}
+          </Link>
         </Button>
       </SidebarFooter>
     </Sidebar>

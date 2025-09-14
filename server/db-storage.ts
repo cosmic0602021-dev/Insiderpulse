@@ -47,7 +47,7 @@ export class DatabaseStorage implements IStorage {
         aiAnalysis: insertTrade.aiAnalysis || null
       }).returning();
       return result[0];
-    } catch (error) {
+    } catch (error: any) {
       // If duplicate accessionNumber, return existing record instead of throwing
       if (error?.code === '23505' || error?.constraint === 'insider_trades_accession_number_unique') {
         console.log(`⚠️ Duplicate accession number ${insertTrade.accessionNumber}, fetching existing record`);
@@ -70,7 +70,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Try to insert first
       return await this.createInsiderTrade(insertTrade);
-    } catch (error) {
+    } catch (error: any) {
       // If it fails due to duplicate, update the existing record
       if (error?.code === '23505' || error?.constraint === 'insider_trades_accession_number_unique') {
         const result = await db
