@@ -214,14 +214,13 @@ Provide analysis in JSON format with:
 Consider factors like transaction size, timing, company performance, and market conditions.`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-5',
+        model: 'gpt-4o-mini',
         messages: [{
           role: 'user',
           content: prompt
         }],
         response_format: { type: 'json_object' },
-        temperature: 0.3,
-        timeout: 10000 // 10 second timeout
+        temperature: 0.3
       });
 
       const analysis = JSON.parse(response.choices[0].message.content || '{}');
@@ -235,7 +234,7 @@ Consider factors like transaction size, timing, company performance, and market 
         recommendation: analysis.recommendation || 'Further analysis required'
       };
       
-    } catch (error) {
+    } catch (error: any) {
       // Gracefully handle all OpenAI errors and fallback to mock analysis
       const errorType = error?.code || error?.status || 'unknown';
       if (errorType === 'insufficient_quota' || errorType === 429) {
