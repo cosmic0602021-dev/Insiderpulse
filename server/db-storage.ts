@@ -83,8 +83,6 @@ export class DatabaseStorage implements IStorage {
             totalValue: insertTrade.totalValue,
             filedDate: insertTrade.filedDate,
             aiAnalysis: insertTrade.aiAnalysis || null,
-            significanceScore: insertTrade.significanceScore,
-            signalType: insertTrade.signalType
           })
           .where(eq(insiderTrades.accessionNumber, insertTrade.accessionNumber))
           .returning();
@@ -117,22 +115,9 @@ export class DatabaseStorage implements IStorage {
       .from(insiderTrades)
       .where(sql`DATE(${insiderTrades.createdAt}) = DATE(${today.toISOString().split('T')[0]})`);
     
-    // Get hot buys (BUY signals with high significance)
-    const hotBuysResult = await db
-      .select({ count: count() })
-      .from(insiderTrades)
-      .where(sql`${insiderTrades.signalType} = 'BUY' AND ${insiderTrades.significanceScore} > 80`);
-    
-    // Get average significance score
-    const avgSignificanceResult = await db
-      .select({ avg: avg(insiderTrades.significanceScore) })
-      .from(insiderTrades);
-    
     return {
       todayTrades: todayStats[0]?.count || 0,
-      totalVolume: Number(todayStats[0]?.totalVolume) || 0,
-      hotBuys: hotBuysResult[0]?.count || 0,
-      avgSignificance: Math.round(Number(avgSignificanceResult[0]?.avg) || 0)
+      totalVolume: Number(todayStats[0]?.totalVolume) || 0
     };
   }
 

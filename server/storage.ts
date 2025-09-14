@@ -126,18 +126,10 @@ export class MemStorage implements IStorage {
     });
     
     const totalVolume = todayTrades.reduce((sum, trade) => sum + trade.totalValue, 0);
-    const hotBuys = trades.filter(trade => 
-      trade.signalType === 'BUY' && trade.significanceScore > 80
-    ).length;
-    const avgSignificance = trades.length > 0 
-      ? Math.round(trades.reduce((sum, trade) => sum + trade.significanceScore, 0) / trades.length)
-      : 0;
     
     return {
       todayTrades: todayTrades.length,
-      totalVolume,
-      hotBuys,
-      avgSignificance
+      totalVolume
     };
   }
 

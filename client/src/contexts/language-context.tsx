@@ -24,8 +24,6 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.lastUpdated': 'Last updated',
     'dashboard.stats.todayTrades': 'Today\'s Trades',
     'dashboard.stats.totalVolume': 'Total Volume',
-    'dashboard.stats.hotBuys': 'Hot Buys',
-    'dashboard.stats.avgSignificance': 'Avg Significance',
     
     // Trades
     'trades.loadingStats': 'Loading trading statistics...',
@@ -84,8 +82,6 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.lastUpdated': '최종 업데이트',
     'dashboard.stats.todayTrades': '오늘의 거래',
     'dashboard.stats.totalVolume': '총 거래량',
-    'dashboard.stats.hotBuys': '주요 매수',
-    'dashboard.stats.avgSignificance': '평균 중요도',
     
     // Trades
     'trades.loadingStats': '거래 통계를 불러오는 중...',
@@ -144,8 +140,6 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.lastUpdated': '最終更新',
     'dashboard.stats.todayTrades': '今日の取引',
     'dashboard.stats.totalVolume': '総取引量',
-    'dashboard.stats.hotBuys': 'ホット買い',
-    'dashboard.stats.avgSignificance': '平均重要度',
     
     // Trades
     'trades.loadingStats': '取引統計を読み込み中...',
@@ -204,8 +198,6 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.lastUpdated': '最后更新',
     'dashboard.stats.todayTrades': '今日交易',
     'dashboard.stats.totalVolume': '总交易量',
-    'dashboard.stats.hotBuys': '热门买入',
-    'dashboard.stats.avgSignificance': '平均重要性',
     
     // Trades
     'trades.loadingStats': '正在加载交易统计...',

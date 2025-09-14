@@ -144,10 +144,8 @@ class SECDataCollector {
   private async processFilings(filings: any[]) {
     for (const filing of filings) {
       try {
-        // Simple trade classification (no AI)
+        // Pure trade data collection only
         const tradeValue = filing.shares * filing.price;
-        const signalType = this.determineTradeSignal(filing);
-        const significanceScore = this.calculateSignificanceScore(tradeValue);
         
         // Create insider trade record
         const tradeData: InsertInsiderTrade = {
@@ -158,15 +156,13 @@ class SECDataCollector {
           pricePerShare: filing.price,
           totalValue: tradeValue,
           filedDate: new Date(filing.date),
-          aiAnalysis: null, // No AI analysis
-          significanceScore: significanceScore,
-          signalType: signalType
+          aiAnalysis: null // No analysis
         };
 
         // Use upsert to handle duplicates gracefully
         const trade = await storage.upsertInsiderTrade(tradeData);
         
-        console.log(`✅ Trade processed: ${filing.company} (${filing.ticker}) - ${signalType}`);
+        console.log(`✅ Trade processed: ${filing.company} (${filing.ticker}) - ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
         
         // Broadcast to WebSocket clients
         broadcastUpdate('NEW_TRADE', {
@@ -183,37 +179,6 @@ class SECDataCollector {
     }
   }
 
-  // Simple trade signal determination (no AI)
-  private determineTradeSignal(filing: any): 'BUY' | 'SELL' | 'HOLD' {
-    // Simple logic: randomly determine based on filing data
-    // In real implementation, this would parse SEC filing transaction codes
-    const tradeValue = filing.shares * filing.price;
-    
-    // Mock logic for demo purposes - would parse actual SEC transaction codes in real implementation
-    if (tradeValue > 5000000) {
-      return Math.random() > 0.3 ? 'BUY' : 'SELL'; // Large trades more likely to be BUY
-    } else if (tradeValue > 1000000) {
-      return Math.random() > 0.4 ? 'BUY' : Math.random() > 0.5 ? 'SELL' : 'HOLD';
-    } else {
-      return Math.random() > 0.5 ? 'BUY' : 'HOLD';
-    }
-  }
-
-  // Simple significance score calculation
-  private calculateSignificanceScore(tradeValue: number): number {
-    // Score based on transaction size only (no AI)
-    let score = 30; // Base score
-    
-    if (tradeValue > 10000000) score += 40; // Giant trades
-    else if (tradeValue > 5000000) score += 30; // Very large trades  
-    else if (tradeValue > 1000000) score += 20; // Large trades
-    else if (tradeValue > 500000) score += 10; // Medium trades
-    
-    // Add some randomness for demo purposes
-    score += Math.floor(Math.random() * 20);
-    
-    return Math.min(100, Math.max(20, score));
-  }
 
   private extractCompanyName(title: string): string {
     const match = title.match(/^([^(]+)/);

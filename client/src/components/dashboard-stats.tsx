@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, AlertCircle, Target } from "lucide-react";
+import { TrendingUp, DollarSign } from "lucide-react";
 import type { TradingStats } from "@shared/schema";
 
 interface DashboardStatsProps {
@@ -31,20 +31,6 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
       change: "+8.2%",
       positive: true
     },
-    {
-      title: "Hot Signals",
-      value: stats.hotBuys.toString(),
-      icon: AlertCircle,
-      change: "+24%",
-      positive: true
-    },
-    {
-      title: "AI Confidence",
-      value: `${stats.avgSignificance}%`,
-      icon: Target,
-      change: "+3.1%",
-      positive: true
-    }
   ];
 
   return (

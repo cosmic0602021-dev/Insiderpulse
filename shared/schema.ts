@@ -20,8 +20,8 @@ export const insiderTrades = pgTable("insider_trades", {
   totalValue: real("total_value").notNull(),
   filedDate: timestamp("filed_date").notNull(),
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
-  significanceScore: integer("significance_score").notNull(),
-  signalType: text("signal_type").notNull(), // BUY, SELL, HOLD
+  significanceScore: integer("significance_score").notNull().default(50), // Default neutral score
+  signalType: text("signal_type").notNull().default('HOLD'), // Default neutral signal
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   // Add index on accessionNumber for fast duplicate checking
@@ -35,6 +35,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   id: true,
+  significanceScore: true, // Use default value
+  signalType: true, // Use default value
   createdAt: true,
 });
 
@@ -55,8 +57,6 @@ export type AIAnalysis = {
 export type TradingStats = {
   todayTrades: number;
   totalVolume: number;
-  hotBuys: number;
-  avgSignificance: number;
 };
 
 // Stock price information
