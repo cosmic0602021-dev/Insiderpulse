@@ -98,10 +98,14 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
 
         {trade.aiAnalysis && (
           <div className="mb-3">
-            <div className="text-xs text-muted-foreground mb-1">AI Insights</div>
+            <div className="text-xs text-muted-foreground mb-1">분석 결과</div>
             <div className="space-y-1">
               {trade.aiAnalysis.key_insights.slice(0, 2).map((insight, index) => (
-                <div key={index} className="text-xs bg-muted/50 rounded px-2 py-1">
+                <div key={index} className={`text-xs rounded px-2 py-1 ${
+                  insight.includes('⚠️') || insight.includes('임시') ? 
+                  'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800' : 
+                  'bg-muted/50'
+                }`}>
                   {insight}
                 </div>
               ))}

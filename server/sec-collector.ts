@@ -268,12 +268,12 @@ Consider factors like transaction size, timing, company performance, and market 
       significance_score: Math.min(100, score),
       signal_type: signalType,
       key_insights: [
-        isLargeTrade ? 'Large institutional transaction detected' : 'Moderate transaction volume',
-        isTechStock ? 'Technology sector momentum' : 'Standard market activity',
-        score > 75 ? 'Strong insider confidence signal' : 'Mixed market indicators'
+        '⚠️ 임시 분석 결과 (AI 분석 대기 중)',
+        isLargeTrade ? '대량 거래 감지됨' : '일반적 거래량',
+        isTechStock ? '기술주 섹터 모멘텀' : '표준 시장 활동'
       ],
       risk_level: riskLevel,
-      recommendation: `AI confidence: ${score}% - ${signalType === 'BUY' ? 'Positive outlook' : signalType === 'SELL' ? 'Exercise caution' : 'Monitor closely'}`
+      recommendation: `⚠️ 임시 분석 (신뢰도 ${score}%) - 실제 AI 분석 대기 중. ${signalType === 'BUY' ? '긍정적 전망' : signalType === 'SELL' ? '주의 필요' : '모니터링 권장'}`
     };
   }
 
