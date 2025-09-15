@@ -78,6 +78,13 @@ export default function LiveTrading() {
       case 'NEW_TRADE':
         const newTrade = lastMessage.data.trade;
         setTrades(prev => {
+          // Check for duplicates before adding
+          const exists = prev.find(trade => trade.id === newTrade.id);
+          if (exists) {
+            console.log('Duplicate trade received, skipping:', newTrade.id);
+            return prev; // Don't add duplicate
+          }
+          
           const updated = [newTrade, ...prev];
           return updated.slice(0, 100); // Keep latest 100 trades
         });
