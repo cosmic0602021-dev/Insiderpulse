@@ -2,7 +2,6 @@ import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import { storage } from './storage';
 import { broadcastUpdate } from './routes';
-import { aiAnalysisService } from './ai-analysis';
 import { SecCamoufoxClient } from './sec-camoufox-client.js';
 import type { InsertInsiderTrade } from '@shared/schema';
 
@@ -619,21 +618,10 @@ class SECDataCollector {
           verificationNotes = 'No ticker symbol available for market validation';
         }
         
-        // Generate AI analysis for the trade
-        console.log(`🧠 Generating AI analysis for ${filing.traderName} at ${filing.company}...`);
-        const aiResult = await aiAnalysisService.analyzeInsiderTrade({
-          companyName: filing.company,
-          ticker: filing.ticker || '',
-          traderName: filing.traderName,
-          traderTitle: filing.traderTitle,
-          tradeType: filing.tradeType,
-          shares: filing.shares,
-          pricePerShare: filing.price,
-          totalValue: tradeValue,
-          ownershipPercentage: filing.ownershipPercentage
-        });
+        // Simple trade processing without AI analysis
+        console.log(`📊 Processing trade data for ${filing.traderName} at ${filing.company}...`);
 
-        // Create insider trade record with AI-powered analysis and verification data
+        // Create insider trade record with verification data only
         const tradeData: InsertInsiderTrade = {
           accessionNumber: filing.accession,
           companyName: filing.company,
@@ -647,8 +635,8 @@ class SECDataCollector {
           ownershipPercentage: filing.ownershipPercentage,
           filedDate: new Date(filing.date),
           aiAnalysis: null, // Deprecated field
-          significanceScore: aiResult.significanceScore,
-          signalType: aiResult.signalType,
+          significanceScore: null, // No AI analysis
+          signalType: null, // No AI analysis
           // Add verification data
           isVerified: isVerified,
           verificationStatus: verificationStatus,
@@ -662,23 +650,16 @@ class SECDataCollector {
         const trade = await storage.upsertInsiderTrade(tradeData);
         
         const statusIcon = isVerified ? '✅' : '⚠️';
-        console.log(`${statusIcon} Trade processed with verification: ${filing.tradeType} - ${filing.traderName} (${filing.traderTitle}) at ${filing.company}`);
-        console.log(`   💡 AI Signal: ${aiResult.signalType} (Score: ${aiResult.significanceScore}/100)`);
+        console.log(`${statusIcon} Trade processed: ${filing.tradeType} - ${filing.traderName} (${filing.traderTitle}) at ${filing.company}`);
         console.log(`   📊 Value: ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
         console.log(`   🔍 Verification: ${verificationStatus}${priceVariance ? ` (${priceVariance}% variance)` : ''}`);
         
         // Only broadcast verified trades to WebSocket clients
         if (isVerified) {
           broadcastUpdate('NEW_TRADE', {
-            trade: trade,
-            aiInsights: {
-              significanceScore: aiResult.significanceScore,
-              signalType: aiResult.signalType,
-              keyInsights: aiResult.keyInsights,
-              riskLevel: aiResult.riskLevel,
-              recommendation: aiResult.recommendation
-            }
+            trade: trade
           });
+          console.log(`   📡 Trade broadcasted to WebSocket clients`);
         } else {
           console.log(`   🚫 Trade not broadcasted - verification failed`);
         }

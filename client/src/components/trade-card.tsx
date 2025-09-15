@@ -65,7 +65,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-sm" data-testid="company-name">
+              <h3 className="text-sm font-semibold text-foreground" data-testid="company-name">
                 {trade.companyName}
               </h3>
               {trade.ticker && (
@@ -80,7 +80,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
                   {trade.traderName}
                 </div>
                 {trade.traderTitle && (
-                  <div className="text-xs text-muted-foreground" data-testid="trader-title">
+                  <div className="text-xs font-normal text-muted-foreground" data-testid="trader-title">
                     {trade.traderTitle}
                   </div>
                 )}
@@ -102,24 +102,24 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
         
         <div className="grid grid-cols-2 gap-4 mb-3">
           <div>
-            <div className="text-xs text-muted-foreground">{t('tradeCard.shares')}</div>
-            <div className="text-sm font-mono" data-testid="shares">
+            <div className="text-xs font-medium text-muted-foreground">{t('tradeCard.shares')}</div>
+            <div className="text-sm font-mono text-foreground" data-testid="shares">
               {trade.shares.toLocaleString()}
             </div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">{t('tradeCard.avgPrice')}</div>
-            <div className="text-sm font-mono" data-testid="price-per-share">
+            <div className="text-xs font-medium text-muted-foreground">{t('tradeCard.avgPrice')}</div>
+            <div className="text-sm font-mono text-foreground" data-testid="price-per-share">
               ${trade.pricePerShare.toFixed(2)}
             </div>
           </div>
           <div className="col-span-2">
-            <div className="text-xs text-muted-foreground">{t('tradeCard.totalValue')}</div>
-            <div className="text-lg font-bold" data-testid="total-value">
+            <div className="text-xs font-medium text-muted-foreground">{t('tradeCard.totalValue')}</div>
+            <div className="text-lg font-bold text-foreground" data-testid="total-value">
               {formatCurrency(trade.totalValue)}
             </div>
             {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-xs font-normal text-muted-foreground mt-1">
                 {trade.ownershipPercentage}% {t('tradeCard.ownership')}
               </div>
             )}
