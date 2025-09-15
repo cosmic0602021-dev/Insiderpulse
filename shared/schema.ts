@@ -17,7 +17,8 @@ export const insiderTrades = pgTable("insider_trades", {
   ticker: text("ticker"),
   traderName: text("trader_name").notNull().default("Unknown Trader"),
   traderTitle: text("trader_title").default(""),
-  tradeType: text("trade_type").notNull().default("BUY"), // BUY, SELL, or TRANSFER
+  tradeType: text("trade_type").notNull().default("BUY"), // All SEC Form 4 codes: P,S,A,M,G,F,X,C,W,U,D
+  transactionCode: text("transaction_code"), // Original SEC transaction code (P,S,A,M,G,F,X,C,W,U,D)
   shares: integer("shares").notNull(),
   pricePerShare: real("price_per_share").notNull(),
   totalValue: real("total_value").notNull(),
@@ -50,7 +51,8 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
 }).extend({
   traderName: z.string().optional(),
   traderTitle: z.string().optional(),
-  tradeType: z.enum(['BUY', 'SELL', 'TRANSFER']).optional(),
+  tradeType: z.enum(['BUY', 'SELL', 'TRANSFER', 'OPTION_EXERCISE', 'GRANT', 'GIFT', 'AWARD', 'TAX', 'CONVERSION', 'INHERIT', 'DISPOSITION', 'OTHER']).optional(),
+  transactionCode: z.string().optional(), // Original SEC transaction code
   ownershipPercentage: z.number().optional(),
   significanceScore: z.number().optional(), // Allow override of default
   signalType: z.enum(['BUY', 'SELL', 'HOLD']).optional(), // Allow override of default

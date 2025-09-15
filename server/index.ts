@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { stockPriceService } from "./stock-price-service";
 import './sec-collector'; // Initialize SEC data collector
+import { startupBackfillManager } from './startup-backfill';
 
 const execAsync = promisify(exec);
 
@@ -53,6 +54,17 @@ app.use((req, res, next) => {
   }
 
   const server = await registerRoutes(app);
+
+  // 🚀 STARTUP BACKFILL - Ensure complete 30-day data coverage
+  console.log('🔄 Starting comprehensive startup backfill...');
+  setTimeout(async () => {
+    try {
+      await startupBackfillManager.performStartupBackfill();
+      console.log('✅ Startup backfill completed successfully');
+    } catch (error) {
+      console.error('❌ Startup backfill failed, continuing with existing data:', error);
+    }
+  }, 5000); // Wait 5 seconds after server start to allow systems to stabilize
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

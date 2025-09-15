@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertInsiderTradeSchema } from "@shared/schema";
 import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
+import { protectAdminEndpoint } from "./security-middleware";
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -137,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Trigger historical data collection for a ticker (admin endpoint)
-  app.post('/api/stocks/:ticker/history/collect', async (req, res) => {
+  app.post('/api/stocks/:ticker/history/collect', protectAdminEndpoint, async (req, res) => {
     try {
       const ticker = req.params.ticker.toUpperCase();
       const period = (req.body.period as string) || '1y';
@@ -209,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for historical data collection
-  app.post('/api/admin/collect/historical', async (req, res) => {
+  app.post('/api/admin/collect/historical', protectAdminEndpoint, async (req, res) => {
     try {
       const months = parseInt(req.body.months) || 6;
       
@@ -243,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/collect/status', async (req, res) => {
+  app.get('/api/admin/collect/status', protectAdminEndpoint, async (req, res) => {
     try {
       const { historicalCollector } = await import('./sec-historical-collector');
       const progress = historicalCollector.getProgress();
@@ -259,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Finviz data collection endpoints
-  app.post('/api/admin/collect/finviz', async (req, res) => {
+  app.post('/api/admin/collect/finviz', protectAdminEndpoint, async (req, res) => {
     try {
       const limit = parseInt(req.body.limit) || 100;
       
@@ -292,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // MarketBeat data collection endpoint
-  app.post('/api/admin/collect/marketbeat', async (req, res) => {
+  app.post('/api/admin/collect/marketbeat', protectAdminEndpoint, async (req, res) => {
     try {
       const limit = parseInt(req.body.limit) || 100;
       
@@ -325,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // OpenInsider data collection endpoint - PRIMARY SOURCE
-  app.post('/api/admin/collect/openinsider', async (req, res) => {
+  app.post('/api/admin/collect/openinsider', protectAdminEndpoint, async (req, res) => {
     try {
       const limit = parseInt(req.body.limit) || 150;
       
@@ -359,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auto scheduler management endpoints
-  app.post('/api/admin/scheduler/start', async (req, res) => {
+  app.post('/api/admin/scheduler/start', protectAdminEndpoint, async (req, res) => {
     try {
       const { autoScheduler } = await import('./auto-scheduler');
       autoScheduler.start();
@@ -380,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/scheduler/stop', async (req, res) => {
+  app.post('/api/admin/scheduler/stop', protectAdminEndpoint, async (req, res) => {
     try {
       const { autoScheduler } = await import('./auto-scheduler');
       autoScheduler.stop();
@@ -401,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/scheduler/status', async (req, res) => {
+  app.get('/api/admin/scheduler/status', protectAdminEndpoint, async (req, res) => {
     try {
       const { autoScheduler } = await import('./auto-scheduler');
       const status = autoScheduler.getStatus();
@@ -422,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Manual collection triggers through scheduler
-  app.post('/api/admin/scheduler/collect/openinsider', async (req, res) => {
+  app.post('/api/admin/scheduler/collect/openinsider', protectAdminEndpoint, async (req, res) => {
     try {
       const limit = parseInt(req.body.limit) || 100;
       
@@ -446,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/scheduler/collect/marketbeat', async (req, res) => {
+  app.post('/api/admin/scheduler/collect/marketbeat', protectAdminEndpoint, async (req, res) => {
     try {
       const limit = parseInt(req.body.limit) || 50;
       
