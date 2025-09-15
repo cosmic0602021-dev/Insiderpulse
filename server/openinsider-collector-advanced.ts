@@ -318,12 +318,29 @@ class AdvancedOpenInsiderCollector {
 
       console.log(`📊 Processing ${rowMatches.length} rows from OpenInsider table`);
 
+      // Extract header mapping from first row (debug raw header)
+      console.log('🔍 DEBUG: Raw first row HTML:', rowMatches[0].substring(0, 500) + '...');
+      const headerCells = this.extractCellTexts(rowMatches[0]);
+      console.log('🔍 DEBUG: Extracted header cells:', headerCells);
+      const headerMap = this.buildHeaderMapping(rowMatches[0]);
+      console.log('🗺️ Built header mapping:', headerMap);
+
       // Skip header rows and process data rows
       for (let i = 1; i < rowMatches.length; i++) {
         try {
-          const trade = this.parseAdvancedRow(rowMatches[i]);
+          const trade = this.parseAdvancedRow(rowMatches[i], headerMap);
+          console.log(`🎯 Trade parsing result for row ${i}:`, trade ? 'SUCCESS' : 'FAILED');
           if (trade) {
+            console.log(`📊 Trade created:`, {
+              ticker: trade.ticker,
+              filingDate: trade.filingDate,
+              tradeDate: trade.tradeDate,
+              value: trade.value,
+              transactionCode: trade.transactionCode
+            });
             trades.push(trade);
+          } else {
+            console.log(`❌ Trade parsing failed for row ${i} - parseAdvancedRow returned null`);
           }
         } catch (error) {
           console.log(`⚠️ Failed to parse row ${i}:`, error);
@@ -340,10 +357,52 @@ class AdvancedOpenInsiderCollector {
   }
 
   /**
-   * 🔍 PARSE ADVANCED ROW WITH ALL TRANSACTION CODES
-   * Extracts all data including real SEC accessionNumber
+   * 🗺️ BUILD HEADER MAPPING FROM TABLE HEADER
+   * Creates column index mapping for flexible data extraction
    */
-  private parseAdvancedRow(row: string): OpenInsiderTrade | null {
+  private buildHeaderMapping(headerRow: string): Record<string, number> {
+    const headerMap: Record<string, number> = {};
+    const cells = this.extractCellTexts(headerRow);
+    
+    cells.forEach((cell, index) => {
+      const normalized = cell.toLowerCase().trim();
+      
+      // Map common header variations to standard names
+      if (normalized.includes('filing') && normalized.includes('date')) {
+        headerMap['filing_date'] = index;
+      } else if (normalized.includes('trade') && normalized.includes('date')) {
+        headerMap['trade_date'] = index;
+      } else if (normalized.includes('ticker') || normalized.includes('symbol')) {
+        headerMap['ticker'] = index;
+      } else if (normalized.includes('company')) {
+        headerMap['company'] = index;
+      } else if (normalized.includes('insider') || normalized.includes('name')) {
+        headerMap['insider'] = index;
+      } else if (normalized.includes('title') || normalized.includes('position')) {
+        headerMap['title'] = index;
+      } else if (normalized.includes('trans') || normalized.includes('type')) {
+        headerMap['transaction'] = index;
+      } else if (normalized.includes('price')) {
+        headerMap['price'] = index;
+      } else if (normalized.includes('qty') || normalized.includes('shares') || normalized.includes('quantity')) {
+        headerMap['quantity'] = index;
+      } else if (normalized.includes('owned')) {
+        headerMap['owned'] = index;
+      } else if (normalized.includes('δown') || normalized.includes('delta') || normalized.includes('change')) {
+        headerMap['delta_own'] = index;
+      } else if (normalized.includes('value')) {
+        headerMap['value'] = index;
+      }
+    });
+    
+    return headerMap;
+  }
+
+  /**
+   * 🔍 PARSE ADVANCED ROW WITH HEADER MAPPING
+   * Extracts all data using flexible column mapping
+   */
+  private parseAdvancedRow(row: string, headerMap?: Record<string, number>): OpenInsiderTrade | null {
     try {
       const cells = this.extractCellTexts(row);
       
@@ -354,22 +413,42 @@ class AdvancedOpenInsiderCollector {
         return null; // Not enough data
       }
 
+      // Declare variables in outer scope
+      let filingDate: string;
+      let tradeDate: string;
+      let transactionCode: string;
       let cellIndex = 0;
       
-      // Handle optional checkbox column
-      if (cells[0]?.trim().match(/^[DMXABCGFW]?$/)) {
-        cellIndex = 0; // Transaction code might be in first column
-      }
+      // Use header mapping if available, otherwise fallback to legacy logic
+      if (headerMap && Object.keys(headerMap).length > 0) {
+        console.log(`🎯 Using header mapping with ${Object.keys(headerMap).length} mapped columns`);
+        
+        // Extract data using header mapping
+        filingDate = this.parseDate(cells[headerMap['filing_date']]) || new Date().toISOString().split('T')[0];
+        tradeDate = this.parseDate(cells[headerMap['trade_date']]) || filingDate;
+        
+        // Extract transaction code from the raw row
+        transactionCode = this.extractTransactionCode(row, cells[0] || '');
+        
+        console.log(`📅 Dates via mapping: filing=${filingDate}, trade=${tradeDate}`);
+      } else {
+        console.log(`⚠️ No header mapping available, using legacy offsets`);
+        
+        // Handle optional checkbox column
+        if (cells[0]?.trim().match(/^[DMXABCGFW]?$/)) {
+          cellIndex = 0; // Transaction code might be in first column
+        }
 
-      // Extract transaction code (D, M, X, etc.)
-      const transactionCode = this.extractTransactionCode(row, cells[cellIndex]);
-      
-      if (cells[cellIndex]?.includes('Filing Date')) {
-        cellIndex = 1; // Skip header row
-      }
+        // Extract transaction code (D, M, X, etc.)
+        transactionCode = this.extractTransactionCode(row, cells[cellIndex]);
+        
+        if (cells[cellIndex]?.includes('Filing Date')) {
+          cellIndex = 1; // Skip header row
+        }
 
-      const filingDate = this.parseDate(cells[cellIndex]) || new Date().toISOString().split('T')[0];
-      const tradeDate = this.parseDate(cells[cellIndex + 1]) || filingDate;
+        filingDate = this.parseDate(cells[cellIndex]) || new Date().toISOString().split('T')[0];
+        tradeDate = this.parseDate(cells[cellIndex + 1]) || filingDate;
+      }
       
       // First try to extract ticker from raw HTML (most reliable)
       const htmlTicker = this.extractTickerFromRow(row);
@@ -393,29 +472,68 @@ class AdvancedOpenInsiderCollector {
         console.log(`❌ No ticker found, skipping row`);
         return null;
       }
-
-      const companyName = this.extractCompanyName(cells[cellIndex + 3], ticker);
-      const insiderName = this.cleanText(cells[cellIndex + 4]);
-      if (!insiderName) return null;
-
-      const title = this.cleanText(cells[cellIndex + 5]) || 'Executive';
       
+      console.log(`🔍 PARSING DEBUG: ticker=${ticker}, filingDate=${filingDate}, tradeDate=${tradeDate}`);
+
+      // Extract all fields using header mapping when available
+      let companyName: string;
+      let insiderName: string;
+      let title: string;
+      let price: number;
+      let quantity: number;
+      let owned: number;
+      let deltaOwn: string;
+      let value: number;
+
+      if (headerMap && Object.keys(headerMap).length > 0) {
+        // Use header mapping for ALL fields
+        companyName = this.extractCompanyName(cells[headerMap['company']] || '', ticker);
+        insiderName = this.cleanText(cells[headerMap['insider']] || '') || 
+                     this.cleanText(cells[5]) || 'Unknown'; // Fallback to legacy position
+        title = this.cleanText(cells[headerMap['title']] || '') || 
+                this.cleanText(cells[6]) || 'Executive'; // Fallback to legacy position
+        price = this.parsePrice(cells[headerMap['price']] || '');
+        quantity = this.parseNumber(cells[headerMap['quantity']] || '');
+        owned = this.parseNumber(cells[headerMap['owned']] || '');
+        deltaOwn = this.cleanText(cells[headerMap['delta_own']] || '') || '';
+        value = this.parseValue(cells[headerMap['value']] || '');
+        
+        console.log(`🎯 HEADER MAPPING: company[${headerMap['company']}]='${cells[headerMap['company']]?.substring(0,30)}', price[${headerMap['price']}]='${cells[headerMap['price']]}', qty[${headerMap['quantity']}]='${cells[headerMap['quantity']]}'`);
+      } else {
+        // Legacy offset access (fallback)
+        companyName = this.extractCompanyName(cells[cellIndex + 3], ticker);
+        insiderName = this.cleanText(cells[cellIndex + 4]);
+        title = this.cleanText(cells[cellIndex + 5]) || 'Executive';
+        price = this.parsePrice(cells[cellIndex + 7]);
+        quantity = this.parseNumber(cells[cellIndex + 8]);
+        owned = this.parseNumber(cells[cellIndex + 9]);
+        deltaOwn = this.cleanText(cells[cellIndex + 10]) || '';
+        value = this.parseValue(cells[cellIndex + 11]);
+      }
+
+      console.log(`🔍 PARSING: insiderName='${insiderName}', price=${price}, quantity=${quantity}, value=${value}`);
+      
+      if (!insiderName) {
+        console.log(`❌ FAILED: No insider name found`);
+        return null;
+      }
+
       // Parse trade type from transaction code
       const tradeType = this.parseTradeTypeFromCode(transactionCode);
-      if (!tradeType) return null;
+      if (!tradeType) {
+        console.log(`❌ FAILED: No trade type found from transactionCode='${transactionCode}'`);
+        return null;
+      }
 
-      const price = this.parsePrice(cells[cellIndex + 7]);
-      const quantity = this.parseNumber(cells[cellIndex + 8]);
-      if (!quantity) return null;
-
-      const owned = this.parseNumber(cells[cellIndex + 9]);
-      const deltaOwn = this.cleanText(cells[cellIndex + 10]) || '';
-      const value = this.parseValue(cells[cellIndex + 11]);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        console.log(`❌ FAILED: Invalid quantity=${quantity}`);
+        return null;
+      }
 
       // Extract SEC filing URL (CRITICAL for real accessionNumber)
       const secUrl = this.extractSecUrl(row);
       if (!secUrl) {
-        console.log(`⚠️ No SEC URL found for ${ticker} - ${insiderName} - proceeding without verification`);
+        console.log(`⚠️ No SEC URL found for ${ticker} - ${insiderName || 'unknown'} - proceeding without verification`);
       }
 
       // Extract real accession number from SEC URL
@@ -613,7 +731,8 @@ class AdvancedOpenInsiderCollector {
 
   // Helper methods (keeping existing ones that work well)
   private extractCellTexts(row: string): string[] {
-    const cellMatches = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+    // Match both <td> and <th> tags for proper header support
+    const cellMatches = row.match(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi);
     if (!cellMatches) return [];
     
     return cellMatches.map(cell => 
