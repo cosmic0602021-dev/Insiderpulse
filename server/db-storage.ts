@@ -343,6 +343,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(alerts.id, id));
   }
 
+  // Efficient duplicate checking methods
+  async existsByAccessionNumber(accessionNumber: string): Promise<boolean> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(insiderTrades)
+      .where(eq(insiderTrades.accessionNumber, accessionNumber));
+    return (result[0]?.count || 0) > 0;
+  }
+
+  async existsByAccessionNumbers(accessionNumbers: string[]): Promise<Set<string>> {
+    if (accessionNumbers.length === 0) {
+      return new Set();
+    }
+
+    const result = await db
+      .select({ accessionNumber: insiderTrades.accessionNumber })
+      .from(insiderTrades)
+      .where(inArray(insiderTrades.accessionNumber, accessionNumbers));
+    
+    return new Set(result.map(row => row.accessionNumber));
+  }
+
   // HOT/WARM/COLD Data Layer Methods
   async getHotTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
     const threeMonthsAgo = new Date();

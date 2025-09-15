@@ -44,6 +44,10 @@ export interface IStorage {
   deleteAlert(id: string): Promise<boolean>;
   triggerAlert(id: string): Promise<void>;
 
+  // Efficient duplicate checking
+  existsByAccessionNumber(accessionNumber: string): Promise<boolean>;
+  existsByAccessionNumbers(accessionNumbers: string[]): Promise<Set<string>>;
+
   // HOT/WARM/COLD Data Layer Management
   getHotTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
   getWarmTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
@@ -127,6 +131,7 @@ export class MemStorage implements IStorage {
       traderName: insertTrade.traderName || 'Unknown Trader',
       traderTitle: insertTrade.traderTitle || null,
       tradeType: insertTrade.tradeType || 'BUY',
+      transactionCode: insertTrade.transactionCode || null,
       ticker: insertTrade.ticker || null,
       aiAnalysis: insertTrade.aiAnalysis || null,
       significanceScore: insertTrade.significanceScore || 50,
@@ -301,6 +306,27 @@ export class MemStorage implements IStorage {
       alert.lastTriggered = new Date();
       this.alerts.set(id, alert);
     }
+  }
+
+  // Efficient duplicate checking methods
+  async existsByAccessionNumber(accessionNumber: string): Promise<boolean> {
+    const exists = Array.from(this.insiderTrades.values()).some(
+      trade => trade.accessionNumber === accessionNumber
+    );
+    return exists;
+  }
+
+  async existsByAccessionNumbers(accessionNumbers: string[]): Promise<Set<string>> {
+    const existingNumbers = new Set<string>();
+    const allTrades = Array.from(this.insiderTrades.values());
+    
+    for (const accessionNumber of accessionNumbers) {
+      if (allTrades.some(trade => trade.accessionNumber === accessionNumber)) {
+        existingNumbers.add(accessionNumber);
+      }
+    }
+    
+    return existingNumbers;
   }
 
   // HOT/WARM/COLD Data Layer Methods

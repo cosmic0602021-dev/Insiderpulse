@@ -82,7 +82,7 @@ class AdvancedOpenInsiderCollector {
         // For backfill mode: bypass duplicate filtering, process all trades
         let newTrades = trades;
         if (mode === 'incremental' && !bypassDuplicates) {
-          newTrades = this.filterNewTrades(trades);
+          newTrades = await this.filterNewTrades(trades);
         }
         
         console.log(`📊 Page ${page}: Found ${trades.length} trades, ${newTrades.length} new`);

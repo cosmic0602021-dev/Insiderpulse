@@ -6,6 +6,7 @@
 import type { Express } from "express";
 import { megaSecBulkCollector } from './mega-sec-bulk-collector';
 import { megaOpenInsiderScraper } from './mega-openinsider-scraper';
+import { openInsiderUltraScraper } from './openinsider-ultra-scraper';
 import { protectAdminEndpoint } from './security-middleware';
 
 export function registerMegaApiEndpoints(app: Express): void {
@@ -181,6 +182,7 @@ export function registerMegaApiEndpoints(app: Express): void {
     try {
       megaSecBulkCollector.pauseCollection();
       megaOpenInsiderScraper.pauseScraping();
+      openInsiderUltraScraper.pauseScraping();
       
       res.json({
         success: true,
@@ -194,6 +196,7 @@ export function registerMegaApiEndpoints(app: Express): void {
   app.post('/api/admin/mega/resume', protectAdminEndpoint, async (req, res) => {
     try {
       megaOpenInsiderScraper.resumeScraping();
+      openInsiderUltraScraper.resumeScraping();
       
       res.json({
         success: true,
@@ -212,6 +215,7 @@ export function registerMegaApiEndpoints(app: Express): void {
     try {
       const secProgress = megaSecBulkCollector.getProgress();
       const openinsiderProgress = megaOpenInsiderScraper.getProgress();
+      const ultraProgress = openInsiderUltraScraper.getProgress();
       
       res.json({
         systems: {
@@ -224,6 +228,12 @@ export function registerMegaApiEndpoints(app: Express): void {
             status: openinsiderProgress?.status || 'not_started', 
             progress: openinsiderProgress ? Math.round((openinsiderProgress.currentPage / openinsiderProgress.maxPagesToProcess) * 100) : 0,
             processedTrades: openinsiderProgress?.totalTradesProcessed || 0
+          },
+          ultraScraping: {
+            status: ultraProgress?.status || 'not_started',
+            progress: ultraProgress ? Math.round((ultraProgress.currentTargetIndex / ultraProgress.totalTargetsToProcess) * 100) : 0,
+            processedTrades: ultraProgress?.totalTradesProcessed || 0,
+            highValueTrades: ultraProgress?.highValueTrades || 0
           }
         },
         totalEstimatedCapacity: '500,000+ insider trades',
@@ -240,5 +250,103 @@ export function registerMegaApiEndpoints(app: Express): void {
     }
   });
 
-  console.log('🚀 Mega API endpoints registered successfully');
+  /**
+   * 🚀 ULTRA SCRAPING ENDPOINTS
+   * For collecting tens of thousands of insider trades
+   */
+  app.post('/api/admin/mega/ultra-scraping/start', protectAdminEndpoint, async (req, res) => {
+    try {
+      const options = req.body || {};
+      console.log('🚀 Starting OpenInsider Ultra Scraping...', options);
+      
+      // Start scraping in background (fire-and-forget pattern like other mega endpoints)
+      openInsiderUltraScraper.startUltraScraping(options);
+      
+      res.json({
+        success: true,
+        message: 'Ultra scraping started - targeting tens of thousands of trades',
+        estimatedCapacity: '50,000+ insider trades',
+        estimatedDuration: '1-3 hours',
+        expectedRecords: options.includeHistorical ? '50,000+ trades' : '10,000+ trades',
+        checkProgressAt: '/api/admin/mega/ultra-scraping/progress'
+      });
+    } catch (error) {
+      console.error('❌ Ultra scraping failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  app.get('/api/admin/mega/ultra-scraping/progress', protectAdminEndpoint, async (req, res) => {
+    try {
+      const progress = openInsiderUltraScraper.getProgress();
+      
+      if (!progress) {
+        return res.json({
+          status: 'not_started',
+          message: 'Ultra scraping has not been started'
+        });
+      }
+      
+      res.json({
+        status: progress.status,
+        progress: {
+          currentTarget: progress.currentTarget,
+          targetIndex: progress.currentTargetIndex,
+          totalTargets: progress.totalTargetsToProcess,
+          percentComplete: Math.round((progress.currentTargetIndex / progress.totalTargetsToProcess) * 100),
+          processedTrades: progress.totalTradesProcessed,
+          duplicatesSkipped: progress.duplicatesSkipped,
+          valueDistribution: {
+            highValue: progress.highValueTrades,
+            mediumValue: progress.mediumValueTrades,
+            lowValue: progress.lowValueTrades
+          },
+          performance: {
+            elapsedTime: progress.elapsedTime,
+            estimatedTimeRemaining: progress.estimatedTimeRemaining,
+            avgTradesPerMinute: progress.avgTradesPerMinute
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Failed to get ultra scraping progress:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  app.post('/api/admin/mega/ultra-scraping/pause', protectAdminEndpoint, async (req, res) => {
+    try {
+      openInsiderUltraScraper.pauseScraping();
+      res.json({ success: true, message: 'Ultra scraping paused' });
+    } catch (error) {
+      console.error('❌ Failed to pause ultra scraping:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  app.post('/api/admin/mega/ultra-scraping/resume', protectAdminEndpoint, async (req, res) => {
+    try {
+      openInsiderUltraScraper.resumeScraping();
+      res.json({ success: true, message: 'Ultra scraping resumed' });
+    } catch (error) {
+      console.error('❌ Failed to resume ultra scraping:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  console.log('🚀 Mega API endpoints registered successfully (with Ultra Scraping!)');
+  console.log('📊 Ultra Scraping: /api/admin/mega/ultra-scraping/*');
 }
