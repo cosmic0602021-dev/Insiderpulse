@@ -291,6 +291,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MarketBeat data collection endpoint
+  app.post('/api/admin/collect/marketbeat', async (req, res) => {
+    try {
+      const limit = parseInt(req.body.limit) || 100;
+      
+      console.log(`🔄 Admin trigger: Starting MarketBeat data collection (limit: ${limit})`);
+      
+      // Import MarketBeat collector with cache busting
+      const { marketBeatCollector, setBroadcaster } = await import(`./marketbeat-collector.ts?ts=${Date.now()}`);
+      
+      // Inject broadcaster to break circular dependency
+      setBroadcaster(broadcastUpdate);
+      
+      // Start collection
+      const processedCount = await marketBeatCollector.collectLatestTrades(limit);
+      
+      res.json({
+        success: true,
+        message: `MarketBeat collection completed`,
+        processedTrades: processedCount,
+        limit: limit,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to collect MarketBeat data:', error);
+      res.status(500).json({ 
+        error: 'Failed to collect MarketBeat data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 
