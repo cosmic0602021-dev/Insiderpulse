@@ -14,13 +14,14 @@ const SECSearchResultSchema = z.object({
     hits: z.array(z.object({
       _source: z.object({
         adsh: z.string(),
-        ciks: z.array(z.string()),
+        ciks: z.array(z.union([z.string(), z.number()])).transform(a => a.map(String)),
         display_names: z.array(z.string()),
-        file_num: z.string().optional(),
-        file_date: z.string(),
-        form: z.string(),
-        ticker: z.array(z.string()).optional()
-      })
+        file_num: z.union([z.string(), z.array(z.string())]).optional(),
+        file_date: z.union([z.string(), z.array(z.string())]).transform(v => Array.isArray(v) ? v[0] : v),
+        form: z.union([z.string(), z.array(z.string())]).transform(v => Array.isArray(v) ? v[0] : v),
+        ticker: z.array(z.string()).optional(),
+        tickers: z.array(z.string()).optional()
+      }).transform(s => ({ ...s, ticker: s.ticker ?? s.tickers ?? [] }))
     }))
   })
 });
@@ -210,7 +211,8 @@ export class HistoricalSecCollector {
     }
 
     // Try to get the XML filing
-    const xmlData = await this.getFilingXml(accessionNumber);
+    const cik = filing.ciks[0]; // Get CIK from filing data
+    const xmlData = await this.getFilingXml(accessionNumber, cik);
     if (!xmlData) {
       throw new Error(`Could not retrieve XML for ${accessionNumber}`);
     }
@@ -242,9 +244,12 @@ export class HistoricalSecCollector {
     }
   }
 
-  private async getFilingXml(accessionNumber: string): Promise<string | null> {
-    // Convert accession number format for URL
+  private async getFilingXml(accessionNumber: string, cik: string): Promise<string | null> {
+    // Convert accession number format for URL (remove dashes)
     const formattedAccession = accessionNumber.replace(/-/g, '');
+    
+    // Remove leading zeros from CIK for URL path
+    const trimmedCik = cik.replace(/^0+/, '') || '0';
     
     // Try common XML paths
     const xmlPaths = [
@@ -256,7 +261,7 @@ export class HistoricalSecCollector {
 
     for (const xmlPath of xmlPaths) {
       try {
-        const url = `https://www.sec.gov/Archives/edgar/data/${formattedAccession}/${xmlPath}`;
+        const url = `https://www.sec.gov/Archives/edgar/data/${trimmedCik}/${formattedAccession}/${xmlPath}`;
         console.log(`🔍 Trying XML path: ${url}`);
         
         const response = await this.httpClient.request({
