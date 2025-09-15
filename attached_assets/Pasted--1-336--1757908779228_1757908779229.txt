@@ -1,0 +1,283 @@
+# 로그 분석 및 문제 해결 체크리스트
+
+## 🔍 **1단계: 워크플로우 로그 분석 (336개)**
+
+### 찾아야 할 핵심 패턴들
+
+**에러 메시지 패턴**:
+```bash
+# 이런 메시지들을 찾아보세요
+ERROR: 
+FAILED:
+timeout:
+404:
+500:
+Connection refused
+Database error
+Parse error
+XML parsing failed
+SEC request blocked
+```
+
+**성공적인 데이터 처리 패턴**:
+```bash
+# 정상 작동 확인용
+"Successfully processed"
+"Inserted new trade"
+"Broadcasting to clients"
+"XML parsed successfully"
+```
+
+### 특히 주의깊게 볼 부분
+
+1. **SEC 데이터 수집 관련**:
+   - SEC API 호출 성공/실패
+   - XML 파싱 오류
+   - 403/404/429 HTTP 상태 코드
+
+2. **데이터베이스 관련**:
+   - PostgreSQL 연결 오류
+   - INSERT/SELECT 쿼리 실패
+   - 중복 데이터 처리
+
+3. **WebSocket 관련**:
+   - 클라이언트 연결/해제
+   - 브로드캐스트 실패
+
+## 🖥️ **2단계: 브라우저 콘솔 로그 분석 (55개)**
+
+### JavaScript 오류 패턴
+
+**React 관련 오류**:
+```javascript
+// 이런 에러들을 확인하세요
+"Cannot read property of undefined"
+"Map is not a function" 
+"Failed to fetch"
+"WebSocket connection failed"
+"Hydration error"
+"Component did not update"
+```
+
+**네트워크 오류**:
+```javascript
+// API 호출 관련
+"Failed to load resource"
+"CORS error"
+"429 Too Many Requests"
+"500 Internal Server Error"
+```
+
+**상태 관리 오류**:
+```javascript
+// 데이터 플로우 관련
+"State update on unmounted component"
+"Invalid hook call"
+"Maximum update depth exceeded"
+```
+
+## 📊 **3단계: 데이터베이스 진단 스크립트**
+
+### 즉시 실행할 SQL 쿼리들
+
+```sql
+-- 1. 기본 데이터 확인
+SELECT COUNT(*) as total_trades FROM insider_trades;
+
+-- 2. 최근 데이터 확인 (24시간)
+SELECT COUNT(*) as recent_trades 
+FROM insider_trades 
+WHERE filing_date >= NOW() - INTERVAL '24 hours';
+
+-- 3. 데이터 분포 확인
+SELECT 
+  DATE(filing_date) as date,
+  COUNT(*) as count
+FROM insider_trades 
+GROUP BY DATE(filing_date)
+ORDER BY date DESC
+LIMIT 7;
+
+-- 4. 중복 데이터 확인
+SELECT 
+  company_name, ticker, trader_name, filing_date,
+  COUNT(*) as duplicates
+FROM insider_trades
+GROUP BY company_name, ticker, trader_name, filing_date
+HAVING COUNT(*) > 1
+LIMIT 10;
+
+-- 5. NULL 값 확인
+SELECT 
+  COUNT(*) as total,
+  COUNT(company_name) as has_company,
+  COUNT(ticker) as has_ticker,
+  COUNT(total_value) as has_value
+FROM insider_trades;
+```
+
+## 🚀 **4단계: API 엔드포인트 상세 테스트**
+
+### 브라우저에서 직접 테스트
+
+```javascript
+// Console에서 실행할 테스트 코드
+
+// 1. 기본 API 호출
+fetch('/api/trades')
+  .then(res => {
+    console.log('Status:', res.status);
+    console.log('Headers:', res.headers);
+    return res.json();
+  })
+  .then(data => {
+    console.log('Data count:', data.length);
+    console.log('First trade:', data[0]);
+    console.log('All data:', data);
+  })
+  .catch(err => console.error('API Error:', err));
+
+// 2. WebSocket 연결 테스트
+const testWS = () => {
+  const ws = new WebSocket('ws://localhost:3000'); // 포트 확인 필요
+  
+  ws.onopen = () => console.log('WebSocket connected');
+  ws.onmessage = (event) => console.log('WS message:', event.data);
+  ws.onerror = (error) => console.error('WS error:', error);
+  ws.onclose = () => console.log('WebSocket closed');
+  
+  return ws;
+};
+
+const ws = testWS();
+
+// 3. 네트워크 탭 확인용
+console.log('현재 페이지 URL:', window.location.href);
+console.log('User Agent:', navigator.userAgent);
+```
+
+## 🔧 **5단계: 임시 디버깅 코드 추가**
+
+### 백엔드에 추가할 로깅
+
+```javascript
+// API 엔드포인트에 상세 로깅 추가
+app.get('/api/trades', async (req, res) => {
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] API 호출: /api/trades`);
+  
+  try {
+    // DB 연결 테스트
+    console.log('데이터베이스 연결 테스트 중...');
+    const connectionTest = await pool.query('SELECT NOW()');
+    console.log('DB 연결 성공:', connectionTest.rows[0]);
+    
+    // 실제 쿼리
+    console.log('거래 데이터 조회 중...');
+    const result = await pool.query(`
+      SELECT * FROM insider_trades 
+      ORDER BY filing_date DESC 
+      LIMIT 50
+    `);
+    
+    console.log(`조회 완료: ${result.rows.length}개 거래`);
+    
+    // 응답 전송
+    const responseTime = Date.now() - startTime;
+    console.log(`API 응답 시간: ${responseTime}ms`);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('API 오류 상세:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    
+    res.status(500).json({
+      error: 'Database error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+```
+
+### 프론트엔드에 추가할 디버깅
+
+```javascript
+// React 컴포넌트에 상세 로깅
+const TradeDashboard = () => {
+  const [trades, setTrades] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    console.log('컴포넌트 마운트됨, 데이터 로딩 시작');
+    fetchTrades();
+  }, []);
+  
+  const fetchTrades = async () => {
+    console.log('fetchTrades 시작');
+    setLoading(true);
+    
+    try {
+      console.log('API 호출 중...');
+      const response = await fetch('/api/trades');
+      
+      console.log('응답 수신:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
+      
+      const data = await response.json();
+      
+      console.log('데이터 파싱 완료:', {
+        isArray: Array.isArray(data),
+        length: data.length,
+        firstItem: data[0]
+      });
+      
+      setTrades(data);
+      console.log('상태 업데이트 완료');
+      
+    } catch (error) {
+      console.error('fetchTrades 오류:', error);
+    } finally {
+      setLoading(false);
+      console.log('로딩 상태 완료');
+    }
+  };
+  
+  console.log('렌더링:', { tradesCount: trades.length, loading });
+  
+  return (
+    <div>
+      {/* 렌더링 코드 */}
+    </div>
+  );
+};
+```
+
+## ⚡ **즉시 실행 우선순위**
+
+### 🔥 **최우선 (지금 당장)**
+1. **워크플로우 로그**에서 "ERROR", "FAILED", "404", "500" 검색
+2. **브라우저 콘솔 로그**에서 빨간색 에러 메시지 확인
+3. 데이터베이스에서 `SELECT COUNT(*) FROM insider_trades` 실행
+
+### 🚨 **2순위 (10분 내)**
+1. `/api/trades` URL 직접 접속해서 응답 확인
+2. 브라우저 Console에서 `fetch('/api/trades')` 실행
+3. Network 탭에서 실제 HTTP 요청/응답 확인
+
+### 📋 **3순위 (30분 내)**
+1. 위의 디버깅 코드 추가
+2. 서버 재시작 후 실시간 로그 모니터링
+3. 각 단계별 성공/실패 지점 정확히 파악
+
+---
+
+**로그 분석 결과를 공유해주시면 정확한 해결책을 즉시 제시하겠습니다!** 
+
+특히 **에러 메시지**나 **반복적으로 나타나는 패턴**이 있다면 바로 알려주세요.
