@@ -219,18 +219,20 @@ class SECDataCollector {
           
           // No additional delay needed - secHttpClient handles rate limiting
         } catch (error) {
-          if (error.message.includes('SEC_BLOCKED')) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('SEC_BLOCKED')) {
             console.log('🔴 SEC blocked - stopping collection cycle');
             break; // Stop processing more filings if blocked
           }
-          console.warn('Failed to process individual filing:', error.message);
+          console.warn('Failed to process individual filing:', errorMessage);
         }
       }
       
       return filings;
       
     } catch (error) {
-      if (error.message.includes('SEC_BLOCKED')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('SEC_BLOCKED')) {
         console.log('⚠️ SEC blocked - will retry after cooldown period');
         return []; // Return empty array instead of throwing
       }
@@ -275,7 +277,8 @@ class SECDataCollector {
           return result;
         }
       } catch (error) {
-        if (error.message.includes('SEC_BLOCKED')) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('SEC_BLOCKED')) {
           throw error; // Propagate blocking immediately
         }
         // Continue to next candidate if this path doesn't exist
@@ -287,7 +290,8 @@ class SECDataCollector {
     try {
       return await this.parseFilingPage(filingUrl, accessionNumber);
     } catch (parseError) {
-      console.warn(`Failed to parse filing ${accessionNumber} via all methods:`, parseError.message);
+      const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+      console.warn(`Failed to parse filing ${accessionNumber} via all methods:`, parseErrorMessage);
       return null;
     }
   }
@@ -480,21 +484,24 @@ class SECDataCollector {
 
     } catch (error) {
       // Fallback to less strict parsing if needed
-      if (error.message.includes('Unexpected') || error.message.includes('Non-whitespace')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Unexpected') || errorMessage.includes('Non-whitespace')) {
         try {
           console.log(`📄 Retrying XML parse with relaxed settings for ${accessionNumber}...`);
-          const xmlData = await parseStringPromise(error.data || '', {
+          const errorData = (error as any)?.data || '';
+          const xmlData = await parseStringPromise(errorData, {
             explicitArray: true,
             strict: false,
             trim: true
           });
           return this.parseForm4XML(xmlData, accessionNumber);
         } catch (retryError) {
-          console.warn(`⚠️ Failed to parse XML for ${accessionNumber} even with relaxed settings:`, retryError.message);
+          const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+          console.warn(`⚠️ Failed to parse XML for ${accessionNumber} even with relaxed settings:`, retryMessage);
         }
       }
       
-      console.warn(`⚠️ Failed to find/parse XML document for ${accessionNumber}:`, error.message);
+      console.warn(`⚠️ Failed to find/parse XML document for ${accessionNumber}:`, errorMessage);
       return null;
     }
   }
@@ -611,8 +618,9 @@ class SECDataCollector {
               console.log(`   ⚠️ No market data available for validation`);
             }
           } catch (error) {
-            verificationNotes = `Market validation error: ${error.message}`;
-            console.warn(`   ⚠️ Market validation failed: ${error.message}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            verificationNotes = `Market validation error: ${errorMessage}`;
+            console.warn(`   ⚠️ Market validation failed: ${errorMessage}`);
           }
         } else {
           verificationNotes = 'No ticker symbol available for market validation';
@@ -635,14 +643,14 @@ class SECDataCollector {
           ownershipPercentage: filing.ownershipPercentage,
           filedDate: new Date(filing.date),
           aiAnalysis: null, // Deprecated field
-          significanceScore: null, // No AI analysis
-          signalType: null, // No AI analysis
+          significanceScore: undefined, // No AI analysis
+          signalType: undefined, // No AI analysis
           // Add verification data
           isVerified: isVerified,
           verificationStatus: verificationStatus,
           verificationNotes: verificationNotes,
-          marketPrice: marketPrice,
-          priceVariance: priceVariance,
+          marketPrice: marketPrice || undefined,
+          priceVariance: priceVariance || undefined,
           secFilingUrl: filing.link
         };
 
