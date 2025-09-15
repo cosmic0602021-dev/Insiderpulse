@@ -1,4 +1,4 @@
-import { openInsiderCollector, setBroadcaster } from './openinsider-collector';
+import { advancedOpenInsiderCollector, setBroadcaster } from './openinsider-collector-advanced';
 import { marketBeatCollector, setBroadcaster as setMarketBeatBroadcaster } from './marketbeat-collector';
 import { broadcastUpdate } from './routes';
 
@@ -89,7 +89,7 @@ class AutoScheduler {
       console.log('🔄 [AUTO] Starting OpenInsider collection...');
       const startTime = Date.now();
       
-      const processedCount = await openInsiderCollector.collectLatestTrades(300); // INCREASED: Collect up to 300 latest trades
+      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 15, perPage: 100 }); // ADVANCED: Collect multiple pages for complete coverage
       
       const duration = Date.now() - startTime;
       console.log(`✅ [AUTO] OpenInsider collection completed in ${duration}ms`);
@@ -146,7 +146,7 @@ class AutoScheduler {
   // Manual trigger methods for testing/admin use
   async manualOpenInsiderRun(limit: number = 100): Promise<number> {
     console.log(`🔧 [MANUAL] Running OpenInsider collection (limit: ${limit})...`);
-    return await openInsiderCollector.collectLatestTrades(limit);
+    return await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: Math.ceil(limit/100), perPage: 100 });
   }
 
   async manualMarketBeatRun(limit: number = 50): Promise<number> {

@@ -155,8 +155,8 @@ class StartupBackfillManager {
       return true;
     }
 
-    if (coverage.totalTrades < 50) {
-      console.log(`🔴 Suspiciously low trade count (${coverage.totalTrades}) - backfill required`);
+    if (coverage.totalTrades < 2000) {
+      console.log(`🔴 Suspiciously low trade count (${coverage.totalTrades}) - comprehensive backfill required for complete coverage`);
       return true;
     }
 

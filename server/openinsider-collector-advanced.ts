@@ -38,7 +38,7 @@ interface OpenInsiderTrade {
  * ✅ Robust error handling and retry logic
  */
 class AdvancedOpenInsiderCollector {
-  private baseUrl = 'http://www.openinsider.com';
+  private baseUrl = 'https://www.openinsider.com';
 
   /**
    * 🎯 COMPLETE 30-DAY BACKFILL
@@ -146,8 +146,8 @@ class AdvancedOpenInsiderCollector {
           duplicateCount++;
           console.log(`⏭️ Page ${page}: All trades already processed (${duplicateCount} consecutive duplicate pages)`);
           
-          // If we get 2 consecutive pages of all duplicates, stop
-          if (duplicateCount >= 2) {
+          // If we get 5 consecutive pages of all duplicates, stop (increased threshold)
+          if (duplicateCount >= 5) {
             console.log(`✋ Stopping after ${duplicateCount} pages of duplicates`);
             break;
           }
@@ -201,14 +201,10 @@ class AdvancedOpenInsiderCollector {
    * Supports pagination, date filtering, and transaction type filtering
    */
   private buildUrl(page: number = 1, maxResults: number = 100): string {
+    // Simplified URL structure as recommended by architect
     const params = new URLSearchParams({
       'page': page.toString(),
-      'max': maxResults.toString(),
-      // Add date filtering for better performance
-      'fd': '30', // Last 30 days filter
-      'grp': '1', // Group by filing
-      'sortcol': '0', // Sort by filing date (newest first)
-      'sortorder': 'desc',
+      'max': maxResults.toString()
     });
     
     return `${this.baseUrl}/?${params.toString()}`;
@@ -278,25 +274,37 @@ class AdvancedOpenInsiderCollector {
         return trades;
       }
 
-      // Find the main insider trading table
+      // Find the main insider trading table using specific selector
       let mainTable: string | null = null;
       
-      for (const table of tableMatches) {
-        // Look for table with insider trading headers
-        if (table.includes('Filing Date') && 
-            table.includes('Trade Date') && 
-            table.includes('Ticker') &&
-            table.includes('Company Name') &&
-            table.includes('Insider Name') &&
-            table.includes('Value')) {
-          mainTable = table;
-          console.log('✅ Found main insider trading table');
-          break;
+      // Look for table#t or .tinytable class as per architect recommendation
+      const tinytableMatch = html.match(/<table[^>]*(?:id="t"|class="[^"]*tinytable[^"]*")[^>]*>([\s\S]*?)<\/table>/i);
+      
+      if (tinytableMatch) {
+        mainTable = tinytableMatch[0];
+        console.log('✅ Found main insider trading table with tinytable selector');
+      } else {
+        // Fallback to any table with insider trading headers
+        for (const table of tableMatches) {
+          if (table.includes('Filing Date') && 
+              table.includes('Trade Date') && 
+              table.includes('Ticker') &&
+              table.includes('Company Name') &&
+              table.includes('Insider Name') &&
+              table.includes('Value')) {
+            mainTable = table;
+            console.log('✅ Found main insider trading table via header fallback');
+            break;
+          }
         }
       }
 
       if (!mainTable) {
         console.log('⚠️ Could not find main insider trading table');
+        console.log('🔍 Available tables found:', tableMatches?.length || 0);
+        if (tableMatches && tableMatches.length > 0) {
+          console.log('🔍 First table preview:', tableMatches[0].substring(0, 200) + '...');
+        }
         return trades;
       }
 

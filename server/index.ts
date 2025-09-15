@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { stockPriceService } from "./stock-price-service";
 import './sec-collector'; // Initialize SEC data collector
+import './auto-scheduler'; // Initialize auto scheduler
 import { startupBackfillManager } from './startup-backfill';
 
 const execAsync = promisify(exec);
