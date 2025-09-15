@@ -60,8 +60,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertInsiderTradeSchema.parse(req.body);
       const trade = await storage.createInsiderTrade(validatedData);
       
-      // CRITICAL: Only broadcast verified trades to WebSocket clients
-      if (wss && trade.isVerified) {
+      // Broadcast all trades to WebSocket clients (verified and unverified)
+      if (wss) {
         const message = JSON.stringify({
           type: 'NEW_TRADE',
           data: trade

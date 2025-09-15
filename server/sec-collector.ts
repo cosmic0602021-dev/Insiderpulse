@@ -352,14 +352,23 @@ class SECDataCollector {
       const postTransaction = transaction.postTransactionAmounts?.[0] || {};
       
       const shares = parseInt(transactionAmounts.transactionShares?.[0]?.value?.[0] || '0');
-      const pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || '0');
+      let pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || '0');
       const acquiredDisposed = transactionAmounts.transactionAcquiredDisposedCode?.[0]?.value?.[0];
       const sharesOwned = parseInt(postTransaction.sharesOwnedFollowingTransaction?.[0]?.value?.[0] || '0');
       
-      // Validate price is reasonable (greater than 0 and less than $10,000 per share)
-      if (pricePerShare <= 0 || pricePerShare > 10000) {
-        console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
-        continue;
+      // Allow $0 price for transfer/conversion transactions (U code)
+      if (transactionCode === 'U') {
+        // For transfers, price can be $0 - use $1 as default for calculations
+        if (pricePerShare <= 0) {
+          pricePerShare = 1.0; // Default price for transfers
+          console.log(`   🔄 Transfer transaction - using default price $1`);
+        }
+      } else {
+        // For other transactions, require valid price
+        if (pricePerShare <= 0 || pricePerShare > 10000) {
+          console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
+          continue;
+        }
       }
       
       // Validate shares count
@@ -668,15 +677,11 @@ class SECDataCollector {
         console.log(`   📊 Value: ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
         console.log(`   🔍 Verification: ${verificationStatus}${priceVariance ? ` (${priceVariance}% variance)` : ''}`);
         
-        // Only broadcast verified trades to WebSocket clients
-        if (isVerified) {
-          broadcastUpdate('NEW_TRADE', {
-            trade: trade
-          });
-          console.log(`   📡 Trade broadcasted to WebSocket clients`);
-        } else {
-          console.log(`   🚫 Trade not broadcasted - verification failed`);
-        }
+        // Broadcast all trades to WebSocket clients (verified and unverified)
+        broadcastUpdate('NEW_TRADE', {
+          trade: trade
+        });
+        console.log(`   📡 Trade broadcasted to WebSocket clients`);
         
         // Delay to avoid overwhelming OpenAI API and SEC servers
         await new Promise(resolve => setTimeout(resolve, 2000));
