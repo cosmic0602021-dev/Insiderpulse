@@ -258,6 +258,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Finviz data collection endpoints
+  app.post('/api/admin/collect/finviz', async (req, res) => {
+    try {
+      const limit = parseInt(req.body.limit) || 100;
+      
+      console.log(`🔄 Admin trigger: Starting Finviz data collection (limit: ${limit})`);
+      
+      // Import Finviz collector with cache busting
+      const { finvizCollector, setBroadcaster } = await import(`./finviz-collector.ts?ts=${Date.now()}`);
+      
+      // Inject broadcaster to break circular dependency
+      setBroadcaster(broadcastUpdate);
+      
+      // Start collection
+      const processedCount = await finvizCollector.collectLatestTrades(limit);
+      
+      res.json({
+        success: true,
+        message: `Finviz collection completed`,
+        processedTrades: processedCount,
+        limit: limit,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to collect Finviz data:', error);
+      res.status(500).json({ 
+        error: 'Failed to collect Finviz data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 
