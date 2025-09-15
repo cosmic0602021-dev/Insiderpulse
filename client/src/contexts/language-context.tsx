@@ -460,7 +460,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.traderName': '거래자 이름',
     'liveTrading.minValue': '최소 값 ($)',
     'liveTrading.maxValue': '최대 값 ($)',
-    'liveTrading.liveFeed': '실시간 거래 피드',
+    'liveTrading.liveFeed': '최근 내부자 거래 (1개월치만 표시)',
     'liveTrading.tradesShown': '거래 표시됨',
     'liveTrading.noTrades': '거래가 없습니다',
     'liveTrading.adjustFilters': '필터를 조정해 보세요',
