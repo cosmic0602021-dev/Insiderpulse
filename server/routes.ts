@@ -324,13 +324,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Health check endpoint
-  app.get('/api/health', (req, res) => {
-    res.json({ 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      websocket: wss ? 'connected' : 'disconnected'
-    });
+  // OpenInsider data collection endpoint - PRIMARY SOURCE
+  app.post('/api/admin/collect/openinsider', async (req, res) => {
+    try {
+      const limit = parseInt(req.body.limit) || 150;
+      
+      console.log(`🔄 Admin trigger: Starting OpenInsider data collection (limit: ${limit})`);
+      
+      // Import OpenInsider collector with cache busting
+      const { openInsiderCollector, setBroadcaster } = await import(`./openinsider-collector.ts?ts=${Date.now()}`);
+      
+      // Inject broadcaster to break circular dependency
+      setBroadcaster(broadcastUpdate);
+      
+      // Start collection
+      const processedCount = await openInsiderCollector.collectLatestTrades(limit);
+      
+      res.json({
+        success: true,
+        message: `OpenInsider collection completed`,
+        processedTrades: processedCount,
+        limit: limit,
+        timestamp: new Date().toISOString(),
+        note: 'OpenInsider is the primary comprehensive data source'
+      });
+      
+    } catch (error) {
+      console.error('Failed to collect OpenInsider data:', error);
+      res.status(500).json({ 
+        error: 'Failed to collect OpenInsider data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Auto scheduler management endpoints
+  app.post('/api/admin/scheduler/start', async (req, res) => {
+    try {
+      const { autoScheduler } = await import('./auto-scheduler');
+      autoScheduler.start();
+      
+      res.json({
+        success: true,
+        message: 'Auto scheduler started',
+        status: autoScheduler.getStatus(),
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to start auto scheduler:', error);
+      res.status(500).json({ 
+        error: 'Failed to start auto scheduler',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/admin/scheduler/stop', async (req, res) => {
+    try {
+      const { autoScheduler } = await import('./auto-scheduler');
+      autoScheduler.stop();
+      
+      res.json({
+        success: true,
+        message: 'Auto scheduler stopped',
+        status: autoScheduler.getStatus(),
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to stop auto scheduler:', error);
+      res.status(500).json({ 
+        error: 'Failed to stop auto scheduler',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/scheduler/status', async (req, res) => {
+    try {
+      const { autoScheduler } = await import('./auto-scheduler');
+      const status = autoScheduler.getStatus();
+      
+      res.json({
+        success: true,
+        status,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to get scheduler status:', error);
+      res.status(500).json({ 
+        error: 'Failed to get scheduler status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Manual collection triggers through scheduler
+  app.post('/api/admin/scheduler/collect/openinsider', async (req, res) => {
+    try {
+      const limit = parseInt(req.body.limit) || 100;
+      
+      const { autoScheduler } = await import('./auto-scheduler');
+      const processedCount = await autoScheduler.manualOpenInsiderRun(limit);
+      
+      res.json({
+        success: true,
+        message: 'Manual OpenInsider collection completed via scheduler',
+        processedTrades: processedCount,
+        limit,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to run manual OpenInsider collection:', error);
+      res.status(500).json({ 
+        error: 'Failed to run manual OpenInsider collection',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/admin/scheduler/collect/marketbeat', async (req, res) => {
+    try {
+      const limit = parseInt(req.body.limit) || 50;
+      
+      const { autoScheduler } = await import('./auto-scheduler');
+      const processedCount = await autoScheduler.manualMarketBeatRun(limit);
+      
+      res.json({
+        success: true,
+        message: 'Manual MarketBeat collection completed via scheduler',
+        processedTrades: processedCount,
+        limit,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to run manual MarketBeat collection:', error);
+      res.status(500).json({ 
+        error: 'Failed to run manual MarketBeat collection',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Enhanced health check endpoint with scheduler status
+  app.get('/api/health', async (req, res) => {
+    try {
+      let schedulerStatus: any = { isRunning: false, error: 'Not loaded' };
+      
+      try {
+        const { autoScheduler } = await import('./auto-scheduler');
+        schedulerStatus = autoScheduler.getStatus();
+      } catch (error) {
+        schedulerStatus.error = 'Failed to load scheduler';
+      }
+      
+      res.json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        websocket: wss ? 'connected' : 'disconnected',
+        autoScheduler: schedulerStatus
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        status: 'error',
+        error: 'Health check failed',
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   const httpServer = createServer(app);

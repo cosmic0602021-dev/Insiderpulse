@@ -131,6 +131,7 @@ export class MemStorage implements IStorage {
       marketPrice: insertTrade.marketPrice || null,
       priceVariance: insertTrade.priceVariance || null,
       secFilingUrl: insertTrade.secFilingUrl || null,
+      ownershipPercentage: insertTrade.ownershipPercentage ?? null,
       createdAt: new Date()
     };
     this.insiderTrades.set(id, trade);
@@ -152,6 +153,7 @@ export class MemStorage implements IStorage {
         aiAnalysis: insertTrade.aiAnalysis || null,
         significanceScore: insertTrade.significanceScore || 50,
         signalType: insertTrade.signalType || 'HOLD',
+        ownershipPercentage: insertTrade.ownershipPercentage ?? null,
       };
       this.insiderTrades.set(existing.id, updatedTrade);
       return updatedTrade;
