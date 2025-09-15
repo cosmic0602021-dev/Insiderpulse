@@ -358,10 +358,13 @@ class SECDataCollector {
       
       // Allow $0 price for transfer/conversion transactions (U code)
       if (transactionCode === 'U') {
-        // For transfers, price can be $0 - use $1 as default for calculations
-        if (pricePerShare <= 0) {
-          pricePerShare = 1.0; // Default price for transfers
-          console.log(`   🔄 Transfer transaction - using default price $1`);
+        // For transfers, price can be $0 - this is legitimate for conversions/transfers
+        if (pricePerShare < 0 || pricePerShare > 10000) {
+          console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
+          continue;
+        }
+        if (pricePerShare === 0) {
+          console.log(`   🔄 Transfer transaction with $0 consideration (legitimate)`);
         }
       } else {
         // For other transactions, require valid price

@@ -13,7 +13,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get trading statistics (verified trades only by default)
   app.get('/api/stats', async (req, res) => {
     try {
-      const verifiedOnly = req.query.verified !== 'false'; // Default to true unless explicitly set to false
+      const verifiedOnly = req.query.verified === 'true'; // Default to false (show all trades) unless explicitly set to true
       const stats = await storage.getTradingStats(verifiedOnly);
       res.json(stats);
     } catch (error) {
@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
-      const verifiedOnly = req.query.verified !== 'false'; // Default to true unless explicitly set to false
+      const verifiedOnly = req.query.verified === 'true'; // Default to false (show all trades) unless explicitly set to true
       const fromDate = req.query.from as string;
       const toDate = req.query.to as string;
       const sortBy = (req.query.sortBy as 'createdAt' | 'filedDate') || 'filedDate';
