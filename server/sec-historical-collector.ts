@@ -165,46 +165,37 @@ export class HistoricalSecCollector {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
-    // SEC Full-Text Search API query
-    const searchQuery = {
-      query: {
-        bool: {
-          must: [
-            { term: { "form": "4" } }
-          ],
-          filter: [
-            {
-              range: {
-                "file_date": {
-                  gte: startDateStr,
-                  lte: endDateStr
-                }
-              }
-            }
-          ]
-        }
-      },
-      size: size,
-      from: from,
-      sort: [
-        { "file_date": { "order": "desc" } }
-      ]
-    };
-
-    const url = 'https://efts.sec.gov/LATEST/search-index';
-    
-    console.log(`🔍 Searching SEC filings: ${startDateStr} to ${endDateStr} (from: ${from}, size: ${size})`);
-
-    const response = await this.httpClient.request({
-      method: 'POST',
-      url: url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      data: JSON.stringify(searchQuery)
+    // Try SEC EDGAR search API with URL parameters approach
+    const queryParams = new URLSearchParams({
+      'dateRange': 'custom',
+      'startdt': startDateStr,
+      'enddt': endDateStr,
+      'forms': '4',
+      'from': from.toString(),
+      'size': size.toString()
     });
 
+    const url = `https://efts.sec.gov/LATEST/search-index?${queryParams.toString()}`;
+    
+    console.log(`🔍 Searching SEC filings: ${startDateStr} to ${endDateStr} (from: ${from}, size: ${size})`);
+    console.log(`🔍 [DEBUG] Search URL:`, url);
+
+    const response = await this.httpClient.request({
+      method: 'GET',
+      url: url,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'InsiderTrack Pro 1.0'
+      }
+    });
+
+    // Handle error responses from SEC API
+    if (response.data && response.data.error) {
+      console.log(`❌ SEC API Error: ${response.data.error}`);
+      throw new Error(`SEC API Error: ${response.data.error}`);
+    }
+
+    console.log(`✅ SEC API Success: Received ${response.data?.hits?.hits?.length || 0} filings`);
     return SECSearchResultSchema.parse(response.data);
   }
 
