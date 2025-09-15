@@ -613,9 +613,11 @@ class SECDataCollector {
                 verificationNotes = `Price validated against market data (variance: ${priceVariance}%)`;
                 console.log(`   ✅ Price verified - within acceptable range`);
               } else {
-                verificationStatus = 'FAILED';
-                verificationNotes = `Price significantly differs from market data (variance: ${priceVariance}%). Possible option exercise or award.`;
-                console.warn(`   ❌ Price verification failed - variance too high: ${priceVariance}%`);
+                // Still process trades with high variance (option exercises, awards, etc.)
+                isVerified = false;
+                verificationStatus = 'UNVERIFIED';
+                verificationNotes = `Price differs from market (variance: ${priceVariance}%). Likely option exercise, award, or special transaction.`;
+                console.log(`   ⚠️ Price variance high but processing anyway: ${priceVariance}%`);
               }
             } else {
               verificationNotes = 'Could not retrieve market data for validation';

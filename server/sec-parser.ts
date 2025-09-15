@@ -103,21 +103,36 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
     
     const transactionAmounts = transaction.transactionAmounts?.[0] || {};
     const shares = parseFloat(transactionAmounts.transactionShares?.[0]?.value?.[0] || transactionAmounts.transactionShares?.[0]);
-    const pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || transactionAmounts.transactionPricePerShare?.[0]);
+    let pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || transactionAmounts.transactionPricePerShare?.[0]);
     
     // Get transaction date
     const transactionDate = transaction.transactionDate?.[0]?.value?.[0] || transaction.transactionDate?.[0];
     
-    // Validate transaction data
-    if (isNaN(shares) || isNaN(pricePerShare) || shares <= 0 || pricePerShare <= 0) {
-      console.log(`   ⚠️ Invalid transaction data: shares=${shares}, price=${pricePerShare}`);
+    // Validate transaction data - allow $0 for transfer transactions (U code)
+    if (isNaN(shares) || shares <= 0) {
+      console.log(`   ⚠️ Invalid shares: ${shares}`);
       continue;
     }
     
-    // Additional validation - reasonable price range ($0.01 to $10,000)
-    if (pricePerShare < 0.01 || pricePerShare > 10000) {
-      console.log(`   ⚠️ Price per share out of reasonable range: $${pricePerShare}`);
-      continue;
+    // Allow $0 price for transfer/conversion transactions (U code)
+    if (transactionCode === 'U') {
+      // For transfers, price can be $0 - use $1 as default for calculations
+      if (isNaN(pricePerShare) || pricePerShare < 0) {
+        pricePerShare = 1.0; // Default price for transfers
+        console.log(`   🔄 Transfer transaction - using default price $1`);
+      }
+    } else {
+      // For other transactions, require valid price
+      if (isNaN(pricePerShare) || pricePerShare <= 0) {
+        console.log(`   ⚠️ Invalid price: $${pricePerShare}`);
+        continue;
+      }
+      
+      // Reasonable price range for non-transfer transactions
+      if (pricePerShare > 10000) {
+        console.log(`   ⚠️ Price too high: $${pricePerShare}`);
+        continue;
+      }
     }
     
     // Extract ownership information
