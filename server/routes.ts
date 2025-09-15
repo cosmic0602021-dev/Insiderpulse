@@ -292,6 +292,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OpenInsider data collection endpoint
+  app.post('/api/admin/openinsider', protectAdminEndpoint, async (req, res) => {
+    try {
+      const maxPages = parseInt(req.body.maxPages) || 15;
+      const perPage = parseInt(req.body.perPage) || 100;
+      
+      console.log(`🔄 Admin trigger: Starting OpenInsider data collection (maxPages: ${maxPages}, perPage: ${perPage})`);
+      
+      // Import OpenInsider collector with cache busting
+      const { advancedOpenInsiderCollector, setBroadcaster } = await import(`./openinsider-collector-advanced.ts?ts=${Date.now()}`);
+      
+      // Inject broadcaster to break circular dependency
+      setBroadcaster(broadcastUpdate);
+      
+      // Start collection
+      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages, perPage });
+      
+      res.json({
+        success: true,
+        message: `OpenInsider collection completed`,
+        processedTrades: processedCount,
+        maxPages: maxPages,
+        perPage: perPage,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Failed to collect OpenInsider data:', error);
+      res.status(500).json({ 
+        error: 'Failed to collect OpenInsider data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // MarketBeat data collection endpoint
   app.post('/api/admin/collect/marketbeat', protectAdminEndpoint, async (req, res) => {
     try {

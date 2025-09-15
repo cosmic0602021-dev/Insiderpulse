@@ -38,7 +38,7 @@ interface OpenInsiderTrade {
  * ✅ Robust error handling and retry logic
  */
 class AdvancedOpenInsiderCollector {
-  private baseUrl = 'https://www.openinsider.com';
+  private baseUrl = 'http://www.openinsider.com';
 
   /**
    * 🎯 COMPLETE 30-DAY BACKFILL
@@ -347,7 +347,10 @@ class AdvancedOpenInsiderCollector {
     try {
       const cells = this.extractCellTexts(row);
       
-      if (cells.length < 12) {
+      console.log(`🔍 Row has ${cells.length} cells:`, cells.slice(0, 8).map(c => c?.substring(0, 20) + '...'));
+      
+      if (cells.length < 8) {
+        console.log(`⚠️ Skipping row - insufficient cells (${cells.length} < 8)`);
         return null; // Not enough data
       }
 
@@ -368,8 +371,28 @@ class AdvancedOpenInsiderCollector {
       const filingDate = this.parseDate(cells[cellIndex]) || new Date().toISOString().split('T')[0];
       const tradeDate = this.parseDate(cells[cellIndex + 1]) || filingDate;
       
-      const ticker = this.extractTicker(cells[cellIndex + 2]);
-      if (!ticker) return null;
+      // First try to extract ticker from raw HTML (most reliable)
+      const htmlTicker = this.extractTickerFromRow(row);
+      let ticker = htmlTicker;
+      if (ticker) {
+        console.log(`🎯 Found ticker '${ticker}' via raw HTML`);
+      } else {
+        // Fallback: try multiple columns to find ticker
+        ticker = null;
+        for (let i = 0; i < Math.min(cells.length, 8); i++) {
+        const testTicker = this.extractTicker(cells[i]);
+        if (testTicker && testTicker.length >= 2 && testTicker.length <= 6) {
+          ticker = testTicker;
+          console.log(`\ud83c\udfaf Found ticker '${ticker}' in column ${i}: '${cells[i]?.substring(0, 30)}...'`);
+          break;
+        }
+      }
+      }
+      console.log(`🎯 Extracted ticker: '${ticker}' from cell: '${cells[cellIndex + 2]?.substring(0, 50)}'`);
+      if (!ticker) {
+        console.log(`❌ No ticker found, skipping row`);
+        return null;
+      }
 
       const companyName = this.extractCompanyName(cells[cellIndex + 3], ticker);
       const insiderName = this.cleanText(cells[cellIndex + 4]);
@@ -392,8 +415,7 @@ class AdvancedOpenInsiderCollector {
       // Extract SEC filing URL (CRITICAL for real accessionNumber)
       const secUrl = this.extractSecUrl(row);
       if (!secUrl) {
-        console.log(`⚠️ No SEC URL found for ${ticker} - ${insiderName}`);
-        return null; // Skip trades without SEC URLs
+        console.log(`⚠️ No SEC URL found for ${ticker} - ${insiderName} - proceeding without verification`);
       }
 
       // Extract real accession number from SEC URL
@@ -606,7 +628,45 @@ class AdvancedOpenInsiderCollector {
     );
   }
 
+  private extractTickerFromRow(row: string): string | null {
+    if (!row) return null;
+    
+    // Extract ticker from raw HTML anchor href
+    const hrefMatch = row.match(/<a[^>]+href=["']\/(?:quote\/)?([A-Z]{1,6})["'][^>]*>.*?<\/a>/i);
+    if (hrefMatch) {
+      const ticker = hrefMatch[1].toUpperCase();
+      // Exclude JavaScript keywords and invalid tickers
+      if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT'].includes(ticker)) {
+        return ticker;
+      }
+    }
+    
+    return null;
+  }
+
   private extractTicker(text: string): string | null {
+    if (!text) return null;
+    
+    // First try to extract ticker from href attribute (most reliable)
+    const hrefMatch = text.match(/href="\/([A-Z]{1,6})"/);
+    if (hrefMatch) {
+      const ticker = hrefMatch[1];
+      // Exclude JavaScript keywords and invalid tickers
+      if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT'].includes(ticker)) {
+        return ticker;
+      }
+    }
+    
+    // Fallback: extract from link text content between > and <
+    const linkTextMatch = text.match(/>([A-Z]{2,6})</);
+    if (linkTextMatch) {
+      const ticker = linkTextMatch[1];
+      if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT'].includes(ticker)) {
+        return ticker;
+      }
+    }
+    
+    // Last resort: use original patterns but exclude JS keywords
     const patterns = [
       /\b([A-Z]{1,5})\b/,
       /([A-Z]{2,5})/,
@@ -615,9 +675,13 @@ class AdvancedOpenInsiderCollector {
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
-        return match[1];
+        const ticker = match[1];
+        if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT', 'ONMOUSEOVER', 'ONMOUSEOUT'].includes(ticker)) {
+          return ticker;
+        }
       }
     }
+    
     return null;
   }
 
@@ -669,7 +733,7 @@ class AdvancedOpenInsiderCollector {
   }
 
   private extractSecUrl(row: string): string | undefined {
-    const urlMatch = row.match(/href=["']([^"']*sec\.gov[^"']*)["']/i);
+    const urlMatch = row.match(/href=["']([^"']*(?:sec\.gov|openinsider\.com|secform4\.com)[^"']*)["']/i);
     return urlMatch ? urlMatch[1] : undefined;
   }
 
