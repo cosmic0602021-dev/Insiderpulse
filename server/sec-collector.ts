@@ -340,10 +340,11 @@ class SECDataCollector {
       
       console.log(`   🔍 Transaction code: ${transactionCode}`);
       
-      // CRITICAL: Only process P (Purchase) and S (Sale) transactions
-      // Skip A (Award), M (Exercise), G (Gift), etc.
-      if (transactionCode !== 'P' && transactionCode !== 'S') {
-        console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not P or S)`);
+      // Process P, S, M, A, U transactions - expanded for more coverage
+      // P=BUY, S=SELL, M=BUY(option exercise), A=BUY(award), U=TRANSFER
+      const validCodes = ['P', 'S', 'M', 'A', 'U'];
+      if (!validCodes.includes(transactionCode)) {
+        console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not ${validCodes.join('/')})`);
         continue;
       }
       
@@ -373,7 +374,10 @@ class SECDataCollector {
       const ownershipPercentage = sharesOwned > 0 && shares > 0 ? 
         parseFloat(((shares / sharesOwned) * 100).toFixed(2)) : 0;
       
-      const tradeType: 'BUY' | 'SELL' = transactionCode === 'P' ? 'BUY' : 'SELL';
+      // Map transaction codes to trade types
+      const tradeType: 'BUY' | 'SELL' | 'TRANSFER' = 
+        transactionCode === 'P' || transactionCode === 'M' || transactionCode === 'A' ? 'BUY' :
+        transactionCode === 'S' ? 'SELL' : 'TRANSFER';
       const transactionDate = transaction.transactionDate?.[0]?.value?.[0];
       
       validTransaction = {

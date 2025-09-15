@@ -5,7 +5,7 @@ export interface ParsedTrade {
   ticker: string;
   traderName: string;
   traderTitle: string;
-  tradeType: 'BUY' | 'SELL';
+  tradeType: 'BUY' | 'SELL' | 'TRANSFER';
   shares: number;
   pricePerShare: number;
   totalValue: number;
@@ -93,10 +93,11 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
     
     console.log(`   🔍 Transaction code: ${transactionCode}`);
     
-    // CRITICAL: Only process P (Purchase) and S (Sale) transactions
-    // Skip A (Award), M (Exercise), G (Gift), etc.
-    if (transactionCode !== 'P' && transactionCode !== 'S') {
-      console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not P or S)`);
+    // Process P, S, M, A, U transactions - expanded for more coverage
+    // P=BUY, S=SELL, M=BUY(option exercise), A=BUY(award), U=TRANSFER
+    const validCodes = ['P', 'S', 'M', 'A', 'U'];
+    if (!validCodes.includes(transactionCode)) {
+      console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not ${validCodes.join('/')})`);
       continue;
     }
     
@@ -135,7 +136,8 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
       ticker: ticker || '', // Use ticker from SEC data
       traderName,
       traderTitle,
-      tradeType: transactionCode === 'P' ? 'BUY' as const : 'SELL' as const,
+      tradeType: (transactionCode === 'P' || transactionCode === 'M' || transactionCode === 'A') ? 'BUY' as const : 
+                (transactionCode === 'S') ? 'SELL' as const : 'TRANSFER' as const,
       shares: Math.round(shares),
       pricePerShare,
       totalValue,
@@ -150,7 +152,7 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
   }
   
   if (!validTransaction) {
-    console.log(`   ⚠️ No valid P/S transactions found for ${accessionNumber}`);
+    console.log(`   ⚠️ No valid P/S/M/A/U transactions found for ${accessionNumber}`);
   }
   
   return validTransaction;
