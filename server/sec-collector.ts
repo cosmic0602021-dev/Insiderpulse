@@ -200,9 +200,10 @@ class SECDataCollector {
       const result = await parseStringPromise(response);
       const entries = result.feed?.entry || [];
       
-      // Process fewer entries to reduce API load and avoid triggering WAF
+      // Process ALL RSS entries to collect complete insider trading data
       const filings = [];
-      for (const entry of entries.slice(0, 3)) { // Reduced from 8 to 3
+      console.log(`📊 Processing ${entries.length} RSS entries for complete coverage`);
+      for (const entry of entries) { // NO LIMIT - Process all available entries
         try {
           const filingUrl = entry.link?.[0]?.$.href;
           if (!filingUrl) continue;

@@ -102,20 +102,71 @@ class AdvancedOpenInsiderCollector {
   /**
    * 📊 INCREMENTAL COLLECTION
    * Collects latest trades since last run (used by scheduler)
+   * BACKWARD COMPATIBLE: Supports both old limit and new pagination
    */
-  async collectLatestTrades(limit: number = 300): Promise<number> {
-    console.log(`🔄 Starting incremental OpenInsider collection (limit: ${limit})...`);
+  async collectLatestTrades(limitOrOptions: number | { maxPages?: number; perPage?: number } = 10): Promise<number> {
+    // Handle backward compatibility
+    let maxPages: number;
+    let perPage: number;
+    
+    if (typeof limitOrOptions === 'number') {
+      // OLD API: treat as limit for single page (backward compatible)
+      if (limitOrOptions > 50) {
+        perPage = limitOrOptions;
+        maxPages = 1; // Single page for large limits (old behavior)
+        console.log(`🔄 Starting OpenInsider collection (LEGACY MODE: ${limitOrOptions} items on 1 page)...`);
+      } else {
+        // Small numbers treated as pages for power users
+        maxPages = limitOrOptions;
+        perPage = 100;
+        console.log(`🔄 Starting COMPLETE incremental OpenInsider collection (${maxPages} pages)...`);
+      }
+    } else {
+      // NEW API: object with options
+      maxPages = limitOrOptions.maxPages || 10;
+      perPage = limitOrOptions.perPage || 100;
+      console.log(`🔄 Starting COMPLETE incremental OpenInsider collection (max ${maxPages} pages)...`);
+    }
     
     try {
-      const { trades } = await this.collectPage(1, limit);
+      let totalProcessed = 0;
+      let page = 1;
+      let hasMore = true;
+      let duplicateCount = 0;
       
-      // Stop early if we encounter duplicate trades (already processed)
-      const newTrades = await this.filterNewTrades(trades);
+      while (hasMore && page <= maxPages) {
+        console.log(`📄 Processing incremental page ${page}...`);
+        
+        const { trades, hasNextPage } = await this.collectPage(page, perPage);
+        
+        // Stop early if we encounter too many duplicates (trades already processed)
+        const newTrades = await this.filterNewTrades(trades);
+        
+        if (newTrades.length === 0) {
+          duplicateCount++;
+          console.log(`⏭️ Page ${page}: All trades already processed (${duplicateCount} consecutive duplicate pages)`);
+          
+          // If we get 2 consecutive pages of all duplicates, stop
+          if (duplicateCount >= 2) {
+            console.log(`✋ Stopping after ${duplicateCount} pages of duplicates`);
+            break;
+          }
+        } else {
+          duplicateCount = 0; // Reset counter when we find new trades
+          const processed = await this.processTrades(newTrades);
+          totalProcessed += processed;
+          console.log(`✅ Page ${page}: Processed ${processed} new trades`);
+        }
+        
+        hasMore = hasNextPage && trades.length > 0;
+        page++;
+        
+        // Rate limiting - be respectful to OpenInsider
+        await this.sleep(2000);
+      }
       
-      const processed = await this.processTrades(newTrades);
-      
-      console.log(`✅ Incremental collection completed: ${processed} new trades`);
-      return processed;
+      console.log(`🎉 Incremental collection completed: ${totalProcessed} total new trades across ${page - 1} pages`);
+      return totalProcessed;
       
     } catch (error) {
       console.error('❌ Error in incremental collection:', error);
