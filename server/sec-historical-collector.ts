@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 import { SecHttpClient } from "./sec-http-client";
-import { parseSecForm4 } from "./sec-parser";
-import { validateAndAnalyzeTrade } from "./trade-analyzer";
+import { parseSecForm4 } from "./sec-parser.js";
+import { validateAndAnalyzeTrade } from "./trade-analyzer.js";
 import { z } from "zod";
 
 // SEC Full-Text Search API response schema

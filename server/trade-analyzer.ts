@@ -66,8 +66,8 @@ export async function validateAndAnalyzeTrade(
     isVerified,
     verificationStatus,
     verificationNotes,
-    marketPrice,
-    priceVariance
+    marketPrice: marketPrice ?? undefined,
+    priceVariance: priceVariance ?? undefined
   };
 
   return {
