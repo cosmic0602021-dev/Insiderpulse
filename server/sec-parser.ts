@@ -15,7 +15,7 @@ export interface ParsedTrade {
   secFilingUrl: string;
 }
 
-export function parseSecForm4(xmlData: string, accessionNumber: string): ParsedTrade[] {
+export async function parseSecForm4(xmlData: string, accessionNumber: string): Promise<ParsedTrade[]> {
   try {
     const parser = new xml2js.Parser({ 
       explicitArray: true,
@@ -41,7 +41,7 @@ export function parseSecForm4(xmlData: string, accessionNumber: string): ParsedT
           resolve([]);
         }
       });
-    }) as any; // Type assertion to work around Promise typing
+    });
 
   } catch (error) {
     console.error(`❌ Error parsing SEC Form 4 for ${accessionNumber}:`, error);

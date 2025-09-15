@@ -218,7 +218,7 @@ export class HistoricalSecCollector {
     }
 
     // Parse the Form 4
-    const trades = parseSecForm4(xmlData, accessionNumber);
+    const trades = await parseSecForm4(xmlData, accessionNumber);
     
     for (const trade of trades) {
       try {
