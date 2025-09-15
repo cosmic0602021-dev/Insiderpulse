@@ -8,6 +8,13 @@ export function setBroadcaster(fn: (event: string, data: any) => void) {
   broadcaster = fn;
 }
 
+export interface CollectionOptions {
+  mode: 'backfill' | 'incremental';
+  bypassDuplicates?: boolean;
+  maxPages?: number;
+  perPage?: number;
+}
+
 interface OpenInsiderTrade {
   ticker: string;
   companyName: string;
@@ -39,6 +46,74 @@ interface OpenInsiderTrade {
  */
 class AdvancedOpenInsiderCollector {
   private baseUrl = 'http://www.openinsider.com';
+
+  /**
+   * 🎯 MASSIVE COLLECTION WITH BACKFILL MODE
+   * Collects thousands of trades without early duplicate stopping
+   */
+  async collectMassive(options: CollectionOptions): Promise<number> {
+    const { mode, maxPages = 50, perPage = 100, bypassDuplicates = true } = options;
+    console.log(`🚀 Starting MASSIVE ${mode} collection (${maxPages} pages × ${perPage} trades)...`);
+    
+    let totalProcessed = 0;
+    let consecutiveEmptyPages = 0;
+    let consecutiveDuplicatePages = 0;
+    
+    for (let page = 1; page <= maxPages; page++) {
+      console.log(`📄 Processing ${mode} page ${page}...`);
+      
+      try {
+        const { trades } = await this.collectPageAdvanced(page, perPage);
+        
+        if (trades.length === 0) {
+          consecutiveEmptyPages++;
+          console.log(`📋 Page ${page}: Empty (${consecutiveEmptyPages} consecutive)`);
+          
+          // Stop on 2 consecutive empty pages
+          if (consecutiveEmptyPages >= 2) {
+            console.log(`⏹️ Stopping after ${consecutiveEmptyPages} consecutive empty pages`);
+            break;
+          }
+          continue;
+        } else {
+          consecutiveEmptyPages = 0;
+        }
+        
+        // For backfill mode: bypass duplicate filtering, process all trades
+        let newTrades = trades;
+        if (mode === 'incremental' && !bypassDuplicates) {
+          newTrades = this.filterNewTrades(trades);
+        }
+        
+        console.log(`📊 Page ${page}: Found ${trades.length} trades, ${newTrades.length} new`);
+        
+        // Process trades
+        const pageProcessed = await this.processTrades(newTrades);
+        totalProcessed += pageProcessed;
+        
+        // For incremental mode: stop on consecutive duplicate pages
+        if (mode === 'incremental' && newTrades.length === 0) {
+          consecutiveDuplicatePages++;
+          if (consecutiveDuplicatePages >= 3) {
+            console.log(`⏹️ Stopping after ${consecutiveDuplicatePages} consecutive duplicate pages`);
+            break;
+          }
+        } else {
+          consecutiveDuplicatePages = 0;
+        }
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+      } catch (error) {
+        console.error(`❌ Error on page ${page}:`, error);
+        continue;
+      }
+    }
+    
+    console.log(`🎉 Massive collection completed: ${totalProcessed} total new trades across ${Math.min(maxPages, maxPages)} pages`);
+    return totalProcessed;
+  }
 
   /**
    * 🎯 COMPLETE 30-DAY BACKFILL
@@ -172,6 +247,29 @@ class AdvancedOpenInsiderCollector {
       console.error('❌ Error in incremental collection:', error);
       throw error;
     }
+  }
+
+  /**
+   * 📄 ADVANCED PAGE COLLECTION FOR MASSIVE BACKFILL
+   * Optimized for thousands of trades without early stopping
+   */
+  private async collectPageAdvanced(page: number = 1, maxResults: number = 100): Promise<{
+    trades: OpenInsiderTrade[];
+    hasNextPage: boolean;
+  }> {
+    const url = this.buildUrl(page, maxResults);
+    console.log(`🌐 Fetching OpenInsider page ${page}: ${url}`);
+    
+    const response = await this.fetchWithRetry(url);
+    const html = await response.text();
+    
+    const trades = this.parseAdvancedHTML(html);
+    // For backfill: assume more pages exist unless we get empty results
+    const hasNextPage = trades.length >= maxResults * 0.8; // 80% threshold
+    
+    console.log(`📊 Page ${page}: Found ${trades.length} trades`);
+    
+    return { trades, hasNextPage };
   }
 
   /**

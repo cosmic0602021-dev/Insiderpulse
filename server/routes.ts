@@ -327,6 +327,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MASSIVE OpenInsider backfill endpoint (for thousands of trades)
+  app.post('/api/admin/openinsider/backfill', protectAdminEndpoint, async (req, res) => {
+    try {
+      const maxPages = parseInt(req.body.maxPages) || 50;
+      const perPage = parseInt(req.body.perPage) || 100;
+      const mode = req.body.mode || 'backfill';
+      
+      console.log(`🚀 Admin trigger: Starting MASSIVE OpenInsider backfill (${maxPages} pages × ${perPage} trades = ${maxPages * perPage} potential trades)`);
+      
+      // Import OpenInsider collector with cache busting
+      const { advancedOpenInsiderCollector, setBroadcaster } = await import(`./openinsider-collector-advanced.ts?ts=${Date.now()}`);
+      
+      // Inject broadcaster to break circular dependency
+      setBroadcaster(broadcastUpdate);
+      
+      // Use massive collection with backfill mode
+      const processedCount = await advancedOpenInsiderCollector.collectMassive({
+        mode: mode as 'backfill' | 'incremental',
+        maxPages,
+        perPage,
+        bypassDuplicates: true
+      });
+      
+      res.json({
+        success: true,
+        message: 'MASSIVE OpenInsider backfill completed',
+        processedTrades: processedCount,
+        maxPages,
+        perPage,
+        mode,
+        estimatedTotal: maxPages * perPage,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ OpenInsider massive collection error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to perform massive OpenInsider collection',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // MarketBeat data collection endpoint
   app.post('/api/admin/collect/marketbeat', protectAdminEndpoint, async (req, res) => {
     try {
