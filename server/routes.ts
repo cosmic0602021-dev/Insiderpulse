@@ -6,6 +6,7 @@ import { insertInsiderTradeSchema } from "@shared/schema";
 import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
 import { protectAdminEndpoint } from "./security-middleware";
+import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -627,6 +628,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // 🚀 Register Mega Data Collection API endpoints
+  registerMegaApiEndpoints(app);
+  
   console.log('✅ API routes registered with WebSocket support');
   return httpServer;
 }

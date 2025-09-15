@@ -168,7 +168,7 @@ export class DatabaseStorage implements IStorage {
     // Get today's trades count and total volume with properly combined filters
     const todayStats = await db
       .select({
-        count: count(),
+        count: sql<number>`count(*)`,
         totalVolume: sum(insiderTrades.totalValue),
       })
       .from(insiderTrades)
@@ -341,5 +341,106 @@ export class DatabaseStorage implements IStorage {
       .update(alerts)
       .set({ lastTriggered: sql`NOW()` })
       .where(eq(alerts.id, id));
+  }
+
+  // HOT/WARM/COLD Data Layer Methods
+  async getHotTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    return this.getInsiderTrades(limit, offset, false, threeMonthsAgo.toISOString().split('T')[0]);
+  }
+
+  async getWarmTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    
+    const result = await db
+      .select()
+      .from(insiderTrades)
+      .where(
+        and(
+          lte(insiderTrades.filedDate, threeMonthsAgo),
+          gte(insiderTrades.filedDate, twoYearsAgo)
+        )
+      )
+      .orderBy(desc(insiderTrades.filedDate))
+      .limit(limit)
+      .offset(offset);
+    
+    return result;
+  }
+
+  async getColdTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    
+    const result = await db
+      .select()
+      .from(insiderTrades)
+      .where(lte(insiderTrades.filedDate, twoYearsAgo))
+      .orderBy(desc(insiderTrades.filedDate))
+      .limit(limit)
+      .offset(offset);
+    
+    return result;
+  }
+
+  async organizeDataLayers(): Promise<{ hot: number, warm: number, cold: number }> {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+    // Count HOT trades (last 3 months)
+    const hotResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(insiderTrades)
+      .where(gte(insiderTrades.filedDate, threeMonthsAgo));
+    
+    // Count WARM trades (3 months - 2 years)
+    const warmResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(insiderTrades)
+      .where(
+        and(
+          lte(insiderTrades.filedDate, threeMonthsAgo),
+          gte(insiderTrades.filedDate, twoYearsAgo)
+        )
+      );
+    
+    // Count COLD trades (older than 2 years)
+    const coldResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(insiderTrades)
+      .where(lte(insiderTrades.filedDate, twoYearsAgo));
+
+    return {
+      hot: hotResult[0]?.count || 0,
+      warm: warmResult[0]?.count || 0,
+      cold: coldResult[0]?.count || 0
+    };
+  }
+
+  async getLayeredTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    // Return trades in optimal order: HOT first, then WARM, then COLD
+    // Use UNION ALL query for better performance
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+    // For now, use a simpler approach - get all trades ordered by date
+    // This can be optimized later with proper SQL UNION queries
+    const result = await db
+      .select()
+      .from(insiderTrades)
+      .orderBy(desc(insiderTrades.filedDate))
+      .limit(limit)
+      .offset(offset);
+    
+    return result;
   }
 }

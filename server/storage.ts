@@ -43,6 +43,13 @@ export interface IStorage {
   updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined>;
   deleteAlert(id: string): Promise<boolean>;
   triggerAlert(id: string): Promise<void>;
+
+  // HOT/WARM/COLD Data Layer Management
+  getHotTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
+  getWarmTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
+  getColdTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
+  organizeDataLayers(): Promise<{ hot: number, warm: number, cold: number }>;
+  getLayeredTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -294,6 +301,81 @@ export class MemStorage implements IStorage {
       alert.lastTriggered = new Date();
       this.alerts.set(id, alert);
     }
+  }
+
+  // HOT/WARM/COLD Data Layer Methods
+  async getHotTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+    
+    return this.getInsiderTrades(limit, offset, false, threeMonthsAgo.toISOString().split('T')[0]);
+  }
+
+  async getWarmTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+    const twoYearsAgo = new Date(now.getTime() - (730 * 24 * 60 * 60 * 1000));
+    
+    const trades = Array.from(this.insiderTrades.values()).filter(trade => {
+      const filedDate = new Date(trade.filedDate);
+      return filedDate < threeMonthsAgo && filedDate >= twoYearsAgo;
+    });
+    
+    return trades
+      .sort((a, b) => new Date(b.filedDate).getTime() - new Date(a.filedDate).getTime())
+      .slice(offset, offset + limit);
+  }
+
+  async getColdTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    const twoYearsAgo = new Date(Date.now() - (730 * 24 * 60 * 60 * 1000));
+    
+    const trades = Array.from(this.insiderTrades.values()).filter(trade => {
+      const filedDate = new Date(trade.filedDate);
+      return filedDate < twoYearsAgo;
+    });
+    
+    return trades
+      .sort((a, b) => new Date(b.filedDate).getTime() - new Date(a.filedDate).getTime())
+      .slice(offset, offset + limit);
+  }
+
+  async organizeDataLayers(): Promise<{ hot: number, warm: number, cold: number }> {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+    const twoYearsAgo = new Date(now.getTime() - (730 * 24 * 60 * 60 * 1000));
+
+    const allTrades = Array.from(this.insiderTrades.values());
+    
+    const hot = allTrades.filter(trade => new Date(trade.filedDate) >= threeMonthsAgo).length;
+    const warm = allTrades.filter(trade => {
+      const filedDate = new Date(trade.filedDate);
+      return filedDate < threeMonthsAgo && filedDate >= twoYearsAgo;
+    }).length;
+    const cold = allTrades.filter(trade => new Date(trade.filedDate) < twoYearsAgo).length;
+
+    return { hot, warm, cold };
+  }
+
+  async getLayeredTrades(limit = 20, offset = 0): Promise<InsiderTrade[]> {
+    // Return trades in optimal order: HOT first, then WARM, then COLD
+    const hotTrades = await this.getHotTrades(Math.min(limit, 50), 0);
+    const remainingLimit = limit - hotTrades.length;
+    
+    if (remainingLimit <= 0) {
+      return hotTrades.slice(offset, offset + limit);
+    }
+    
+    const warmTrades = await this.getWarmTrades(remainingLimit, 0);
+    const stillRemainingLimit = remainingLimit - warmTrades.length;
+    
+    let allTrades = [...hotTrades, ...warmTrades];
+    
+    if (stillRemainingLimit > 0) {
+      const coldTrades = await this.getColdTrades(stillRemainingLimit, 0);
+      allTrades = [...allTrades, ...coldTrades];
+    }
+    
+    return allTrades.slice(offset, offset + limit);
   }
 }
 

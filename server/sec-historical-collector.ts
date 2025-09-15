@@ -45,10 +45,19 @@ export class HistoricalSecCollector {
     this.httpClient = new SecHttpClient();
   }
 
-  async collectHistoricalData(months = 6): Promise<HistoricalCollectionProgress> {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
+  async collectHistoricalData(months = 6, targetYear?: number): Promise<HistoricalCollectionProgress> {
+    let endDate = new Date();
+    let startDate = new Date();
+    
+    if (targetYear) {
+      // For specific year collection
+      startDate = new Date(targetYear, 0, 1); // January 1st of target year
+      endDate = new Date(targetYear, 11, 31); // December 31st of target year
+      console.log(`🎯 Targeting specific year: ${targetYear}`);
+    } else {
+      // Default behavior: last N months from now
+      startDate.setMonth(startDate.getMonth() - months);
+    }
     
     this.progress = {
       startDate: startDate.toISOString().split('T')[0],
@@ -59,7 +68,10 @@ export class HistoricalSecCollector {
       status: 'running'
     };
 
-    console.log(`🕰️ Starting historical collection for ${months} months (${this.progress.startDate} to ${this.progress.endDate})`);
+    const description = targetYear 
+      ? `year ${targetYear}` 
+      : `${months} months`;
+    console.log(`🕰️ Starting historical collection for ${description} (${this.progress.startDate} to ${this.progress.endDate})`);
 
     try {
       // Collect data in monthly chunks to avoid overwhelming the API
@@ -104,6 +116,10 @@ export class HistoricalSecCollector {
     }
 
     return this.progress;
+  }
+
+  async collectForSpecificYear(year: number): Promise<HistoricalCollectionProgress> {
+    return this.collectHistoricalData(12, year);
   }
 
   private async collectForDateRange(startDate: Date, endDate: Date): Promise<void> {
