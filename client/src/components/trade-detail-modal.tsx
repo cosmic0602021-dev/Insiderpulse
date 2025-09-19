@@ -103,20 +103,20 @@ export function TradeDetailModal({
 
   return (
     <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* InsiderPulse 워터마크 - 모달 중앙에 고정 */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-40 overflow-hidden">
+        <img 
+          src={logoLight} 
+          alt="InsiderPulse" 
+          className="w-80 h-auto opacity-5 select-none dark:hidden"
+        />
+        <img 
+          src={logoDark} 
+          alt="InsiderPulse" 
+          className="w-80 h-auto opacity-5 select-none hidden dark:block"
+        />
+      </div>
       <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
-        {/* InsiderPulse 워터마크 */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-          <img 
-            src={logoLight} 
-            alt="InsiderPulse" 
-            className="w-80 h-auto opacity-8 select-none dark:hidden"
-          />
-          <img 
-            src={logoDark} 
-            alt="InsiderPulse" 
-            className="w-80 h-auto opacity-8 select-none hidden dark:block"
-          />
-        </div>
         <CardHeader className="relative z-10">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
