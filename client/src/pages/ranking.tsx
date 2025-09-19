@@ -57,8 +57,12 @@ export default function Ranking() {
       const tickerTrades = allTrades.filter(trade => trade.ticker === ticker);
       
       if (tickerTrades && tickerTrades.length > 0) {
+        // Sort by filedDate descending to get the most recent trade
+        const sortedTrades = tickerTrades.sort((a, b) => 
+          new Date(b.filedDate).getTime() - new Date(a.filedDate).getTime()
+        );
         // Use the most recent trade
-        const recentTrade = tickerTrades[0];
+        const recentTrade = sortedTrades[0];
         
         // Enhance trade data with additional information
         const enhancedTrade = {
