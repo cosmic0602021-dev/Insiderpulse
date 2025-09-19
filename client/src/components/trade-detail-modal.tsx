@@ -109,12 +109,12 @@ export function TradeDetailModal({
           <img 
             src={logoLight} 
             alt="InsiderPulse" 
-            className="w-48 h-auto opacity-10 select-none transform -rotate-12 dark:hidden"
+            className="w-80 h-auto opacity-8 select-none dark:hidden"
           />
           <img 
             src={logoDark} 
             alt="InsiderPulse" 
-            className="w-48 h-auto opacity-10 select-none transform -rotate-12 hidden dark:block"
+            className="w-80 h-auto opacity-8 select-none hidden dark:block"
           />
         </div>
         <CardHeader className="relative z-10">
