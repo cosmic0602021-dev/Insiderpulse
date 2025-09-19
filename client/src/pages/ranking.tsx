@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
-import { RefreshCw, Star, TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, DollarSign, Activity, X, Mail, Bookmark, Bell, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { apiClient } from '@/lib/api';
 
@@ -37,6 +37,11 @@ export default function Ranking() {
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [selectedTradeData, setSelectedTradeData] = useState<any | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [showWatchlistModal, setShowWatchlistModal] = useState(false);
+  const [selectedTradeForAlert, setSelectedTradeForAlert] = useState<any | null>(null);
+  const [selectedCompanyForAlert, setSelectedCompanyForAlert] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({
     queryKey: ['/api/rankings'],
@@ -350,16 +355,140 @@ export default function Ranking() {
         isOpen={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         trade={selectedTradeData}
-        onAlert={() => {
-          // Alert functionality can be implemented later
-          console.log('Alert for trade:', selectedTradeData);
+        onAlert={(trade) => {
+          setSelectedTradeForAlert(trade);
+          setSelectedCompanyForAlert(trade.ticker || '');
+          setShowAlertModal(true);
+          setShowTradeModal(false);
         }}
-        onAddToWatchlist={() => {
-          // Watchlist functionality can be implemented later
-          console.log('Add to watchlist:', selectedTradeData);
+        onAddToWatchlist={(trade) => {
+          if (trade.ticker && !watchlist.includes(trade.ticker)) {
+            setWatchlist(prev => [...prev, trade.ticker!]);
+            setSelectedTradeForAlert(trade);
+            setShowWatchlistModal(true);
+            setShowTradeModal(false);
+          }
         }}
-        isInWatchlist={false}
+        isInWatchlist={selectedTradeData?.ticker ? watchlist.includes(selectedTradeData.ticker) : false}
       />
+
+      {/* 알림 설정 모달 */}
+      {showAlertModal && selectedTradeForAlert && (
+        <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="modal-content card-professional max-w-md w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-blue-500" />
+                알림 설정
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">종목</p>
+                <p className="font-semibold">{selectedCompanyForAlert} ({selectedTradeForAlert.ticker})</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">알림 조건</p>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span className="text-sm">새로운 내부자 거래 발생 시</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span className="text-sm">거래 규모가 $100,000 이상일 때</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input type="checkbox" className="rounded" />
+                    <span className="text-sm">임원진 거래 시</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAlertModal(false)}
+                  className="btn-professional flex-1"
+                >
+                  취소
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // Here you would implement the actual alert setting logic
+                    setShowAlertModal(false);
+                  }}
+                  className="btn-professional flex-1"
+                >
+                  알림 설정
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 워치리스트 추가 성공 모달 */}
+      {showWatchlistModal && selectedTradeForAlert && (
+        <div className="modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-emerald-900/95 to-teal-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <Card className="bg-transparent border-none shadow-none">
+              <CardContent className="p-0">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full flex items-center justify-center">
+                        <Check className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-30"></div>
+                    </div>
+                    <span className="font-bold text-lg bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
+                      추가 완료!
+                    </span>
+                  </div>
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    이제 <span className="font-semibold text-emerald-300">'내 워치리스트'</span> 탭에서
+                    <span className="font-semibold text-teal-300"> {selectedTradeForAlert.ticker}</span>의
+                    내부자 거래 정보만 따로 볼 수 있습니다.
+                  </p>
+
+                  {/* 추가 기능 힌트 */}
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2 text-xs text-white/60">
+                      <Bell className="h-3 w-3" />
+                      <span>실시간 알림 설정도 가능합니다</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 액션 버튼들 */}
+                <div className="flex space-x-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowWatchlistModal(false)}
+                    className="btn-professional flex-1 bg-white/5 hover:bg-white/10 border-white/20 text-white/80 hover:text-white rounded-xl h-12"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    닫기
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowWatchlistModal(false);
+                    }}
+                    className="btn-professional flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl h-12 shadow-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4" />
+                      확인
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
