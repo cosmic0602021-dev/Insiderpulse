@@ -215,6 +215,9 @@ export class MemStorage implements IStorage {
   async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
     
+    // Filter out HOLD trades completely
+    trades = trades.filter(trade => trade.signalType !== 'HOLD');
+    
     if (verifiedOnly) {
       trades = trades.filter(trade => trade.isVerified === true);
     }
@@ -259,7 +262,7 @@ export class MemStorage implements IStorage {
       ticker: insertTrade.ticker || null,
       aiAnalysis: insertTrade.aiAnalysis || null,
       significanceScore: insertTrade.significanceScore || 50,
-      signalType: insertTrade.signalType || 'HOLD',
+      signalType: insertTrade.signalType || 'BUY',
       // Add verification fields with defaults
       isVerified: insertTrade.isVerified ?? false,
       verificationStatus: insertTrade.verificationStatus || 'PENDING',
@@ -288,7 +291,7 @@ export class MemStorage implements IStorage {
         ticker: insertTrade.ticker || null,
         aiAnalysis: insertTrade.aiAnalysis || null,
         significanceScore: insertTrade.significanceScore || 50,
-        signalType: insertTrade.signalType || 'HOLD',
+        signalType: insertTrade.signalType || 'BUY',
         ownershipPercentage: insertTrade.ownershipPercentage ?? null,
       };
       this.insiderTrades.set(existing.id, updatedTrade);
@@ -309,7 +312,11 @@ export class MemStorage implements IStorage {
   }
 
   async getTradingStats(verifiedOnly = true): Promise<TradingStats> {
-    const trades = Array.from(this.insiderTrades.values());
+    let trades = Array.from(this.insiderTrades.values());
+    
+    // Filter out HOLD trades completely
+    trades = trades.filter(trade => trade.signalType !== 'HOLD');
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     

@@ -26,7 +26,7 @@ export const insiderTrades = pgTable("insider_trades", {
   filedDate: timestamp("filed_date").notNull(),
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   significanceScore: integer("significance_score").notNull().default(50), // Default neutral score
-  signalType: text("signal_type").notNull().default('HOLD'), // Default neutral signal
+  signalType: text("signal_type").notNull().default('BUY'), // Default buy signal
   // Data verification fields for accuracy control
   isVerified: boolean("is_verified").notNull().default(false), // Whether price data has been verified
   verificationStatus: text("verification_status").notNull().default('PENDING'), // PENDING, VERIFIED, FAILED
@@ -55,7 +55,7 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   transactionCode: z.string().optional(), // Original SEC transaction code
   ownershipPercentage: z.number().optional(),
   significanceScore: z.number().optional(), // Allow override of default
-  signalType: z.enum(['BUY', 'SELL', 'HOLD']).optional(), // Allow override of default
+  signalType: z.enum(['BUY', 'SELL']).optional(), // Allow override of default
   isVerified: z.boolean().optional(),
   verificationStatus: z.string().optional(),
   verificationNotes: z.string().optional(),
@@ -72,7 +72,7 @@ export type InsiderTrade = typeof insiderTrades.$inferSelect;
 // Deprecated - AI analysis no longer used
 export type AIAnalysis = {
   significance_score: number;
-  signal_type: 'BUY' | 'SELL' | 'HOLD';
+  signal_type: 'BUY' | 'SELL';
   key_insights: string[];
   risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
   recommendation: string;

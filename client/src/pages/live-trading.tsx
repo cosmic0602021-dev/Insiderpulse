@@ -30,7 +30,7 @@ interface TradeFilter {
   maxValue: string;
   companySearch: string;
   traderSearch: string;
-  signalType: 'ALL' | 'BUY' | 'SELL' | 'HOLD';
+  signalType: 'ALL' | 'BUY' | 'SELL';
 }
 
 interface EnhancedTrade extends InsiderTrade {
@@ -74,14 +74,14 @@ export default function LiveTrading() {
     queryKey: queryKeys.trades.list({ limit: 100, offset: 0 }), // 초기 로딩 수 감소
     queryFn: () => apiClient.getInsiderTrades(100, 0), // 초기엔 적은 데이터로 빠른 로딩
     staleTime: 300000, // 5분으로 증가하여 재요청 빈도 감소
-    cacheTime: 600000, // 10분 캐시
+    gcTime: 600000, // 10분 캐시
   });
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
     staleTime: 300000, // 5분으로 증가
-    cacheTime: 600000, // 10분 캐시
+    gcTime: 600000, // 10분 캐시
   });
 
   // WebSocket for real-time updates
@@ -123,7 +123,7 @@ export default function LiveTrading() {
     };
 
     const tradeSize = getTradeSize();
-    const positionWeight = getPositionWeight(trade.traderTitle);
+    const positionWeight = getPositionWeight(trade.traderTitle || '');
     const marketContext = getMarketContext();
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
 
@@ -209,7 +209,7 @@ export default function LiveTrading() {
       else if (tradeValue >= 100000) baseAccuracy += 5; // 중형 거래
 
       // 직책 가산점
-      const title = trade.traderTitle.toUpperCase();
+      const title = (trade.traderTitle || '').toUpperCase();
       if (title.includes('CEO') || title.includes('CHIEF EXECUTIVE')) baseAccuracy += 10;
       else if (title.includes('CFO') || title.includes('CHIEF FINANCIAL')) baseAccuracy += 8;
       else if (title.includes('PRESIDENT') || title.includes('CHAIRMAN')) baseAccuracy += 6;
@@ -256,7 +256,7 @@ export default function LiveTrading() {
       let baseReturn = isBuy ? 5.2 : -2.8; // 매수는 평균 +5.2%, 매도는 -2.8%
 
       // 직책 영향도
-      const title = trade.traderTitle.toUpperCase();
+      const title = (trade.traderTitle || '').toUpperCase();
       if (title.includes('CEO')) baseReturn *= 1.3;
       else if (title.includes('CFO')) baseReturn *= 1.2;
       else if (title.includes('PRESIDENT')) baseReturn *= 1.1;
@@ -334,6 +334,9 @@ export default function LiveTrading() {
   // 필터링 로직을 useMemo로 최적화
   const filteredTrades = useMemo(() => {
     let filtered = trades;
+    
+    // Filter out HOLD trades completely
+    filtered = filtered.filter(trade => trade.signalType !== 'HOLD');
 
     // 워치리스트 필터링
     if (activeTab === 'watchlist') {
@@ -712,7 +715,6 @@ export default function LiveTrading() {
                   <SelectItem value="ALL">{t('filter.allSignals')}</SelectItem>
                   <SelectItem value="BUY">{t('filter.buySignal')}</SelectItem>
                   <SelectItem value="SELL">{t('filter.sellSignal')}</SelectItem>
-                  <SelectItem value="HOLD">{t('filter.holdSignal')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
