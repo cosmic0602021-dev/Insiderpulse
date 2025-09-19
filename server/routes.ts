@@ -104,6 +104,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get stock rankings based on insider trading patterns
+  app.get('/api/rankings', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Get all trades from the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      const trades = await storage.getInsiderTrades(1000, 0, false, fromDate);
+      
+      // Group trades by ticker and calculate ranking metrics
+      const tickerMetrics = new Map();
+      
+      for (const trade of trades) {
+        if (!trade.ticker) continue;
+        
+        const ticker = trade.ticker.toUpperCase();
+        if (!tickerMetrics.has(ticker)) {
+          tickerMetrics.set(ticker, {
+            ticker,
+            companyName: trade.companyName || ticker,
+            trades: [],
+            totalBuyValue: 0,
+            totalSellValue: 0,
+            buyCount: 0,
+            sellCount: 0,
+            uniqueInsiders: new Set(),
+            lastTradeDate: null,
+            avgTradeValue: 0,
+            netBuying: 0,
+            score: 0
+          });
+        }
+        
+        const metrics = tickerMetrics.get(ticker);
+        metrics.trades.push(trade);
+        metrics.uniqueInsiders.add(trade.traderName);
+        
+        const tradeValue = Math.abs(trade.totalValue || 0);
+        const tradeDate = new Date(trade.filedDate || trade.createdAt || '');
+        
+        if (!metrics.lastTradeDate || tradeDate > metrics.lastTradeDate) {
+          metrics.lastTradeDate = tradeDate;
+        }
+        
+        // Classify as buy or sell based on trade type and transaction code
+        const isBuy = trade.tradeType === 'BUY' || 
+                      trade.tradeType === 'PURCHASE' ||
+                      trade.tradeType === 'GRANT' ||
+                      trade.transactionCode === 'P' ||
+                      trade.transactionCode === 'A' ||
+                      (trade.shares && trade.shares > 0);
+        
+        if (isBuy) {
+          metrics.totalBuyValue += tradeValue;
+          metrics.buyCount++;
+        } else {
+          metrics.totalSellValue += tradeValue;
+          metrics.sellCount++;
+        }
+      }
+      
+      // Calculate scores and rankings
+      const rankings = Array.from(tickerMetrics.values()).map(metrics => {
+        const totalTrades = metrics.buyCount + metrics.sellCount;
+        metrics.avgTradeValue = totalTrades > 0 ? (metrics.totalBuyValue + metrics.totalSellValue) / totalTrades : 0;
+        metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
+        
+        // Calculate ranking score based on:
+        // - Net buying amount (40%)
+        // - Number of buying transactions (20%)
+        // - Number of unique insiders (20%)
+        // - Average trade value (10%)
+        // - Recency of trades (10%)
+        
+        const netBuyingScore = Math.max(0, metrics.netBuying) / 1000000; // Normalize to millions
+        const buyCountScore = metrics.buyCount * 5; // 5 points per buy trade
+        const insiderScore = metrics.uniqueInsiders.size * 10; // 10 points per unique insider
+        const avgValueScore = metrics.avgTradeValue / 100000; // Normalize to 100k
+        
+        const daysSinceLastTrade = metrics.lastTradeDate ? 
+          (Date.now() - metrics.lastTradeDate.getTime()) / (1000 * 60 * 60 * 24) : 30;
+        const recencyScore = Math.max(0, 30 - daysSinceLastTrade) * 2; // More recent = higher score
+        
+        metrics.score = Math.round(
+          netBuyingScore * 0.4 +
+          buyCountScore * 0.2 +
+          insiderScore * 0.2 +
+          avgValueScore * 0.1 +
+          recencyScore * 0.1
+        );
+        
+        // Determine recommendation
+        if (metrics.score >= 80) {
+          metrics.recommendation = 'STRONG_BUY';
+        } else if (metrics.score >= 50) {
+          metrics.recommendation = 'BUY';
+        } else {
+          metrics.recommendation = 'HOLD';
+        }
+        
+        return {
+          ticker: metrics.ticker,
+          companyName: metrics.companyName,
+          score: metrics.score,
+          recommendation: metrics.recommendation,
+          totalTrades: totalTrades,
+          buyTrades: metrics.buyCount,
+          sellTrades: metrics.sellCount,
+          uniqueInsiders: metrics.uniqueInsiders.size,
+          avgTradeValue: Math.round(metrics.avgTradeValue),
+          netBuying: Math.round(metrics.netBuying),
+          lastTradeDate: metrics.lastTradeDate?.toISOString(),
+          insiderActivity: `${totalTrades} trades in last 30 days`
+        };
+      });
+      
+      // Sort by score and return top results
+      const topRankings = rankings
+        .filter(r => r.totalTrades >= 2) // Only include stocks with at least 2 trades
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+      
+      res.json({
+        rankings: topRankings,
+        generatedAt: new Date().toISOString(),
+        period: '30 days',
+        totalStocksAnalyzed: rankings.length
+      });
+      
+    } catch (error) {
+      console.error('Error generating rankings:', error);
+      res.status(500).json({ error: 'Failed to generate stock rankings' });
+    }
+  });
+
   // Get stock price history by ticker
   app.get('/api/stocks/:ticker/history', async (req, res) => {
     try {

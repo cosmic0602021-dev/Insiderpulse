@@ -1,4 +1,4 @@
-import { BarChart3, Home, TrendingUp, AlertCircle, Settings, Search, Bell } from "lucide-react";
+import { BarChart3, Home, TrendingUp, AlertCircle, Settings, Search, Bell, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +50,12 @@ const getMenuItems = (t: (key: string) => string) => [
     url: "/search",
     icon: Search,
     key: 'search'
+  },
+  {
+    title: t('nav.ranking'),
+    url: "/ranking",
+    icon: Star,
+    key: 'ranking'
   },
 ];
 

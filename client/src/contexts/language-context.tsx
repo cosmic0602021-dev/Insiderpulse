@@ -16,6 +16,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.analytics': 'Analytics', 
     'nav.alerts': 'Alerts',
     'nav.search': 'Search',
+    'nav.ranking': 'Top Stocks',
     'nav.settings': 'Settings',
     
     // Dashboard
@@ -287,6 +288,28 @@ const translations: Record<Language, Record<string, string>> = {
     'priceChart.tradePriceLabel': 'Trade Price:',
     'priceChart.currentLabel': 'Current:',
     
+    // Ranking page
+    'ranking.title': 'Top Buy Recommendations',
+    'ranking.subtitle': 'AI-powered stock recommendations based on insider trading patterns',
+    'ranking.topStocks': 'Top 10 Recommended Stocks',
+    'ranking.recommendation': 'Recommendation',
+    'ranking.buyPotential': 'Buy Potential',
+    'ranking.marketCap': 'Market Cap',
+    'ranking.volume': 'Volume',
+    'ranking.priceChange': 'Price Change',
+    'ranking.lastPrice': 'Current Price',
+    'ranking.strongBuy': 'Strong Buy',
+    'ranking.buy': 'Buy',
+    'ranking.hold': 'Hold',
+    'ranking.analysis': 'Analysis',
+    'ranking.insiderActivity': 'Insider Activity',
+    'ranking.tradesLast30Days': 'trades in last 30 days',
+    'ranking.avgTradeValue': 'Avg Trade Value',
+    'ranking.netBuying': 'Net Buying',
+    'ranking.loading': 'Loading stock rankings...',
+    'ranking.noData': 'No ranking data available',
+    'ranking.refreshData': 'Refresh Data',
+
     // Not Found page
     'notFound.title': '404 - Page Not Found',
     'notFound.message': 'The page you are looking for does not exist.',
@@ -298,6 +321,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.analytics': '분석',
     'nav.alerts': '알림',
     'nav.search': '검색',
+    'nav.ranking': '추천주식',
     'nav.settings': '설정',
     
     // Dashboard
@@ -570,6 +594,28 @@ const translations: Record<Language, Record<string, string>> = {
     'priceChart.tradePriceLabel': '거래 가격:',
     'priceChart.currentLabel': '현재:',
     
+    // Ranking page
+    'ranking.title': '추천매수 순위',
+    'ranking.subtitle': '내부자 거래 패턴을 기반으로 한 AI 주식 추천',
+    'ranking.topStocks': '추천 주식 TOP 10',
+    'ranking.recommendation': '추천',
+    'ranking.buyPotential': '매수 잠재력',
+    'ranking.marketCap': '시가총액',
+    'ranking.volume': '거래량',
+    'ranking.priceChange': '가격 변동',
+    'ranking.lastPrice': '현재 가격',
+    'ranking.strongBuy': '적극매수',
+    'ranking.buy': '매수',
+    'ranking.hold': '보유',
+    'ranking.analysis': '분석',
+    'ranking.insiderActivity': '내부자 활동',
+    'ranking.tradesLast30Days': '최근 30일 거래',
+    'ranking.avgTradeValue': '평균 거래 가치',
+    'ranking.netBuying': '순매수',
+    'ranking.loading': '주식 순위를 불러오는 중...',
+    'ranking.noData': '순위 데이터가 없습니다',
+    'ranking.refreshData': '데이터 새로고침',
+
     // Not Found page
     'notFound.title': '404 - 페이지를 찾을 수 없습니다',
     'notFound.message': '요청하신 페이지가 존재하지 않습니다.',
