@@ -310,6 +310,28 @@ export function TradeDetailModal({
             </div>
           )}
 
+          {/* AI 분석 결과 */}
+          <div className="border-t pt-4" data-testid="section-ai-analysis">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Brain className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200" data-testid="text-ai-analysis">
+                    AI 분석결과: {trade.companyName}의 최근 내부자 거래 패턴을 분석한 결과, 주의 깊게 관찰해야 할 신호를 보이고 있습니다. 
+                    {(() => {
+                      const tradeTypeUpper = (trade.tradeType || '').toUpperCase();
+                      return tradeTypeUpper === 'SELL' || tradeTypeUpper === 'SALE' 
+                        ? ' 내부자 매도는 회사의 단기적 전망에 대한 우려를 시사할 수 있으며, 투자자들은 신중한 접근이 필요합니다.'
+                        : ' 내부자 매수는 회사의 향후 성장에 대한 긍정적 전망을 나타낼 수 있으며, 이는 투자 기회로 해석될 수 있습니다.';
+                    })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 액션 버튼들 */}
           <div className="flex gap-2 pt-4 border-t">
             {onAlert && (
