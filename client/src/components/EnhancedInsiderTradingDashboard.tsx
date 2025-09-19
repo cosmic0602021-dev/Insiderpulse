@@ -633,7 +633,7 @@ const EnhancedInsiderTradingDashboard = () => {
       case 'Gift':
         return '💝';
       default:
-        return '📊';
+        return '🔄';
     }
   };
 
@@ -1185,7 +1185,7 @@ const EnhancedInsiderTradingDashboard = () => {
                     📱 모바일 알림 설정
                   </button>
                   <button className="w-full bg-slate-700 text-white py-2 px-4 rounded-lg text-sm hover:bg-slate-600 transition">
-                    📊 맞춤 대시보드
+                    맞춤 대시보드
                   </button>
                 </div>
               </div>
@@ -1925,7 +1925,7 @@ const EnhancedInsiderTradingDashboard = () => {
                     <p className="text-xs text-slate-400 mt-1">시장 타이밍: {selectedTrade.marketTiming.replace(/_/g, ' ')}</p>
                   </div>
                   <div className="bg-slate-800/50 rounded-lg p-3">
-                    <h4 className="font-semibold text-cyan-400 mb-2">📊 기관 심리</h4>
+                    <h4 className="font-semibold text-cyan-400 mb-2">기관 심리</h4>
                     <p className="text-sm text-slate-300">{selectedTrade.institutionalSentiment.replace(/_/g, ' ')}</p>
                     <p className="text-xs text-slate-400 mt-1">거래량 이상: {selectedTrade.volumeAnomaly}x 평소</p>
                   </div>

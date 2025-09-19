@@ -57,7 +57,7 @@ class ApiClient {
     const url = `/trades?${params.toString()}`;
     console.log(`🌐 [API] Requesting: ${url}`);
     const result = await this.request<InsiderTrade[]>(url);
-    console.log(`📊 [API] Received ${result.length} trades`);
+    console.log(`[API] Received ${result.length} trades`);
     return result;
   }
 

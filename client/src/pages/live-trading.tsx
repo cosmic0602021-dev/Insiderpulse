@@ -283,7 +283,7 @@ export default function LiveTrading() {
       console.log(`🔍 [DEBUG] Received ${initialTrades.length} trades from API`);
       const enhancedTrades = initialTrades.map(enhanceTradeWithAI);
       setTrades(enhancedTrades);
-      console.log(`📊 [DEBUG] Set ${enhancedTrades.length} enhanced trades in state`);
+      console.log(`[DEBUG] Set ${enhancedTrades.length} enhanced trades in state`);
     }
   }, [initialTrades, enhanceTradeWithAI]);
 
@@ -533,7 +533,7 @@ export default function LiveTrading() {
               모든 내부자 거래 데이터를 검색하고 필터링할 수 있습니다
             </p>
             <p className="text-sm text-blue-600 font-medium mt-1">
-              📊 총 {trades.length}개 거래 로드됨 | 필터링된 결과: {filteredTrades.length}개
+              총 {trades.length}개 거래 로드됨 | 필터링된 결과: {filteredTrades.length}개
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -875,6 +875,17 @@ export default function LiveTrading() {
                           {trade.ticker && (
                             <Badge variant="outline" className="text-xs font-semibold">{trade.ticker}</Badge>
                           )}
+                          
+                          {/* 내부자 매수/매도 가격 - 더 눈에 띄는 위치로 이동 */}
+                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                              내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
+                            </p>
+                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                              ${trade.pricePerShare.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">per share</p>
+                          </div>
                         </div>
                         
                         <div>
@@ -886,20 +897,11 @@ export default function LiveTrading() {
                         <div>
                           <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.tradeDetails')}</p>
                           <p className="font-semibold text-foreground">{trade.shares.toLocaleString()} shares</p>
-                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-                              📊 내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
-                            </p>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                              ${trade.pricePerShare.toFixed(2)}
-                            </p>
-                            <p className="text-xs text-blue-600 dark:text-blue-400">per share</p>
-                          </div>
                           {(() => {
                             const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
                             return avgBuyPrice && (
-                              <p className="text-xs text-purple-600 font-medium mt-1">
-                                💎 평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
+                              <p className="text-xs text-purple-600 font-medium mt-2">
+                                평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
                               </p>
                             );
                           })()}
