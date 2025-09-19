@@ -108,12 +108,12 @@ export function TradeDetailModal({
         <img 
           src={logoLight} 
           alt="InsiderPulse" 
-          className="w-80 h-auto opacity-5 select-none dark:hidden"
+          className="w-80 h-auto opacity-10 select-none dark:hidden"
         />
         <img 
           src={logoDark} 
           alt="InsiderPulse" 
-          className="w-80 h-auto opacity-5 select-none hidden dark:block"
+          className="w-80 h-auto opacity-10 select-none hidden dark:block"
         />
       </div>
       <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
