@@ -2,9 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  TrendingUp, DollarSign, User, Calendar, BarChart3, Calculator,
+  TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
   X, Mail, Bookmark, Brain, Check, Bell, Star, Lightbulb
 } from 'lucide-react';
+import insiderPulseLogo from '@assets/generated_images/InsiderPulse_SaaS_logo_057b994c.png';
 import type { InsiderTrade } from '@shared/schema';
 
 interface EnhancedTrade extends InsiderTrade {
@@ -67,7 +68,7 @@ export function TradeDetailModal({
         return <TrendingUp className={iconClass} />;
       case 'SELL':
       case 'SALE':
-        return <TrendingUp className={`${iconClass} rotate-180`} />;
+        return <TrendingDown className={iconClass} />;
       default:
         return <DollarSign className={iconClass} />;
     }
@@ -101,8 +102,16 @@ export function TradeDetailModal({
 
   return (
     <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <CardHeader>
+      <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
+        {/* InsiderPulse 워터마크 */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+          <img 
+            src={insiderPulseLogo} 
+            alt="InsiderPulse" 
+            className="w-64 h-auto opacity-5 select-none transform -rotate-12"
+          />
+        </div>
+        <CardHeader className="relative z-10">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
               {trade.ticker ? (
@@ -146,7 +155,7 @@ export function TradeDetailModal({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative z-10">
           {/* 기본 정보 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
