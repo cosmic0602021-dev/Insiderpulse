@@ -18,8 +18,8 @@ const generateInitials = (name: string): string => {
 };
 
 // 회사 로고 컴포넌트 (모달과 동일한 Parqet API 사용)
-function CompanyLogo({ ticker, companyName, size = 'md' }: {
-  ticker?: string,
+function CompanyLogo({ ticker, companyName, size = 'lg' }: {
+  ticker?: string | null,
   companyName: string,
   size?: 'sm' | 'md' | 'lg'
 }) {
@@ -28,7 +28,7 @@ function CompanyLogo({ ticker, companyName, size = 'md' }: {
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
-    lg: 'w-12 h-12'
+    lg: 'w-14 h-14'
   };
 
   if (logoError || !ticker) {
@@ -36,7 +36,7 @@ function CompanyLogo({ ticker, companyName, size = 'md' }: {
     const initials = generateInitials(companyName);
 
     return (
-      <div className={`${sizeClasses[size]} bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm shadow-md`}>
+      <div className={`${sizeClasses[size]} bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-base shadow-md`}>
         {initials}
       </div>
     );
@@ -120,7 +120,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             <CompanyLogo
               ticker={trade.ticker}
               companyName={trade.companyName}
-              size="md"
+              size="lg"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
