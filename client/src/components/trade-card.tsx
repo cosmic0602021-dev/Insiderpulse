@@ -11,50 +11,19 @@ interface TradeCardProps {
   onViewDetails?: (trade: InsiderTrade) => void;
 }
 
-// 회사 로고 소스들
-const companyLogos: Record<string, string[]> = {
-  'AAPL': [
-    'https://logo.clearbit.com/apple.com',
-    'https://companiesmarketcap.com/img/company-logos/64/AAPL.webp'
-  ],
-  'TSLA': [
-    'https://logo.clearbit.com/tesla.com',
-    'https://companiesmarketcap.com/img/company-logos/64/TSLA.webp'
-  ],
-  'NVDA': [
-    'https://logo.clearbit.com/nvidia.com',
-    'https://companiesmarketcap.com/img/company-logos/64/NVDA.webp'
-  ],
-  'META': [
-    'https://logo.clearbit.com/meta.com',
-    'https://companiesmarketcap.com/img/company-logos/64/META.webp'
-  ],
-  'MSFT': [
-    'https://logo.clearbit.com/microsoft.com',
-    'https://companiesmarketcap.com/img/company-logos/64/MSFT.webp'
-  ],
-  'AMZN': [
-    'https://logo.clearbit.com/amazon.com',
-    'https://companiesmarketcap.com/img/company-logos/64/AMZN.webp'
-  ],
-  'GOOGL': [
-    'https://logo.clearbit.com/google.com',
-    'https://companiesmarketcap.com/img/company-logos/64/GOOGL.webp'
-  ],
-  'NFLX': [
-    'https://logo.clearbit.com/netflix.com',
-    'https://companiesmarketcap.com/img/company-logos/64/NFLX.webp'
-  ]
+// 회사명에서 이니셜 생성하는 유틸리티 함수
+const generateInitials = (name: string): string => {
+  const words = name.split(' ').filter(w => w.length > 1);
+  return words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
 };
 
-// 회사 로고 컴포넌트
+// 회사 로고 컴포넌트 (모달과 동일한 Parqet API 사용)
 function CompanyLogo({ ticker, companyName, size = 'md' }: {
   ticker?: string,
   companyName: string,
   size?: 'sm' | 'md' | 'lg'
 }) {
-  const [currentSrc, setCurrentSrc] = useState(0);
-  const [hasError, setHasError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -62,25 +31,9 @@ function CompanyLogo({ ticker, companyName, size = 'md' }: {
     lg: 'w-12 h-12'
   };
 
-  const sources = ticker ? companyLogos[ticker.toUpperCase()] || [] : [];
-
-  const handleError = () => {
-    if (currentSrc < sources.length - 1) {
-      setCurrentSrc(prev => prev + 1);
-    } else {
-      setHasError(true);
-    }
-  };
-
-  if (hasError || sources.length === 0) {
+  if (logoError || !ticker) {
     // 회사명에서 이니셜 생성
-    const initials = companyName
-      .split(' ')
-      .filter(word => word.length > 1)
-      .slice(0, 2)
-      .map(word => word[0])
-      .join('')
-      .toUpperCase();
+    const initials = generateInitials(companyName);
 
     return (
       <div className={`${sizeClasses[size]} bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm shadow-md`}>
@@ -90,12 +43,21 @@ function CompanyLogo({ ticker, companyName, size = 'md' }: {
   }
 
   return (
-    <div className={`${sizeClasses[size]} bg-white rounded-lg flex items-center justify-center p-1 shadow-md`}>
+    <div className={`${sizeClasses[size]} relative overflow-hidden`}>
       <img
-        src={sources[currentSrc]}
-        alt={ticker || companyName}
-        className="w-full h-full object-contain"
-        onError={handleError}
+        src={`https://assets.parqet.com/logos/resolution/${ticker.toUpperCase()}.png`}
+        alt={`${companyName} logo`}
+        className="w-full h-full rounded-lg object-contain"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          if (target.src.includes('parqet.com')) {
+            // Fallback to EODHD API
+            target.src = `https://eodhd.com/img/logos/US/${ticker.toUpperCase()}.png`;
+          } else {
+            // Both APIs failed, show initials
+            setLogoError(true);
+          }
+        }}
       />
     </div>
   );
