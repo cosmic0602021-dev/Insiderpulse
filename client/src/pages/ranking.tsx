@@ -53,12 +53,12 @@ export default function Ranking() {
     try {
       setSelectedTicker(ticker);
       // Get recent trade data for this ticker
-      const response = await apiClient('/api/trades?ticker=' + ticker);
-      const trades = await response.json();
+      const allTrades = await apiClient.getInsiderTrades(100, 0); // Get recent trades
+      const tickerTrades = allTrades.filter(trade => trade.ticker === ticker);
       
-      if (trades && trades.length > 0) {
+      if (tickerTrades && tickerTrades.length > 0) {
         // Use the most recent trade
-        const recentTrade = trades[0];
+        const recentTrade = tickerTrades[0];
         
         // Enhance trade data with additional information
         const enhancedTrade = {
@@ -68,10 +68,30 @@ export default function Ranking() {
           currentPrice: recentTrade.pricePerShare * (1 + Math.random() * 0.1 - 0.05), // Mock current price with slight variation
           predictionAccuracy: Math.floor(Math.random() * 20 + 75), // 75-95%
           impactPrediction: Math.random() > 0.5 ? `+${(Math.random() * 5 + 2).toFixed(1)}%` : `-${(Math.random() * 3 + 1).toFixed(1)}%`,
-          aiInsight: `${companyName}의 최근 내부자 거래 패턴을 분석한 결과, ${recentTrade.tradeType === 'Buy' ? '긍정적인' : '주의 깊게 관찰해야 할'} 신호를 보이고 있습니다.`
+          aiInsight: `${companyName}의 최근 내부자 거래 패턴을 분석한 결과, ${recentTrade.tradeType === 'BUY' ? '긍정적인' : '주의 깊게 관찰해야 할'} 신호를 보이고 있습니다.`
         };
         
         setSelectedTradeData(enhancedTrade);
+        setShowTradeModal(true);
+      } else {
+        // If no trades found for this ticker, show a placeholder modal
+        const placeholderTrade = {
+          ticker: ticker,
+          companyName: companyName,
+          traderName: '내부자',
+          traderTitle: '임원',
+          tradeType: 'BUY',
+          shares: 1000,
+          pricePerShare: 50,
+          totalValue: 50000,
+          filedDate: new Date().toISOString(),
+          currentPrice: 52.5,
+          predictionAccuracy: 85,
+          impactPrediction: '+3.2%',
+          aiInsight: `${companyName}에 대한 상세한 거래 정보가 곧 업데이트될 예정입니다.`
+        };
+        
+        setSelectedTradeData(placeholderTrade);
         setShowTradeModal(true);
       }
     } catch (error) {
