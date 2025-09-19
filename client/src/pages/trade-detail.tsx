@@ -19,7 +19,14 @@ export default function TradeDetail() {
 
   // Fetch trade details
   const { data: trades = [], isLoading } = useQuery<InsiderTrade[]>({
-    queryKey: ['/api/trades'],
+    queryKey: ['trades', 'list', { limit: 100, offset: 0 }],
+    queryFn: async () => {
+      const response = await fetch('/api/trades?limit=100&offset=0');
+      if (!response.ok) {
+        throw new Error('Failed to fetch trades');
+      }
+      return response.json();
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -149,9 +156,21 @@ export default function TradeDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12" data-testid="avatar-company">
-                  <AvatarFallback>{getCompanyInitials(trade.companyName)}</AvatarFallback>
-                </Avatar>
+                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-md">
+                  <img
+                    src={`https://logo.clearbit.com/${trade.ticker?.toLowerCase()}.com`}
+                    alt={trade.ticker || trade.companyName}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm hidden">
+                    {getCompanyInitials(trade.companyName)}
+                  </div>
+                </div>
                 <div>
                   <h3 className="font-semibold text-lg" data-testid="text-company-name">
                     {trade.companyName}

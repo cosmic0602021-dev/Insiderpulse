@@ -216,7 +216,7 @@ class OpenInsiderCollector {
       if (!insiderName) return null;
 
       // Title
-      const title = this.cleanText(cells[cellIndex + 5]) || '';
+      const title = this.cleanTraderTitle(cells[cellIndex + 5] || '');
 
       // Trade type (P - Purchase, S - Sale, etc.)
       const tradeType = this.parseTradeType(cells[cellIndex + 6]);
@@ -308,6 +308,17 @@ class OpenInsiderCollector {
 
   private cleanText(text: string): string {
     return text.replace(/\s+/g, ' ').trim();
+  }
+
+  private cleanTraderTitle(title: string): string {
+    const cleaned = this.cleanText(title);
+
+    // If title is just a number or empty, provide a meaningful default
+    if (!cleaned || /^\d+$/.test(cleaned)) {
+      return 'Executive';
+    }
+
+    return cleaned;
   }
 
   private parseDate(text: string): string | null {

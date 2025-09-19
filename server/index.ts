@@ -7,6 +7,8 @@ import { stockPriceService } from "./stock-price-service";
 import './sec-collector'; // Initialize SEC data collector
 import './auto-scheduler'; // Initialize auto scheduler
 import { startupBackfillManager } from './startup-backfill';
+import { enhancedDataCollector } from './enhanced-data-collector';
+import { massiveDataImporter } from './massive-data-import';
 
 const execAsync = promisify(exec);
 
@@ -56,16 +58,37 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 STARTUP BACKFILL - Ensure complete 30-day data coverage
-  console.log('🔄 Starting comprehensive startup backfill...');
+  // 🚀 MASSIVE DATA COLLECTION - Multiple sources with high frequency
+  console.log('🔄 Starting massive data collection system...');
   setTimeout(async () => {
     try {
+      // First run massive import from multiple sources
+      console.log('🚀 Starting massive data import from multiple sources...');
+      await massiveDataImporter.executeManualImport();
+      console.log('✅ Massive data import completed successfully');
+
+      // Then run enhanced data collection
+      await enhancedDataCollector.performComprehensiveDataCollection();
+      console.log('✅ Enhanced data collection completed successfully');
+
+      // Also run original backfill as backup
       await startupBackfillManager.performStartupBackfill();
       console.log('✅ Startup backfill completed successfully');
     } catch (error) {
-      console.error('❌ Startup backfill failed, continuing with existing data:', error);
+      console.error('❌ Data collection failed, continuing with existing data:', error);
     }
   }, 5000); // Wait 5 seconds after server start to allow systems to stabilize
+
+  // 🔄 CONTINUOUS DATA COLLECTION - Run every 30 minutes
+  setInterval(async () => {
+    try {
+      console.log('🔄 Running scheduled data collection...');
+      await massiveDataImporter.executeManualImport();
+      console.log('✅ Scheduled data collection completed');
+    } catch (error) {
+      console.error('❌ Scheduled data collection failed:', error);
+    }
+  }, 30 * 60 * 1000); // 30분마다 실행
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

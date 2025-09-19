@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,96 @@ import type { InsiderTrade } from "@shared/schema";
 interface TradeCardProps {
   trade: InsiderTrade;
   onViewDetails?: (trade: InsiderTrade) => void;
+}
+
+// 회사 로고 소스들
+const companyLogos: Record<string, string[]> = {
+  'AAPL': [
+    'https://logo.clearbit.com/apple.com',
+    'https://companiesmarketcap.com/img/company-logos/64/AAPL.webp'
+  ],
+  'TSLA': [
+    'https://logo.clearbit.com/tesla.com',
+    'https://companiesmarketcap.com/img/company-logos/64/TSLA.webp'
+  ],
+  'NVDA': [
+    'https://logo.clearbit.com/nvidia.com',
+    'https://companiesmarketcap.com/img/company-logos/64/NVDA.webp'
+  ],
+  'META': [
+    'https://logo.clearbit.com/meta.com',
+    'https://companiesmarketcap.com/img/company-logos/64/META.webp'
+  ],
+  'MSFT': [
+    'https://logo.clearbit.com/microsoft.com',
+    'https://companiesmarketcap.com/img/company-logos/64/MSFT.webp'
+  ],
+  'AMZN': [
+    'https://logo.clearbit.com/amazon.com',
+    'https://companiesmarketcap.com/img/company-logos/64/AMZN.webp'
+  ],
+  'GOOGL': [
+    'https://logo.clearbit.com/google.com',
+    'https://companiesmarketcap.com/img/company-logos/64/GOOGL.webp'
+  ],
+  'NFLX': [
+    'https://logo.clearbit.com/netflix.com',
+    'https://companiesmarketcap.com/img/company-logos/64/NFLX.webp'
+  ]
+};
+
+// 회사 로고 컴포넌트
+function CompanyLogo({ ticker, companyName, size = 'md' }: {
+  ticker?: string,
+  companyName: string,
+  size?: 'sm' | 'md' | 'lg'
+}) {
+  const [currentSrc, setCurrentSrc] = useState(0);
+  const [hasError, setHasError] = useState(false);
+
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12'
+  };
+
+  const sources = ticker ? companyLogos[ticker.toUpperCase()] || [] : [];
+
+  const handleError = () => {
+    if (currentSrc < sources.length - 1) {
+      setCurrentSrc(prev => prev + 1);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  if (hasError || sources.length === 0) {
+    // 회사명에서 이니셜 생성
+    const initials = companyName
+      .split(' ')
+      .filter(word => word.length > 1)
+      .slice(0, 2)
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+
+    return (
+      <div className={`${sizeClasses[size]} bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm shadow-md`}>
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${sizeClasses[size]} bg-white rounded-lg flex items-center justify-center p-1 shadow-md`}>
+      <img
+        src={sources[currentSrc]}
+        alt={ticker || companyName}
+        className="w-full h-full object-contain"
+        onError={handleError}
+      />
+    </div>
+  );
 }
 
 export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
@@ -63,17 +154,23 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
     <Card className="hover-elevate" data-testid={`trade-card-${trade.id}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-semibold text-foreground" data-testid="company-name">
-                {trade.companyName}
-              </h3>
-              {trade.ticker && (
-                <Badge variant="outline" className="text-xs font-mono">
-                  {trade.ticker}
-                </Badge>
-              )}
-            </div>
+          <div className="flex items-start gap-3 flex-1">
+            <CompanyLogo
+              ticker={trade.ticker}
+              companyName={trade.companyName}
+              size="md"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-semibold text-foreground" data-testid="company-name">
+                  {trade.companyName}
+                </h3>
+                {trade.ticker && (
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {trade.ticker}
+                  </Badge>
+                )}
+              </div>
             {trade.traderName && (
               <div className="mb-1">
                 <div className="text-sm font-medium text-foreground" data-testid="trader-name">
@@ -89,6 +186,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             <p className="text-xs text-muted-foreground">
               {t('tradeCard.filed')} {formatDate(trade.filedDate)}
             </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {trade.tradeType && (

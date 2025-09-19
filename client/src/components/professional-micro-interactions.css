@@ -1,0 +1,315 @@
+/* 전문적인 마이크로 인터랙션 - 금융 SaaS 최적화 */
+
+/* 핵심 애니메이션 변수 */
+:root {
+  --micro-duration-fast: 200ms;
+  --micro-duration-medium: 300ms;
+  --micro-duration-slow: 400ms;
+  --micro-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --micro-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --trading-green: #10b981;
+  --trading-red: #ef4444;
+  --trading-blue: #3b82f6;
+  --professional-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --professional-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 1. 버튼 상태 변화 애니메이션 */
+.btn-professional {
+  position: relative;
+  transition: all var(--micro-duration-medium) var(--micro-easing);
+  transform: translateY(0);
+  box-shadow: var(--professional-shadow);
+}
+
+.btn-professional:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--professional-shadow-hover);
+}
+
+.btn-professional:active {
+  transform: translateY(0);
+  transition-duration: var(--micro-duration-fast);
+}
+
+/* 버튼 로딩 상태 */
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: btn-spin 1s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 2. 카드 호버 효과 */
+.card-professional {
+  transition: all var(--micro-duration-medium) var(--micro-easing);
+  border: 1px solid transparent;
+}
+
+.card-professional:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--professional-shadow-hover);
+  border-color: rgba(59, 130, 246, 0.1);
+}
+
+/* 3. 데이터 로딩 스켈레톤 */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 4. 수치 변화 애니메이션 */
+.value-change-up {
+  animation: value-flash-green var(--micro-duration-slow) var(--micro-easing);
+}
+
+.value-change-down {
+  animation: value-flash-red var(--micro-duration-slow) var(--micro-easing);
+}
+
+@keyframes value-flash-green {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(16, 185, 129, 0.1); }
+  100% { background-color: transparent; }
+}
+
+@keyframes value-flash-red {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(239, 68, 68, 0.1); }
+  100% { background-color: transparent; }
+}
+
+/* 5. 검색 입력 포커스 효과 */
+.search-professional {
+  transition: all var(--micro-duration-medium) var(--micro-easing);
+  border: 2px solid transparent;
+}
+
+.search-professional:focus {
+  border-color: var(--trading-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: scale(1.01);
+}
+
+/* 6. 모달 등장 애니메이션 */
+.modal-backdrop {
+  animation: modal-fade-in var(--micro-duration-medium) var(--micro-easing);
+}
+
+.modal-content {
+  animation: modal-slide-up var(--micro-duration-medium) var(--micro-easing);
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 7. 성공/오류 피드백 */
+.feedback-success {
+  animation: feedback-bounce-in var(--micro-duration-slow) var(--micro-easing-bounce);
+  color: var(--trading-green);
+}
+
+.feedback-error {
+  animation: feedback-shake var(--micro-duration-slow) var(--micro-easing);
+  color: var(--trading-red);
+}
+
+@keyframes feedback-bounce-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes feedback-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* 8. 프로그레스 바 */
+.progress-professional {
+  background: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 6px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--trading-blue), #06b6d4);
+  transition: width var(--micro-duration-slow) var(--micro-easing);
+  border-radius: 8px;
+}
+
+/* 9. 체크박스/토글 애니메이션 */
+.checkbox-professional {
+  transition: all var(--micro-duration-fast) var(--micro-easing);
+}
+
+.checkbox-professional:checked {
+  animation: checkbox-check var(--micro-duration-medium) var(--micro-easing-bounce);
+}
+
+@keyframes checkbox-check {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* 10. 탭 전환 효과 */
+.tab-professional {
+  position: relative;
+  transition: all var(--micro-duration-medium) var(--micro-easing);
+}
+
+.tab-professional::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--trading-blue);
+  transition: width var(--micro-duration-medium) var(--micro-easing);
+}
+
+.tab-professional.active::after {
+  width: 100%;
+}
+
+/* 11. 툴팁 애니메이션 */
+.tooltip-professional {
+  animation: tooltip-fade-in var(--micro-duration-fast) var(--micro-easing);
+  transform-origin: bottom center;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 12. 상태 배지 펄스 효과 */
+.status-live {
+  animation: status-pulse 2s infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* 13. 데이터 그리드 로우 호버 */
+.grid-row-professional {
+  transition: all var(--micro-duration-fast) var(--micro-easing);
+}
+
+.grid-row-professional:hover {
+  background-color: rgba(59, 130, 246, 0.02);
+  transform: translateX(2px);
+}
+
+/* 14. 아이콘 회전 애니메이션 */
+.icon-refresh.loading {
+  animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 15. 알림 슬라이드 인 */
+.notification-slide-in {
+  animation: notification-slide var(--micro-duration-medium) var(--micro-easing);
+}
+
+@keyframes notification-slide {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 16. 폼 필드 검증 효과 */
+.field-valid {
+  border-color: var(--trading-green);
+  animation: field-valid-glow var(--micro-duration-medium) var(--micro-easing);
+}
+
+.field-invalid {
+  border-color: var(--trading-red);
+  animation: field-invalid-shake var(--micro-duration-medium) var(--micro-easing);
+}
+
+@keyframes field-valid-glow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes field-invalid-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* 성능 최적화를 위한 will-change 속성 */
+.btn-professional,
+.card-professional,
+.modal-content,
+.grid-row-professional {
+  will-change: transform;
+}
+
+/* 애니메이션 비활성화 (사용자 선호도 존중) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -58,13 +58,18 @@ export class AIAnalysisService {
         max_tokens: 500 // Limit tokens to reduce cost
       });
 
-      const result = JSON.parse(response.choices[0].message.content);
-      
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content received from AI analysis");
+      }
+
+      const result = JSON.parse(content);
+
       // Validate and sanitize the response
       return this.validateAnalysisResult(result);
-      
-    } catch (error) {
-      if (error.status === 429) {
+
+    } catch (error: any) {
+      if (error?.status === 429) {
         console.warn('OpenAI rate limit exceeded, using fallback analysis');
       } else {
         console.error('AI analysis failed:', error);

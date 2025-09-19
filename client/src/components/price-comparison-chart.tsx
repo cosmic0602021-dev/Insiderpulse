@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 
@@ -31,13 +31,13 @@ export default function PriceComparisonChart({
 
   const data = [
     {
-      name: t('priceChart.tradePrice'),
+      category: t('priceChart.tradePrice'),
       price: tradePrice,
       type: 'trade',
       date: new Date(filedDate).toLocaleDateString()
     },
     {
-      name: t('priceChart.currentPrice'),
+      category: t('priceChart.currentPrice'),
       price: currentPrice,
       type: 'current',
       date: t('priceChart.today')
@@ -76,24 +76,38 @@ export default function PriceComparisonChart({
         {/* Chart */}
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="category"
                 tick={{ fontSize: 12 }}
                 className="text-muted-foreground"
               />
-              <YAxis 
+              <YAxis
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 tick={{ fontSize: 12 }}
                 className="text-muted-foreground"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="price" radius={[4, 4, 0, 0]}>
-                <Cell fill="hsl(var(--chart-1))" />
-                <Cell fill={isProfit ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))"} />
-              </Bar>
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="price"
+                stroke={isProfit ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))"}
+                strokeWidth={3}
+                dot={{
+                  fill: "hsl(var(--chart-1))",
+                  strokeWidth: 2,
+                  r: 6
+                }}
+                activeDot={{
+                  r: 8,
+                  stroke: isProfit ? "hsl(var(--chart-2))" : "hsl(var(--chart-5))",
+                  strokeWidth: 2,
+                  fill: '#fff'
+                }}
+                animationDuration={2000}
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
 

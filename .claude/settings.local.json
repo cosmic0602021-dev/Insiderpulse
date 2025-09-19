@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run start:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pkill:*)",
+      "Bash(PORT=3000 npm run start)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(kill:*)",
+      "Bash(PORT=3001 npm run dev)",
+      "Bash(export DEBIAN_FRONTEND=noninteractive)",
+      "Bash(export CI=true)",
+      "Bash(tsx:*)",
+      "Bash(pgrep:*)",
+      "Bash(awk:*)",
+      "Bash(npx vite:*)",
+      "Bash(xargs -r kill -9)",
+      "Bash(npm start)",
+      "Bash(curl:*)",
+      "Bash(PORT=5001 npm start)",
+      "WebFetch(domain:imgdb.in)",
+      "Bash(npm run:*)",
+      "Bash(PORT=5001 npm run dev)",
+      "Bash(npm install:*)",
+      "Bash(PORT=5002 npm start)",
+      "Bash(xargs cat:*)",
+      "Bash(echo:*)",
+      "Bash(node:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

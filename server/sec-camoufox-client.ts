@@ -68,7 +68,14 @@ export class SecCamoufoxClient {
       const { stdout, stderr } = await execAsync(`cd ${process.cwd()} && python ${scriptPath}`);
       
       // Clean up temp file
-      fs.unlinkSync(scriptPath);
+      try {
+        fs.unlinkSync(scriptPath);
+      } catch (error) {
+        // Ignore file not found errors
+        if (error.code !== 'ENOENT') {
+          console.warn('Warning: Could not delete temp script:', error.message);
+        }
+      }
       
       if (stderr && stderr.includes('error')) {
         console.error('🔴 Camoufox error:', stderr);

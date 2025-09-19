@@ -471,6 +471,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.loadMore': '더 많은 거래 불러오기',
     'liveTrading.activeNow': '현재 활성',
     'liveTrading.alertsSet': '알림 설정',
+    'liveTrading.loadingTrades': '내부자 거래를 불러오는 중입니다',
     
     // Trade Card
     'tradeCard.filed': '신고됨',

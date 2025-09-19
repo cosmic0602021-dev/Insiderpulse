@@ -120,46 +120,24 @@ class AdvancedOpenInsiderCollector {
    * Collects ALL insider trades from the past 30 days using pagination
    */
   async collect30DayBackfill(): Promise<number> {
-    console.log('🚀 Starting COMPLETE 30-day OpenInsider backfill...');
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    console.log('🚀 Starting COMPLETE OpenInsider backfill (no date limit)...');
     
     let totalProcessed = 0;
     let page = 1;
     let hasMore = true;
     
-    while (hasMore && page <= 100) { // Safety limit
-      console.log(`📄 Processing page ${page} for 30-day backfill...`);
+    while (hasMore && page <= 500) { // Increased safety limit for full collection
+      console.log(`📄 Processing page ${page} for full backfill...`);
       
       try {
         const { trades, hasNextPage } = await this.collectPage(page);
         
-        // Check if we've reached trades older than 30 days
-        const oldestTradeOnPage = trades.reduce((oldest, trade) => {
-          const tradeDate = new Date(trade.tradeDate);
-          return tradeDate < oldest ? tradeDate : oldest;
-        }, new Date());
-        
-        if (oldestTradeOnPage < thirtyDaysAgo) {
-          console.log(`⏹️ Reached 30-day limit on page ${page}. Stopping backfill.`);
-          
-          // Filter trades to only include those within 30 days
-          const recentTrades = trades.filter(trade => 
-            new Date(trade.tradeDate) >= thirtyDaysAgo
-          );
-          
-          const processed = await this.processTrades(recentTrades);
-          totalProcessed += processed;
-          
-          hasMore = false;
-        } else {
-          const processed = await this.processTrades(trades);
-          totalProcessed += processed;
-          
-          hasMore = hasNextPage && trades.length > 0;
-          page++;
-        }
+        // Process all trades without date filtering
+        const processed = await this.processTrades(trades);
+        totalProcessed += processed;
+
+        hasMore = hasNextPage && trades.length > 0;
+        page++;
         
         // Rate limiting - be respectful to OpenInsider
         await this.sleep(2000);
@@ -170,7 +148,7 @@ class AdvancedOpenInsiderCollector {
       }
     }
     
-    console.log(`🎉 30-day backfill completed: ${totalProcessed} trades processed across ${page - 1} pages`);
+    console.log(`🎉 Full backfill completed: ${totalProcessed} trades processed across ${page - 1} pages`);
     return totalProcessed;
   }
 
@@ -588,8 +566,8 @@ class AdvancedOpenInsiderCollector {
         companyName = this.extractCompanyName(cells[headerMap['company']] || '', ticker);
         insiderName = this.cleanText(cells[headerMap['insider']] || '') || 
                      this.cleanText(cells[5]) || 'Unknown'; // Fallback to legacy position
-        title = this.cleanText(cells[headerMap['title']] || '') || 
-                this.cleanText(cells[6]) || 'Executive'; // Fallback to legacy position
+        title = this.cleanTraderTitle(cells[headerMap['title']] || '') ||
+                this.cleanTraderTitle(cells[6]) || 'Executive'; // Fallback to legacy position
         price = this.parsePrice(cells[headerMap['price']] || '');
         quantity = this.parseNumber(cells[headerMap['quantity']] || '');
         owned = this.parseNumber(cells[headerMap['owned']] || '');
@@ -601,7 +579,7 @@ class AdvancedOpenInsiderCollector {
         // Legacy offset access (fallback)
         companyName = this.extractCompanyName(cells[cellIndex + 3], ticker);
         insiderName = this.cleanText(cells[cellIndex + 4]);
-        title = this.cleanText(cells[cellIndex + 5]) || 'Executive';
+        title = this.cleanTraderTitle(cells[cellIndex + 5] || 'Executive');
         price = this.parsePrice(cells[cellIndex + 7]);
         quantity = this.parseNumber(cells[cellIndex + 8]);
         owned = this.parseNumber(cells[cellIndex + 9]);
@@ -910,6 +888,17 @@ class AdvancedOpenInsiderCollector {
 
   private cleanText(text: string): string {
     return text.replace(/\s+/g, ' ').trim();
+  }
+
+  private cleanTraderTitle(title: string): string {
+    const cleaned = this.cleanText(title);
+
+    // If title is just a number or empty, provide a meaningful default
+    if (!cleaned || /^\d+$/.test(cleaned)) {
+      return 'Executive';
+    }
+
+    return cleaned;
   }
 
   private parseDate(text: string): string | null {

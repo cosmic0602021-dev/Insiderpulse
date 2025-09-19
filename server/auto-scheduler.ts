@@ -33,9 +33,9 @@ class AutoScheduler {
       this.runOpenInsiderCollection();
     }, 30000);
 
-    console.log('✅ Auto scheduler started successfully - OPTIMIZED FOR COMPLETE COVERAGE:');
-    console.log('   🔄 OpenInsider: Every 10 minutes (HIGH FREQUENCY)');
-    console.log('   🔄 MarketBeat: Every 30 minutes (COMPREHENSIVE)');
+    console.log('✅ Auto scheduler started successfully - MAXIMUM SPEED OPTIMIZED:');
+    console.log('   🔄 OpenInsider: Every 5 minutes (MAXIMUM FREQUENCY)');
+    console.log('   🔄 MarketBeat: Every 15 minutes (MAXIMUM COMPREHENSIVE)');
   }
 
   stop() {
@@ -61,27 +61,27 @@ class AutoScheduler {
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 10 minutes (10 * 60 * 1000 = 600000ms) for complete coverage
+    // Run OpenInsider collection every 5 minutes (5 * 60 * 1000 = 300000ms) for MAXIMUM coverage
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
-    console.log('📅 OpenInsider scheduled: Every 10 minutes (HIGH FREQUENCY MODE)');
+    console.log('📅 OpenInsider scheduled: Every 5 minutes (MAXIMUM FREQUENCY MODE)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 30 minutes (30 * 60 * 1000 = 1800000ms) for comprehensive data
-    // Offset by 5 minutes to avoid conflicts with OpenInsider
+    // Run MarketBeat collection every 15 minutes (15 * 60 * 1000 = 900000ms) for MAXIMUM comprehensive data
+    // Offset by 2 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 30 * 60 * 1000);
+      }, 15 * 60 * 1000);
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
-    }, 5 * 60 * 1000); // Start after 5 minutes
+    }, 2 * 60 * 1000); // Start after 2 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 30 minutes (COMPREHENSIVE MODE)');
+    console.log('📅 MarketBeat scheduled: Every 15 minutes (MAXIMUM COMPREHENSIVE MODE)');
   }
 
   private async runOpenInsiderCollection() {
@@ -89,7 +89,7 @@ class AutoScheduler {
       console.log('🔄 [AUTO] Starting OpenInsider collection...');
       const startTime = Date.now();
       
-      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 15, perPage: 100 }); // ADVANCED: Collect multiple pages for complete coverage
+      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 25, perPage: 100 }); // MAXIMUM: Collect many pages for complete coverage
       
       const duration = Date.now() - startTime;
       console.log(`✅ [AUTO] OpenInsider collection completed in ${duration}ms`);
@@ -111,7 +111,7 @@ class AutoScheduler {
       console.log('🔄 [AUTO] Starting MarketBeat supplemental collection...');
       const startTime = Date.now();
       
-      const processedCount = await marketBeatCollector.collectLatestTrades(200); // INCREASED: Comprehensive batch for complete coverage
+      const processedCount = await marketBeatCollector.collectLatestTrades(500); // MAXIMUM: Large batch for complete coverage
       
       const duration = Date.now() - startTime;
       console.log(`✅ [AUTO] MarketBeat collection completed in ${duration}ms`);

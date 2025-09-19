@@ -15,6 +15,8 @@ import Analytics from "@/pages/analytics";
 import Alerts from "@/pages/alerts";
 import Search from "@/pages/search";
 import LiveTrading from "@/pages/live-trading";
+import PasswordDemo from "@/pages/password-demo";
+import EnhancedInsiderTradingDashboard from "@/components/EnhancedInsiderTradingDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/search" component={Search} />
+      <Route path="/password-demo" component={PasswordDemo} />
+      <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

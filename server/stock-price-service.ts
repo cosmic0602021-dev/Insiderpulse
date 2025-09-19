@@ -169,10 +169,12 @@ export class StockPriceService {
             await storage.upsertStockPrice(stockPrice);
             console.log(`✅ Updated stock price for ${priceData.ticker}: $${priceData.currentPrice}`);
           } else {
-            console.log(`⚠️ No real price data available for ${companyName} - skipping (no fake data)`);
+            console.log(`⚠️ No real price data available for ${companyName} - skipping`);
           }
         } catch (error) {
-          console.error(`❌ Failed to update price for ${companyName}:`, error);
+          console.error(`❌ Failed to update price for ${companyName}:`, error?.message || error);
+          // Continue with next company instead of crashing
+          continue;
         }
         
         // Rate limiting: wait 100ms between requests

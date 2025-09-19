@@ -7,6 +7,8 @@ import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
 import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
+import dataCollectionRouter from "./data-collection-api";
+import { massiveDataImporter } from "./massive-data-import";
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -210,19 +212,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MASSIVE DATA COLLECTION ENDPOINTS
+  app.post('/api/admin/collect/massive', protectAdminEndpoint, async (req, res) => {
+    try {
+      console.log('🚀 Admin trigger: Starting massive data collection from multiple sources');
+
+      // Start collection in background
+      const collectionPromise = massiveDataImporter.executeManualImport();
+
+      // Return immediately with job info
+      res.json({
+        success: true,
+        message: 'Massive data collection started',
+        timestamp: new Date().toISOString(),
+        note: 'Collection is running in background - check logs for progress'
+      });
+
+      // Log completion when done (but don't wait for response)
+      collectionPromise.then(() => {
+        console.log('✅ Admin-triggered massive data collection completed');
+      }).catch((error) => {
+        console.error('❌ Admin-triggered massive data collection failed:', error);
+      });
+
+    } catch (error) {
+      console.error('Failed to start massive data collection:', error);
+      res.status(500).json({ error: 'Failed to start massive data collection' });
+    }
+  });
+
+  // Get data collection statistics
+  app.get('/api/admin/stats/collection', protectAdminEndpoint, async (req, res) => {
+    try {
+      const trades = await storage.getInsiderTrades(1000, 0, false);
+
+      const stats = {
+        total: trades.length,
+        today: trades.filter(t => {
+          const today = new Date().toISOString().split('T')[0];
+          return t.filingDate?.startsWith(today) || t.createdAt?.startsWith(today);
+        }).length,
+        thisWeek: trades.filter(t => {
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          const tradeDate = new Date(t.filingDate || t.createdAt || '');
+          return tradeDate >= weekAgo;
+        }).length,
+        verified: trades.filter(t => t.isVerified).length,
+        pending: trades.filter(t => t.verificationStatus === 'PENDING').length,
+        sources: {
+          finviz: trades.filter(t => t.verificationNotes?.includes('finviz')).length,
+          marketwatch: trades.filter(t => t.verificationNotes?.includes('marketwatch')).length,
+          nasdaq: trades.filter(t => t.verificationNotes?.includes('nasdaq')).length,
+          sec: trades.filter(t => t.secFilingUrl?.includes('sec.gov')).length
+        }
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Failed to get collection statistics:', error);
+      res.status(500).json({ error: 'Failed to get collection statistics' });
+    }
+  });
+
   // Admin endpoints for historical data collection
   app.post('/api/admin/collect/historical', protectAdminEndpoint, async (req, res) => {
     try {
       const months = parseInt(req.body.months) || 6;
-      
+
       console.log(`🔄 Admin trigger: Starting ${months}-month historical collection`);
-      
+
       // Import here to avoid circular dependencies
       const { historicalCollector } = await import('./sec-historical-collector');
-      
+
       // Start collection in background
       const progressPromise = historicalCollector.collectHistoricalData(months);
-      
+
       // Return immediately with job info
       res.json({
         success: true,
@@ -628,10 +693,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // 🚀 Register enhanced data collection API endpoints
+  app.use(dataCollectionRouter);
+
   // 🚀 Register Mega Data Collection API endpoints
   registerMegaApiEndpoints(app);
-  
-  console.log('✅ API routes registered with WebSocket support');
+
+  console.log('✅ API routes registered with WebSocket support and enhanced data collection');
   return httpServer;
 }
 

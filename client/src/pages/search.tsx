@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Filter, TrendingUp, TrendingDown, Calendar, Building2, User, DollarSign, Sliders } from "lucide-react";
+import { AnimatedSearchInput } from "@/components/animated-search-input";
 import TradeCard from "@/components/trade-card";
 import type { InsiderTrade } from "@shared/schema";
 import { useLocation } from "wouter";

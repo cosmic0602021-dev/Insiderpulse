@@ -54,7 +54,11 @@ class ApiClient {
       params.append('sortBy', sortBy);
     }
 
-    return this.request<InsiderTrade[]>(`/trades?${params.toString()}`);
+    const url = `/trades?${params.toString()}`;
+    console.log(`🌐 [API] Requesting: ${url}`);
+    const result = await this.request<InsiderTrade[]>(url);
+    console.log(`📊 [API] Received ${result.length} trades`);
+    return result;
   }
 
   getInsiderTradeById = async (id: string): Promise<InsiderTrade> => {
