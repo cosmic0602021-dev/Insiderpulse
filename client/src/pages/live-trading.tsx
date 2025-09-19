@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { AnimatedSearchInput } from '@/components/animated-search-input';
+import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
@@ -170,6 +171,28 @@ export default function LiveTrading() {
 
     return generateAdvancedInsight();
   }, []); // 메모이제이션으로 성능 최적화
+
+  // 내부자 매수 평균가격 계산 함수
+  const calculateInsiderBuyAvgPrice = useCallback((ticker: string, tradeType: string): number | null => {
+    if (!ticker) return null;
+    
+    // 해당 ticker의 매수 거래들만 필터링
+    const buyTrades = trades.filter(trade => 
+      trade.ticker === ticker &&
+      (trade.tradeType?.toUpperCase().includes('BUY') || 
+       trade.tradeType?.toUpperCase().includes('PURCHASE'))
+    );
+    
+    if (buyTrades.length === 0) return null;
+    
+    // 평균가격 계산 (거래량 가중평균)
+    const totalValue = buyTrades.reduce((sum, trade) => sum + (trade.totalValue || 0), 0);
+    const totalShares = buyTrades.reduce((sum, trade) => sum + (trade.shares || 0), 0);
+    
+    if (totalShares === 0) return null;
+    
+    return totalValue / totalShares;
+  }, [trades]);
 
   // 정교한 AI 데이터 강화 시스템 - 메모이제이션 최적화
   const enhanceTradeWithAI = useCallback((trade: InsiderTrade): EnhancedTrade => {
@@ -859,6 +882,14 @@ export default function LiveTrading() {
                           <p className="text-xs text-muted-foreground font-medium">
                             ${trade.pricePerShare.toFixed(2)} per share
                           </p>
+                          {(() => {
+                            const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
+                            return avgBuyPrice && (
+                              <p className="text-xs text-blue-600 font-medium">
+                                내부자 매수 평균: ${avgBuyPrice.toFixed(2)}
+                              </p>
+                            );
+                          })()}
                         </div>
                         
                         <div className="text-right">
@@ -1249,321 +1280,26 @@ export default function LiveTrading() {
       )}
 
       {/* 거래 상세 정보 모달 */}
-      {showTradeDetailModal && selectedTradeForDetail && (
-        <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
-                    {getCompanyInitials(selectedTradeForDetail.companyName)}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold">{selectedTradeForDetail.companyName}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedTradeForDetail.ticker}</p>
-                  </div>
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowTradeDetailModal(false)}
-                  className="btn-professional"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 기본 정보 */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">거래 유형</p>
-                  <Badge variant={getTradeTypeVariant(selectedTradeForDetail.tradeType)} className="btn-professional font-semibold flex items-center gap-1 w-fit">
-                    {getTradeTypeIcon(selectedTradeForDetail.tradeType)}
-                    {selectedTradeForDetail.tradeType}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">총 거래액</p>
-                  <p className="font-bold">{formatCurrency(selectedTradeForDetail.totalValue)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">주식 수</p>
-                  <p className="font-bold">{selectedTradeForDetail.shares.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">주당 가격</p>
-                  <p className="font-bold">${selectedTradeForDetail.pricePerShare.toFixed(2)}</p>
-                </div>
-              </div>
-
-              {/* 내부자 정보 */}
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  내부자 정보
-                </h4>
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">이름</p>
-                    <p className="font-medium">{selectedTradeForDetail.traderName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">직책</p>
-                    <p className="font-medium">{selectedTradeForDetail.traderTitle}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">신고 일자</p>
-                    <p className="font-medium">{formatDate(selectedTradeForDetail.filedDate)}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 가격 분석 대시보드 */}
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
-                  가격 분석 & 투자 인사이트
-                </h4>
-
-                {/* 핵심 지표 카드들 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* 내부자 거래가 카드 */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
-                        <DollarSign className="h-4 w-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">내부자 거래가</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{formatDate(selectedTradeForDetail.filedDate)}</p>
-                      </div>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-200 value-change-up">
-                      ${selectedTradeForDetail.pricePerShare.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">실제 거래 가격</p>
-                  </div>
-
-                  {/* 현재 시장가 카드 */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="h-4 w-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">현재 시장가</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">실시간 추정</p>
-                      </div>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                      ${selectedTradeForDetail.currentPrice?.toFixed(2) || 'N/A'}
-                    </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">시장 예상 가격</p>
-                  </div>
-
-                  {/* 가격 차이 카드 */}
-                  {selectedTradeForDetail.currentPrice && (
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
-                          <Calculator className="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300">가격 차이</p>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {selectedTradeForDetail.currentPrice > selectedTradeForDetail.pricePerShare ? '내부자가 저가에 매수' : '내부자가 고가에 매수'}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                        {selectedTradeForDetail.currentPrice > selectedTradeForDetail.pricePerShare ? '+' : ''}
-                        {(
-                          ((selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare) / selectedTradeForDetail.pricePerShare) * 100
-                        ).toFixed(1)}%
-                      </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                        ${Math.abs(selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare).toFixed(2)} 차이
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                  {/* 인터랙티브 가격 비교 차트 */}
-                  {selectedTradeForDetail.currentPrice && (
-                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-                      <h5 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-6 flex items-center justify-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-cyan-400" />
-                        가격 비교 대시보드
-                      </h5>
-
-                      {/* 인터랙티브 차트 */}
-                      <div className="space-y-8">
-                        <div className="grid grid-cols-2 gap-12">
-                          {/* 내부자 거래가 바 */}
-                          <div className="text-center space-y-4">
-                            <div>
-                              <p className="text-sm font-semibold text-cyan-300 mb-2">내부자 거래가</p>
-                              <p className="text-xl font-bold text-white">
-                                ${selectedTradeForDetail.pricePerShare.toFixed(2)}
-                              </p>
-                            </div>
-
-                            <div className="relative flex justify-center">
-                              <div className="relative">
-                                <div
-                                  className="bg-gradient-to-t from-cyan-500 to-cyan-300 rounded-t-xl transition-all duration-1000"
-                                  style={{
-                                    width: '80px',
-                                    height: `${Math.min((selectedTradeForDetail.pricePerShare / Math.max(selectedTradeForDetail.pricePerShare, selectedTradeForDetail.currentPrice)) * 160, 160)}px`
-                                  }}
-                                ></div>
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-cyan-400 rounded-full border-4 border-white/20"></div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* 현재 시장가 바 */}
-                          <div className="text-center space-y-4">
-                            <div>
-                              <p className="text-sm font-semibold text-blue-300 mb-2">현재 시장가</p>
-                              <p className="text-xl font-bold text-white">
-                                ${selectedTradeForDetail.currentPrice.toFixed(2)}
-                              </p>
-                            </div>
-
-                            <div className="relative flex justify-center">
-                              <div className="relative">
-                                <div
-                                  className="bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-xl transition-all duration-1000"
-                                  style={{
-                                    width: '80px',
-                                    height: `${Math.min((selectedTradeForDetail.currentPrice / Math.max(selectedTradeForDetail.pricePerShare, selectedTradeForDetail.currentPrice)) * 160, 160)}px`
-                                  }}
-                                ></div>
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-400 rounded-full border-4 border-white/20"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 베이스 라인 */}
-                        <div className="relative">
-                          <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                          <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-white/50 rounded-full"></div>
-                        </div>
-
-                        {/* 수익 예측 카드 - 수익일 때만 표시 */}
-                        {selectedTradeForDetail.currentPrice > selectedTradeForDetail.pricePerShare && (
-                          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                                <p className="text-sm font-semibold text-white/80">예상 수익</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xl font-bold text-green-400">
-                                  +${(selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare).toFixed(2)}
-                                </p>
-                                <p className="text-sm font-medium text-green-300">
-                                  ({((selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare) / selectedTradeForDetail.pricePerShare * 100).toFixed(1)}%)
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* 투자 시뮬레이션 */}
-                            <div className="pt-3 border-t border-white/10">
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-white/60">100주 투자 시:</span>
-                                  <span className="font-bold text-green-300">
-                                    +${((selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare) * 100).toFixed(0)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-white/60">1000주 투자 시:</span>
-                                  <span className="font-bold text-green-300">
-                                    +${((selectedTradeForDetail.currentPrice - selectedTradeForDetail.pricePerShare) * 1000).toLocaleString()}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-              </div>
-
-              {/* AI 분석 정보 */}
-              {selectedTradeForDetail.predictionAccuracy && (
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-purple-600" />
-                    AI 분석 정보
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">예측 정확도</p>
-                      <p className="text-lg font-bold text-green-600 value-change-up">
-                        {selectedTradeForDetail.predictionAccuracy}%
-                      </p>
-                    </div>
-                    <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-xs text-muted-foreground mb-1">예상 영향</p>
-                      <p className={`text-lg font-bold value-change-${selectedTradeForDetail.impactPrediction?.startsWith('+') ? 'up' : 'down'} ${
-                        selectedTradeForDetail.impactPrediction?.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {selectedTradeForDetail.impactPrediction}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedTradeForDetail.aiInsight && (
-                    <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <p className="text-sm">{selectedTradeForDetail.aiInsight}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 액션 버튼들 */}
-              <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTradeForAlert(selectedTradeForDetail);
-                    setSelectedCompanyForAlert(selectedTradeForDetail.ticker || '');
-                    setShowAlertModal(true);
-                    setShowTradeDetailModal(false);
-                  }}
-                  className="btn-professional"
-                >
-                  <Mail className="h-4 w-4 mr-1" />
-                  알림
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedTradeForDetail.ticker && !watchlist.includes(selectedTradeForDetail.ticker)) {
-                      setWatchlist(prev => [...prev, selectedTradeForDetail.ticker!]);
-                      setSelectedTradeForAlert(selectedTradeForDetail);
-                      setShowWatchlistModal(true);
-                      setShowTradeDetailModal(false);
-                    }
-                  }}
-                  disabled={selectedTradeForDetail.ticker ? watchlist.includes(selectedTradeForDetail.ticker) : true}
-                  className="btn-professional"
-                >
-                  <Bookmark className="h-4 w-4 mr-1" />
-                  워치리스트
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <TradeDetailModal
+        isOpen={showTradeDetailModal}
+        onClose={() => setShowTradeDetailModal(false)}
+        trade={selectedTradeForDetail}
+        onAlert={(trade) => {
+          setSelectedTradeForAlert(trade);
+          setSelectedCompanyForAlert(trade.ticker || '');
+          setShowAlertModal(true);
+          setShowTradeDetailModal(false);
+        }}
+        onAddToWatchlist={(trade) => {
+          if (trade.ticker && !watchlist.includes(trade.ticker)) {
+            setWatchlist(prev => [...prev, trade.ticker!]);
+            setSelectedTradeForAlert(trade);
+            setShowWatchlistModal(true);
+            setShowTradeDetailModal(false);
+          }
+        }}
+        isInWatchlist={selectedTradeForDetail?.ticker ? watchlist.includes(selectedTradeForDetail.ticker) : false}
+      />
     </div>
   );
 }
