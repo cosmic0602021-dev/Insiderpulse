@@ -34,7 +34,6 @@ interface TradeFilter {
 }
 
 interface EnhancedTrade extends InsiderTrade {
-  predictionAccuracy?: number;
   recommendedBuyPrice?: number;
   currentPrice?: number;
   similarTrades?: number;
@@ -88,88 +87,93 @@ export default function LiveTrading() {
   const wsUrl = getWebSocketUrl();
   const { isConnected, lastMessage, sendMessage } = useWebSocket(wsUrl);
 
-  // 고급 AI 분석 인사이트 생성 시스템 - 간소화된 버전
+  // 회사별 맞춤형 전문가 분석 생성 시스템
   const generateProfessionalInsight = useCallback((trade: InsiderTrade): string => {
+    const company = trade.companyName || 'Unknown';
+    const ticker = trade.ticker || '';
     const tradeValue = trade.totalValue;
-    const shares = trade.shares;
     const price = trade.pricePerShare;
-
-    // 거래 규모 분류
-    const getTradeSize = () => {
-      if (tradeValue >= 10000000) return 'MEGA'; // 1천만 달러 이상
-      if (tradeValue >= 1000000) return 'LARGE'; // 1백만 달러 이상
-      if (tradeValue >= 100000) return 'MEDIUM'; // 10만 달러 이상
-      return 'SMALL';
-    };
-
-    // 직책 중요도 분석
-    const getPositionWeight = (title: string) => {
-      const upperTitle = title.toUpperCase();
-      if (upperTitle.includes('CEO') || upperTitle.includes('CHIEF EXECUTIVE')) return 'HIGH';
-      if (upperTitle.includes('CFO') || upperTitle.includes('CHIEF FINANCIAL')) return 'HIGH';
-      if (upperTitle.includes('CTO') || upperTitle.includes('CHIEF TECHNOLOGY')) return 'HIGH';
-      if (upperTitle.includes('PRESIDENT') || upperTitle.includes('CHAIRMAN')) return 'HIGH';
-      if (upperTitle.includes('DIRECTOR') || upperTitle.includes('VICE PRESIDENT')) return 'MEDIUM';
-      return 'LOW';
-    };
-
-    // 시장 타이밍 분석
-    const getMarketContext = () => {
-      const contexts = [
-        'earnings season', 'market uncertainty', 'sector rotation', 'economic indicators',
-        'regulatory changes', 'competitive landscape', 'innovation cycle', 'market volatility'
-      ];
-      return contexts[Math.floor(Math.random() * contexts.length)];
-    };
-
-    const tradeSize = getTradeSize();
-    const positionWeight = getPositionWeight(trade.traderTitle || '');
-    const marketContext = getMarketContext();
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
-
-    // 정교한 분석 시스템
-    const generateAdvancedInsight = () => {
-      const baseInsights = {
-        MEGA_HIGH_BUY: [
-          `🎯 초대형 내부자 매수신호: ${trade.traderName}이 ${(tradeValue/1000000).toFixed(1)}M$ 규모로 전략적 매수 실행. 기업 내부 정보를 바탕으로 한 강력한 상승 신호로 해석됩니다.`,
-          `💎 CEO급 메가 투자: ${(shares/1000).toFixed(0)}K 주식의 대량 매수는 향후 3-6개월 내 중요 발표나 실적 개선을 시사할 수 있습니다.`,
-          `🚀 경영진 확신의 표현: $${price.toFixed(2)} 가격에서의 대량 매수는 현재 주가가 내재가치 대비 크게 저평가되었다는 경영진의 판단을 반영합니다.`
-        ],
-        MEGA_HIGH_SELL: [
-          `⚠️ 주요 경고신호: ${trade.traderName}의 ${(tradeValue/1000000).toFixed(1)}M$ 대량 매도는 단순 현금화를 넘어선 의미일 수 있습니다. 향후 실적이나 시장 상황에 대한 우려를 반영할 가능성이 높습니다.`,
-          `🔴 리스크 회피 신호: CEO급 인사의 메가 규모 매도는 일반적으로 시장에 부정적 신호로 해석됩니다. 추가 하락 압력 가능성을 염두에 두어야 합니다.`,
-          `📉 전략적 매도 분석: ${(shares/1000).toFixed(0)}K 주식 매도는 포트폴리오 재조정이나 개인적 이유를 넘어선 기업 전망에 대한 신중한 접근을 시사합니다.`
-        ],
-        LARGE_MEDIUM_BUY: [
-          `📈 중규모 투자 기회: ${(tradeValue/1000).toFixed(0)}K$ 규모의 내부자 매수는 ${marketContext} 상황에서 긍정적 신호로 작용할 수 있습니다.`,
-          `💡 전략적 투자 타이밍: 현재 가격 수준에서의 ${trade.traderTitle} 매수는 향후 12개월 내 주가 상승 가능성을 시사합니다.`,
-          `🎯 가치 인정 매수: 내부 정보에 접근 가능한 임원의 매수는 현재 밸류에이션의 매력도를 반영합니다.`
-        ],
-        LARGE_MEDIUM_SELL: [
-          `⚖️ 중립적 매도 신호: ${(tradeValue/1000).toFixed(0)}K$ 규모의 매도는 개인적 현금 필요나 포트폴리오 조정 차원일 수 있으나, 시장 상황을 종합적으로 고려해야 합니다.`,
-          `📊 선제적 리스크 관리: ${trade.traderTitle}의 매도는 ${marketContext} 환경에서의 보수적 접근으로 해석됩니다.`,
-          `🔍 추가 분석 필요: 중규모 매도의 경우 다른 내부자 거래 패턴과 함께 종합적 분석이 권장됩니다.`
-        ],
-        SMALL_ANY: [
-          `📋 일반적 거래 패턴: ${(tradeValue/1000).toFixed(0)}K$ 규모의 소액 거래는 일반적인 포트폴리오 관리 차원으로 해석됩니다.`,
-          `💼 정기적 거래 활동: 소규모 ${isBuy ? '매수' : '매도'}는 개인 재무 계획의 일환일 가능성이 높습니다.`,
-          `📈 장기적 관점 필요: 소액 거래는 단독으로는 강한 신호가 아니므로, 다른 지표와 함께 분석하는 것이 중요합니다.`
-        ]
-      };
-
-      // 인사이트 카테고리 결정
-      let category = 'SMALL_ANY';
-      if (tradeSize === 'MEGA' && positionWeight === 'HIGH') {
-        category = isBuy ? 'MEGA_HIGH_BUY' : 'MEGA_HIGH_SELL';
-      } else if ((tradeSize === 'LARGE' || tradeSize === 'MEDIUM') && (positionWeight === 'HIGH' || positionWeight === 'MEDIUM')) {
-        category = isBuy ? 'LARGE_MEDIUM_BUY' : 'LARGE_MEDIUM_SELL';
+    const titleUpper = (trade.traderTitle || '').toUpperCase();
+    
+    // 회사별 업종 및 특성 분석
+    const getCompanyContext = (companyName: string, ticker: string) => {
+      const name = companyName.toUpperCase();
+      const tick = ticker.toUpperCase();
+      
+      // 실제 주요 기업들의 현재 상황 반영
+      if (tick === 'AAPL' || name.includes('APPLE')) {
+        return { sector: 'tech', trend: 'AI 혁신 사이클', context: 'Vision Pro와 AI 통합으로 새로운 성장 동력 확보' };
       }
-
-      const insights = baseInsights[category as keyof typeof baseInsights];
-      return insights[Math.floor(Math.random() * insights.length)];
+      if (tick === 'TSLA' || name.includes('TESLA')) {
+        return { sector: 'ev', trend: '자율주행 상용화', context: 'FSD 기술 발전과 로보택시 사업 기대감 상승' };
+      }
+      if (tick === 'NVDA' || name.includes('NVIDIA')) {
+        return { sector: 'ai', trend: 'AI 반도체 독점', context: '생성형 AI 붐으로 데이터센터 수요 폭증' };
+      }
+      if (tick === 'MSFT' || name.includes('MICROSOFT')) {
+        return { sector: 'cloud', trend: '클라우드 지배력', context: 'Azure와 Copilot으로 AI 기업 전환 가속화' };
+      }
+      if (tick === 'GOOGL' || tick === 'GOOG' || name.includes('ALPHABET') || name.includes('GOOGLE')) {
+        return { sector: 'search', trend: '검색 AI 경쟁', context: 'Gemini 모델로 ChatGPT 대항하며 검색 혁신 추진' };
+      }
+      if (tick === 'META' || name.includes('META')) {
+        return { sector: 'social', trend: '메타버스 전환', context: 'Reality Labs 투자로 차세대 플랫폼 구축 중' };
+      }
+      if (tick === 'AMZN' || name.includes('AMAZON')) {
+        return { sector: 'ecommerce', trend: 'AWS 클라우드', context: '전자상거래 회복과 클라우드 성장 동력 지속' };
+      }
+      if (tick === 'CRM' || name.includes('SALESFORCE')) {
+        return { sector: 'saas', trend: 'AI CRM 혁신', context: 'Einstein AI로 고객관리 솔루션 차별화' };
+      }
+      if (name.includes('MARA') || tick === 'MARA') {
+        return { sector: 'crypto', trend: '비트코인 마이닝', context: '비트코인 가격 상승과 채굴 효율성 개선' };
+      }
+      
+      // 일반적인 업종 분류
+      if (name.includes('BANK') || name.includes('FINANCIAL')) {
+        return { sector: 'finance', trend: '금리 정상화', context: '연준의 통화정책 변화에 따른 수익성 개선 기대' };
+      }
+      if (name.includes('PHARMA') || name.includes('BIO')) {
+        return { sector: 'biotech', trend: '신약 개발', context: 'AI 신약 개발 가속화와 규제 환경 개선' };
+      }
+      
+      return { sector: 'general', trend: '시장 변동성', context: '업종별 차별화된 실적 모멘텀' };
     };
 
-    return generateAdvancedInsight();
+    const { sector, trend, context } = getCompanyContext(company, ticker);
+    
+    // 직책별 신뢰도
+    const getExecutiveWeight = () => {
+      if (titleUpper.includes('CEO') || titleUpper.includes('CHIEF EXECUTIVE')) return 'CEO';
+      if (titleUpper.includes('CFO') || titleUpper.includes('CHIEF FINANCIAL')) return 'CFO';
+      if (titleUpper.includes('CTO') || titleUpper.includes('CHIEF TECHNOLOGY')) return 'CTO';
+      if (titleUpper.includes('PRESIDENT') || titleUpper.includes('CHAIRMAN')) return '임원진';
+      return '직원';
+    };
+
+    const role = getExecutiveWeight();
+    const action = isBuy ? '매수' : '매도';
+    const valueMillions = (tradeValue / 1000000).toFixed(1);
+
+    // 거래 규모별 전문가 분석 생성
+    if (tradeValue >= 5000000) { // 500만 달러 이상
+      if (isBuy) {
+        return `${company} ${role}의 ${valueMillions}M$ 대량 매수는 ${context} 전망에 대한 강한 확신을 시사`;
+      } else {
+        return `${company} ${role}의 ${valueMillions}M$ 대량 매도는 ${trend} 사이클 정점 또는 리스크 회피 신호로 해석`;
+      }
+    } else if (tradeValue >= 1000000) { // 100만 달러 이상
+      if (isBuy) {
+        return `${ticker} ${role} 매수는 현재 밸류에이션 대비 ${context} 잠재력을 높게 평가한 것으로 분석`;
+      } else {
+        return `${company} ${role}의 ${valueMillions}M$ 매도는 포트폴리오 조정 또는 ${trend} 둔화 우려 반영`;
+      }
+    } else if (tradeValue >= 100000) { // 10만 달러 이상
+      return `${ticker} 중간급 임원의 ${action}는 ${trend} 트렌드 속 기업 내부 전망을 반영한 일반적 거래`;
+    } else {
+      return `${company} 소액 ${action}는 개인 포트폴리오 관리 차원의 일상적 거래로 판단`;
+    }
   }, []); // 메모이제이션으로 성능 최적화
 
   // 내부자 매수 평균가격 계산 함수
@@ -199,27 +203,6 @@ export default function LiveTrading() {
     const tradeValue = trade.totalValue;
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
 
-    // 거래 규모와 직책에 따른 예측 정확도 계산
-    const calculatePredictionAccuracy = () => {
-      let baseAccuracy = 75;
-
-      // 거래 규모 가산점
-      if (tradeValue >= 10000000) baseAccuracy += 15; // 메가 거래
-      else if (tradeValue >= 1000000) baseAccuracy += 10; // 대형 거래
-      else if (tradeValue >= 100000) baseAccuracy += 5; // 중형 거래
-
-      // 직책 가산점
-      const title = (trade.traderTitle || '').toUpperCase();
-      if (title.includes('CEO') || title.includes('CHIEF EXECUTIVE')) baseAccuracy += 10;
-      else if (title.includes('CFO') || title.includes('CHIEF FINANCIAL')) baseAccuracy += 8;
-      else if (title.includes('PRESIDENT') || title.includes('CHAIRMAN')) baseAccuracy += 6;
-      else if (title.includes('DIRECTOR')) baseAccuracy += 3;
-
-      // 랜덤 변동 추가 (±5%)
-      baseAccuracy += Math.floor(Math.random() * 11) - 5;
-
-      return Math.min(Math.max(baseAccuracy, 65), 98); // 65-98% 범위로 제한
-    };
 
     // 현실적인 현재가 계산
     const calculateCurrentPrice = () => {
@@ -282,7 +265,6 @@ export default function LiveTrading() {
     const currentPrice = calculateCurrentPrice();
     const enhanced: EnhancedTrade = {
       ...trade,
-      predictionAccuracy: calculatePredictionAccuracy(),
       recommendedBuyPrice: isBuy
         ? currentPrice * 0.97 // 매수 거래면 현재가보다 3% 낮은 추천가
         : currentPrice * 1.02, // 매도 거래면 현재가보다 2% 높은 추천가
@@ -864,7 +846,30 @@ export default function LiveTrading() {
                       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            {trade.ticker ? (
+                              <div className="relative h-6 w-6 flex-shrink-0">
+                                <img
+                                  src={`https://assets.parqet.com/logos/resolution/${trade.ticker}.png`}
+                                  alt={`${trade.companyName} logo`}
+                                  className="h-6 w-6 rounded-sm object-contain"
+                                  onError={(e) => {
+                                    // Fallback to EODHD API if Parqet fails
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('parqet.com')) {
+                                      target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
+                                    } else {
+                                      // Final fallback to Building2 icon
+                                      target.style.display = 'none';
+                                      const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                                      if (iconDiv) iconDiv.style.display = 'block';
+                                    }
+                                  }}
+                                />
+                                <Building2 className="fallback-icon h-6 w-6 text-muted-foreground hidden" style={{display: 'none'}} />
+                              </div>
+                            ) : (
+                              <Building2 className="h-6 w-6 text-muted-foreground flex-shrink-0" />
+                            )}
                             <span className="font-bold text-foreground truncate">{trade.companyName}</span>
                           </div>
                           {trade.ticker && (
@@ -881,14 +886,20 @@ export default function LiveTrading() {
                         <div>
                           <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.tradeDetails')}</p>
                           <p className="font-semibold text-foreground">{trade.shares.toLocaleString()} shares</p>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            ${trade.pricePerShare.toFixed(2)} per share
-                          </p>
+                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                              📊 내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
+                            </p>
+                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                              ${trade.pricePerShare.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">per share</p>
+                          </div>
                           {(() => {
                             const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
                             return avgBuyPrice && (
-                              <p className="text-xs text-blue-600 font-medium">
-                                내부자 매수 평균: ${avgBuyPrice.toFixed(2)}
+                              <p className="text-xs text-purple-600 font-medium mt-1">
+                                💎 평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
                               </p>
                             );
                           })()}
@@ -904,21 +915,9 @@ export default function LiveTrading() {
                       </div>
 
                       {/* AI 분석 정보 */}
-                      {trade.predictionAccuracy && (
+                      {(trade.recommendedBuyPrice || trade.impactPrediction || trade.aiInsight) && (
                         <div className="mt-4 pt-4 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground font-medium">AI 예측 정확도</p>
-                              <div className="flex items-center gap-2">
-                                <p className={`font-semibold value-change-${trade.predictionAccuracy >= 80 ? 'up' : 'down'} ${
-                                  trade.predictionAccuracy >= 90 ? 'text-green-600' :
-                                  trade.predictionAccuracy >= 80 ? 'text-yellow-600' : 'text-red-600'
-                                }`}>
-                                  {trade.predictionAccuracy}%
-                                </p>
-                                <span className="text-xs text-muted-foreground">주가 변동 예측</span>
-                              </div>
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
 
                             {trade.recommendedBuyPrice && trade.currentPrice && (
                               <div>
