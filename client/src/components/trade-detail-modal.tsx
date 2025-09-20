@@ -88,16 +88,16 @@ export function TradeDetailModal({
     }
   };
 
-  const getTradeTypeVariant = (tradeType: string): 'default' | 'destructive' | 'outline' | 'secondary' => {
+  const getTradeTypeColor = (tradeType: string) => {
     switch (tradeType?.toUpperCase()) {
       case 'BUY':
       case 'PURCHASE':
-        return 'default';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'SELL':
       case 'SALE':
-        return 'destructive';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'secondary';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -166,7 +166,7 @@ export function TradeDetailModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">거래 유형</p>
-              <Badge variant={getTradeTypeVariant(trade.tradeType)} className="btn-professional font-semibold flex items-center gap-1 w-fit">
+              <Badge className={`btn-professional font-semibold flex items-center gap-1 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
                 {getTradeTypeIcon(trade.tradeType)}
                 {trade.tradeType}
               </Badge>

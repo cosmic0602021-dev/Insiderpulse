@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, lazy, Suspense } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,8 @@ import {
   Gift, Zap, RefreshCw, Award, Settings, CreditCard, Target,
   Loader2
 } from 'lucide-react';
-import { AnimatedSearchInput } from '@/components/animated-search-input';
-import { TradeDetailModal } from '@/components/trade-detail-modal';
+const AnimatedSearchInput = lazy(() => import('@/components/animated-search-input').then(module => ({ default: module.AnimatedSearchInput })));
+const TradeDetailModal = lazy(() => import('@/components/trade-detail-modal').then(module => ({ default: module.TradeDetailModal })));
 import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
@@ -42,12 +42,233 @@ interface EnhancedTrade extends InsiderTrade {
   impactPrediction?: string;
 }
 
+// 모바일 감지 훅
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
+// 가상화된 거래 아이템 컴포넌트
+const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchlistClick, calculateInsiderBuyAvgPrice, formatCurrency, formatTime, getSignalColor, getSignalIcon, getTradeTypeIcon, t, watchlist, isMobile }: {
+  trade: EnhancedTrade;
+  onTradeClick: (trade: EnhancedTrade) => void;
+  onAlertClick: (trade: EnhancedTrade) => void;
+  onWatchlistClick: (trade: EnhancedTrade) => void;
+  calculateInsiderBuyAvgPrice: (ticker: string, tradeType: string) => number | null;
+  formatCurrency: (value: number) => string;
+  formatTime: (date: Date | string) => string;
+  getSignalColor: (signalType: string) => string;
+  getSignalIcon: (signalType: string) => JSX.Element;
+  getTradeTypeIcon: (tradeType: string) => JSX.Element;
+  t: (key: string) => string;
+  watchlist: string[];
+  isMobile: boolean;
+}) => {
+  return (
+    <div
+      className={`grid-row-professional border rounded-xl ${isMobile ? 'p-3' : 'p-4'} cursor-pointer bg-card hover:bg-accent/50 transition-colors duration-200`}
+      data-testid={`trade-item-${trade.id}`}
+      onClick={() => onTradeClick(trade)}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Badge className={`${getSignalColor(trade.signalType)} font-semibold flex items-center gap-1 btn-professional`}>
+                {getSignalIcon(trade.signalType)}
+                {trade.signalType}
+              </Badge>
+              {trade.signalType === 'HOLD' && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  {getTradeTypeIcon(trade.tradeType)}
+                  {trade.tradeType}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+              <Clock className="h-3 w-3" />
+              {formatTime(trade.filedDate)}
+            </div>
+          </div>
+
+          <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 lg:grid-cols-4 gap-4'}`}>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                {trade.ticker ? (
+                  <div className={`relative ${isMobile ? 'h-10 w-10' : 'h-14 w-14'} flex-shrink-0`}>
+                    <img
+                      src={`https://assets.parqet.com/logos/resolution/${trade.ticker}.png`}
+                      alt={`${trade.companyName} logo`}
+                      className={`${isMobile ? 'h-10 w-10' : 'h-14 w-14'} rounded-lg object-contain`}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src.includes('parqet.com')) {
+                          target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
+                        } else {
+                          target.style.display = 'none';
+                          const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                          if (iconDiv) iconDiv.style.display = 'block';
+                        }
+                      }}
+                    />
+                    <Building2 className={`fallback-icon ${isMobile ? 'h-10 w-10' : 'h-14 w-14'} text-muted-foreground hidden`} style={{display: 'none'}} />
+                  </div>
+                ) : (
+                  <Building2 className={`${isMobile ? 'h-10 w-10' : 'h-14 w-14'} text-muted-foreground flex-shrink-0`} />
+                )}
+                <span className="font-bold text-foreground truncate">{trade.companyName}</span>
+              </div>
+              {trade.ticker && (
+                <Badge variant="outline" className="text-xs font-semibold">{trade.ticker}</Badge>
+              )}
+
+              <div className={`mt-2 ${isMobile ? 'p-1.5' : 'p-2'} bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800`}>
+                <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-blue-700 dark:text-blue-300 font-medium`}>
+                  내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
+                </p>
+                <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-blue-600 dark:text-blue-400`}>
+                  ${trade.pricePerShare.toFixed(2)}
+                </p>
+                <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-blue-600 dark:text-blue-400`}>per share</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.insider')}</p>
+              <p className="font-semibold text-foreground">{trade.traderName}</p>
+              <p className="text-xs text-muted-foreground">{trade.traderTitle}</p>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.tradeDetails')}</p>
+              <p className="font-semibold text-foreground">{trade.shares.toLocaleString()} shares</p>
+              {(() => {
+                const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
+                return avgBuyPrice && (
+                  <p className="text-xs text-purple-600 font-medium mt-1">
+                    평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
+                  </p>
+                );
+              })()}
+            </div>
+
+            <div className="text-left pr-4">
+              <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.totalValue')}</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(trade.totalValue)}</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                {t('liveTrading.score')} {trade.significanceScore}/100
+              </p>
+            </div>
+          </div>
+
+          {(trade.recommendedBuyPrice || trade.impactPrediction || trade.aiInsight) && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
+                {trade.recommendedBuyPrice && trade.currentPrice && (
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE')
+                        ? 'AI 추천 매수가 (Follow)'
+                        : 'AI 추천 매수가 (Opportunistic)'
+                      }
+                    </p>
+                    <p className={`font-semibold ${
+                      trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE')
+                        ? 'text-green-600'
+                        : 'text-orange-600'
+                    }`}>
+                      ${trade.recommendedBuyPrice.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      현재가: ${trade.currentPrice.toFixed(2)}
+                      {trade.tradeType.includes('SELL') && (
+                        <span className="block text-orange-600">
+                          (내부자 매도 후 기회)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">예상 영향</p>
+                  <p className={`font-semibold ${
+                    trade.impactPrediction?.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {trade.impactPrediction}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    유사 거래: {trade.similarTrades}건
+                  </p>
+                </div>
+
+                <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'}`}>
+                  <Button
+                    size={isMobile ? "xs" : "sm"}
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAlertClick(trade);
+                    }}
+                    className={`flex items-center gap-1 ${isMobile ? 'h-7 text-xs' : 'h-8'}`}
+                  >
+                    <Mail className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
+                    알림
+                  </Button>
+
+                  <Button
+                    size={isMobile ? "xs" : "sm"}
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onWatchlistClick(trade);
+                    }}
+                    className={`flex items-center gap-1 ${isMobile ? 'h-7 text-xs' : 'h-8'}`}
+                    disabled={trade.ticker ? watchlist.includes(trade.ticker) : true}
+                  >
+                    <Bookmark className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
+                    {isMobile ? (trade.ticker && watchlist.includes(trade.ticker) ? '추가됨' : '워치') : (trade.ticker && watchlist.includes(trade.ticker) ? '추가됨' : '워치리스트')}
+                  </Button>
+                </div>
+              </div>
+
+              {trade.aiInsight && (
+                <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
+                  <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+                    <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>AI 분석</span>
+                  </div>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground`}>{trade.aiInsight}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+VirtualizedTradeItem.displayName = 'VirtualizedTradeItem';
+
 export default function LiveTrading() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [trades, setTrades] = useState<EnhancedTrade[]>([]);
-  // filteredTrades는 이제 useMemo로 계산되므로 state에서 제거
   const [currentOffset, setCurrentOffset] = useState(0);
+  const [visibleTradesCount, setVisibleTradesCount] = useState(isMobile ? 10 : 20);
   const [filters, setFilters] = useState<TradeFilter>({
     tradeType: 'ALL',
     minValue: '',
@@ -159,20 +380,28 @@ export default function LiveTrading() {
     // 거래 규모별 전문가 분석 생성
     if (tradeValue >= 5000000) { // 500만 달러 이상
       if (isBuy) {
-        return `${company} ${role}의 ${valueMillions}M$ 대량 매수는 ${context} 전망에 대한 강한 확신을 시사`;
+        return `💡 ${company} ${role}의 ${valueMillions}M$ 대량 매수는 ${context} 전망에 대한 강한 확신을 시사. 추가 매수 관심 권장`;
       } else {
-        return `${company} ${role}의 ${valueMillions}M$ 대량 매도는 ${trend} 사이클 정점 또는 리스크 회피 신호로 해석`;
+        return `⚠️ ${company} ${role}의 ${valueMillions}M$ 대량 매도는 ${trend} 사이클 정점 신호. 매수 시점 재고 권장`;
       }
     } else if (tradeValue >= 1000000) { // 100만 달러 이상
       if (isBuy) {
-        return `${ticker} ${role} 매수는 현재 밸류에이션 대비 ${context} 잠재력을 높게 평가한 것으로 분석`;
+        return `📈 ${ticker} ${role} 매수는 현재 밸류에이션 대비 ${context} 잠재력 높게 평가. 동승 매수 검토`;
       } else {
-        return `${company} ${role}의 ${valueMillions}M$ 매도는 포트폴리오 조정 또는 ${trend} 둔화 우려 반영`;
+        return `📉 ${company} ${role}의 ${valueMillions}M$ 매도는 포트폴리오 조정 신호. 하락 후 매수 기회 대기`;
       }
     } else if (tradeValue >= 100000) { // 10만 달러 이상
-      return `${ticker} 중간급 임원의 ${action}는 ${trend} 트렌드 속 기업 내부 전망을 반영한 일반적 거래`;
+      if (isBuy) {
+        return `🎯 ${ticker} 임원 매수는 ${trend} 트렌드 지속 기대감 반영. 모멘텀 추종 고려`;
+      } else {
+        return `⏳ ${ticker} 임원 매도는 일반적 수익 실현. 매수 타이밍은 추가 모니터링 필요`;
+      }
     } else {
-      return `${company} 소액 ${action}는 개인 포트폴리오 관리 차원의 일상적 거래로 판단`;
+      if (isBuy) {
+        return `✅ ${company} 소액 매수는 지속적 낙관론 표현. 장기 관점에서 긍정적 신호`;
+      } else {
+        return `🔄 ${company} 소액 매도는 포트폴리오 관리 차원. 투자 판단에 미미한 영향`;
+      }
     }
   }, []); // 메모이제이션으로 성능 최적화
 
@@ -266,8 +495,8 @@ export default function LiveTrading() {
     const enhanced: EnhancedTrade = {
       ...trade,
       recommendedBuyPrice: isBuy
-        ? currentPrice * 0.97 // 매수 거래면 현재가보다 3% 낮은 추천가
-        : currentPrice * 1.02, // 매도 거래면 현재가보다 2% 높은 추천가
+        ? Math.min(currentPrice * 0.97, trade.pricePerShare * 1.02) // 매수 거래면 현재가의 3% 낮은 가격이나 내부자 매수가의 2% 높은 가격 중 낮은 값
+        : Math.min(currentPrice * 0.95, trade.pricePerShare * 0.90), // 매도 거래면 현재가의 5% 낮은 가격이나 내부자 매도가의 10% 낮은 가격 중 낮은 값
       currentPrice,
       similarTrades: calculateSimilarTrades(),
       avgReturnAfterSimilar: calculateAvgReturn(),
@@ -385,17 +614,59 @@ export default function LiveTrading() {
     return filtered;
   }, [trades, filters, activeTab, watchlist]);
 
+  // 무한 스크롤과 가상화를 위한 상태
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const loadMoreTrades = useCallback(async () => {
+    if (isLoadingMore) return;
+
     try {
-      const newOffset = currentOffset + 500;
-      const moreTrades = await apiClient.getInsiderTrades(500, newOffset);
+      setIsLoadingMore(true);
+      const newOffset = currentOffset + (isMobile ? 50 : 100); // 모바일에서는 더 적게 로드
+      const moreTrades = await apiClient.getInsiderTrades(isMobile ? 50 : 100, newOffset);
       const enhancedMoreTrades = moreTrades.map(enhanceTradeWithAI);
       setTrades(prev => [...prev, ...enhancedMoreTrades]);
       setCurrentOffset(newOffset);
     } catch (error) {
       console.error('Failed to load more trades:', error);
+    } finally {
+      setIsLoadingMore(false);
     }
-  }, [currentOffset, enhanceTradeWithAI]);
+  }, [currentOffset, enhanceTradeWithAI, isMobile, isLoadingMore]);
+
+  // 무한 스크롤 감지
+  const handleLoadMore = useCallback(() => {
+    if (filteredTrades.length > visibleTradesCount && !isLoadingMore) {
+      setVisibleTradesCount(prev => prev + (isMobile ? 10 : 20));
+    } else if (visibleTradesCount >= filteredTrades.length && !isLoadingMore) {
+      loadMoreTrades();
+    }
+  }, [filteredTrades.length, visibleTradesCount, isLoadingMore, isMobile, loadMoreTrades]);
+
+  // 거래 클릭 핸들러들 (메모이제이션)
+  const handleTradeClick = useCallback((trade: EnhancedTrade) => {
+    setSelectedTradeForDetail(trade);
+    setShowTradeDetailModal(true);
+  }, []);
+
+  const handleAlertClick = useCallback((trade: EnhancedTrade) => {
+    setSelectedTradeForAlert(trade);
+    setSelectedCompanyForAlert(trade.ticker || '');
+    setShowAlertModal(true);
+  }, []);
+
+  const handleWatchlistClick = useCallback((trade: EnhancedTrade) => {
+    if (trade.ticker && !watchlist.includes(trade.ticker)) {
+      setWatchlist(prev => [...prev, trade.ticker!]);
+      setSelectedTradeForAlert(trade);
+      setShowWatchlistModal(true);
+    }
+  }, [watchlist]);
+
+  // 표시할 거래 목록 (가상화된)
+  const visibleTrades = useMemo(() => {
+    return filteredTrades.slice(0, visibleTradesCount);
+  }, [filteredTrades, visibleTradesCount]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -523,29 +794,33 @@ export default function LiveTrading() {
   };
 
   return (
-    <div className="space-y-6 p-6" data-testid="live-trading">
+    <div className={`space-y-4 ${isMobile ? 'p-3' : 'p-6'}`} data-testid="live-trading">
       {/* Page Header */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
+        <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
           <div>
-            <h1 className="text-3xl font-bold" data-testid="page-title">모든 거래 표시 및 검색</h1>
-            <p className="text-muted-foreground">
-              모든 내부자 거래 데이터를 검색하고 필터링할 수 있습니다
-            </p>
-            <p className="text-sm text-blue-600 font-medium mt-1">
-              총 {trades.length}개 거래 로드됨 | 필터링된 결과: {filteredTrades.length}개
+            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`} data-testid="page-title">
+              {isMobile ? '거래 검색' : '모든 거래 표시 및 검색'}
+            </h1>
+            {!isMobile && (
+              <p className="text-muted-foreground">
+                모든 내부자 거래 데이터를 검색하고 필터링할 수 있습니다
+              </p>
+            )}
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-600 font-medium mt-1`}>
+              총 {trades.length}개 | 필터링: {filteredTrades.length}개
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Alert className={`px-3 py-2 ${isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}`}>
+            <Alert className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} ${isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}`}>
               <div className="flex items-center gap-2">
                 {isConnected ? (
-                  <Wifi className="h-4 w-4 text-chart-2" />
+                  <Wifi className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-chart-2`} />
                 ) : (
-                  <WifiOff className="h-4 w-4 text-destructive" />
+                  <WifiOff className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-destructive`} />
                 )}
-                <AlertDescription className={`text-xs ${isConnected ? 'text-chart-2' : 'text-destructive'}`}>
-                  {isConnected ? t('connection.liveFeed') : t('connection.disconnected')}
+                <AlertDescription className={`${isMobile ? 'text-xs' : 'text-xs'} ${isConnected ? 'text-chart-2' : 'text-destructive'}`}>
+                  {isConnected ? (isMobile ? '실시간' : t('connection.liveFeed')) : (isMobile ? '연결끊김' : t('connection.disconnected'))}
                 </AlertDescription>
               </div>
             </Alert>
@@ -555,48 +830,58 @@ export default function LiveTrading() {
 
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-1 md:grid-cols-4 gap-4'}`}>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('stats.todayTrades')}</p>
-                  <p className="text-2xl font-bold">{stats.todayTrades}</p>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                    {isMobile ? '오늘' : t('stats.todayTrades')}
+                  </p>
+                  <p className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold`}>{stats.todayTrades}</p>
                 </div>
-                <Users className="h-8 w-8 text-muted-foreground" />
+                <Users className={`${isMobile ? 'h-5 w-5' : 'h-8 w-8'} text-muted-foreground`} />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('stats.totalVolume')}</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</p>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                    {isMobile ? '총거래액' : t('stats.totalVolume')}
+                  </p>
+                  <p className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold`}>
+                    {isMobile ? `$${(stats.totalVolume / 1000000).toFixed(0)}M` : formatCurrency(stats.totalVolume)}
+                  </p>
                 </div>
-                <DollarSign className="h-8 w-8 text-muted-foreground" />
+                <DollarSign className={`${isMobile ? 'h-5 w-5' : 'h-8 w-8'} text-muted-foreground`} />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('liveTrading.activeNow')}</p>
-                  <p className="text-2xl font-bold">{filteredTrades.length}</p>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                    {isMobile ? '활성' : t('liveTrading.activeNow')}
+                  </p>
+                  <p className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold`}>{filteredTrades.length}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                <BarChart3 className={`${isMobile ? 'h-5 w-5' : 'h-8 w-8'} text-muted-foreground`} />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('liveTrading.alertsSet')}</p>
-                  <p className="text-2xl font-bold">—</p>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                    {isMobile ? '알림' : t('liveTrading.alertsSet')}
+                  </p>
+                  <p className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold`}>—</p>
                 </div>
-                <Bell className="h-8 w-8 text-muted-foreground" />
+                <Bell className={`${isMobile ? 'h-5 w-5' : 'h-8 w-8'} text-muted-foreground`} />
               </div>
             </CardContent>
           </Card>
@@ -629,14 +914,14 @@ export default function LiveTrading() {
 
       {/* Filters */}
       <Card className="card-professional">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            {t('liveTrading.filtersAndSearch')}
+        <CardHeader className={`${isMobile ? 'p-3' : ''}`}>
+          <CardTitle className={`${isMobile ? 'text-sm' : 'text-base'} flex items-center gap-2`}>
+            <Filter className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+            {isMobile ? '필터' : t('liveTrading.filtersAndSearch')}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <CardContent className={`${isMobile ? 'p-3 space-y-3' : 'space-y-4'}`}>
+          <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3'}`}>
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">{t('liveTrading.tradeType')}</label>
               <Select value={filters.tradeType} onValueChange={(value: any) => 
@@ -811,200 +1096,66 @@ export default function LiveTrading() {
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredTrades.slice(0, Math.min(20, filteredTrades.length)).map((trade) => (
-                <div
+            <div className={`space-y-${isMobile ? '2' : '3'}`}>
+              {visibleTrades.map((trade) => (
+                <VirtualizedTradeItem
                   key={trade.id}
-                  className="grid-row-professional border rounded-xl p-4 cursor-pointer bg-card"
-                  data-testid={`trade-item-${trade.id}`}
-                  onClick={() => {
-                    setSelectedTradeForDetail(trade);
-                    setShowTradeDetailModal(true);
-                  }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge className={`${getSignalColor(trade.signalType)} font-semibold flex items-center gap-1 btn-professional`}>
-                            {getSignalIcon(trade.signalType)}
-                            {trade.signalType}
-                          </Badge>
-                          {trade.signalType === 'HOLD' && (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1">
-                              {getTradeTypeIcon(trade.tradeType)}
-                              {trade.tradeType}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                          <Clock className="h-3 w-3" />
-                          {formatTime(trade.filedDate)}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            {trade.ticker ? (
-                              <div className="relative h-6 w-6 flex-shrink-0">
-                                <img
-                                  src={`https://assets.parqet.com/logos/resolution/${trade.ticker}.png`}
-                                  alt={`${trade.companyName} logo`}
-                                  className="h-6 w-6 rounded-sm object-contain"
-                                  onError={(e) => {
-                                    // Fallback to EODHD API if Parqet fails
-                                    const target = e.target as HTMLImageElement;
-                                    if (target.src.includes('parqet.com')) {
-                                      target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
-                                    } else {
-                                      // Final fallback to Building2 icon
-                                      target.style.display = 'none';
-                                      const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
-                                      if (iconDiv) iconDiv.style.display = 'block';
-                                    }
-                                  }}
-                                />
-                                <Building2 className="fallback-icon h-6 w-6 text-muted-foreground hidden" style={{display: 'none'}} />
-                              </div>
-                            ) : (
-                              <Building2 className="h-6 w-6 text-muted-foreground flex-shrink-0" />
-                            )}
-                            <span className="font-bold text-foreground truncate">{trade.companyName}</span>
-                          </div>
-                          {trade.ticker && (
-                            <Badge variant="outline" className="text-xs font-semibold">{trade.ticker}</Badge>
-                          )}
-                          
-                          {/* 내부자 매수/매도 가격 - 더 눈에 띄는 위치로 이동 */}
-                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-                              내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
-                            </p>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                              ${trade.pricePerShare.toFixed(2)}
-                            </p>
-                            <p className="text-xs text-blue-600 dark:text-blue-400">per share</p>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.insider')}</p>
-                          <p className="font-semibold text-foreground">{trade.traderName}</p>
-                          <p className="text-xs text-muted-foreground">{trade.traderTitle}</p>
-                        </div>
-                        
-                        <div>
-                          <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.tradeDetails')}</p>
-                          <p className="font-semibold text-foreground">{trade.shares.toLocaleString()} shares</p>
-                          {(() => {
-                            const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
-                            return avgBuyPrice && (
-                              <p className="text-xs text-purple-600 font-medium mt-2">
-                                평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
-                              </p>
-                            );
-                          })()}
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground font-medium">{t('liveTrading.totalValue')}</p>
-                          <p className="text-lg font-bold text-foreground">{formatCurrency(trade.totalValue)}</p>
-                          <p className="text-xs text-muted-foreground font-medium">
-                            {t('liveTrading.score')} {trade.significanceScore}/100
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* AI 분석 정보 */}
-                      {(trade.recommendedBuyPrice || trade.impactPrediction || trade.aiInsight) && (
-                        <div className="mt-4 pt-4 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-
-                            {trade.recommendedBuyPrice && trade.currentPrice && (
-                              <div>
-                                <p className="text-xs text-muted-foreground font-medium">AI 추천 매수가</p>
-                                <p className="font-semibold text-green-600">${trade.recommendedBuyPrice.toFixed(2)}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  현재가: ${trade.currentPrice.toFixed(2)}
-                                </p>
-                              </div>
-                            )}
-
-                            <div>
-                              <p className="text-xs text-muted-foreground font-medium">예상 영향</p>
-                              <p className={`font-semibold ${
-                                trade.impactPrediction?.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {trade.impactPrediction}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                유사 거래: {trade.similarTrades}건
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTradeForAlert(trade);
-                                  setSelectedCompanyForAlert(trade.ticker || '');
-                                  setShowAlertModal(true);
-                                }}
-                                className="flex items-center gap-1 h-8"
-                              >
-                                <Mail className="h-3 w-3" />
-                                알림
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (trade.ticker && !watchlist.includes(trade.ticker)) {
-                                    setWatchlist(prev => [...prev, trade.ticker!]);
-                                    setSelectedTradeForAlert(trade);
-                                    setShowWatchlistModal(true);
-                                  }
-                                }}
-                                className="flex items-center gap-1 h-8"
-                                disabled={trade.ticker ? watchlist.includes(trade.ticker) : true}
-                              >
-                                <Bookmark className="h-3 w-3" />
-                                {trade.ticker && watchlist.includes(trade.ticker) ? '추가됨' : '워치리스트'}
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* AI 인사이트 */}
-                          {trade.aiInsight && (
-                            <div className="bg-muted/50 rounded-lg p-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Brain className="h-4 w-4 text-purple-600" />
-                                <span className="text-sm font-medium text-purple-600">AI 분석</span>
-                              </div>
-                              <p className="text-sm text-foreground">{trade.aiInsight}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  trade={trade}
+                  onTradeClick={handleTradeClick}
+                  onAlertClick={handleAlertClick}
+                  onWatchlistClick={handleWatchlistClick}
+                  calculateInsiderBuyAvgPrice={calculateInsiderBuyAvgPrice}
+                  formatCurrency={formatCurrency}
+                  formatTime={formatTime}
+                  getSignalColor={getSignalColor}
+                  getSignalIcon={getSignalIcon}
+                  getTradeTypeIcon={getTradeTypeIcon}
+                  t={t}
+                  watchlist={watchlist}
+                  isMobile={isMobile}
+                />
               ))}
-              
-              {filteredTrades.length > 0 && (
+
+              {/* 무한 스크롤 로더 */}
+              {visibleTrades.length < filteredTrades.length && (
+                <div className="text-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    data-testid="button-load-more"
+                    className="btn-professional"
+                  >
+                    {isLoadingMore ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        로딩 중...
+                      </div>
+                    ) : (
+                      `더 보기 (${filteredTrades.length - visibleTrades.length}개 남음)`
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* 모든 데이터 로드 완료 시 새 데이터 불러오기 */}
+              {visibleTrades.length >= filteredTrades.length && filteredTrades.length > 0 && (
                 <div className="text-center pt-4">
                   <Button
                     variant="outline"
                     onClick={loadMoreTrades}
-                    data-testid="button-load-more"
+                    disabled={isLoadingMore}
+                    data-testid="button-load-more-api"
                     className="btn-professional"
                   >
-더 많은 거래 불러오기 (500개씩)
+                    {isLoadingMore ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        서버에서 불러오는 중...
+                      </div>
+                    ) : (
+                      `새 거래 불러오기 (${isMobile ? '50' : '100'}개씩)`
+                    )}
                   </Button>
                 </div>
               )}
@@ -1283,26 +1434,30 @@ export default function LiveTrading() {
       )}
 
       {/* 거래 상세 정보 모달 */}
-      <TradeDetailModal
-        isOpen={showTradeDetailModal}
-        onClose={() => setShowTradeDetailModal(false)}
-        trade={selectedTradeForDetail}
-        onAlert={(trade) => {
-          setSelectedTradeForAlert(trade);
-          setSelectedCompanyForAlert(trade.ticker || '');
-          setShowAlertModal(true);
-          setShowTradeDetailModal(false);
-        }}
-        onAddToWatchlist={(trade) => {
-          if (trade.ticker && !watchlist.includes(trade.ticker)) {
-            setWatchlist(prev => [...prev, trade.ticker!]);
-            setSelectedTradeForAlert(trade);
-            setShowWatchlistModal(true);
-            setShowTradeDetailModal(false);
-          }
-        }}
-        isInWatchlist={selectedTradeForDetail?.ticker ? watchlist.includes(selectedTradeForDetail.ticker) : false}
-      />
+      {showTradeDetailModal && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Loader2 className="h-8 w-8 animate-spin text-white" /></div>}>
+          <TradeDetailModal
+            isOpen={showTradeDetailModal}
+            onClose={() => setShowTradeDetailModal(false)}
+            trade={selectedTradeForDetail}
+            onAlert={(trade) => {
+              setSelectedTradeForAlert(trade);
+              setSelectedCompanyForAlert(trade.ticker || '');
+              setShowAlertModal(true);
+              setShowTradeDetailModal(false);
+            }}
+            onAddToWatchlist={(trade) => {
+              if (trade.ticker && !watchlist.includes(trade.ticker)) {
+                setWatchlist(prev => [...prev, trade.ticker!]);
+                setSelectedTradeForAlert(trade);
+                setShowWatchlistModal(true);
+                setShowTradeDetailModal(false);
+              }
+            }}
+            isInWatchlist={selectedTradeForDetail?.ticker ? watchlist.includes(selectedTradeForDetail.ticker) : false}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
