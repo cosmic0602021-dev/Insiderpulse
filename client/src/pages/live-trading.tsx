@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getCurrentStockPrice, getMultipleStockPrices, StockPrice } from '@/lib/stock-price-api';
+import { AdvancedAIAnalyst } from '@/lib/advanced-ai-analyst';
+import { DataIntegrityChecker, createDataQualityAlert } from '@/lib/data-integrity-checker';
 import {
   TrendingUp, TrendingDown, DollarSign, Users, Search,
   Filter, Wifi, WifiOff, Bell, BarChart3, ArrowUpRight,
@@ -36,10 +39,13 @@ interface TradeFilter {
 interface EnhancedTrade extends InsiderTrade {
   recommendedBuyPrice?: number;
   currentPrice?: number;
+  realTimePrice?: StockPrice;
   similarTrades?: number;
   avgReturnAfterSimilar?: number;
   aiInsight?: string;
   impactPrediction?: string;
+  comprehensiveAnalysis?: any; // 새로운 고급 분석 결과
+  analysisLoading?: boolean;
 }
 
 // 모바일 감지 훅
@@ -175,7 +181,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
           {(trade.recommendedBuyPrice || trade.impactPrediction || trade.aiInsight) && (
             <div className="mt-4 pt-4 border-t">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-                {trade.recommendedBuyPrice && trade.currentPrice && (
+                {trade.recommendedBuyPrice && trade.currentPrice ? (
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">
                       {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE')
@@ -190,16 +196,47 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     }`}>
                       ${trade.recommendedBuyPrice.toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      현재가: ${trade.currentPrice.toFixed(2)}
+                    <div className="text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>현재가: ${trade.currentPrice.toFixed(2)}</span>
+                        {trade.realTimePrice && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            trade.realTimePrice.priceChange >= 0
+                              ? 'text-green-600 bg-green-100 dark:bg-green-900/30'
+                              : 'text-red-600 bg-red-100 dark:bg-red-900/30'
+                          }`}>
+                            {trade.realTimePrice.priceChange >= 0 ? '+' : ''}
+                            {trade.realTimePrice.priceChangePercent.toFixed(2)}%
+                          </span>
+                        )}
+                      </div>
+                      {trade.realTimePrice && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          업데이트: {new Date(trade.realTimePrice.lastUpdated).toLocaleTimeString('ko-KR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      )}
                       {trade.tradeType.includes('SELL') && (
-                        <span className="block text-orange-600">
+                        <span className="block text-orange-600 mt-1">
                           (내부자 매도 후 기회)
                         </span>
                       )}
+                    </div>
+                  </div>
+                ) : trade.ticker && !trade.currentPrice ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">실시간 가격 정보</p>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-600">로딩 중...</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      내부자 거래가: ${trade.pricePerShare.toFixed(2)}
                     </p>
                   </div>
-                )}
+                ) : null}
 
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">예상 영향</p>
@@ -243,15 +280,112 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                 </div>
               </div>
 
-              {trade.aiInsight && (
+              {/* 새로운 고급 AI 분석 표시 */}
+              {trade.comprehensiveAnalysis ? (
+                <div className={`bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg ${isMobile ? 'p-2' : 'p-3'} border border-purple-200 dark:border-purple-800`}>
+                  <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                    <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
+                      고급 AI 분석 (신뢰도: {trade.comprehensiveAnalysis.confidenceLevel}%)
+                    </span>
+                  </div>
+
+                  {/* 실행 요약 */}
+                  <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground font-medium leading-relaxed`}>
+                      {trade.comprehensiveAnalysis.executiveSummary}
+                    </p>
+                  </div>
+
+                  {/* 핵심 발견사항 */}
+                  {trade.comprehensiveAnalysis.keyFindings?.length > 0 && (
+                    <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
+                      <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-purple-700 dark:text-purple-300 mb-1`}>
+                        핵심 발견사항:
+                      </h4>
+                      <ul className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground space-y-1`}>
+                        {trade.comprehensiveAnalysis.keyFindings.slice(0, isMobile ? 2 : 3).map((finding: string, index: number) => (
+                          <li key={index} className="flex items-start gap-1">
+                            <span className="text-purple-500 mt-0.5">•</span>
+                            <span className="flex-1">{finding}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 목표가 */}
+                  {trade.comprehensiveAnalysis.priceTargets && (
+                    <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
+                      <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-green-700 dark:text-green-300 mb-1`}>
+                        AI 목표가:
+                      </h4>
+                      <div className="flex gap-2">
+                        <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded`}>
+                          보수적: ${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}
+                        </span>
+                        <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded`}>
+                          현실적: ${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}
+                        </span>
+                        {!isMobile && (
+                          <span className={`text-sm text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded`}>
+                            낙관적: ${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 실행 가능한 추천사항 */}
+                  {trade.comprehensiveAnalysis.actionableRecommendations?.length > 0 && !isMobile && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-1">
+                        실행 추천:
+                      </h4>
+                      <ul className="text-sm text-foreground space-y-1">
+                        {trade.comprehensiveAnalysis.actionableRecommendations.slice(0, 2).map((recommendation: string, index: number) => (
+                          <li key={index} className="flex items-start gap-1">
+                            <span className="text-orange-500 mt-0.5">→</span>
+                            <span className="flex-1">{recommendation}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 시간 범위와 촉매 */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded`}>
+                      {trade.comprehensiveAnalysis.timeHorizon}
+                    </span>
+                    {trade.comprehensiveAnalysis.catalysts?.length > 0 && (
+                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded`}>
+                        촉매 {trade.comprehensiveAnalysis.catalysts.length}개 식별됨
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : trade.analysisLoading ? (
+                <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
+                  <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+                    <Loader2 className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} animate-spin text-purple-600`} />
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
+                      고급 AI 분석 중...
+                    </span>
+                  </div>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                    뉴스, 재무 데이터, 내부자 패턴을 종합 분석하고 있습니다
+                  </p>
+                </div>
+              ) : trade.aiInsight ? (
                 <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
                     <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
-                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>AI 분석</span>
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>기본 분석</span>
                   </div>
                   <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground`}>{trade.aiInsight}</p>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
@@ -269,6 +403,11 @@ export default function LiveTrading() {
   const [trades, setTrades] = useState<EnhancedTrade[]>([]);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [visibleTradesCount, setVisibleTradesCount] = useState(isMobile ? 10 : 20);
+  const [stockPrices, setStockPrices] = useState<Map<string, StockPrice>>(new Map());
+  const [priceLoadingSymbols, setPriceLoadingSymbols] = useState<Set<string>>(new Set());
+  const [dataQualityReport, setDataQualityReport] = useState<any>(null);
+  const [showDataQualityDetails, setShowDataQualityDetails] = useState(false);
+  const [dataQualityAlert, setDataQualityAlert] = useState<string | null>(null);
   const [filters, setFilters] = useState<TradeFilter>({
     tradeType: 'ALL',
     minValue: '',
@@ -308,102 +447,219 @@ export default function LiveTrading() {
   const wsUrl = getWebSocketUrl();
   const { isConnected, lastMessage, sendMessage } = useWebSocket(wsUrl);
 
-  // 회사별 맞춤형 전문가 분석 생성 시스템
-  const generateProfessionalInsight = useCallback((trade: InsiderTrade): string => {
-    const company = trade.companyName || 'Unknown';
-    const ticker = trade.ticker || '';
-    const tradeValue = trade.totalValue;
-    const price = trade.pricePerShare;
-    const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
-    const titleUpper = (trade.traderTitle || '').toUpperCase();
-    
-    // 회사별 업종 및 특성 분석
-    const getCompanyContext = (companyName: string, ticker: string) => {
-      const name = companyName.toUpperCase();
-      const tick = ticker.toUpperCase();
-      
-      // 실제 주요 기업들의 현재 상황 반영
-      if (tick === 'AAPL' || name.includes('APPLE')) {
-        return { sector: 'tech', trend: 'AI 혁신 사이클', context: 'Vision Pro와 AI 통합으로 새로운 성장 동력 확보' };
-      }
-      if (tick === 'TSLA' || name.includes('TESLA')) {
-        return { sector: 'ev', trend: '자율주행 상용화', context: 'FSD 기술 발전과 로보택시 사업 기대감 상승' };
-      }
-      if (tick === 'NVDA' || name.includes('NVIDIA')) {
-        return { sector: 'ai', trend: 'AI 반도체 독점', context: '생성형 AI 붐으로 데이터센터 수요 폭증' };
-      }
-      if (tick === 'MSFT' || name.includes('MICROSOFT')) {
-        return { sector: 'cloud', trend: '클라우드 지배력', context: 'Azure와 Copilot으로 AI 기업 전환 가속화' };
-      }
-      if (tick === 'GOOGL' || tick === 'GOOG' || name.includes('ALPHABET') || name.includes('GOOGLE')) {
-        return { sector: 'search', trend: '검색 AI 경쟁', context: 'Gemini 모델로 ChatGPT 대항하며 검색 혁신 추진' };
-      }
-      if (tick === 'META' || name.includes('META')) {
-        return { sector: 'social', trend: '메타버스 전환', context: 'Reality Labs 투자로 차세대 플랫폼 구축 중' };
-      }
-      if (tick === 'AMZN' || name.includes('AMAZON')) {
-        return { sector: 'ecommerce', trend: 'AWS 클라우드', context: '전자상거래 회복과 클라우드 성장 동력 지속' };
-      }
-      if (tick === 'CRM' || name.includes('SALESFORCE')) {
-        return { sector: 'saas', trend: 'AI CRM 혁신', context: 'Einstein AI로 고객관리 솔루션 차별화' };
-      }
-      if (name.includes('MARA') || tick === 'MARA') {
-        return { sector: 'crypto', trend: '비트코인 마이닝', context: '비트코인 가격 상승과 채굴 효율성 개선' };
-      }
-      
-      // 일반적인 업종 분류
-      if (name.includes('BANK') || name.includes('FINANCIAL')) {
-        return { sector: 'finance', trend: '금리 정상화', context: '연준의 통화정책 변화에 따른 수익성 개선 기대' };
-      }
-      if (name.includes('PHARMA') || name.includes('BIO')) {
-        return { sector: 'biotech', trend: '신약 개발', context: 'AI 신약 개발 가속화와 규제 환경 개선' };
-      }
-      
-      return { sector: 'general', trend: '시장 변동성', context: '업종별 차별화된 실적 모멘텀' };
-    };
-
-    const { sector, trend, context } = getCompanyContext(company, ticker);
-    
-    // 직책별 신뢰도
-    const getExecutiveWeight = () => {
-      if (titleUpper.includes('CEO') || titleUpper.includes('CHIEF EXECUTIVE')) return 'CEO';
-      if (titleUpper.includes('CFO') || titleUpper.includes('CHIEF FINANCIAL')) return 'CFO';
-      if (titleUpper.includes('CTO') || titleUpper.includes('CHIEF TECHNOLOGY')) return 'CTO';
-      if (titleUpper.includes('PRESIDENT') || titleUpper.includes('CHAIRMAN')) return '임원진';
-      return '직원';
-    };
-
-    const role = getExecutiveWeight();
-    const action = isBuy ? '매수' : '매도';
-    const valueMillions = (tradeValue / 1000000).toFixed(1);
-
-    // 거래 규모별 전문가 분석 생성
-    if (tradeValue >= 5000000) { // 500만 달러 이상
-      if (isBuy) {
-        return `💡 ${company} ${role}의 ${valueMillions}M$ 대량 매수는 ${context} 전망에 대한 강한 확신을 시사. 추가 매수 관심 권장`;
-      } else {
-        return `⚠️ ${company} ${role}의 ${valueMillions}M$ 대량 매도는 ${trend} 사이클 정점 신호. 매수 시점 재고 권장`;
-      }
-    } else if (tradeValue >= 1000000) { // 100만 달러 이상
-      if (isBuy) {
-        return `📈 ${ticker} ${role} 매수는 현재 밸류에이션 대비 ${context} 잠재력 높게 평가. 동승 매수 검토`;
-      } else {
-        return `📉 ${company} ${role}의 ${valueMillions}M$ 매도는 포트폴리오 조정 신호. 하락 후 매수 기회 대기`;
-      }
-    } else if (tradeValue >= 100000) { // 10만 달러 이상
-      if (isBuy) {
-        return `🎯 ${ticker} 임원 매수는 ${trend} 트렌드 지속 기대감 반영. 모멘텀 추종 고려`;
-      } else {
-        return `⏳ ${ticker} 임원 매도는 일반적 수익 실현. 매수 타이밍은 추가 모니터링 필요`;
-      }
-    } else {
-      if (isBuy) {
-        return `✅ ${company} 소액 매수는 지속적 낙관론 표현. 장기 관점에서 긍정적 신호`;
-      } else {
-        return `🔄 ${company} 소액 매도는 포트폴리오 관리 차원. 투자 판단에 미미한 영향`;
-      }
+  // 고급 AI 분석 생성 (기존 식상한 로직 대체)
+  const generateAdvancedAnalysis = useCallback(async (trade: InsiderTrade, currentPrice?: number): Promise<void> => {
+    if (!trade.ticker) {
+      // ticker가 없으면 즉시 로딩 해제
+      setTrades(prevTrades =>
+        prevTrades.map(t =>
+          t.id === trade.id ? { ...t, analysisLoading: false } : t
+        )
+      );
+      return;
     }
-  }, []); // 메모이제이션으로 성능 최적화
+
+    try {
+      // 종합 분석 실행
+      const analysis = await AdvancedAIAnalyst.generateComprehensiveInsight(
+        trade,
+        currentPrice || trade.pricePerShare,
+        trades,
+        trade.realTimePrice || undefined
+      );
+
+      // 해당 거래의 분석 결과 업데이트
+      setTrades(prevTrades =>
+        prevTrades.map(t =>
+          t.id === trade.id
+            ? {
+                ...t,
+                comprehensiveAnalysis: analysis,
+                analysisLoading: false,
+                // 기존 간단한 인사이트는 유지하되 새로운 것으로 대체
+                aiInsight: analysis.executiveSummary
+              }
+            : t
+        )
+      );
+
+    } catch (error) {
+      console.error('Advanced analysis failed for', trade.ticker, error);
+
+      // 실패 시에도 기본 분석을 제공하고 로딩 해제
+      const fallbackAnalysis = {
+        executiveSummary: generateEnhancedFallbackInsight(trade, currentPrice),
+        actionableRecommendation: `${trade.tradeType === 'BUY' ? '매수' : '매도'} 신호로 해석될 수 있으나 추가적인 시장 분석이 필요합니다.`,
+        priceTargets: {
+          conservative: (currentPrice || trade.pricePerShare) * 0.95,
+          optimistic: (currentPrice || trade.pricePerShare) * 1.05,
+          timeHorizon: '3-6개월'
+        },
+        riskAssessment: {
+          level: 'MEDIUM' as const,
+          factors: ['시장 변동성', '회사 실적'],
+          mitigation: '포트폴리오 분산 투자 권장'
+        },
+        marketContext: {
+          sentiment: 'NEUTRAL' as const,
+          reasoning: '일반적인 시장 상황에서의 내부자 거래'
+        },
+        catalysts: [],
+        timeHorizon: '단기-중기',
+        confidence: 70
+      };
+
+      setTrades(prevTrades =>
+        prevTrades.map(t =>
+          t.id === trade.id
+            ? {
+                ...t,
+                comprehensiveAnalysis: fallbackAnalysis,
+                analysisLoading: false,
+                aiInsight: fallbackAnalysis.executiveSummary
+              }
+            : t
+        )
+      );
+    }
+  }, [trades]);
+
+  // 향상된 fallback 인사이트 (실패 시 사용)
+  const generateEnhancedFallbackInsight = useCallback((trade: InsiderTrade, currentPrice?: number): string => {
+    const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
+    const valueMillions = (trade.totalValue / 1000000).toFixed(1);
+    const role = trade.traderTitle || '내부자';
+    const percentageOfShares = trade.ownershipPercentage || 0;
+
+    // 회사별 맞춤 분석
+    const companySpecific = getCompanyInsight(trade.companyName, trade.ticker);
+
+    // 거래 규모 분석
+    const sizeAnalysis = trade.totalValue > 5000000 ? '대규모' :
+                        trade.totalValue > 1000000 ? '중간 규모' : '소규모';
+
+    // 내부자 역할 중요도
+    const roleImportance = (role.toUpperCase().includes('CEO') || role.toUpperCase().includes('CFO')) ?
+                          '핵심 경영진' : '일반 임원';
+
+    // 호재/악재 분석 추가
+    const getDetailedMarketFactors = (company: string, ticker?: string) => {
+      const companyUpper = company.toUpperCase();
+
+      if (companyUpper.includes('APPLE') || ticker === 'AAPL') {
+        return {
+          catalysts: isBuy ? ['Vision Pro 확산', 'AI 생태계 통합', '인도 시장 진출'] : ['중국 규제 강화', '하드웨어 혁신 둔화'],
+          marketSentiment: isBuy ? 'AI 기기 수요 급증으로 긍정적' : '성장률 둔화 우려 확산'
+        };
+      } else if (companyUpper.includes('NVIDIA') || ticker === 'NVDA') {
+        return {
+          catalysts: isBuy ? ['Blackwell 칩 출시', 'AI 소프트웨어 확장', '자동차 AI 진출'] : ['지정학적 리스크', '밸류에이션 부담'],
+          marketSentiment: isBuy ? 'AI 인프라 투자 급증으로 매우 긍정적' : '고평가 우려와 규제 리스크 대두'
+        };
+      } else if (companyUpper.includes('TESLA') || ticker === 'TSLA') {
+        return {
+          catalysts: isBuy ? ['FSD v13 출시', '로보택시 상용화', '에너지 저장 사업'] : ['EV 경쟁 격화', '중국 시장 점유율 하락'],
+          marketSentiment: isBuy ? '자율주행 상용화 기대감 상승' : 'EV 시장 성장 둔화 우려'
+        };
+      } else {
+        return {
+          catalysts: isBuy ? ['디지털 전환 가속화', '신규 시장 진출'] : ['경쟁 환경 악화', '비용 상승 압박'],
+          marketSentiment: isBuy ? '업계 성장 모멘텀 지속' : '시장 불확실성 증가'
+        };
+      }
+    };
+
+    const marketFactors = getDetailedMarketFactors(trade.companyName, trade.ticker);
+    const mainCatalyst = marketFactors.catalysts[0];
+
+    return `${companySpecific} ${role}(${roleImportance})이 ${sizeAnalysis} ${isBuy ? '매수' : '매도'}(${valueMillions}M)를 실행했습니다. ` +
+           `💡 ${isBuy ? '핵심 호재' : '주요 악재'}: ${mainCatalyst}. ` +
+           `📊 시장 분위기: ${marketFactors.marketSentiment}. ` +
+           `${isBuy ?
+             `${roleImportance === '핵심 경영진' ? '경영진의 강한 확신을 보여주는 신호로' : '내부 정보에 기반한 투자 판단으로'} 해석 가능합니다.` :
+             `${roleImportance === '핵심 경영진' ? '향후 실적에 대한 우려나' : '개인적 자금 조달 또는'} 이익 실현 목적일 수 있습니다.`
+           } 지분율: ${percentageOfShares.toFixed(1)}%`;
+  }, []);
+
+  // 회사별 인사이트
+  const getCompanyInsight = (companyName: string, ticker?: string): string => {
+    const company = (companyName || ticker || '').toUpperCase();
+
+    if (company.includes('APPLE') || ticker === 'AAPL') {
+      return 'Apple의 지속적인 혁신과 생태계 확장 속에서';
+    } else if (company.includes('MICROSOFT') || ticker === 'MSFT') {
+      return 'Microsoft의 클라우드 사업 성장과 AI 투자 확대 시점에서';
+    } else if (company.includes('TESLA') || ticker === 'TSLA') {
+      return 'Tesla의 전기차 시장 확대와 자율주행 기술 발전 과정에서';
+    } else if (company.includes('NVIDIA') || ticker === 'NVDA') {
+      return 'NVIDIA의 AI 칩 수요 급증과 데이터센터 확장 시기에';
+    } else if (company.includes('AMAZON') || ticker === 'AMZN') {
+      return 'Amazon의 AWS 성장과 물류 혁신이 가속화되는 시점에서';
+    } else {
+      return `${companyName || ticker || '해당 회사'}의 사업 환경 변화 속에서`;
+    }
+  };
+
+  // 호재/악재 분석 포함한 향상된 fallback 인사이트
+  const generateFallbackInsight = useCallback((trade: InsiderTrade): string => {
+    const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
+    const valueMillions = (trade.totalValue / 1000000).toFixed(1);
+    const role = trade.traderTitle || '내부자';
+    const roleImportance = (role.toUpperCase().includes('CEO') || role.toUpperCase().includes('CFO')) ? '핵심 경영진' : '임원';
+
+    // 회사별 호재/악재 분석
+    const getMarketFactors = (company: string, ticker?: string) => {
+      const companyUpper = company.toUpperCase();
+      const currentMonth = new Date().getMonth() + 1;
+
+      if (companyUpper.includes('APPLE') || ticker === 'AAPL') {
+        return {
+          positives: ['iPhone 16 출시 호조', 'AI 기능 통합', '서비스 매출 성장'],
+          negatives: ['중국 시장 경쟁 심화', '하드웨어 성장 둔화'],
+          context: 'AI 생태계 확장 시점'
+        };
+      } else if (companyUpper.includes('MICROSOFT') || ticker === 'MSFT') {
+        return {
+          positives: ['Azure 클라우드 성장', 'AI Copilot 확산', '구독 서비스 확대'],
+          negatives: ['클라우드 경쟁 격화', '높은 밸류에이션'],
+          context: 'AI 투자 확대 기간'
+        };
+      } else if (companyUpper.includes('TESLA') || ticker === 'TSLA') {
+        return {
+          positives: ['로보택시 개발', '에너지 사업 성장', 'FSD 기술 진전'],
+          negatives: ['EV 경쟁 심화', '중국 생산 이슈'],
+          context: '자율주행 기술 전환점'
+        };
+      } else if (companyUpper.includes('NVIDIA') || ticker === 'NVDA') {
+        return {
+          positives: ['AI 칩 수요 급증', '데이터센터 확장', '소프트웨어 매출 증가'],
+          negatives: ['중국 수출 규제', '높은 기대치 부담'],
+          context: 'AI 붐 지속 여부가 관건'
+        };
+      } else if (companyUpper.includes('AMAZON') || ticker === 'AMZN') {
+        return {
+          positives: ['AWS 수익성 개선', '광고 사업 성장', '물류 효율화'],
+          negatives: ['이커머스 성장 둔화', '규제 리스크'],
+          context: '클라우드 수익성 집중 시기'
+        };
+      } else {
+        return {
+          positives: ['기업 실적 개선', '시장 확대 기회'],
+          negatives: ['경쟁 환경 변화', '거시경제 불확실성'],
+          context: '업계 전반 변화 시점'
+        };
+      }
+    };
+
+    const factors = getMarketFactors(trade.companyName, trade.ticker);
+    const primaryFactor = isBuy ? factors.positives[0] : factors.negatives[0];
+
+    return `${factors.context}에서 ${roleImportance} ${role}이 ${valueMillions}M$ ${isBuy ? '매수' : '매도'} 실행. ` +
+           `${isBuy ? '🟢 주요 호재' : '🔴 주요 악재'}: ${primaryFactor}. ` +
+           `${isBuy ?
+             `경영진 확신 표명으로 해석될 수 있으나, 추가 확인 필요.` :
+             `이익 실현 목적일 수 있으나, 시장 우려 신호 가능성도 있음.`}`;
+  }, []);
 
   // 내부자 매수 평균가격 계산 함수
   const calculateInsiderBuyAvgPrice = useCallback((ticker: string, tradeType: string): number | null => {
@@ -432,21 +688,6 @@ export default function LiveTrading() {
     const tradeValue = trade.totalValue;
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
 
-
-    // 현실적인 현재가 계산
-    const calculateCurrentPrice = () => {
-      const baseVariation = isBuy ? 0.02 : -0.03; // 매수는 +2%, 매도는 -3% 기본
-      const randomVariation = (Math.random() - 0.5) * 0.1; // ±5% 랜덤
-
-      // 거래 규모에 따른 영향도 조정
-      let impactMultiplier = 1;
-      if (tradeValue >= 10000000) impactMultiplier = 1.5; // 메가 거래는 더 큰 영향
-      else if (tradeValue >= 1000000) impactMultiplier = 1.2; // 대형 거래
-
-      const totalVariation = (baseVariation + randomVariation) * impactMultiplier;
-      return trade.pricePerShare * (1 + totalVariation);
-    };
-
     // 유사 거래 건수 계산
     const calculateSimilarTrades = () => {
       let baseTrades = 3;
@@ -473,8 +714,13 @@ export default function LiveTrading() {
       else if (title.includes('CFO')) baseReturn *= 1.2;
       else if (title.includes('PRESIDENT')) baseReturn *= 1.1;
 
-      // 랜덤 변동
-      baseReturn += (Math.random() - 0.5) * 6; // ±3% 변동
+      // 거래 ID 기반 일관된 변동 (해시 기반으로 고정값 생성)
+      const hash = trade.id.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const consistentVariation = ((hash % 100) / 100 - 0.5) * 6; // ±3% 변동 (일관됨)
+      baseReturn += consistentVariation;
 
       return baseReturn;
     };
@@ -491,30 +737,175 @@ export default function LiveTrading() {
       return prediction;
     };
 
-    const currentPrice = calculateCurrentPrice();
     const enhanced: EnhancedTrade = {
       ...trade,
-      recommendedBuyPrice: isBuy
-        ? Math.min(currentPrice * 0.97, trade.pricePerShare * 1.02) // 매수 거래면 현재가의 3% 낮은 가격이나 내부자 매수가의 2% 높은 가격 중 낮은 값
-        : Math.min(currentPrice * 0.95, trade.pricePerShare * 0.90), // 매도 거래면 현재가의 5% 낮은 가격이나 내부자 매도가의 10% 낮은 가격 중 낮은 값
-      currentPrice,
+      // 실제 현재가는 별도로 비동기 로딩됨
+      currentPrice: undefined,
+      realTimePrice: undefined,
+      recommendedBuyPrice: undefined, // 실제 현재가 로딩 후 계산
       similarTrades: calculateSimilarTrades(),
       avgReturnAfterSimilar: calculateAvgReturn(),
-      aiInsight: generateProfessionalInsight(trade),
-      impactPrediction: calculateImpactPrediction()
+      aiInsight: generateFallbackInsight(trade), // 기본 인사이트 (고급 분석 전까지)
+      impactPrediction: calculateImpactPrediction(),
+      comprehensiveAnalysis: undefined, // 나중에 비동기로 로딩
+      analysisLoading: true // 분석 로딩 상태
     };
     return enhanced;
   }, []); // 의존성 없음으로 한 번만 생성
+
+  // 실시간 주가 업데이트 함수
+  const updateStockPrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
+
+    // 이미 로딩 중인 심볼들 제외
+    const symbolsToLoad = symbols.filter(symbol => !priceLoadingSymbols.has(symbol));
+    if (symbolsToLoad.length === 0) return;
+
+    // 로딩 상태 업데이트
+    setPriceLoadingSymbols(prev => {
+      const newSet = new Set(prev);
+      symbolsToLoad.forEach(symbol => newSet.add(symbol));
+      return newSet;
+    });
+
+    try {
+      const prices = await getMultipleStockPrices(symbolsToLoad);
+
+      setStockPrices(prev => {
+        const newMap = new Map(prev);
+        prices.forEach((price, symbol) => {
+          newMap.set(symbol, price);
+        });
+        return newMap;
+      });
+
+      // 거래 데이터에 실시간 가격 정보 업데이트
+      setTrades(prevTrades =>
+        prevTrades.map(trade => {
+          if (!trade.ticker) return trade;
+
+          const stockPrice = prices.get(trade.ticker);
+          if (!stockPrice) return trade;
+
+          const isBuy = trade.tradeType.toUpperCase().includes('BUY') ||
+                       trade.tradeType.toUpperCase().includes('PURCHASE');
+
+          // AI 추천 매수가 계산
+          const recommendedBuyPrice = isBuy
+            ? Math.min(stockPrice.currentPrice * 0.97, trade.pricePerShare * 1.02)
+            : Math.min(stockPrice.currentPrice * 0.95, trade.pricePerShare * 0.90);
+
+          const updatedTrade = {
+            ...trade,
+            currentPrice: stockPrice.currentPrice,
+            realTimePrice: stockPrice,
+            recommendedBuyPrice
+          };
+
+          // 주가 로딩 완료 후 고급 분석 시작
+          if (!trade.comprehensiveAnalysis && trade.analysisLoading) {
+            setTimeout(() => {
+              generateAdvancedAnalysis(updatedTrade, stockPrice.currentPrice);
+            }, 100); // 짧은 지연 후 분석 시작
+
+            // 10초 후에도 분석이 완료되지 않으면 강제로 fallback 분석 제공
+            setTimeout(() => {
+              setTrades(prevTrades =>
+                prevTrades.map(t => {
+                  if (t.id === trade.id && t.analysisLoading) {
+                    const fallbackAnalysis = {
+                      executiveSummary: generateEnhancedFallbackInsight(t, stockPrice.currentPrice),
+                      actionableRecommendation: `${t.tradeType === 'BUY' ? '매수' : '매도'} 신호로 해석될 수 있으나 추가적인 시장 분석이 필요합니다.`,
+                      priceTargets: {
+                        conservative: stockPrice.currentPrice * 0.95,
+                        optimistic: stockPrice.currentPrice * 1.05,
+                        timeHorizon: '3-6개월'
+                      },
+                      riskAssessment: {
+                        level: 'MEDIUM' as const,
+                        factors: ['시장 변동성', '회사 실적'],
+                        mitigation: '포트폴리오 분산 투자 권장'
+                      },
+                      marketContext: {
+                        sentiment: 'NEUTRAL' as const,
+                        reasoning: '일반적인 시장 상황에서의 내부자 거래'
+                      },
+                      catalysts: [],
+                      timeHorizon: '단기-중기',
+                      confidence: 70
+                    };
+
+                    return {
+                      ...t,
+                      comprehensiveAnalysis: fallbackAnalysis,
+                      analysisLoading: false,
+                      aiInsight: fallbackAnalysis.executiveSummary
+                    };
+                  }
+                  return t;
+                })
+              );
+            }, 10000); // 10초 타임아웃
+          }
+
+          return updatedTrade;
+        })
+      );
+
+    } catch (error) {
+      console.error('Failed to update stock prices:', error);
+    } finally {
+      // 로딩 상태 제거
+      setPriceLoadingSymbols(prev => {
+        const newSet = new Set(prev);
+        symbolsToLoad.forEach(symbol => newSet.delete(symbol));
+        return newSet;
+      });
+    }
+  }, [priceLoadingSymbols]);
 
   // Initialize trades - 최적화된 버전
   useEffect(() => {
     if (initialTrades) {
       console.log(`🔍 [DEBUG] Received ${initialTrades.length} trades from API`);
+
+      // 데이터 품질 검증
+      const qualityReport = DataIntegrityChecker.validateTradeData(initialTrades);
+      setDataQualityReport(qualityReport);
+
+      if (qualityReport.qualityScore < 80) {
+        console.warn(`⚠️ 데이터 품질 경고: ${qualityReport.qualityScore}%`, qualityReport.issues);
+      }
+
       const enhancedTrades = initialTrades.map(enhanceTradeWithAI);
       setTrades(enhancedTrades);
       console.log(`[DEBUG] Set ${enhancedTrades.length} enhanced trades in state`);
+
+      // 실시간 주가 업데이트
+      const symbols = enhancedTrades
+        .map(trade => trade.ticker)
+        .filter(Boolean) as string[];
+
+      if (symbols.length > 0) {
+        updateStockPrices(symbols);
+      }
     }
-  }, [initialTrades, enhanceTradeWithAI]);
+  }, [initialTrades, enhanceTradeWithAI, updateStockPrices]);
+
+  // 주기적으로 주가 업데이트 (5분마다)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const symbols = trades
+        .map(trade => trade.ticker)
+        .filter(Boolean) as string[];
+
+      if (symbols.length > 0) {
+        updateStockPrices(symbols);
+      }
+    }, 5 * 60 * 1000); // 5분
+
+    return () => clearInterval(interval);
+  }, [trades, updateStockPrices]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -536,6 +927,20 @@ export default function LiveTrading() {
           }
 
           const updated = [newTrade, ...prev];
+
+          // 실시간 데이터 품질 검증
+          const qualityAlert = createDataQualityAlert([newTrade]);
+          if (qualityAlert) {
+            console.warn('🚨 실시간 데이터 품질 경고:', qualityAlert);
+            setDataQualityAlert(qualityAlert);
+            // 전체 데이터 품질 재검증
+            const updatedQualityReport = DataIntegrityChecker.validateTradeData(updated);
+            setDataQualityReport(updatedQualityReport);
+
+            // 5초 후 알림 자동 제거
+            setTimeout(() => setDataQualityAlert(null), 5000);
+          }
+
           return updated; // Keep all trades for comprehensive search
         });
         break;
@@ -807,11 +1212,63 @@ export default function LiveTrading() {
                 모든 내부자 거래 데이터를 검색하고 필터링할 수 있습니다
               </p>
             )}
-            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-600 font-medium mt-1`}>
-              총 {trades.length}개 | 필터링: {filteredTrades.length}개
-            </p>
+            <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium mt-1 space-y-1`}>
+              <p className="text-blue-600">
+                총 {trades.length}개 | 필터링: {filteredTrades.length}개
+              </p>
+              {stockPrices.size > 0 && (
+                <p className="text-green-600">
+                  📈 실시간 주가: {stockPrices.size}개 로드됨
+                  {priceLoadingSymbols.size > 0 && (
+                    <span className="ml-2 text-orange-600">
+                      ({priceLoadingSymbols.size}개 로딩 중...)
+                    </span>
+                  )}
+                </p>
+              )}
+              {dataQualityReport && (
+                <div className="flex items-center gap-2">
+                  <p className={`${
+                    dataQualityReport.qualityScore >= 90 ? 'text-green-600' :
+                    dataQualityReport.qualityScore >= 70 ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    🔍 데이터 품질: {dataQualityReport.qualityScore}%
+                  </p>
+                  {dataQualityReport.issues.length > 0 && (
+                    <button
+                      onClick={() => setShowDataQualityDetails(true)}
+                      className="text-blue-600 hover:text-blue-800 underline text-sm"
+                    >
+                      ({dataQualityReport.issues.length}개 이슈)
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* 실시간 주가 업데이트 버튼 */}
+            <Button
+              variant="outline"
+              size={isMobile ? "sm" : "default"}
+              onClick={() => {
+                const symbols = trades
+                  .map(trade => trade.ticker)
+                  .filter(Boolean) as string[];
+                updateStockPrices(symbols);
+              }}
+              disabled={priceLoadingSymbols.size > 0}
+              className={`${isMobile ? 'h-8 text-xs' : 'h-9'} flex items-center gap-1`}
+            >
+              {priceLoadingSymbols.size > 0 ? (
+                <Loader2 className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} animate-spin`} />
+              ) : (
+                <RefreshCw className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+              )}
+              {isMobile ? '주가' : '주가 업데이트'}
+            </Button>
+
             <Alert className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} ${isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}`}>
               <div className="flex items-center gap-2">
                 {isConnected ? (
@@ -911,6 +1368,26 @@ export default function LiveTrading() {
           내 워치리스트 ({watchlist.length})
         </Button>
       </div>
+
+      {/* Data Quality Alert */}
+      {dataQualityAlert && (
+        <Alert className="border-amber-200 bg-amber-50 animate-in slide-in-from-top-2 duration-300">
+          <AlertDescription className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-800">⚠️</span>
+              <span className="text-amber-800 font-medium">{dataQualityAlert}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDataQualityAlert(null)}
+              className="h-6 w-6 p-0 text-amber-600 hover:text-amber-800"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filters */}
       <Card className="card-professional">
@@ -1457,6 +1934,94 @@ export default function LiveTrading() {
             isInWatchlist={selectedTradeForDetail?.ticker ? watchlist.includes(selectedTradeForDetail.ticker) : false}
           />
         </Suspense>
+      )}
+
+      {/* 데이터 품질 세부사항 모달 */}
+      {showDataQualityDetails && dataQualityReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                🔍 데이터 품질 리포트
+                <Badge className={`${
+                  dataQualityReport.qualityScore >= 90 ? 'bg-green-500' :
+                  dataQualityReport.qualityScore >= 70 ? 'bg-yellow-500' :
+                  'bg-red-500'
+                } text-white`}>
+                  {dataQualityReport.qualityScore}%
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* 요약 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">총 거래 수</p>
+                  <p className="text-lg font-semibold">{dataQualityReport.totalTrades}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">유효 거래 수</p>
+                  <p className="text-lg font-semibold text-green-600">{dataQualityReport.validTrades}</p>
+                </div>
+              </div>
+
+              {/* 이슈 목록 */}
+              {dataQualityReport.issues.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">발견된 이슈들</h4>
+                  <div className="space-y-3">
+                    {dataQualityReport.issues.map((issue: any, index: number) => (
+                      <div key={index} className={`p-3 rounded-lg border ${
+                        issue.severity === 'HIGH' ? 'bg-red-50 border-red-200' :
+                        issue.severity === 'MEDIUM' ? 'bg-yellow-50 border-yellow-200' :
+                        'bg-blue-50 border-blue-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={`${
+                            issue.severity === 'HIGH' ? 'bg-red-500' :
+                            issue.severity === 'MEDIUM' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+                          } text-white text-xs`}>
+                            {issue.severity}
+                          </Badge>
+                          <span className="text-sm font-medium">{issue.type}</span>
+                        </div>
+                        <p className="text-sm text-foreground mb-2">{issue.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          💡 {issue.suggestion}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          영향받은 거래: {issue.affectedTrades.length}개
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 권장사항 */}
+              {dataQualityReport.recommendations.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">권장사항</h4>
+                  <ul className="space-y-2">
+                    {dataQualityReport.recommendations.map((rec: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <span className="text-blue-500 mt-0.5">•</span>
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => setShowDataQualityDetails(false)}>
+                  닫기
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

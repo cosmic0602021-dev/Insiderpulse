@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
-import { RefreshCw, Star, TrendingUp, DollarSign, Activity, X, Mail, Bookmark, Bell, Check } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, DollarSign, Activity, X, Mail, Bookmark, Bell, Check, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { apiClient } from '@/lib/api';
 
@@ -160,6 +160,7 @@ export default function Ranking() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Skeleton className="h-12 w-12 rounded" />
+                    <Skeleton className="h-16 w-16 rounded-lg" />
                     <div>
                       <Skeleton className="h-5 w-24 mb-2" />
                       <Skeleton className="h-4 w-32" />
@@ -259,6 +260,31 @@ export default function Ranking() {
                   <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
                     <span className="text-lg font-bold text-primary">#{index + 1}</span>
                   </div>
+
+                  {/* Company Logo */}
+                  <div className="relative h-16 w-16 flex-shrink-0">
+                    <img
+                      src={`https://assets.parqet.com/logos/resolution/${item.ticker}.png`}
+                      alt={`${item.companyName} logo`}
+                      className="h-16 w-16 rounded-lg object-contain"
+                      onError={(e) => {
+                        // Fallback to EODHD API if Parqet fails
+                        const target = e.target as HTMLImageElement;
+                        if (target.src.includes('parqet.com')) {
+                          target.src = `https://eodhd.com/img/logos/US/${item.ticker}.png`;
+                        } else {
+                          // Final fallback to Building2 icon
+                          target.style.display = 'none';
+                          const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
+                          if (iconDiv) iconDiv.style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div className="fallback-icon h-16 w-16 bg-muted rounded-lg hidden items-center justify-center" style={{display: 'none'}}>
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  </div>
+
                   <div>
                     <h3 className="text-xl font-semibold" data-testid={`text-ticker-${item.ticker.toLowerCase()}`}>
                       {item.ticker}

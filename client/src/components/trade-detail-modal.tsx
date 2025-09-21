@@ -38,6 +38,25 @@ export function TradeDetailModal({
 }: TradeDetailModalProps) {
   if (!isOpen || !trade) return null;
 
+  // 시장 개장 시간 확인 (미국 동부 시간 기준)
+  const isMarketOpen = () => {
+    const now = new Date();
+    const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const day = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+    const hour = easternTime.getHours();
+    const minute = easternTime.getMinutes();
+    const currentTime = hour * 60 + minute;
+
+    // 주말 제외 (월-금)
+    if (day === 0 || day === 6) return false;
+
+    // 시장 시간: 9:30 AM - 4:00 PM ET
+    const marketOpen = 9 * 60 + 30; // 9:30 AM
+    const marketClose = 16 * 60; // 4:00 PM
+
+    return currentTime >= marketOpen && currentTime <= marketClose;
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -245,7 +264,7 @@ export function TradeDetailModal({
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                  ${(trade.pricePerShare * (0.95 + Math.random() * 0.1)).toFixed(2)}
+                  ${(trade.recommendedBuyPrice || trade.pricePerShare * 0.98).toFixed(2)}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">동일 티커 평균</p>
               </div>
@@ -258,13 +277,17 @@ export function TradeDetailModal({
                   </div>
                   <div>
                     <p className="text-xs font-medium text-slate-700 dark:text-slate-300">현재 시장가</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">실시간 추정</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {isMarketOpen() ? '실시간 추정' : '휴장 (최근가)'}
+                    </p>
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
                   ${trade.currentPrice?.toFixed(2) || 'N/A'}
                 </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">시장 예상 가격</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                  {isMarketOpen() ? '실시간 가격' : '마지막 종가 (휴장 중)'}
+                </p>
               </div>
             </div>
 

@@ -32,7 +32,9 @@
       "Bash(PORT=5002 npm start)",
       "Bash(xargs cat:*)",
       "Bash(echo:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(npm cache clean:*)"
     ],
     "deny": [],
     "ask": []

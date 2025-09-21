@@ -1,6 +1,6 @@
 import { storage } from './storage.js';
 import axios from 'axios';
-// import * as cheerio from 'cheerio'; // Temporarily disabled due to package issues
+import { JSDOM } from 'jsdom';
 
 export class MassiveDataImporter {
   private userAgents = [
@@ -74,8 +74,9 @@ export class MassiveDataImporter {
           timeout: 30000
         });
 
-        const $ = cheerio.load(response.data);
-        const trades = this.parseFinvizTrades($);
+        const dom = new JSDOM(response.data);
+        const document = dom.window.document;
+        const trades = this.parseFinvizTrades(document);
 
         for (const trade of trades) {
           try {
@@ -96,24 +97,25 @@ export class MassiveDataImporter {
     return collected;
   }
 
-  private parseFinvizTrades($: cheerio.CheerioAPI): any[] {
+  private parseFinvizTrades(document: Document): any[] {
     const trades: any[] = [];
 
-    $('table.table-light-rows tr').each((index, element) => {
+    const rows = document.querySelectorAll('table.table-light-rows tr');
+    rows.forEach((element, index) => {
       if (index === 0) return; // 헤더 스킵
 
-      const cells = $(element).find('td');
+      const cells = element.querySelectorAll('td');
       if (cells.length >= 9) {
         try {
-          const ticker = $(cells[0]).text().trim();
-          const owner = $(cells[1]).text().trim();
-          const relationship = $(cells[2]).text().trim();
-          const date = $(cells[3]).text().trim();
-          const transaction = $(cells[4]).text().trim();
-          const cost = $(cells[5]).text().trim();
-          const shares = $(cells[6]).text().trim();
-          const value = $(cells[7]).text().trim();
-          const sharesTotal = $(cells[8]).text().trim();
+          const ticker = cells[0]?.textContent?.trim() || '';
+          const owner = cells[1]?.textContent?.trim() || '';
+          const relationship = cells[2]?.textContent?.trim() || '';
+          const date = cells[3]?.textContent?.trim() || '';
+          const transaction = cells[4]?.textContent?.trim() || '';
+          const cost = cells[5]?.textContent?.trim() || '';
+          const shares = cells[6]?.textContent?.trim() || '';
+          const value = cells[7]?.textContent?.trim() || '';
+          const sharesTotal = cells[8]?.textContent?.trim() || '';
 
           if (ticker && owner && date) {
             trades.push({
@@ -156,8 +158,9 @@ export class MassiveDataImporter {
           timeout: 30000
         });
 
-        const $ = cheerio.load(response.data);
-        const trades = this.parseMarketWatchTrades($);
+        const dom = new JSDOM(response.data);
+        const document = dom.window.document;
+        const trades = this.parseMarketWatchTrades(document);
 
         for (const trade of trades) {
           try {
@@ -178,19 +181,20 @@ export class MassiveDataImporter {
     return collected;
   }
 
-  private parseMarketWatchTrades($: cheerio.CheerioAPI): any[] {
+  private parseMarketWatchTrades(document: Document): any[] {
     const trades: any[] = [];
 
-    $('.table tbody tr').each((index, element) => {
+    const rows = document.querySelectorAll('.table tbody tr');
+    rows.forEach((element) => {
       try {
-        const cells = $(element).find('td');
+        const cells = element.querySelectorAll('td');
         if (cells.length >= 6) {
-          const ticker = $(cells[0]).text().trim();
-          const company = $(cells[1]).text().trim();
-          const insider = $(cells[2]).text().trim();
-          const transaction = $(cells[3]).text().trim();
-          const value = $(cells[4]).text().trim();
-          const date = $(cells[5]).text().trim();
+          const ticker = cells[0]?.textContent?.trim() || '';
+          const company = cells[1]?.textContent?.trim() || '';
+          const insider = cells[2]?.textContent?.trim() || '';
+          const transaction = cells[3]?.textContent?.trim() || '';
+          const value = cells[4]?.textContent?.trim() || '';
+          const date = cells[5]?.textContent?.trim() || '';
 
           if (ticker && insider && date) {
             trades.push({
