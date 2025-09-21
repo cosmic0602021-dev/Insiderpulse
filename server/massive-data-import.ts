@@ -1,6 +1,7 @@
 import { storage } from './storage.js';
 import axios from 'axios';
-import { JSDOM } from 'jsdom';
+// Temporarily disabled due to package installation issues
+// import { JSDOM } from 'jsdom';
 
 export class MassiveDataImporter {
   private userAgents = [
@@ -54,6 +55,10 @@ export class MassiveDataImporter {
   }
 
   private async collectFromFinviz(): Promise<number> {
+    // Temporarily disabled due to jsdom package issue
+    console.log('⏸️ Finviz collection temporarily disabled due to jsdom dependency issue');
+    return 0;
+    
     let collected = 0;
 
     try {
@@ -141,6 +146,10 @@ export class MassiveDataImporter {
   }
 
   private async collectFromMarketWatch(): Promise<number> {
+    // Temporarily disabled due to jsdom package issue
+    console.log('⏸️ MarketWatch collection temporarily disabled due to jsdom dependency issue');
+    return 0;
+    
     let collected = 0;
 
     try {
@@ -273,7 +282,7 @@ export class MassiveDataImporter {
         t.accessionNumber === uniqueId ||
         (t.ticker === trade.ticker &&
          t.traderName === trade.traderName &&
-         t.tradeDate === trade.tradeDate &&
+         t.filedDate === trade.tradeDate &&
          Math.abs(t.totalValue - trade.totalValue) < 1)
       );
 
@@ -288,8 +297,7 @@ export class MassiveDataImporter {
         companyName: trade.companyName || '',
         traderName: trade.traderName,
         traderTitle: trade.traderTitle || '',
-        tradeDate: trade.tradeDate,
-        filingDate: new Date().toISOString().split('T')[0],
+        filedDate: new Date(trade.tradeDate),
         transactionType: trade.transactionType || 'Unknown',
         tradeType: this.mapTransactionToTradeType(trade.transactionType),
         shares: trade.shares || 0,
@@ -331,10 +339,19 @@ export class MassiveDataImporter {
     return transaction;
   }
 
-  private mapTransactionToTradeType(transactionType: string): string {
+  private mapTransactionToTradeType(transactionType: string): 'BUY' | 'SELL' | 'TRANSFER' | 'OPTION_EXERCISE' | 'GRANT' | 'GIFT' | 'AWARD' | 'TAX' | 'CONVERSION' | 'INHERIT' | 'DISPOSITION' | 'OTHER' {
     const lower = (transactionType || '').toLowerCase();
     if (lower.includes('buy') || lower.includes('purchase')) return 'BUY';
     if (lower.includes('sell') || lower.includes('sale')) return 'SELL';
+    if (lower.includes('grant')) return 'GRANT';
+    if (lower.includes('exercise')) return 'OPTION_EXERCISE';
+    if (lower.includes('transfer')) return 'TRANSFER';
+    if (lower.includes('gift')) return 'GIFT';
+    if (lower.includes('award')) return 'AWARD';
+    if (lower.includes('tax')) return 'TAX';
+    if (lower.includes('conversion')) return 'CONVERSION';
+    if (lower.includes('inherit')) return 'INHERIT';
+    if (lower.includes('disposition')) return 'DISPOSITION';
     return 'OTHER';
   }
 
