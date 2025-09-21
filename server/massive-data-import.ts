@@ -79,8 +79,8 @@ export class MassiveDataImporter {
           timeout: 30000
         });
 
-        const dom = new JSDOM(response.data);
-        const document = dom.window.document;
+        // const dom = new JSDOM(response.data);
+        // const document = dom.window.document;
         const trades = this.parseFinvizTrades(document);
 
         for (const trade of trades) {
@@ -167,8 +167,8 @@ export class MassiveDataImporter {
           timeout: 30000
         });
 
-        const dom = new JSDOM(response.data);
-        const document = dom.window.document;
+        // const dom = new JSDOM(response.data);
+        // const document = dom.window.document;
         const trades = this.parseMarketWatchTrades(document);
 
         for (const trade of trades) {
@@ -298,12 +298,12 @@ export class MassiveDataImporter {
         traderName: trade.traderName,
         traderTitle: trade.traderTitle || '',
         filedDate: new Date(trade.tradeDate),
-        transactionType: trade.transactionType || 'Unknown',
+        transactionCode: trade.transactionType || 'Unknown',
         tradeType: this.mapTransactionToTradeType(trade.transactionType),
         shares: trade.shares || 0,
         pricePerShare: trade.pricePerShare || 0,
         totalValue: trade.totalValue || 0,
-        sharesOwned: trade.sharesOwned || 0,
+        // sharesOwned: trade.sharesOwned || 0, // This field doesn't exist in schema
         ownershipPercentage: 0,
         secFilingUrl: `https://${source}.com/insider-trading`,
         isVerified: false,
