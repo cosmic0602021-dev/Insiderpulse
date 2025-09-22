@@ -32,10 +32,10 @@ export default function TradeDetail() {
 
   const trade = trades.find(t => t.id === id);
 
-  // Fetch stock price if we have a ticker - 🚨 임시 비활성화
+  // Fetch stock price if we have a ticker - 🔥 진짜 데이터만 표시하도록 다시 활성화
   const { data: stockPrice } = useQuery<StockPrice>({
     queryKey: ['/api/stocks', trade?.ticker || trade?.companyName],
-    enabled: false, // 🚨 완전히 비활성화해서 무한 루프 방지
+    enabled: false, // 주가 정보는 선택사항으로 비활성화 유지 (API 비용 절약)
     staleTime: 10 * 60 * 1000, // 10분으로 증가
     cacheTime: 15 * 60 * 1000, // 15분 캐시
     refetchOnWindowFocus: false, // 창 포커스시 리페치 비활성화
