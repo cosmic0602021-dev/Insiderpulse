@@ -18,10 +18,10 @@ def make_request():
             page.set_extra_http_headers({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0","Accept":"application/xml","Accept-Language":"en-US,en;q=0.9","Accept-Encoding":"gzip, deflate, br","Connection":"keep-alive","Upgrade-Insecure-Requests":"1","Sec-Fetch-Dest":"document","Sec-Fetch-Mode":"navigate","Sec-Fetch-Site":"none","Cache-Control":"no-cache"})
             
             # Navigate to the URL with shorter timeout for XML files
-            response = page.goto('https://www.sec.gov/Archives/edgar/data/1579877/000208642025000004/xslF345X03/ownership.xml', wait_until='domcontentloaded', timeout=30000)
+            response = page.goto('https://www.sec.gov/Archives/edgar/data/2086420/000208642025000004/form4.xml', wait_until='domcontentloaded', timeout=30000)
             
             # For XML files, get the raw response
-            if 'https://www.sec.gov/Archives/edgar/data/1579877/000208642025000004/xslF345X03/ownership.xml'.endswith('.xml') or 'application/xml' in 'application/xml':
+            if 'https://www.sec.gov/Archives/edgar/data/2086420/000208642025000004/form4.xml'.endswith('.xml') or 'application/xml' in 'application/xml':
                 # This is likely an XML file, get the raw content
                 raw_content = page.content()
                 
