@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, memo, lazy, Suspense } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -253,7 +253,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
 
                 <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'}`}>
                   <Button
-                    size={isMobile ? "xs" : "sm"}
+                    size="sm"
                     variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -266,7 +266,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   </Button>
 
                   <Button
-                    size={isMobile ? "xs" : "sm"}
+                    size="sm"
                     variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -463,8 +463,8 @@ export default function LiveTrading() {
     try {
       console.log(`🔍 Calling real OpenAI API for ${trade.ticker} analysis...`);
       
-      // 실제 OpenAI API 호출
-      const analysisResponse = await apiRequest(`/api/analyze/trade`, {
+      // 실제 OpenAI API 호출 - fetch로 직접 호출
+      const response = await fetch(`/api/analyze/trade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -479,6 +479,12 @@ export default function LiveTrading() {
           ownershipPercentage: trade.ownershipPercentage || 0
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`AI analysis failed: ${response.status}`);
+      }
+
+      const analysisResponse = await response.json();
 
       // AI 분석 결과를 comprehensive analysis 형태로 변환
       const analysis = {
