@@ -97,9 +97,10 @@ export class MemStorage implements IStorage {
   // Insider trading methods
   async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
+    console.log(`🔍 [DEBUG] MemStorage has ${trades.length} total trades in memory`);
     
-    // Filter out HOLD trades completely
-    trades = trades.filter(trade => trade.signalType !== 'HOLD');
+    // 🔧 TEMPORARILY DISABLED: Filter out HOLD trades to show all collected data
+    // trades = trades.filter(trade => trade.signalType !== 'HOLD');
     
     if (verifiedOnly) {
       trades = trades.filter(trade => trade.isVerified === true);
