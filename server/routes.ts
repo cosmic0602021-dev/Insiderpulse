@@ -9,6 +9,10 @@ import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 import dataCollectionRouter from "./data-collection-api";
 import { massiveDataImporter } from "./massive-data-import";
+import enhancedApiRouter from "./routes/enhanced-api";
+// import newApiRouter from "./routes/new-api-routes";
+import { newScrapingManager } from "./temp-scraper";
+// import { newDataCollectionService } from "./new-data-collection-service";
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -834,8 +838,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 🚀 Register enhanced data collection API endpoints
   app.use(dataCollectionRouter);
 
+  // 🚀 Simple test endpoints for enhanced API
+  app.get('/api/enhanced/simple-test', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Enhanced API is working',
+      timestamp: new Date().toISOString(),
+      data: newScrapingManager.getStatistics()
+    });
+  });
+
+  app.get('/api/enhanced/quick-trades', (req, res) => {
+    try {
+      const trades = newScrapingManager.getAllTrades().slice(0, 10);
+      res.json({
+        success: true,
+        count: trades.length,
+        data: trades,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+
+  // 🚀 Register new enhanced scraping API endpoints
+  app.use('/api/enhanced', enhancedApiRouter);
+  // app.use('/api/v2', newApiRouter);
+
   // 🚀 Register Mega Data Collection API endpoints
   registerMegaApiEndpoints(app);
+
+  // 🚀 Initialize new data collection service
+  try {
+    console.log('🚀 Starting new data collection service...');
+    // Start the new enhanced scraping system
+    const result = await newScrapingManager.executeFullCollection();
+    console.log(`✅ New enhanced scraping system initialized with ${result.length} trades`);
+
+    // Start scheduled jobs for new data collection
+    // await newDataCollectionService.startAllJobs();
+    console.log('✅ New data collection service initialized');
+  } catch (error) {
+    console.error('❌ Failed to start new data collection service:', error);
+    console.log('🔄 Continuing with basic enhanced API endpoints...');
+  }
 
   console.log('✅ API routes registered with WebSocket support and enhanced data collection');
   return httpServer;

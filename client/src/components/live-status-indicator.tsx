@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 import '../professional-micro-interactions.css';
 
 interface LiveStatusIndicatorProps {
@@ -9,8 +10,9 @@ interface LiveStatusIndicatorProps {
 
 export function LiveStatusIndicator({ isConnected, className = '' }: LiveStatusIndicatorProps) {
   const [pulseKey, setPulseKey] = useState(0);
+  const { t } = useLanguage();
 
-  // 연결 상태 변경 시 펄스 애니메이션 트리거
+  // Trigger pulse animation when connection status changes
   useEffect(() => {
     setPulseKey(prev => prev + 1);
   }, [isConnected]);
@@ -31,7 +33,7 @@ export function LiveStatusIndicator({ isConnected, className = '' }: LiveStatusI
           <WifiOff className="h-3 w-3" />
         )}
         <span className="whitespace-nowrap">
-          {isConnected ? '실시간 연결됨' : '연결 끊어짐'}
+          {isConnected ? t('connection.liveFeed') : t('connection.disconnected')}
         </span>
       </div>
     </div>

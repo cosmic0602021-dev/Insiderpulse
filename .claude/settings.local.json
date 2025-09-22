@@ -34,7 +34,9 @@
       "Bash(echo:*)",
       "Bash(node:*)",
       "Bash(python3:*)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Bash(find:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

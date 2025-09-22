@@ -106,7 +106,7 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to load more trades:', error);
       // TODO: Show user-friendly error notification
-      alert('더 많은 거래를 불러오는데 실패했습니다. 다시 시도해 주세요.');
+      alert(t('dashboard.loadMoreTradesError'));
     } finally {
       setLoadingMore(false);
     }

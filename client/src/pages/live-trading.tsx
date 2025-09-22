@@ -141,7 +141,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
 
               <div className={`mt-2 ${isMobile ? 'p-1.5' : 'p-2'} bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800`}>
                 <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-blue-700 dark:text-blue-300 font-medium`}>
-                  내부자 {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? '매수' : '매도'} 가격
+                  {t('liveTrading.insider')} {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? t('liveTrading.buy') : t('liveTrading.sell')} {t('liveTrading.currentPriceLabel')}
                 </p>
                 <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-blue-600 dark:text-blue-400`}>
                   ${trade.pricePerShare.toFixed(2)}
@@ -163,7 +163,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                 const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
                 return avgBuyPrice && (
                   <p className="text-xs text-purple-600 font-medium mt-1">
-                    평균 내부자 매수가: ${avgBuyPrice.toFixed(2)}
+                    {t('liveTrading.avgInsiderBuyPriceLabel')}: ${avgBuyPrice.toFixed(2)}
                   </p>
                 );
               })()}
@@ -185,8 +185,8 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">
                       {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE')
-                        ? 'AI 추천 매수가 (Follow)'
-                        : 'AI 추천 매수가 (Opportunistic)'
+                        ? `${t('liveTrading.aiRecommendedBuyPriceLabel')} (${t('liveTrading.followLabel')})`
+                        : `${t('liveTrading.aiRecommendedBuyPriceLabel')} (${t('liveTrading.opportunisticLabel')})`
                       }
                     </p>
                     <p className={`font-semibold ${
@@ -198,7 +198,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     </p>
                     <div className="text-xs text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <span>현재가: ${trade.currentPrice.toFixed(2)}</span>
+                        <span>{t('liveTrading.currentPriceLabel')}: ${trade.currentPrice.toFixed(2)}</span>
                         {trade.realTimePrice && (
                           <span className={`text-xs px-1.5 py-0.5 rounded ${
                             trade.realTimePrice.priceChange >= 0
@@ -212,7 +212,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                       </div>
                       {trade.realTimePrice && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          업데이트: {new Date(trade.realTimePrice.lastUpdated).toLocaleTimeString('ko-KR', {
+                          {t('liveTrading.updatedLabel')}: {new Date(trade.realTimePrice.lastUpdated).toLocaleTimeString('ko-KR', {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
@@ -220,33 +220,33 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                       )}
                       {trade.tradeType.includes('SELL') && (
                         <span className="block text-orange-600 mt-1">
-                          (내부자 매도 후 기회)
+                          ({t('liveTrading.opportunityAfterSellLabel')})
                         </span>
                       )}
                     </div>
                   </div>
                 ) : trade.ticker && !trade.currentPrice ? (
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">실시간 가격 정보</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('liveTrading.realtimePriceInfo')}</p>
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
-                      <span className="text-sm text-blue-600">로딩 중...</span>
+                      <span className="text-sm text-blue-600">{t('general.loading')}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      내부자 거래가: ${trade.pricePerShare.toFixed(2)}
+                      {t('liveTrading.insiderTradePrice')}: ${trade.pricePerShare.toFixed(2)}
                     </p>
                   </div>
                 ) : null}
 
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">예상 영향</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('liveTrading.expectedImpact')}</p>
                   <p className={`font-semibold ${
                     trade.impactPrediction?.startsWith('+') ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {trade.impactPrediction}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    유사 거래: {trade.similarTrades}건
+                    {t('liveTrading.similarTrades')}: {trade.similarTrades}{t('liveTrading.count')}
                   </p>
                 </div>
 
@@ -261,7 +261,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     className={`flex items-center gap-1 ${isMobile ? 'h-7 text-xs' : 'h-8'}`}
                   >
                     <Mail className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
-                    알림
+                    {t('liveTrading.alert')}
                   </Button>
 
                   <Button
@@ -275,33 +275,33 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     disabled={trade.ticker ? watchlist.includes(trade.ticker) : true}
                   >
                     <Bookmark className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
-                    {isMobile ? (trade.ticker && watchlist.includes(trade.ticker) ? '추가됨' : '워치') : (trade.ticker && watchlist.includes(trade.ticker) ? '추가됨' : '워치리스트')}
+                    {isMobile ? (trade.ticker && watchlist.includes(trade.ticker) ? t('liveTrading.added') : t('liveTrading.watch')) : (trade.ticker && watchlist.includes(trade.ticker) ? t('liveTrading.added') : t('liveTrading.watchlist'))}
                   </Button>
                 </div>
               </div>
 
-              {/* 새로운 고급 AI 분석 표시 */}
+              {/* {t('liveTrading.comprehensiveAnalysisLabel')} */}
               {trade.comprehensiveAnalysis ? (
                 <div className={`bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg ${isMobile ? 'p-2' : 'p-3'} border border-purple-200 dark:border-purple-800`}>
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                     <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
                     <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
-                      고급 AI 분석 (신뢰도: {trade.comprehensiveAnalysis.confidenceLevel}%)
+                      {t('liveTrading.advancedAiAnalysis')} ({t('liveTrading.confidenceLevel')}: {trade.comprehensiveAnalysis.confidenceLevel}%)
                     </span>
                   </div>
 
-                  {/* 실행 요약 */}
+                  {/* {t('liveTrading.executiveSummaryLabel')} */}
                   <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
                     <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground font-medium leading-relaxed`}>
                       {trade.comprehensiveAnalysis.executiveSummary}
                     </p>
                   </div>
 
-                  {/* 핵심 발견사항 */}
+                  {/* {t('liveTrading.keyFindingsLabel')} */}
                   {trade.comprehensiveAnalysis.keyFindings?.length > 0 && (
                     <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
                       <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-purple-700 dark:text-purple-300 mb-1`}>
-                        핵심 발견사항:
+                        {t('liveTrading.keyFindingsTitle')}
                       </h4>
                       <ul className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground space-y-1`}>
                         {trade.comprehensiveAnalysis.keyFindings.slice(0, isMobile ? 2 : 3).map((finding: string, index: number) => (
@@ -314,33 +314,33 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     </div>
                   )}
 
-                  {/* 목표가 */}
+                  {/* {t('liveTrading.aiTargetPriceLabel')} */}
                   {trade.comprehensiveAnalysis.priceTargets && (
                     <div className={`${isMobile ? 'mb-2' : 'mb-3'}`}>
                       <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-green-700 dark:text-green-300 mb-1`}>
-                        AI 목표가:
+                        {t('liveTrading.aiTargetPriceTitle')}
                       </h4>
                       <div className="flex gap-2">
                         <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded`}>
-                          보수적: ${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}
+                          {t('liveTrading.conservativeLabel')}: ${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}
                         </span>
                         <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded`}>
-                          현실적: ${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}
+                          {t('liveTrading.realisticLabel')}: ${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}
                         </span>
                         {!isMobile && (
                           <span className={`text-sm text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded`}>
-                            낙관적: ${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}
+                            {t('liveTrading.optimisticLabel')}: ${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}
                           </span>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* 실행 가능한 추천사항 */}
+                  {/* {t('liveTrading.actionableRecommendationLabel')} */}
                   {trade.comprehensiveAnalysis.actionableRecommendations?.length > 0 && !isMobile && (
                     <div className="mb-3">
                       <h4 className="text-sm font-semibold text-orange-700 dark:text-orange-300 mb-1">
-                        실행 추천:
+                        {t('liveTrading.actionableRecommendationTitle')}
                       </h4>
                       <ul className="text-sm text-foreground space-y-1">
                         {trade.comprehensiveAnalysis.actionableRecommendations.slice(0, 2).map((recommendation: string, index: number) => (
@@ -353,14 +353,14 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                     </div>
                   )}
 
-                  {/* 시간 범위와 촉매 */}
+                  {/* {t('liveTrading.timeRangeAndCatalysts')} */}
                   <div className="flex flex-wrap gap-2">
                     <span className={`${isMobile ? 'text-xs' : 'text-sm'} bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded`}>
                       {trade.comprehensiveAnalysis.timeHorizon}
                     </span>
                     {trade.comprehensiveAnalysis.catalysts?.length > 0 && (
                       <span className={`${isMobile ? 'text-xs' : 'text-sm'} bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded`}>
-                        촉매 {trade.comprehensiveAnalysis.catalysts.length}개 식별됨
+                        {t('liveTrading.catalystsIdentifiedLabel')} {trade.comprehensiveAnalysis.catalysts.length}{t('liveTrading.pieces')} {t('liveTrading.catalystsIdentifiedLabel')}
                       </span>
                     )}
                   </div>
@@ -370,18 +370,18 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
                     <Loader2 className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} animate-spin text-purple-600`} />
                     <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
-                      고급 AI 분석 중...
+                      {t('liveTrading.advancedAnalyzing')}
                     </span>
                   </div>
                   <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
-                    뉴스, 재무 데이터, 내부자 패턴을 종합 분석하고 있습니다
+                    {t('liveTrading.analysisInProgress')}
                   </p>
                 </div>
               ) : trade.aiInsight ? (
                 <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
                     <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
-                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>기본 분석</span>
+                    <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>{t('liveTrading.basicAnalysis')}</span>
                   </div>
                   <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-foreground`}>{trade.aiInsight}</p>
                 </div>
@@ -423,24 +423,24 @@ export default function LiveTrading() {
   const [showTradeDetailModal, setShowTradeDetailModal] = useState(false);
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState<EnhancedTrade | null>(null);
   const [selectedTradeForDetail, setSelectedTradeForDetail] = useState<EnhancedTrade | null>(null);
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA']); // 기본 워치리스트
-  const [userEmail] = useState('user@example.com'); // 실제로는 로그인 정보에서 가져옴
+  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'TSLA']); // {t('liveTrading.defaultWatchlist')}
+  const [userEmail] = useState('user@example.com'); // {t('liveTrading.defaultUserEmail')}
   const [selectedCompanyForAlert, setSelectedCompanyForAlert] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'watchlist'>('all');
 
-  // All trades data queries - 성능 최적화된 데이터 로딩
+  // All trades data queries - {t('liveTrading.performanceOptimized')}
   const { data: initialTrades, isLoading, refetch } = useQuery({
-    queryKey: queryKeys.trades.list({ limit: 100, offset: 0 }), // 초기 로딩 수 감소
-    queryFn: () => apiClient.getInsiderTrades(100, 0), // 초기엔 적은 데이터로 빠른 로딩
-    staleTime: 300000, // 5분으로 증가하여 재요청 빈도 감소
-    gcTime: 600000, // 10분 캐시
+    queryKey: queryKeys.trades.list({ limit: 100, offset: 0 }), // {t('liveTrading.initialLoadingCount')}
+    queryFn: () => apiClient.getInsiderTrades(100, 0), // {t('liveTrading.quickLoadingFewer')}
+    staleTime: 300000, // 5 minutes to reduce requery frequency
+    gcTime: 600000, // 10 minute cache
   });
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
-    staleTime: 300000, // 5분으로 증가
-    gcTime: 600000, // 10분 캐시
+    staleTime: 300000, // Increase to 5 minutes
+    gcTime: 600000, // 10 minute cache
   });
 
   // WebSocket for real-time updates
@@ -489,7 +489,7 @@ export default function LiveTrading() {
       // 실패 시에도 기본 분석을 제공하고 로딩 해제
       const fallbackAnalysis = {
         executiveSummary: generateEnhancedFallbackInsight(trade, currentPrice),
-        actionableRecommendation: `${trade.tradeType === 'BUY' ? '매수' : '매도'} 신호로 해석될 수 있으나 추가적인 시장 분석이 필요합니다.`,
+        actionableRecommendation: `${trade.tradeType === 'BUY' ? t('liveTrading.buySignal') : t('liveTrading.sellSignal')} ${t('liveTrading.additionalMarketAnalysisNeeded')}.`,
         priceTargets: {
           conservative: (currentPrice || trade.pricePerShare) * 0.95,
           optimistic: (currentPrice || trade.pricePerShare) * 1.05,
@@ -505,7 +505,7 @@ export default function LiveTrading() {
           reasoning: '일반적인 시장 상황에서의 내부자 거래'
         },
         catalysts: [],
-        timeHorizon: '단기-중기',
+        timeHorizon: t('liveTrading.shortToMediumTerm'),
         confidence: 70
       };
 
@@ -528,15 +528,15 @@ export default function LiveTrading() {
   const generateEnhancedFallbackInsight = useCallback((trade: InsiderTrade, currentPrice?: number): string => {
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
     const valueMillions = (trade.totalValue / 1000000).toFixed(1);
-    const role = trade.traderTitle || '내부자';
+    const role = trade.traderTitle || t('liveTrading.insiderLabel');
     const percentageOfShares = trade.ownershipPercentage || 0;
 
     // 회사별 맞춤 분석
     const companySpecific = getCompanyInsight(trade.companyName, trade.ticker);
 
     // 거래 규모 분석
-    const sizeAnalysis = trade.totalValue > 5000000 ? '대규모' :
-                        trade.totalValue > 1000000 ? '중간 규모' : '소규모';
+    const sizeAnalysis = trade.totalValue > 5000000 ? t('liveTrading.largeScale') :
+                        trade.totalValue > 1000000 ? t('liveTrading.mediumScale') : t('liveTrading.smallScale');
 
     // 내부자 역할 중요도
     const roleImportance = (role.toUpperCase().includes('CEO') || role.toUpperCase().includes('CFO')) ?
@@ -604,7 +604,7 @@ export default function LiveTrading() {
   const generateFallbackInsight = useCallback((trade: InsiderTrade): string => {
     const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
     const valueMillions = (trade.totalValue / 1000000).toFixed(1);
-    const role = trade.traderTitle || '내부자';
+    const role = trade.traderTitle || t('liveTrading.insiderLabel');
     const roleImportance = (role.toUpperCase().includes('CEO') || role.toUpperCase().includes('CFO')) ? '핵심 경영진' : '임원';
 
     // 회사별 호재/악재 분석
@@ -831,7 +831,7 @@ export default function LiveTrading() {
                         reasoning: '일반적인 시장 상황에서의 내부자 거래'
                       },
                       catalysts: [],
-                      timeHorizon: '단기-중기',
+                      timeHorizon: t('liveTrading.shortToMediumTerm'),
                       confidence: 70
                     };
 
@@ -1205,23 +1205,23 @@ export default function LiveTrading() {
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
           <div>
             <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`} data-testid="page-title">
-              {isMobile ? '거래 검색' : '모든 거래 표시 및 검색'}
+              {isMobile ? t('liveTrading.pageTitleMobile') : t('liveTrading.pageTitle')}
             </h1>
             {!isMobile && (
               <p className="text-muted-foreground">
-                모든 내부자 거래 데이터를 검색하고 필터링할 수 있습니다
+                {t('liveTrading.pageSubtitle')}
               </p>
             )}
             <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium mt-1 space-y-1`}>
               <p className="text-blue-600">
-                총 {trades.length}개 | 필터링: {filteredTrades.length}개
+                {t('liveTrading.totalTrades')} {trades.length}개 | {t('liveTrading.filtered')}: {filteredTrades.length}개
               </p>
               {stockPrices.size > 0 && (
                 <p className="text-green-600">
-                  📈 실시간 주가: {stockPrices.size}개 로드됨
+                  📈 {t('liveTrading.realtimeStock')}: {stockPrices.size}개 {t('liveTrading.loaded')}
                   {priceLoadingSymbols.size > 0 && (
                     <span className="ml-2 text-orange-600">
-                      ({priceLoadingSymbols.size}개 로딩 중...)
+                      ({priceLoadingSymbols.size}개 {t('liveTrading.loading')}...)
                     </span>
                   )}
                 </p>
@@ -1233,14 +1233,14 @@ export default function LiveTrading() {
                     dataQualityReport.qualityScore >= 70 ? 'text-yellow-600' :
                     'text-red-600'
                   }`}>
-                    🔍 데이터 품질: {dataQualityReport.qualityScore}%
+                    🔍 {t('liveTrading.dataQuality')}: {dataQualityReport.qualityScore}%
                   </p>
                   {dataQualityReport.issues.length > 0 && (
                     <button
                       onClick={() => setShowDataQualityDetails(true)}
                       className="text-blue-600 hover:text-blue-800 underline text-sm"
                     >
-                      ({dataQualityReport.issues.length}개 이슈)
+                      ({dataQualityReport.issues.length}{t('liveTrading.issues')})
                     </button>
                   )}
                 </div>
@@ -1365,7 +1365,7 @@ export default function LiveTrading() {
           data-active={activeTab === 'watchlist'}
         >
           <Bookmark className="h-4 w-4" />
-          내 워치리스트 ({watchlist.length})
+          {t('liveTrading.myWatchlist')} ({watchlist.length})
         </Button>
       </div>
 
@@ -1536,14 +1536,14 @@ export default function LiveTrading() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <p className="text-xl font-semibold text-primary animate-pulse">거래 데이터 로딩 중...</p>
+                  <p className="text-xl font-semibold text-primary animate-pulse">{t('liveTrading.loadingTradeData')}</p>
                   <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                   </div>
-                  <p className="text-sm text-muted-foreground">최신 내부자 거래 정보를 불러오고 있습니다</p>
-                  <p className="text-xs text-blue-600 font-medium">💡 평균 로딩 시간: 3-5초</p>
+                  <p className="text-sm text-muted-foreground">{t('liveTrading.fetchingLatestInsider')}</p>
+                  <p className="text-xs text-blue-600 font-medium">{t('liveTrading.avgLoadingTime')}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -1566,8 +1566,8 @@ export default function LiveTrading() {
                   <span className="text-xs">!</span>
                 </div>
               </div>
-              <p className="text-lg font-medium mb-2">필터 조건에 맞는 거래가 없습니다</p>
-              <p className="text-muted-foreground mb-4">검색 조건을 조정하시거나 다른 필터를 시도해보세요</p>
+              <p className="text-lg font-medium mb-2">{t('liveTrading.noTradesMatchingFilter')}</p>
+              <p className="text-muted-foreground mb-4">{t('liveTrading.adjustSearchConditions')}</p>
               <div className="text-xs text-muted-foreground bg-muted/20 rounded-lg p-3 inline-block">
                 💡 팁: 거래 유형을 "전체"로 변경하거나 가격 범위를 넓혀보세요
               </div>
@@ -1606,10 +1606,10 @@ export default function LiveTrading() {
                     {isLoadingMore ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        로딩 중...
+                        {t('general.loading')}
                       </div>
                     ) : (
-                      `더 보기 (${filteredTrades.length - visibleTrades.length}개 남음)`
+                      `${t('liveTrading.loadMore')} (${filteredTrades.length - visibleTrades.length}${t('liveTrading.remaining')})`
                     )}
                   </Button>
                 </div>
@@ -1664,9 +1664,9 @@ export default function LiveTrading() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        알림 설정
+                        {t('liveTrading.alertSettings')}
                       </h3>
-                      <p className="text-xs text-white/60 mt-0.5">실시간 거래 알림을 받아보세요</p>
+                      <p className="text-xs text-white/60 mt-0.5">{t('liveTrading.getRealtimeAlerts')}</p>
                     </div>
                   </CardTitle>
                   <Button
@@ -1683,7 +1683,7 @@ export default function LiveTrading() {
               <CardContent className="space-y-6 relative">
                 {/* 이메일 입력 */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/80">알림 받을 이메일</label>
+                  <label className="block text-sm font-semibold text-white/80">{t('liveTrading.alertEmail')}</label>
                   <div className="relative">
                     <Input
                       type="email"
@@ -1699,7 +1699,7 @@ export default function LiveTrading() {
 
                 {/* 회사 선택 */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/80">회사 선택</label>
+                  <label className="block text-sm font-semibold text-white/80">{t('liveTrading.companySelection')}</label>
                   <Select
                     value={selectedCompanyForAlert}
                     onValueChange={setSelectedCompanyForAlert}
@@ -1725,7 +1725,7 @@ export default function LiveTrading() {
                   <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <h4 className="font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-3 flex items-center gap-2">
                       <Bell className="h-4 w-4 text-cyan-400" />
-                      알림 조건
+                      {t('liveTrading.alertConditions')}
                     </h4>
                     <div className="space-y-3">
                       <label className="flex items-center space-x-3 cursor-pointer group">
@@ -1734,7 +1734,7 @@ export default function LiveTrading() {
                           <div className="w-5 h-5 bg-white/10 border-2 border-white/30 rounded-md peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-blue-500 peer-checked:border-transparent transition-all duration-200"></div>
                           <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity" />
                         </div>
-                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">내부자 거래 발생 시</span>
+                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">{t('liveTrading.whenInsiderTrade')}</span>
                       </label>
                       <label className="flex items-center space-x-3 cursor-pointer group">
                         <div className="relative">
@@ -1742,7 +1742,7 @@ export default function LiveTrading() {
                           <div className="w-5 h-5 bg-white/10 border-2 border-white/30 rounded-md peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-blue-500 peer-checked:border-transparent transition-all duration-200"></div>
                           <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity" />
                         </div>
-                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">대량 거래 ($10M+)</span>
+                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">{t('liveTrading.largeTrades')}</span>
                       </label>
                       <label className="flex items-center space-x-3 cursor-pointer group">
                         <div className="relative">
@@ -1750,7 +1750,7 @@ export default function LiveTrading() {
                           <div className="w-5 h-5 bg-white/10 border-2 border-white/30 rounded-md peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-blue-500 peer-checked:border-transparent transition-all duration-200"></div>
                           <Check className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity" />
                         </div>
-                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">추천 매수가격 도달 시</span>
+                        <span className="text-sm text-white/80 group-hover:text-white transition-colors">{t('liveTrading.whenRecommendedPrice')}</span>
                       </label>
                     </div>
                   </div>
@@ -1763,11 +1763,11 @@ export default function LiveTrading() {
                     onClick={() => setShowAlertModal(false)}
                     className="flex-1 bg-white/5 hover:bg-white/10 border-white/20 text-white/80 hover:text-white rounded-xl h-12 transition-all duration-200"
                   >
-                    취소
+                    {t('general.cancel')}
                   </Button>
                   <Button
                     onClick={() => {
-                      alert(`${selectedCompanyForAlert} 알림이 ${userEmail}로 설정되었습니다!`);
+                      alert(`${selectedCompanyForAlert} ${t('liveTrading.alertSettings')} ${userEmail}로 설정되었습니다!`);
                       setShowAlertModal(false);
                     }}
                     disabled={!selectedCompanyForAlert}
@@ -1775,7 +1775,7 @@ export default function LiveTrading() {
                   >
                     <div className="flex items-center gap-2">
                       <Zap className="h-4 w-4" />
-                      알림 설정
+                      {t('liveTrading.alertSettings')}
                     </div>
                   </Button>
                 </div>
@@ -1811,9 +1811,9 @@ export default function LiveTrading() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                        워치리스트 추가
+                        {t('liveTrading.addToWatchlist')}
                       </h3>
-                      <p className="text-xs text-white/60 mt-1">성공적으로 추가되었습니다!</p>
+                      <p className="text-xs text-white/60 mt-1">{t('liveTrading.successfullyAdded')}</p>
                     </div>
                   </CardTitle>
                   <Button
@@ -1861,20 +1861,20 @@ export default function LiveTrading() {
                           <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-30"></div>
                         </div>
                         <span className="font-bold text-lg bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
-                          추가 완료!
+                          {t('liveTrading.additionComplete')}
                         </span>
                       </div>
                       <p className="text-sm text-white/80 leading-relaxed">
-                        이제 <span className="font-semibold text-emerald-300">'내 워치리스트'</span> 탭에서
+                        {t('liveTrading.nowYouCanView')} <span className="font-semibold text-emerald-300">'{t('liveTrading.myWatchlist')}'</span> {t('liveTrading.myWatchlistTab')}
                         <span className="font-semibold text-teal-300"> {selectedTradeForAlert.ticker}</span>의
-                        내부자 거래 정보만 따로 볼 수 있습니다.
+                        {t('liveTrading.canViewSeparately')}
                       </p>
 
                       {/* 추가 기능 힌트 */}
                       <div className="mt-4 pt-4 border-t border-white/10">
                         <div className="flex items-center gap-2 text-xs text-white/60">
                           <Bell className="h-3 w-3" />
-                          <span>실시간 알림 설정도 가능합니다</span>
+                          <span>{t('liveTrading.realtimeAlertsAvailable')}</span>
                         </div>
                       </div>
                     </div>
@@ -1900,7 +1900,7 @@ export default function LiveTrading() {
                   >
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4" />
-                      워치리스트 보기
+                      {t('liveTrading.viewWatchlist')}
                     </div>
                   </Button>
                 </div>
@@ -1942,7 +1942,7 @@ export default function LiveTrading() {
           <Card className="max-w-2xl w-full max-h-[80vh] overflow-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                🔍 데이터 품질 리포트
+                🔍 {t('liveTrading.dataQualityReport')}
                 <Badge className={`${
                   dataQualityReport.qualityScore >= 90 ? 'bg-green-500' :
                   dataQualityReport.qualityScore >= 70 ? 'bg-yellow-500' :
@@ -1956,11 +1956,11 @@ export default function LiveTrading() {
               {/* 요약 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">총 거래 수</p>
+                  <p className="text-sm text-muted-foreground">{t('liveTrading.totalTrades')}</p>
                   <p className="text-lg font-semibold">{dataQualityReport.totalTrades}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">유효 거래 수</p>
+                  <p className="text-sm text-muted-foreground">{t('liveTrading.validTrades')}</p>
                   <p className="text-lg font-semibold text-green-600">{dataQualityReport.validTrades}</p>
                 </div>
               </div>
@@ -1968,7 +1968,7 @@ export default function LiveTrading() {
               {/* 이슈 목록 */}
               {dataQualityReport.issues.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-3">발견된 이슈들</h4>
+                  <h4 className="font-semibold mb-3">{t('liveTrading.discoveredIssues')}</h4>
                   <div className="space-y-3">
                     {dataQualityReport.issues.map((issue: any, index: number) => (
                       <div key={index} className={`p-3 rounded-lg border ${
@@ -2002,7 +2002,7 @@ export default function LiveTrading() {
               {/* 권장사항 */}
               {dataQualityReport.recommendations.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-3">권장사항</h4>
+                  <h4 className="font-semibold mb-3">{t('liveTrading.recommendations')}</h4>
                   <ul className="space-y-2">
                     {dataQualityReport.recommendations.map((rec: string, index: number) => (
                       <li key={index} className="flex items-start gap-2 text-sm">

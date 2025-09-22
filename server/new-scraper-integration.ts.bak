@@ -1,0 +1,971 @@
+/**
+ * 새로운 스크래핑 시스템 통합 (의존성 최소화)
+ * 기존 시스템을 점진적으로 교체
+ */
+
+import axios from 'axios';
+
+interface SimpleTrade {
+  id: string;
+  ticker: string;
+  companyName: string;
+  insiderName: string;
+  title: string;
+  transactionDate: string;
+  filingDate: string;
+  transactionType: 'BUY' | 'SELL' | 'OPTION_EXERCISE' | 'GIFT' | 'OTHER';
+  pricePerShare: number;
+  shares: number;
+  totalValue: number;
+  source: 'SEC_EDGAR_API' | 'SEC_RSS_FEED' | 'OPENINSIDER';
+  confidence: number;
+  verified: boolean;
+  createdAt: string;
+}
+
+/**
+ * 간단한 SEC EDGAR API 스크래퍼
+ */
+class SimpleEdgarScraper {
+  private headers = {
+    'User-Agent': 'InsiderPulse Trading Tracker info@insiderpulse.com',
+    'Accept': 'application/json'
+  };
+
+  async scrapeRecentFilings(): Promise<SimpleTrade[]> {
+    try {
+      console.log('🏛️ SEC RSS 피드에서 모든 최신 Form 4 파일링 수집 중...');
+
+      // SEC RSS 피드를 사용해서 모든 Form 4 파일링 수집 (대폭 확대)
+      const allTrades: SimpleTrade[] = [];
+
+      // 여러 페이지에서 대량 수집 (총 1000개 Form 4 파일링)
+      const pagesToCollect = [
+        { start: 0, count: 100 },    // 최신 100개
+        { start: 100, count: 100 },  // 다음 100개
+        { start: 200, count: 100 },  // 다음 100개
+        { start: 300, count: 100 },  // 다음 100개
+        { start: 400, count: 100 },  // 다음 100개
+        { start: 500, count: 100 },  // 다음 100개
+        { start: 600, count: 100 },  // 다음 100개
+        { start: 700, count: 100 },  // 다음 100개
+        { start: 800, count: 100 },  // 다음 100개
+        { start: 900, count: 100 }   // 다음 100개
+      ];
+
+      for (const page of pagesToCollect) {
+        const rssUrl = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&CIK=&type=4&company=&dateb=&owner=include&start=${page.start}&count=${page.count}&output=atom`;
+
+        try {
+          console.log(`🔄 SEC RSS 페이지 수집 중: ${page.start}-${page.start + page.count}`);
+
+          const response = await axios.get(rssUrl, { headers: this.headers });
+          const pageTrades = await this.parseRSSFeed(response.data);
+          allTrades.push(...pageTrades);
+
+          console.log(`✅ 페이지 ${page.start}-${page.start + page.count}: ${pageTrades.length}개 거래 수집`);
+
+          // SEC 서버 부하 방지를 위한 딜레이
+          await this.delay(500);
+
+        } catch (error) {
+          console.error(`❌ 페이지 ${page.start} 수집 실패:`, error.message);
+          continue;
+        }
+      }
+
+      console.log(`✅ 전체 SEC RSS에서 ${allTrades.length}개 Form 4 거래 수집 완료`);
+      return allTrades;
+
+    } catch (error) {
+      console.error('❌ SEC RSS 대량 수집 실패, 백업 방식 사용:', error.message);
+
+        // 백업: 주요 기업들도 포함
+        const majorCIKs = [
+          '0000320187', // Apple
+          '0001652044', // Alphabet
+          '0000789019', // Microsoft
+          '0001018724', // Amazon
+          '0001045810', // NVIDIA
+          '0000886982', // Energy Fuels Inc (EFR)
+          '0000019617', // JPMorgan Chase
+          '0000732712', // Intel
+          '0000051143', // IBM
+          '0000066740'  // 3M
+        ];
+
+        const allTrades: SimpleTrade[] = [];
+
+        for (const cik of majorCIKs) {
+          try {
+            const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
+            const response = await axios.get(url, { headers: this.headers });
+
+            if (response.data && response.data.filings) {
+              const trades = this.parseEdgarData(response.data, cik);
+              allTrades.push(...trades);
+            }
+
+            await this.delay(100);
+
+          } catch (error) {
+            console.error(`❌ CIK ${cik} 수집 실패:`, error.message);
+          }
+        }
+
+        console.log(`✅ SEC EDGAR 백업에서 ${allTrades.length}개 거래 수집 완료`);
+        return allTrades;
+      }
+
+    } catch (error) {
+      console.error('❌ SEC EDGAR 스크래핑 오류:', error.message);
+      return [];
+    }
+  }
+
+  private parseEdgarData(data: any, cik: string): SimpleTrade[] {
+    const trades: SimpleTrade[] = [];
+
+    try {
+      const recentFilings = data.filings?.recent;
+      if (!recentFilings) return trades;
+
+      // Form 4 파일링들만 찾기
+      const form4Indices = recentFilings.form
+        .map((form: string, index: number) => form === '4' ? index : -1)
+        .filter((index: number) => index !== -1)
+        .slice(0, 5); // 최신 5개만
+
+      for (const index of form4Indices) {
+        console.log(`⚠️ Form 4 파일링 발견: ${data.name} - ${recentFilings.filingDate[index]}`);
+        console.log(`📄 실제 Form 4 XML 파싱 없이는 정확한 거래 데이터를 얻을 수 없음`);
+        console.log(`🔗 파일링 번호: ${recentFilings.accessionNumber[index]}`);
+
+        // 실제 Form 4 XML을 파싱하지 않고는 정확한 거래 정보를 얻을 수 없음
+        // 가짜 price, shares 생성하지 않음
+        // 실제 구현에서는 accessionNumber를 사용해 XML을 가져와서 파싱해야 함
+      }
+
+    } catch (error) {
+      console.error('❌ EDGAR 데이터 파싱 오류:', error.message);
+    }
+
+    return trades;
+  }
+
+  private async parseRSSFeed(rssData: string): Promise<SimpleTrade[]> {
+    const trades: SimpleTrade[] = [];
+
+    try {
+      // RSS/Atom 피드에서 Form 4 엔트리들 추출
+      // 간단한 정규식으로 파싱 (실제로는 XML 파서 사용 권장)
+      const entryPattern = /<entry>(.*?)<\/entry>/gs;
+      const titlePattern = /<title>(.*?)<\/title>/;
+      const linkPattern = /<link[^>]*href="([^"]*)"[^>]*>/;
+
+      const entries = rssData.match(entryPattern) || [];
+
+      // 모든 엔트리 처리 (최대 200개)
+      const maxEntries = Math.min(entries.length, 200);
+      console.log(`📊 RSS 피드에서 ${maxEntries}개 엔트리 처리 중...`);
+
+      for (let i = 0; i < maxEntries; i++) {
+        const entry = entries[i];
+        const titleMatch = entry.match(titlePattern);
+        const linkMatch = entry.match(linkPattern);
+
+        if (titleMatch && linkMatch) {
+          const title = titleMatch[1];
+          const link = linkMatch[1];
+
+          // Form 4 파일링만 처리
+          if (title.includes('4') && link.includes('edgar')) {
+            const trade = await this.parseRSSEntry(title, link);
+            if (trade) {
+              trades.push(trade);
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ RSS 피드 파싱 오류:', error.message);
+    }
+
+    return trades;
+  }
+
+  private async parseRSSEntry(title: string, link: string): Promise<SimpleTrade | null> {
+    try {
+      console.log(`📋 실제 Form 4 XML 파싱 시도: ${title}`);
+      console.log(`🔗 링크: ${link}`);
+
+      // RSS 링크에서 accession number와 CIK 추출
+      const accessionMatch = link.match(/\/(\d+-\d+-\d+)-index\.htm/);
+      const cikMatch = link.match(/\/data\/(\d+)\//);
+
+      if (!accessionMatch || !cikMatch) {
+        console.log('⚠️ accession number 또는 CIK 추출 실패');
+        return null;
+      }
+
+      const accessionNumber = accessionMatch[1];
+      const cik = cikMatch[1];
+      const accessionNumberClean = accessionNumber.replace(/-/g, '');
+
+      // 여러 가능한 XML 파일 경로 시도
+      const possiblePaths = [
+        `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNumberClean}/xslF345X03/${accessionNumber}.xml`,
+        `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNumberClean}/${accessionNumber}.txt`,
+        `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNumberClean}/primary_doc.xml`,
+        `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNumberClean}/doc4.xml`,
+        `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNumberClean}/form4.xml`
+      ];
+
+      for (const xmlUrl of possiblePaths) {
+        try {
+          console.log(`🔍 XML URL 시도: ${xmlUrl}`);
+
+          const xmlResponse = await axios.get(xmlUrl, {
+            headers: this.headers,
+            timeout: 5000,
+            validateStatus: (status) => status === 200
+          });
+
+          if (xmlResponse.data && typeof xmlResponse.data === 'string' &&
+              (xmlResponse.data.includes('<ownershipDocument') ||
+               xmlResponse.data.includes('<XML>') ||
+               xmlResponse.data.includes('FORM TYPE:') ||
+               xmlResponse.data.includes('<DOCUMENT>'))) {
+            console.log(`✅ 유효한 Form 4 문서 발견: ${xmlUrl}`);
+            return this.parseForm4Content(xmlResponse.data, link, cik);
+          }
+        } catch (error) {
+          console.log(`❌ XML 로드 실패 (${xmlUrl}): ${error.message}`);
+          continue;
+        }
+      }
+
+      console.log('⚠️ 모든 XML 경로에서 유효한 Form 4 문서를 찾지 못했습니다');
+      return null;
+
+    } catch (error) {
+      console.error('❌ Form 4 XML 파싱 실패:', error.message);
+      // XML 파싱 실패시에도 null 반환 (가짜 데이터 생성 안함)
+      return null;
+    }
+  }
+
+  private parseForm4Content(docData: string, originalLink: string, cik: string): SimpleTrade | null {
+    try {
+      console.log('🔍 Form 4 문서 내용 파싱 시작...');
+
+      // SGML/XML 형식과 일반 텍스트 형식 모두 처리
+      let xmlContent = docData;
+
+      // SGML 문서에서 XML 부분 추출
+      if (docData.includes('<DOCUMENT>')) {
+        const xmlMatch = docData.match(/<XML>([\s\S]*?)<\/XML>/i);
+        if (xmlMatch) {
+          xmlContent = xmlMatch[1];
+        }
+      }
+
+      // ownershipDocument에서 데이터 추출
+      const issuerName = this.extractTagContent(xmlContent, 'issuerName') ||
+                        this.extractTagContent(xmlContent, 'companyName') || 'Unknown Company';
+      const issuerCik = this.extractTagContent(xmlContent, 'issuerCik') || cik;
+
+      // 신고자 정보
+      const rptOwnerName = this.extractTagContent(xmlContent, 'rptOwnerName') ||
+                          this.extractTagContent(xmlContent, 'ownerName') || 'Unknown Insider';
+
+      // 거래 정보 - 가장 최근 거래 추출 (nonDerivativeTable 또는 derivativeTable)
+      const transactionDate = this.extractTagContent(xmlContent, 'transactionDate') ||
+                             this.extractTransactionDate(xmlContent);
+      const transactionCode = this.extractTagContent(xmlContent, 'transactionCode') ||
+                             this.extractTransactionCode(xmlContent);
+      const transactionShares = this.extractTagContent(xmlContent, 'transactionShares') ||
+                               this.extractTagContent(xmlContent, 'sharesOwnedFollowingTransaction') ||
+                               this.extractSharesAmount(xmlContent);
+      const transactionPricePerShare = this.extractTagContent(xmlContent, 'transactionPricePerShare') ||
+                                      this.extractPricePerShare(xmlContent);
+
+      // 거래 타입 매핑
+      const transactionType = this.mapTransactionCode(transactionCode);
+
+      // 수치 계산
+      const shares = this.parseNumber(transactionShares) || 0;
+      const pricePerShare = this.parseNumber(transactionPricePerShare) || 0;
+      const totalValue = shares * pricePerShare;
+
+      // 필수 데이터 검증 - 실제 거래가 있는 경우만 반환
+      if (!issuerName || !rptOwnerName || !transactionDate || shares === 0) {
+        console.log(`⚠️ 필수 거래 데이터 누락: ${issuerName}, ${rptOwnerName}, ${transactionDate}, ${shares}`);
+        return null;
+      }
+
+      // 거래 가격이 너무 낮거나 높으면 의심스러운 데이터로 간주
+      if (pricePerShare > 0 && (pricePerShare < 0.01 || pricePerShare > 10000)) {
+        console.log(`⚠️ 의심스러운 가격 데이터: $${pricePerShare}`);
+      }
+
+      // 티커 추출
+      const ticker = this.getTickerByCIKFromXML(issuerCik) ||
+                    this.extractTickerFromName(issuerName);
+
+      const trade: SimpleTrade = {
+        id: `sec_real_${issuerCik}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ticker,
+        companyName: issuerName,
+        insiderName: rptOwnerName,
+        title: this.extractTagContent(xmlContent, 'officerTitle') || 'Insider',
+        transactionDate: this.formatDate(transactionDate),
+        filingDate: new Date().toISOString().split('T')[0],
+        transactionType,
+        pricePerShare,
+        shares,
+        totalValue,
+        source: 'SEC_EDGAR_API' as const,
+        confidence: 95, // 실제 SEC 데이터이므로 높은 신뢰도
+        verified: true, // SEC 공식 데이터는 검증됨
+        createdAt: new Date().toISOString()
+      };
+
+      console.log(`✅ 실제 거래 데이터 파싱 완료: ${ticker} - ${rptOwnerName} - $${totalValue.toLocaleString()}`);
+      return trade;
+
+    } catch (error) {
+      console.error('❌ Form 4 문서 파싱 중 오류:', error.message);
+      return null;
+    }
+  }
+
+  private extractTagContent(xml: string, tagName: string): string | null {
+    // XML 태그에서 내용 추출
+    const patterns = [
+      `<${tagName}[^>]*>([^<]+)</${tagName}>`,
+      `<${tagName}>([^<]+)</${tagName}>`,
+      `<${tagName}[^>]*>\\s*<value>([^<]+)</value>`,
+      `<${tagName}[^>]*>\\s*([^<\\s]+)\\s*<`
+    ];
+
+    for (const pattern of patterns) {
+      const regex = new RegExp(pattern, 'i');
+      const match = xml.match(regex);
+      if (match && match[1] && match[1].trim()) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private extractTransactionDate(xml: string): string | null {
+    // 다양한 거래일 패턴 시도
+    const patterns = [
+      /<transactionDate>\s*<value>([^<]+)<\/value>/i,
+      /<transactionDate>([^<]+)<\/transactionDate>/i,
+      /<date>([^<]+)<\/date>/i,
+      /TRANSACTION DATE:\s*(\d{2}\/\d{2}\/\d{4})/i,
+      /DATE:\s*(\d{4}-\d{2}-\d{2})/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = xml.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private extractTransactionCode(xml: string): string | null {
+    // 거래 코드 추출
+    const patterns = [
+      /<transactionCode>([^<]+)<\/transactionCode>/i,
+      /<code>([^<]+)<\/code>/i,
+      /TRANSACTION CODE:\s*([A-Z])/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = xml.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private extractSharesAmount(xml: string): string | null {
+    // 주식 수량 추출
+    const patterns = [
+      /<transactionShares>\s*<value>([^<]+)<\/value>/i,
+      /<transactionShares>([^<]+)<\/transactionShares>/i,
+      /<sharesOwnedFollowingTransaction>\s*<value>([^<]+)<\/value>/i,
+      /<amount>([^<]+)<\/amount>/i,
+      /SHARES:\s*([\d,]+)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = xml.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private extractPricePerShare(xml: string): string | null {
+    // 주당 가격 추출
+    const patterns = [
+      /<transactionPricePerShare>\s*<value>([^<]+)<\/value>/i,
+      /<transactionPricePerShare>([^<]+)<\/transactionPricePerShare>/i,
+      /<pricePerShare>([^<]+)<\/pricePerShare>/i,
+      /PRICE PER SHARE:\s*\$?([\d,.]+)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = xml.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private parseNumber(value: string | null): number {
+    if (!value) return 0;
+    // 숫자가 아닌 문자 제거하고 파싱
+    const cleaned = value.replace(/[,$]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  private parseForm4XML(xmlData: string, originalLink: string): SimpleTrade | null {
+    try {
+      console.log('🔍 Form 4 XML 실제 파싱 시작...');
+
+      // 기본 정보 추출
+      const issuerName = this.extractXMLValue(xmlData, 'issuerName') ||
+                        this.extractXMLValue(xmlData, 'companyName') || 'Unknown Company';
+      const issuerCik = this.extractXMLValue(xmlData, 'issuerCik') ||
+                       this.extractXMLValue(xmlData, 'cik') || '';
+
+      // 신고자 정보
+      const rptOwnerName = this.extractXMLValue(xmlData, 'rptOwnerName') ||
+                          this.extractXMLValue(xmlData, 'ownerName') || 'Unknown Insider';
+      const ownerTitle = this.extractXMLValue(xmlData, 'officerTitle') ||
+                        this.extractXMLValue(xmlData, 'title') || 'Insider';
+
+      // 거래 정보 - 가장 최근 거래 추출
+      const transactionDate = this.extractXMLValue(xmlData, 'transactionDate') ||
+                             this.extractXMLValue(xmlData, 'executionDate') || '';
+      const transactionCode = this.extractXMLValue(xmlData, 'transactionCode') || '';
+      const transactionShares = this.extractXMLValue(xmlData, 'transactionShares') ||
+                               this.extractXMLValue(xmlData, 'shares') || '0';
+      const transactionPricePerShare = this.extractXMLValue(xmlData, 'transactionPricePerShare') ||
+                                      this.extractXMLValue(xmlData, 'pricePerShare') || '0';
+
+      // 거래 타입 매핑
+      const transactionType = this.mapTransactionCode(transactionCode);
+
+      // 수치 계산
+      const shares = parseFloat(transactionShares) || 0;
+      const pricePerShare = parseFloat(transactionPricePerShare) || 0;
+      const totalValue = shares * pricePerShare;
+
+      // 필수 데이터가 없으면 null 반환 (가짜 데이터 생성 안함)
+      if (!issuerName || !rptOwnerName || !transactionDate || shares === 0) {
+        console.log('⚠️ 필수 거래 데이터 누락, null 반환');
+        return null;
+      }
+
+      // 티커 추출
+      const ticker = this.getTickerByCIKFromXML(issuerCik) ||
+                    this.extractTickerFromName(issuerName);
+
+      const trade: SimpleTrade = {
+        id: `sec_real_${issuerCik}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ticker,
+        companyName: issuerName,
+        insiderName: rptOwnerName,
+        title: ownerTitle,
+        transactionDate: this.formatDate(transactionDate),
+        filingDate: new Date().toISOString().split('T')[0],
+        transactionType,
+        pricePerShare,
+        shares,
+        totalValue,
+        source: 'SEC_EDGAR_API' as const,
+        confidence: 95, // 실제 SEC 데이터이므로 높은 신뢰도
+        verified: true, // SEC 공식 데이터는 검증됨
+        createdAt: new Date().toISOString()
+      };
+
+      console.log(`✅ 실제 거래 데이터 파싱 완료: ${ticker} - ${rptOwnerName} - $${totalValue.toLocaleString()}`);
+      return trade;
+
+    } catch (error) {
+      console.error('❌ Form 4 XML 파싱 중 오류:', error.message);
+      return null;
+    }
+  }
+
+  private extractXMLValue(xml: string, tagName: string): string | null {
+    // 다양한 XML 태그 패턴 시도
+    const patterns = [
+      `<${tagName}[^>]*>([^<]+)</${tagName}>`,
+      `<${tagName}>([^<]+)</${tagName}>`,
+      `<${tagName}[^>]*>\\s*<value>([^<]+)</value>`,
+      `<${tagName}[^>]*>\\s*([^<\\s]+)\\s*<`,
+    ];
+
+    for (const pattern of patterns) {
+      const regex = new RegExp(pattern, 'i');
+      const match = xml.match(regex);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  }
+
+  private mapTransactionCode(code: string): SimpleTrade['transactionType'] {
+    const codeMap: { [key: string]: SimpleTrade['transactionType'] } = {
+      'P': 'BUY',
+      'S': 'SELL',
+      'A': 'BUY',
+      'D': 'SELL',
+      'M': 'OPTION_EXERCISE',
+      'X': 'OPTION_EXERCISE',
+      'G': 'GIFT',
+      'J': 'OTHER',
+      'K': 'OTHER',
+      'L': 'OTHER',
+      'W': 'OTHER',
+      'Z': 'OTHER'
+    };
+
+    return codeMap[code?.toUpperCase()] || 'OTHER';
+  }
+
+  private getTickerByCIKFromXML(cik: string): string | null {
+    const cikToTicker: { [key: string]: string } = {
+      // 대형주
+      '320187': 'AAPL',
+      '1652044': 'GOOGL',
+      '789019': 'MSFT',
+      '1018724': 'AMZN',
+      '1045810': 'NVDA',
+      '1326801': 'META',
+      '1318605': 'TSLA',
+      '19617': 'JPM',
+      '732712': 'INTC',
+      '51143': 'IBM',
+      '66740': 'MMM',
+
+      // 중소형주 및 기타 주식들
+      '886982': 'EFR',     // Energy Fuels Inc
+      '1571996': 'DELL',   // Dell Technologies
+      '1046102': 'RBI',    // RB Global Inc
+      '1492422': 'APLS',   // Apellis Pharmaceuticals
+      '1604821': 'NTRA',   // Natera Inc
+      '1562088': 'DUOL',   // Duolingo Inc
+      '1818874': 'SOFI',   // SoFi Technologies
+      '1356090': 'PGEN',   // Precigen Inc
+      '1861107': 'CBLL',   // Ceribell Inc
+      '1916099': 'DCRB',   // Diameter Credit Co
+      '1579877': 'OUT',    // OUTFRONT Media
+
+      // 추가 중소형주들
+      '1672619': 'ELVN',   // Enliven Therapeutics
+      '1376960': 'OBIA',   // Obia Pharma
+      '1350653': 'ATEC',   // Alphatec Holdings
+      '1786205': 'ACLX',   // Arcellx Inc
+      '1582313': 'XENE',   // Xenon Pharmaceuticals
+      '728618': 'MET',     // MetLife Inc
+      '1099219': 'MET',    // MetLife entities
+      '1650164': 'RARE',   // Ultragenyx Pharmaceutical
+      '1467858': 'CRM',    // Salesforce
+      '1551152': 'SNOW',   // Snowflake
+      '1677576': 'CVNA',   // Carvana
+      '1090872': 'ANET',   // Arista Networks
+      '1378946': 'LRN',    // Stride Inc
+      '1835632': 'CCCS',   // CCC Intelligent Solutions
+      '1770450': 'HBM',    // Hudbay Minerals
+      '1824149': 'SITM',   // SiTime Corp
+      '1828536': 'OKLO',   // Oklo Inc
+      '1829227': 'GTLB',   // GitLab Inc
+      '1543151': 'MGNI',   // Magnite Inc
+      '1756111': 'WSM',    // Williams-Sonoma
+      '1604778': 'UPWK',   // Upwork Inc
+      '1633917': 'NGS',    // Natural Gas Services
+      '1463101': 'RNGR',   // Ranger Energy Services
+      '1011006': 'PI',     // Impinj Inc
+      '1846016': 'WRBY',   // Warby Parker
+      '1040971': 'KRC',    // Kilroy Realty Corp
+      '1652879': 'IDR',    // Idaho Strategic Resources
+      '1828806': 'CART',   // Maplebear Inc
+      '1829126': 'CRWV',   // Crown Electrokinetics
+      '354950': 'HD',      // Home Depot
+      '40545': 'GE',       // General Electric
+      '72971': 'WFC',      // Wells Fargo
+      '78003': 'PFE'       // Pfizer
+    };
+
+    const cleanCik = cik?.replace(/^0+/, ''); // 앞의 0 제거
+    return cikToTicker[cleanCik] || null;
+  }
+
+  private extractTickerFromName(companyName: string): string {
+    const name = companyName.toLowerCase();
+
+    // 대형주
+    if (name.includes('apple')) return 'AAPL';
+    if (name.includes('microsoft')) return 'MSFT';
+    if (name.includes('amazon')) return 'AMZN';
+    if (name.includes('nvidia')) return 'NVDA';
+    if (name.includes('alphabet') || name.includes('google')) return 'GOOGL';
+    if (name.includes('meta') || name.includes('facebook')) return 'META';
+    if (name.includes('tesla')) return 'TSLA';
+
+    // 중소형주 및 특수한 경우들
+    if (name.includes('energy fuels')) return 'EFR';
+    if (name.includes('dell technologies')) return 'DELL';
+    if (name.includes('rb global')) return 'RBI';
+    if (name.includes('apellis pharmaceuticals')) return 'APLS';
+    if (name.includes('natera')) return 'NTRA';
+    if (name.includes('duolingo')) return 'DUOL';
+    if (name.includes('sofi technologies')) return 'SOFI';
+    if (name.includes('precigen')) return 'PGEN';
+    if (name.includes('ceribell')) return 'CBLL';
+    if (name.includes('diameter credit')) return 'DCRB';
+    if (name.includes('outfront media')) return 'OUT';
+    if (name.includes('enliven therapeutics')) return 'ELVN';
+    if (name.includes('alphatec')) return 'ATEC';
+    if (name.includes('arcellx')) return 'ACLX';
+    if (name.includes('xenon pharmaceuticals')) return 'XENE';
+    if (name.includes('metlife')) return 'MET';
+    if (name.includes('ultragenyx')) return 'RARE';
+    if (name.includes('salesforce')) return 'CRM';
+    if (name.includes('snowflake')) return 'SNOW';
+    if (name.includes('carvana')) return 'CVNA';
+    if (name.includes('arista networks')) return 'ANET';
+    if (name.includes('stride')) return 'LRN';
+    if (name.includes('ccc intelligent')) return 'CCCS';
+    if (name.includes('hudbay minerals')) return 'HBM';
+    if (name.includes('sitime')) return 'SITM';
+    if (name.includes('oklo')) return 'OKLO';
+    if (name.includes('gitlab')) return 'GTLB';
+    if (name.includes('magnite')) return 'MGNI';
+    if (name.includes('williams-sonoma')) return 'WSM';
+    if (name.includes('upwork')) return 'UPWK';
+    if (name.includes('natural gas services')) return 'NGS';
+    if (name.includes('ranger energy')) return 'RNGR';
+    if (name.includes('impinj')) return 'PI';
+    if (name.includes('warby parker')) return 'WRBY';
+    if (name.includes('kilroy realty')) return 'KRC';
+    if (name.includes('idaho strategic')) return 'IDR';
+    if (name.includes('maplebear')) return 'CART';
+    if (name.includes('crown electrokinetics')) return 'CRWV';
+    if (name.includes('home depot')) return 'HD';
+    if (name.includes('general electric')) return 'GE';
+    if (name.includes('wells fargo')) return 'WFC';
+    if (name.includes('pfizer')) return 'PFE';
+
+    // 기본값: 회사명에서 약어 생성 (중소형주용)
+    const words = companyName.split(' ').filter(word =>
+      word.length > 2 && !['inc', 'corp', 'llc', 'ltd', 'co'].includes(word.toLowerCase())
+    );
+    if (words.length >= 2) {
+      return words.slice(0, 2).map(word => word.charAt(0).toUpperCase()).join('') + 'XX';
+    }
+    return words.slice(0, 1).map(word => word.substring(0, 3).toUpperCase()).join('') + 'X';
+  }
+
+  private formatDate(dateStr: string): string {
+    try {
+      // 다양한 날짜 형식 처리
+      if (dateStr.includes('-')) {
+        return dateStr.split('T')[0]; // ISO 형식
+      }
+
+      // MMDDYYYY 형식 처리
+      if (dateStr.length === 8) {
+        const month = dateStr.substr(0, 2);
+        const day = dateStr.substr(2, 2);
+        const year = dateStr.substr(4, 4);
+        return `${year}-${month}-${day}`;
+      }
+
+      return new Date().toISOString().split('T')[0];
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
+  }
+
+  private async getTickerFromCompanyName(companyName: string): Promise<string> {
+    // 간단한 회사명-티커 매핑 (실제로는 API 조회 필요)
+    const commonMappings: { [key: string]: string } = {
+      'Apple': 'AAPL',
+      'Microsoft': 'MSFT',
+      'Amazon': 'AMZN',
+      'Alphabet': 'GOOGL',
+      'Google': 'GOOGL',
+      'Tesla': 'TSLA',
+      'Meta': 'META',
+      'Facebook': 'META',
+      'NVIDIA': 'NVDA',
+      'Energy Fuels': 'EFR',
+      'Intel': 'INTC',
+      'IBM': 'IBM',
+      'JPMorgan': 'JPM'
+    };
+
+    for (const [company, ticker] of Object.entries(commonMappings)) {
+      if (companyName.toLowerCase().includes(company.toLowerCase())) {
+        return ticker;
+      }
+    }
+
+    // 기본값: 회사명에서 첫 글자들 추출
+    const words = companyName.split(' ').filter(word => word.length > 2);
+    return words.slice(0, 3).map(word => word.charAt(0).toUpperCase()).join('') + 'X';
+  }
+
+  private getTickerByCIK(cik: string): string {
+    const cikToTicker: { [key: string]: string } = {
+      '0000320187': 'AAPL',
+      '0001652044': 'GOOGL',
+      '0000789019': 'MSFT',
+      '0001018724': 'AMZN',
+      '0001045810': 'NVDA',
+      '0000886982': 'EFR',
+      '0000019617': 'JPM',
+      '0000732712': 'INTC',
+      '0000051143': 'IBM',
+      '0000066740': 'MMM'
+    };
+    return cikToTicker[cik] || 'UNKNOWN';
+  }
+
+  private generateId(cik: string, index: number): string {
+    return `edgar_${cik}_${index}_${Date.now()}`;
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+/**
+ * 간단한 OpenInsider 스크래퍼 (HTML 파싱 없이)
+ */
+class SimpleOpenInsiderScraper {
+  async scrapeLatestTrades(): Promise<SimpleTrade[]> {
+    console.log('⚠️ OpenInsider 실제 스크래핑 비활성화됨 - 시뮬레이션 데이터 사용 금지');
+    console.log('💡 실제 OpenInsider 데이터만 필요할 때 cheerio 의존성 추가 후 구현 예정');
+
+    // 시뮬레이션 데이터 완전 제거 - 빈 배열 반환
+    return [];
+  }
+}
+
+/**
+ * 통합 스크래핑 관리자
+ */
+export class NewScrapingManager {
+  private trades: Map<string, SimpleTrade> = new Map();
+  private edgarScraper = new SimpleEdgarScraper();
+  private openInsiderScraper = new SimpleOpenInsiderScraper();
+  private isRunning = false;
+
+  constructor() {
+    console.log('🚀 새로운 스크래핑 관리자 초기화됨');
+  }
+
+  /**
+   * 전체 데이터 수집 실행
+   */
+  async executeFullCollection(): Promise<SimpleTrade[]> {
+    if (this.isRunning) {
+      console.log('⚠️ 스크래핑이 이미 실행 중입니다');
+      return Array.from(this.trades.values());
+    }
+
+    this.isRunning = true;
+    console.log('🔄 새로운 통합 스크래핑 시작...');
+
+    try {
+      const startTime = Date.now();
+
+      // 병렬로 데이터 수집
+      const [edgarTrades, openInsiderTrades] = await Promise.allSettled([
+        this.edgarScraper.scrapeRecentFilings(),
+        this.openInsiderScraper.scrapeLatestTrades()
+      ]);
+
+      const allTrades: SimpleTrade[] = [];
+
+      if (edgarTrades.status === 'fulfilled') {
+        allTrades.push(...edgarTrades.value);
+      }
+
+      if (openInsiderTrades.status === 'fulfilled') {
+        allTrades.push(...openInsiderTrades.value);
+      }
+
+      // 중복 제거 및 저장
+      const uniqueTrades = this.removeDuplicates(allTrades);
+      uniqueTrades.forEach(trade => {
+        this.trades.set(trade.id, trade);
+      });
+
+      const endTime = Date.now();
+      console.log(`✅ 새로운 스크래핑 완료!`);
+      console.log(`📊 결과: ${uniqueTrades.length}개 고품질 거래 데이터`);
+      console.log(`⏱️ 소요 시간: ${((endTime - startTime) / 1000).toFixed(1)}초`);
+
+      return uniqueTrades;
+
+    } catch (error) {
+      console.error('❌ 통합 스크래핑 오류:', error.message);
+      return [];
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  /**
+   * 중복 제거
+   */
+  private removeDuplicates(trades: SimpleTrade[]): SimpleTrade[] {
+    const uniqueMap = new Map<string, SimpleTrade>();
+
+    for (const trade of trades) {
+      const key = `${trade.ticker}_${trade.insiderName}_${trade.transactionDate}_${trade.totalValue.toFixed(0)}`;
+
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, trade);
+      } else {
+        // 더 신뢰할 수 있는 소스 우선
+        const existing = uniqueMap.get(key)!;
+        if (this.getSourcePriority(trade.source) > this.getSourcePriority(existing.source)) {
+          uniqueMap.set(key, trade);
+        }
+      }
+    }
+
+    return Array.from(uniqueMap.values());
+  }
+
+  private getSourcePriority(source: string): number {
+    switch (source) {
+      case 'SEC_EDGAR_API': return 3;
+      case 'SEC_RSS_FEED': return 2;
+      case 'OPENINSIDER': return 1;
+      default: return 0;
+    }
+  }
+
+  /**
+   * 저장된 거래 데이터 반환
+   */
+  getAllTrades(): SimpleTrade[] {
+    return Array.from(this.trades.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * 필터링된 거래 데이터 반환
+   */
+  getFilteredTrades(filters: {
+    ticker?: string;
+    minValue?: number;
+    maxValue?: number;
+    transactionType?: string;
+    minConfidence?: number;
+    verifiedOnly?: boolean;
+  }): SimpleTrade[] {
+    let trades = this.getAllTrades();
+
+    if (filters.ticker) {
+      trades = trades.filter(t => t.ticker === filters.ticker.toUpperCase());
+    }
+
+    if (filters.minValue) {
+      trades = trades.filter(t => t.totalValue >= filters.minValue!);
+    }
+
+    if (filters.maxValue) {
+      trades = trades.filter(t => t.totalValue <= filters.maxValue!);
+    }
+
+    if (filters.transactionType) {
+      trades = trades.filter(t => t.transactionType === filters.transactionType);
+    }
+
+    if (filters.minConfidence) {
+      trades = trades.filter(t => t.confidence >= filters.minConfidence!);
+    }
+
+    if (filters.verifiedOnly) {
+      trades = trades.filter(t => t.verified);
+    }
+
+    return trades;
+  }
+
+  /**
+   * 통계 정보 반환
+   */
+  getStatistics(): any {
+    const trades = this.getAllTrades();
+
+    return {
+      totalTrades: trades.length,
+      verifiedTrades: trades.filter(t => t.verified).length,
+      averageConfidence: trades.reduce((sum, t) => sum + t.confidence, 0) / trades.length || 0,
+      sourceBreakdown: {
+        edgar: trades.filter(t => t.source === 'SEC_EDGAR_API').length,
+        rss: trades.filter(t => t.source === 'SEC_RSS_FEED').length,
+        openinsider: trades.filter(t => t.source === 'OPENINSIDER').length
+      },
+      transactionTypeBreakdown: {
+        buy: trades.filter(t => t.transactionType === 'BUY').length,
+        sell: trades.filter(t => t.transactionType === 'SELL').length,
+        optionExercise: trades.filter(t => t.transactionType === 'OPTION_EXERCISE').length,
+        gift: trades.filter(t => t.transactionType === 'GIFT').length,
+        other: trades.filter(t => t.transactionType === 'OTHER').length
+      },
+      totalValue: trades.reduce((sum, t) => sum + t.totalValue, 0),
+      averageValue: trades.reduce((sum, t) => sum + t.totalValue, 0) / trades.length || 0,
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
+   * 자동 스케줄링 시작 (간단한 setInterval 사용)
+   */
+  startAutoCollection(intervalMinutes: number = 10): void {
+    console.log(`⏰ 자동 데이터 수집 시작 (${intervalMinutes}분마다)`);
+
+    // 즉시 한 번 실행
+    this.executeFullCollection();
+
+    // 주기적 실행
+    setInterval(async () => {
+      console.log('🔄 스케줄된 데이터 수집 실행...');
+      await this.executeFullCollection();
+    }, intervalMinutes * 60 * 1000);
+  }
+}
+
+// Export singleton instance
+export const newScrapingManager = new NewScrapingManager();
