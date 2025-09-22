@@ -226,12 +226,11 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                       )}
                     </div>
                   </div>
-                ) : trade.ticker && !trade.currentPrice ? (
+                ) : trade.ticker ? (
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">{t('liveTrading.realtimePriceInfo')}</p>
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
-                      <span className="text-sm text-blue-600">{t('general.loading')}</span>
+                      <span className="text-sm text-blue-600">분석 비용 절약을 위해 비활성화됨</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {t('liveTrading.insiderTradePrice')}: ${trade.pricePerShare?.toFixed(2) || '0.00'}
@@ -369,13 +368,13 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
               ) : trade.analysisLoading ? (
                 <div className={`bg-muted/50 rounded-lg ${isMobile ? 'p-2' : 'p-3'}`}>
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
-                    <Loader2 className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} animate-spin text-purple-600`} />
+                    <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
                     <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
-                      {t('liveTrading.advancedAnalyzing')}
+                      AI 분석 비활성화됨 (API 비용 절약)
                     </span>
                   </div>
                   <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
-                    {t('liveTrading.analysisInProgress')}
+                    진짜 데이터로 검증된 SEC 제출 자료를 확인하세요
                   </p>
                 </div>
               ) : trade.aiInsight ? (
