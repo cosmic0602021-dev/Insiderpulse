@@ -37,7 +37,7 @@ export default function TradeDetail() {
     queryKey: ['/api/stocks', trade?.ticker || trade?.companyName],
     enabled: false, // 주가 정보는 선택사항으로 비활성화 유지 (API 비용 절약)
     staleTime: 10 * 60 * 1000, // 10분으로 증가
-    cacheTime: 15 * 60 * 1000, // 15분 캐시
+    gcTime: 15 * 60 * 1000, // React Query v5: cacheTime -> gcTime
     refetchOnWindowFocus: false, // 창 포커스시 리페치 비활성화
     refetchOnMount: false, // 마운트시 리페치 비활성화
     refetchInterval: false, // 자동 리페치 비활성화
