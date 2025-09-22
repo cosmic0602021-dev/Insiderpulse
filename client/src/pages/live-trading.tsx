@@ -448,17 +448,79 @@ export default function LiveTrading() {
   const wsUrl = getWebSocketUrl();
   const { isConnected, lastMessage, sendMessage } = useWebSocket(wsUrl);
 
-  // 고급 AI 분석 생성 (기존 식상한 로직 대체)
+  // 전역 분석 완료 추적 - 무한 루프 방지
+  const analyzedTradesRef = useRef<Set<string>>(new Set());
+  const analysisInProgressRef = useRef<Set<string>>(new Set());
+
+  // AI 분석을 임시로 비활성화하여 무한 루프 차단
   const generateAdvancedAnalysis = useCallback(async (trade: InsiderTrade, currentPrice?: number): Promise<void> => {
-    if (!trade.ticker) {
-      // ticker가 없으면 즉시 로딩 해제
-      setTrades(prevTrades =>
-        prevTrades.map(t =>
-          t.id === trade.id ? { ...t, analysisLoading: false } : t
-        )
-      );
+    if (!trade.ticker || !trade.id) {
       return;
     }
+
+    // 더 엄격한 중복 방지 체크
+    const tradeKey = `${trade.id}-${trade.ticker}`;
+    
+    // 이미 분석 완료되었거나 진행 중인 경우 스킵
+    if (analyzedTradesRef.current.has(tradeKey) || analysisInProgressRef.current.has(tradeKey)) {
+      console.log(`⏭️ Skipping analysis for ${trade.ticker} (${trade.id}) - already processed`);
+      return;
+    }
+
+    // 기존 거래 상태도 체크
+    const enhancedTrade = trade as EnhancedTrade;
+    if (enhancedTrade.comprehensiveAnalysis) {
+      analyzedTradesRef.current.add(tradeKey);
+      console.log(`⏭️ Skipping analysis for ${trade.ticker} - already has analysis`);
+      return;
+    }
+
+    // 🚨 임시로 AI 분석 비활성화 - 무한 루프 차단
+    console.log(`🛑 AI analysis temporarily disabled for ${trade.ticker} to prevent infinite loop`);
+    analyzedTradesRef.current.add(tradeKey);
+    
+    // 즉시 기본 분석 제공 (API 호출 없음)
+    const fallbackAnalysis = {
+      executiveSummary: generateEnhancedFallbackInsight(trade, currentPrice),
+      actionableRecommendation: `${trade.tradeType === 'BUY' ? '매수' : '매도'} 신호 감지. 추가 시장 분석 필요.`,
+      priceTargets: {
+        conservative: (currentPrice || trade.pricePerShare || 0) * 0.95,
+        realistic: (currentPrice || trade.pricePerShare || 0) * 1.02,
+        optimistic: (currentPrice || trade.pricePerShare || 0) * 1.05,
+        timeHorizon: '3-6개월'
+      },
+      riskAssessment: {
+        level: 'MEDIUM' as const,
+        factors: ['시장 변동성', '회사 실적'],
+        mitigation: '포트폴리오 분산 투자 권장'
+      },
+      marketContext: {
+        sentiment: 'NEUTRAL' as const,
+        reasoning: '일반적인 시장 상황에서의 내부자 거래'
+      },
+      catalysts: [],
+      timeHorizon: '단기-중기 (3-12개월)',
+      confidence: 70
+    };
+
+    // 즉시 분석 결과 업데이트 (API 호출 없음)
+    setTrades(prevTrades =>
+      prevTrades.map(t =>
+        t.id === trade.id
+          ? {
+              ...t,
+              comprehensiveAnalysis: fallbackAnalysis,
+              analysisLoading: false,
+              aiInsight: fallbackAnalysis.executiveSummary,
+              aiAnalysis: fallbackAnalysis.actionableRecommendation,
+              significanceScore: 70,
+              signalType: trade.tradeType === 'BUY' ? 'BUY' : 'SELL'
+            }
+          : t
+      )
+    );
+
+    return; // 🚨 실제 API 호출은 건너뛰기
 
     try {
       console.log(`🔍 Calling real OpenAI API for ${trade.ticker} analysis...`);
@@ -513,6 +575,10 @@ export default function LiveTrading() {
 
       console.log(`✅ Real AI analysis completed for ${trade.ticker}:`, analysis.executiveSummary);
 
+      // 분석 완료 상태 정리
+      analysisInProgressRef.current.delete(tradeKey);
+      analyzedTradesRef.current.add(tradeKey);
+
       // 해당 거래의 분석 결과 업데이트
       setTrades(prevTrades =>
         prevTrades.map(t =>
@@ -534,6 +600,9 @@ export default function LiveTrading() {
 
     } catch (error) {
       console.error('Advanced analysis failed for', trade.ticker, error);
+
+      // 실패 시에도 상태 정리
+      analysisInProgressRef.current.delete(tradeKey);
 
       // 실패 시에도 기본 분석을 제공하고 로딩 해제
       const fallbackAnalysis = {
