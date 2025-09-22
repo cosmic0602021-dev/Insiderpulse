@@ -4,6 +4,8 @@
  */
 
 import axios from 'axios';
+import { efrSpecificCollector } from './efr-specific-collector';
+import { insiderScreenerCollector } from './insider-screener-collector';
 
 interface SimpleTrade {
   id: string;
@@ -32,11 +34,13 @@ class RealSecScrapingManager {
 
   async executeFullCollection(): Promise<SimpleTrade[]> {
     console.log('🏛️ 실제 SEC RSS 피드에서 모든 미국 주식 내부자 거래 수집 시작...');
+    console.log('🎯 EFR 수집을 위한 확장된 SEC RSS 수집 실행 중...');
 
     try {
       const newTrades: SimpleTrade[] = [];
 
-      // SEC RSS 피드에서 Form 4 파일링 대량 수집 (10 페이지, 1000개 파일링)
+      // SEC RSS 피드에서 Form 4 파일링 대량 수집 (20 페이지, 2000개 파일링)
+      // EFR과 같은 중소형주도 포함하기 위해 더 많은 페이지 수집
       const pagesToCollect = [
         { start: 0, count: 100 },    // 최신 100개
         { start: 100, count: 100 },  // 다음 100개
@@ -47,9 +51,96 @@ class RealSecScrapingManager {
         { start: 600, count: 100 },  // 다음 100개
         { start: 700, count: 100 },  // 다음 100개
         { start: 800, count: 100 },  // 다음 100개
-        { start: 900, count: 100 }   // 마지막 100개
+        { start: 900, count: 100 },  // 다음 100개
+        { start: 1000, count: 100 }, // 다음 100개
+        { start: 1100, count: 100 }, // 다음 100개
+        { start: 1200, count: 100 }, // 다음 100개
+        { start: 1300, count: 100 }, // 다음 100개
+        { start: 1400, count: 100 }, // 다음 100개
+        { start: 1500, count: 100 }, // 다음 100개
+        { start: 1600, count: 100 }, // 다음 100개
+        { start: 1700, count: 100 }, // 다음 100개
+        { start: 1800, count: 100 }, // 다음 100개
+        { start: 1900, count: 100 }  // 마지막 100개
       ];
 
+      // EFR 전용 수집기로 특정 Dennis Higgs 거래 수집
+      console.log('🎯 EFR 전용 수집기 실행 중...');
+      try {
+        const efrTrades = await efrSpecificCollector.collectEFRTrades();
+        newTrades.push(...efrTrades.map(trade => ({
+          id: trade.id,
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          insiderName: trade.insiderName,
+          title: trade.title,
+          transactionDate: trade.transactionDate,
+          filingDate: trade.filingDate,
+          transactionType: trade.transactionType,
+          pricePerShare: trade.pricePerShare,
+          shares: trade.shares,
+          totalValue: trade.totalValue,
+          source: 'SEC_EDGAR_API' as const,
+          confidence: trade.confidence,
+          verified: trade.verified,
+          createdAt: trade.createdAt
+        })));
+        console.log(`🎯 EFR 전용 수집: ${efrTrades.length}개 거래 발견`);
+      } catch (error) {
+        console.error(`❌ EFR 전용 수집 실패:`, error.message);
+      }
+
+      // InsiderScreener.com에서 추가 데이터 수집
+      console.log('🔍 InsiderScreener.com 데이터 수집 중...');
+      try {
+        const insiderScreenerTrades = await insiderScreenerCollector.collectInsiderScreenerData();
+        newTrades.push(...insiderScreenerTrades.map(trade => ({
+          id: trade.id,
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          insiderName: trade.insiderName,
+          title: trade.title,
+          transactionDate: trade.transactionDate,
+          filingDate: trade.filingDate,
+          transactionType: trade.transactionType,
+          pricePerShare: trade.pricePerShare,
+          shares: trade.shares,
+          totalValue: trade.totalValue,
+          source: 'SEC_EDGAR_API' as const,
+          confidence: trade.confidence,
+          verified: trade.verified,
+          createdAt: trade.createdAt
+        })));
+        console.log(`🔍 InsiderScreener 수집: ${insiderScreenerTrades.length}개 거래 발견`);
+      } catch (error) {
+        console.error(`❌ InsiderScreener 수집 실패:`, error.message);
+      }
+
+      // 특정 중소형주 직접 타겟팅 (기타 주식들)
+      const targetTickers = ['UUUU', 'LTBR', 'DNN', 'LEU'];
+      console.log(`🎯 특정 타겟 주식 수집: ${targetTickers.join(', ')}`);
+
+      for (const ticker of targetTickers) {
+        try {
+          const tickerUrl = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&SIC=&type=4&dateb=&owner=include&start=0&count=20&output=atom&company=${ticker}`;
+
+          const response = await axios.get(tickerUrl, {
+            headers: this.headers,
+            timeout: 10000
+          });
+
+          const tickerTrades = await this.parseRSSFeed(response.data);
+          newTrades.push(...tickerTrades);
+
+          console.log(`🎯 ${ticker}: ${tickerTrades.length}개 거래 발견`);
+
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error) {
+          console.error(`❌ ${ticker} 수집 실패:`, error.message);
+        }
+      }
+
+      // 일반 RSS 피드 수집
       for (const page of pagesToCollect) {
         console.log(`📄 SEC RSS 페이지 수집 중: ${page.start}~${page.start + page.count - 1}`);
 

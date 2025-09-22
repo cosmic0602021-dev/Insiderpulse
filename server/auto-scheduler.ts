@@ -61,27 +61,27 @@ class AutoScheduler {
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 5 minutes (5 * 60 * 1000 = 300000ms) for MAXIMUM coverage
+    // Run OpenInsider collection every 30 minutes for stability
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 5 * 60 * 1000);
+    }, 30 * 60 * 1000);
 
-    console.log('📅 OpenInsider scheduled: Every 5 minutes (MAXIMUM FREQUENCY MODE)');
+    console.log('📅 OpenInsider scheduled: Every 30 minutes (OPTIMIZED MODE)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 15 minutes (15 * 60 * 1000 = 900000ms) for MAXIMUM comprehensive data
-    // Offset by 2 minutes to avoid conflicts with OpenInsider
+    // Run MarketBeat collection every 2 hours for stability
+    // Offset by 5 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 15 * 60 * 1000);
+      }, 2 * 60 * 60 * 1000);
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
-    }, 2 * 60 * 1000); // Start after 2 minutes
+    }, 5 * 60 * 1000); // Start after 5 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 15 minutes (MAXIMUM COMPREHENSIVE MODE)');
+    console.log('📅 MarketBeat scheduled: Every 2 hours (OPTIMIZED MODE)');
   }
 
   private async runOpenInsiderCollection() {
@@ -89,7 +89,7 @@ class AutoScheduler {
       console.log('🔄 [AUTO] Starting OpenInsider collection...');
       const startTime = Date.now();
       
-      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 25, perPage: 100 }); // MAXIMUM: Collect many pages for complete coverage
+      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 5, perPage: 100 }); // OPTIMIZED: Collect fewer pages for stability
       
       const duration = Date.now() - startTime;
       console.log(`✅ [AUTO] OpenInsider collection completed in ${duration}ms`);
@@ -111,7 +111,7 @@ class AutoScheduler {
       console.log('🔄 [AUTO] Starting MarketBeat supplemental collection...');
       const startTime = Date.now();
       
-      const processedCount = await marketBeatCollector.collectLatestTrades(500); // MAXIMUM: Large batch for complete coverage
+      const processedCount = await marketBeatCollector.collectLatestTrades(100); // OPTIMIZED: Smaller batch for stability
       
       const duration = Date.now() - startTime;
       console.log(`✅ [AUTO] MarketBeat collection completed in ${duration}ms`);

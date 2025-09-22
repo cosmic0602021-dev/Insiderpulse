@@ -831,7 +831,7 @@ export default function LiveTrading() {
                         reasoning: '일반적인 시장 상황에서의 내부자 거래'
                       },
                       catalysts: [],
-                      timeHorizon: t('liveTrading.shortToMediumTerm'),
+                      timeHorizon: '3-6개월',
                       confidence: 70
                     };
 

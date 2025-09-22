@@ -36,7 +36,10 @@
       "Bash(python3:*)",
       "Bash(npm cache clean:*)",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:www.insiderscreener.com)",
+      "WebFetch(domain:www.sec.gov)",
+      "WebFetch(domain:www.secform4.com)"
     ],
     "deny": [],
     "ask": []

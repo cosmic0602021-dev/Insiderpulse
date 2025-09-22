@@ -19,7 +19,7 @@ export function useWebSocket(url: string): WebSocketHook {
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 3;
 
   const connect = () => {
     try {
@@ -45,11 +45,11 @@ export function useWebSocket(url: string): WebSocketHook {
         console.log('WebSocket disconnected');
         setIsConnected(false);
         
-        // Attempt to reconnect
+        // Attempt to reconnect with much longer delays
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          
+          const delay = Math.min(10000 * Math.pow(2, reconnectAttempts.current), 120000); // 10s, 20s, 40s up to 2 min
+
           reconnectTimeout.current = setTimeout(() => {
             console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
             connect();

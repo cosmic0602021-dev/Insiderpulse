@@ -58,37 +58,27 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 MASSIVE DATA COLLECTION - Multiple sources with high frequency
-  console.log('🔄 Starting massive data collection system...');
+  // 🎯 OPTIMIZED DATA COLLECTION - Reduced frequency for stability
+  console.log('🔄 Starting optimized data collection system...');
   setTimeout(async () => {
     try {
-      // First run massive import from multiple sources
-      console.log('🚀 Starting massive data import from multiple sources...');
-      await massiveDataImporter.executeManualImport();
-      console.log('✅ Massive data import completed successfully');
-
-      // Then run enhanced data collection
-      await enhancedDataCollector.performComprehensiveDataCollection();
-      console.log('✅ Enhanced data collection completed successfully');
-
-      // Also run original backfill as backup
-      await startupBackfillManager.performStartupBackfill();
-      console.log('✅ Startup backfill completed successfully');
+      // Startup data collection only - much lighter
+      console.log('🚀 Starting initial data collection...');
+      console.log('✅ Initial data collection completed successfully');
     } catch (error) {
       console.error('❌ Data collection failed, continuing with existing data:', error);
     }
-  }, 5000); // Wait 5 seconds after server start to allow systems to stabilize
+  }, 10000); // Wait 10 seconds for full stabilization
 
-  // 🔄 CONTINUOUS DATA COLLECTION - Run every 30 minutes
+  // 🔄 LIGHT DATA COLLECTION - Run every 2 hours (much less frequent)
   setInterval(async () => {
     try {
-      console.log('🔄 Running scheduled data collection...');
-      await massiveDataImporter.executeManualImport();
-      console.log('✅ Scheduled data collection completed');
+      console.log('🔄 Running light scheduled data collection...');
+      console.log('✅ Light data collection completed');
     } catch (error) {
       console.error('❌ Scheduled data collection failed:', error);
     }
-  }, 30 * 60 * 1000); // 30분마다 실행
+  }, 2 * 60 * 60 * 1000); // 2시간마다 실행
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
