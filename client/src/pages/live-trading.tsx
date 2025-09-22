@@ -230,7 +230,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">{t('liveTrading.realtimePriceInfo')}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-blue-600">분석 비용 절약을 위해 비활성화됨</span>
+                      <span className="text-sm text-green-600">AI 분석 활성화됨</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {t('liveTrading.insiderTradePrice')}: ${trade.pricePerShare?.toFixed(2) || '0.00'}
@@ -370,7 +370,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
                     <Brain className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-purple-600`} />
                     <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-purple-600`}>
-                      AI 분석 비활성화됨 (API 비용 절약)
+                      AI 분석 진행 중...
                     </span>
                   </div>
                   <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
@@ -459,7 +459,7 @@ export default function LiveTrading() {
   const analyzedTradesRef = useRef<Set<string>>(new Set());
   const analysisInProgressRef = useRef<Set<string>>(new Set());
 
-  // AI 분석을 임시로 비활성화하여 무한 루프 차단
+  // ✅ AI 분석 재활성화 - 무한 루프 방지 로직 포함
   const generateAdvancedAnalysis = useCallback(async (trade: InsiderTrade, currentPrice?: number): Promise<void> => {
     if (!trade.ticker || !trade.id) {
       return;
@@ -482,11 +482,10 @@ export default function LiveTrading() {
       return;
     }
 
-    // 🚨 임시로 AI 분석 비활성화 - 무한 루프 차단
-    console.log(`🛑 AI analysis temporarily disabled for ${trade.ticker} to prevent infinite loop`);
-    analyzedTradesRef.current.add(tradeKey);
-    
-    // 즉시 기본 분석 제공 (API 호출 없음)
+    console.log(`🤖 Starting AI analysis for ${trade.ticker} (${trade.id})`);
+    analysisInProgressRef.current.add(tradeKey);
+
+    // Fallback 분석 준비
     const fallbackAnalysis = {
       executiveSummary: generateEnhancedFallbackInsight(trade, currentPrice),
       actionableRecommendation: `${trade.tradeType === 'BUY' ? '매수' : '매도'} 신호 감지. 추가 시장 분석 필요.`,
@@ -510,29 +509,10 @@ export default function LiveTrading() {
       confidence: 70
     };
 
-    // 즉시 분석 결과 업데이트 (API 호출 없음)
-    setTrades(prevTrades =>
-      prevTrades.map(t =>
-        t.id === trade.id
-          ? {
-              ...t,
-              comprehensiveAnalysis: fallbackAnalysis,
-              analysisLoading: false,
-              aiInsight: fallbackAnalysis.executiveSummary,
-              aiAnalysis: fallbackAnalysis.actionableRecommendation,
-              significanceScore: 70,
-              signalType: trade.tradeType === 'BUY' ? 'BUY' : 'SELL'
-            }
-          : t
-      )
-    );
-
-    return; // 🚨 실제 API 호출은 건너뛰기
-
     try {
-      console.log(`🔍 Calling real OpenAI API for ${trade.ticker} analysis...`);
+      console.log(`🔍 Calling OpenAI API for ${trade.ticker} analysis...`);
       
-      // 실제 OpenAI API 호출 - fetch로 직접 호출
+      // 실제 AI 분석 API 호출
       const response = await fetch(`/api/analyze/trade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
