@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getCurrentStockPrice, getMultipleStockPrices, StockPrice } from '@/lib/stock-price-api';
-import { AdvancedAIAnalyst } from '@/lib/advanced-ai-analyst';
+// import { AdvancedAIAnalyst } from '@/lib/advanced-ai-analyst'; // 실제 AI API로 교체
+import { apiRequest } from '@/lib/queryClient';
 import { DataIntegrityChecker, createDataQualityAlert } from '@/lib/data-integrity-checker';
 import {
   TrendingUp, TrendingDown, DollarSign, Users, Search,
@@ -144,7 +145,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                   {t('liveTrading.insider')} {trade.tradeType.includes('BUY') || trade.tradeType.includes('PURCHASE') ? t('liveTrading.buy') : t('liveTrading.sell')} {t('liveTrading.currentPriceLabel')}
                 </p>
                 <p className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-blue-600 dark:text-blue-400`}>
-                  ${trade.pricePerShare.toFixed(2)}
+                  ${trade.pricePerShare?.toFixed(2) || '0.00'}
                 </p>
                 <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-blue-600 dark:text-blue-400`}>per share</p>
               </div>
@@ -163,7 +164,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                 const avgBuyPrice = calculateInsiderBuyAvgPrice(trade.ticker || '', trade.tradeType);
                 return avgBuyPrice && (
                   <p className="text-xs text-purple-600 font-medium mt-1">
-                    {t('liveTrading.avgInsiderBuyPriceLabel')}: ${avgBuyPrice.toFixed(2)}
+                    {t('liveTrading.avgInsiderBuyPriceLabel')}: ${avgBuyPrice?.toFixed(2) || '0.00'}
                   </p>
                 );
               })()}
@@ -194,11 +195,11 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                         ? 'text-green-600'
                         : 'text-orange-600'
                     }`}>
-                      ${trade.recommendedBuyPrice.toFixed(2)}
+                      ${trade.recommendedBuyPrice?.toFixed(2) || '0.00'}
                     </p>
                     <div className="text-xs text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <span>{t('liveTrading.currentPriceLabel')}: ${trade.currentPrice.toFixed(2)}</span>
+                        <span>{t('liveTrading.currentPriceLabel')}: ${trade.currentPrice?.toFixed(2) || '0.00'}</span>
                         {trade.realTimePrice && (
                           <span className={`text-xs px-1.5 py-0.5 rounded ${
                             trade.realTimePrice.priceChange >= 0
@@ -206,7 +207,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                               : 'text-red-600 bg-red-100 dark:bg-red-900/30'
                           }`}>
                             {trade.realTimePrice.priceChange >= 0 ? '+' : ''}
-                            {trade.realTimePrice.priceChangePercent.toFixed(2)}%
+                            {trade.realTimePrice?.priceChangePercent?.toFixed(2) || '0.00'}%
                           </span>
                         )}
                       </div>
@@ -233,7 +234,7 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                       <span className="text-sm text-blue-600">{t('general.loading')}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {t('liveTrading.insiderTradePrice')}: ${trade.pricePerShare.toFixed(2)}
+                      {t('liveTrading.insiderTradePrice')}: ${trade.pricePerShare?.toFixed(2) || '0.00'}
                     </p>
                   </div>
                 ) : null}
@@ -322,14 +323,14 @@ const VirtualizedTradeItem = memo(({ trade, onTradeClick, onAlertClick, onWatchl
                       </h4>
                       <div className="flex gap-2">
                         <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded`}>
-                          {t('liveTrading.conservativeLabel')}: ${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}
+                          {t('liveTrading.conservativeLabel')}: ${trade.comprehensiveAnalysis?.priceTargets?.conservative?.toFixed(2) || '0.00'}
                         </span>
                         <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-600 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded`}>
-                          {t('liveTrading.realisticLabel')}: ${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}
+                          {t('liveTrading.realisticLabel')}: ${trade.comprehensiveAnalysis?.priceTargets?.realistic?.toFixed(2) || '0.00'}
                         </span>
                         {!isMobile && (
                           <span className={`text-sm text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded`}>
-                            {t('liveTrading.optimisticLabel')}: ${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}
+                            {t('liveTrading.optimisticLabel')}: ${trade.comprehensiveAnalysis?.priceTargets?.optimistic?.toFixed(2) || '0.00'}
                           </span>
                         )}
                       </div>
@@ -460,13 +461,51 @@ export default function LiveTrading() {
     }
 
     try {
-      // 종합 분석 실행
-      const analysis = await AdvancedAIAnalyst.generateComprehensiveInsight(
-        trade,
-        currentPrice || trade.pricePerShare,
-        trades,
-        trade.realTimePrice || undefined
-      );
+      console.log(`🔍 Calling real OpenAI API for ${trade.ticker} analysis...`);
+      
+      // 실제 OpenAI API 호출
+      const analysisResponse = await apiRequest(`/api/analyze/trade`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: trade.companyName,
+          ticker: trade.ticker,
+          traderName: trade.traderName,
+          traderTitle: trade.traderTitle,
+          tradeType: trade.tradeType,
+          shares: trade.shares,
+          pricePerShare: trade.pricePerShare || currentPrice || 0,
+          totalValue: trade.totalValue,
+          ownershipPercentage: trade.ownershipPercentage || 0
+        })
+      });
+
+      // AI 분석 결과를 comprehensive analysis 형태로 변환
+      const analysis = {
+        executiveSummary: analysisResponse.keyInsights?.join(' ') || analysisResponse.recommendation || 'AI 분석 완료',
+        actionableRecommendation: analysisResponse.recommendation || '추가 분석이 필요합니다',
+        priceTargets: {
+          conservative: (currentPrice || trade.pricePerShare) * (analysisResponse.signalType === 'BUY' ? 1.03 : 0.97),
+          realistic: (currentPrice || trade.pricePerShare) * (analysisResponse.signalType === 'BUY' ? 1.08 : 0.92),
+          optimistic: (currentPrice || trade.pricePerShare) * (analysisResponse.signalType === 'BUY' ? 1.15 : 0.85),
+          timeHorizon: '3-6개월'
+        },
+        riskAssessment: {
+          level: analysisResponse.riskLevel || 'MEDIUM' as const,
+          factors: analysisResponse.keyInsights || ['시장 변동성'],
+          mitigation: '포트폴리오 분산 권장'
+        },
+        marketContext: {
+          sentiment: analysisResponse.signalType === 'BUY' ? 'POSITIVE' as const : 
+                   analysisResponse.signalType === 'SELL' ? 'NEGATIVE' as const : 'NEUTRAL' as const,
+          reasoning: analysisResponse.recommendation || '일반적인 시장 상황'
+        },
+        catalysts: analysisResponse.keyInsights || [],
+        timeHorizon: '중기 (3-12개월)',
+        confidence: analysisResponse.significanceScore || 75
+      };
+
+      console.log(`✅ Real AI analysis completed for ${trade.ticker}:`, analysis.executiveSummary);
 
       // 해당 거래의 분석 결과 업데이트
       setTrades(prevTrades =>
@@ -477,7 +516,11 @@ export default function LiveTrading() {
                 comprehensiveAnalysis: analysis,
                 analysisLoading: false,
                 // 기존 간단한 인사이트는 유지하되 새로운 것으로 대체
-                aiInsight: analysis.executiveSummary
+                aiInsight: analysis.executiveSummary,
+                // AI 분석 결과도 업데이트
+                aiAnalysis: analysisResponse.recommendation,
+                significanceScore: analysisResponse.significanceScore,
+                signalType: analysisResponse.signalType
               }
             : t
         )
@@ -892,10 +935,14 @@ export default function LiveTrading() {
     }
   }, [initialTrades, enhanceTradeWithAI, updateStockPrices]);
 
-  // 주기적으로 주가 업데이트 (5분마다)
+  // 주기적으로 주가 업데이트 (5분마다) - useRef로 최신 trades 참조해서 무한 루프 방지
+  const tradesRef = useRef<InsiderTrade[]>([]);
+  tradesRef.current = trades;
+
   useEffect(() => {
     const interval = setInterval(() => {
-      const symbols = trades
+      const currentTrades = tradesRef.current;
+      const symbols = currentTrades
         .map(trade => trade.ticker)
         .filter(Boolean) as string[];
 
@@ -905,7 +952,7 @@ export default function LiveTrading() {
     }, 5 * 60 * 1000); // 5분
 
     return () => clearInterval(interval);
-  }, [trades, updateStockPrices]);
+  }, [updateStockPrices]); // updateStockPrices만 dependency로 사용
 
   // Handle WebSocket messages
   useEffect(() => {

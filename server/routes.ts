@@ -13,6 +13,7 @@ import enhancedApiRouter from "./routes/enhanced-api";
 // import newApiRouter from "./routes/new-api-routes";
 import { newScrapingManager } from "./temp-scraper";
 // import { newDataCollectionService } from "./new-data-collection-service";
+import { AIAnalysisService } from "./ai-analysis";
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -105,6 +106,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching stock price:', error);
       res.status(500).json({ error: 'Failed to fetch stock price' });
+    }
+  });
+
+  // AI Analysis for insider trades using real OpenAI API
+  app.post('/api/analyze/trade', async (req, res) => {
+    try {
+      const aiService = new AIAnalysisService();
+      const tradeData = req.body;
+
+      // Validate required fields
+      if (!tradeData.companyName || !tradeData.ticker || !tradeData.tradeType) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: companyName, ticker, tradeType' 
+        });
+      }
+
+      const analysis = await aiService.analyzeInsiderTrade({
+        companyName: tradeData.companyName,
+        ticker: tradeData.ticker,
+        traderName: tradeData.traderName || 'Unknown',
+        traderTitle: tradeData.traderTitle || 'Unknown',
+        tradeType: tradeData.tradeType,
+        shares: tradeData.shares || 0,
+        pricePerShare: tradeData.pricePerShare || 0,
+        totalValue: tradeData.totalValue || 0,
+        ownershipPercentage: tradeData.ownershipPercentage || 0
+      });
+
+      res.json(analysis);
+    } catch (error) {
+      console.error('Error performing AI analysis:', error);
+      res.status(500).json({ 
+        error: 'Failed to perform AI analysis',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
