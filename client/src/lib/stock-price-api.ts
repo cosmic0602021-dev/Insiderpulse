@@ -7,83 +7,59 @@ export interface StockPrice {
   lastUpdated: string;
 }
 
-// Yahoo Finance API를 통한 주가 조회 (무료, 높은 신뢰성)
-async function fetchYahooFinancePrice(symbol: string): Promise<StockPrice | null> {
+// Backend API를 통한 주가 조회 (CORS 문제 해결)
+async function fetchBackendStockPrice(symbol: string): Promise<StockPrice | null> {
   try {
-    // CORS 우회를 위한 프록시 서비스 사용
-    const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
+    const response = await fetch(`/api/stocks/${symbol}`);
 
     if (!response.ok) {
-      throw new Error(`Yahoo Finance API error: ${response.status}`);
+      throw new Error(`Backend API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const result = data.chart.result[0];
 
-    if (!result || !result.meta) {
-      throw new Error('Invalid Yahoo Finance response');
+    if (!data || data.currentPrice === undefined) {
+      throw new Error('Invalid backend response');
     }
-
-    const meta = result.meta;
-    const currentPrice = meta.regularMarketPrice || meta.previousClose;
-    const previousClose = meta.previousClose;
-    const priceChange = currentPrice - previousClose;
-    const priceChangePercent = (priceChange / previousClose) * 100;
 
     return {
       symbol: symbol,
-      currentPrice: currentPrice,
-      priceChange: priceChange,
-      priceChangePercent: priceChangePercent,
+      currentPrice: data.currentPrice,
+      priceChange: data.change || 0,
+      priceChangePercent: data.changePercent || 0,
       lastUpdated: new Date().toISOString()
     };
   } catch (error) {
-    console.warn(`Yahoo Finance API failed for ${symbol}:`, error);
+    console.warn(`Backend API failed for ${symbol}:`, error);
     return null;
   }
 }
 
-// Alpha Vantage API (백업용, API 키 필요)
-async function fetchAlphaVantagePrice(symbol: string): Promise<StockPrice | null> {
+// Multiple stocks API를 통한 주가 조회 (백업용)
+async function fetchMultipleStocksPrice(symbol: string): Promise<StockPrice | null> {
   try {
-    // API 키가 환경변수에 있는 경우에만 사용
-    const apiKey = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY;
-    if (!apiKey) {
-      return null;
-    }
-
-    const response = await fetch(
-      `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
-    );
+    const response = await fetch(`/api/stocks?tickers=${symbol}`);
 
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API error: ${response.status}`);
+      throw new Error(`Multiple stocks API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const quote = data['Global Quote'];
+    const stockData = Array.isArray(data) ? data[0] : data;
 
-    if (!quote || !quote['05. price']) {
-      throw new Error('Invalid Alpha Vantage response');
+    if (!stockData || stockData.currentPrice === undefined) {
+      throw new Error('Invalid multiple stocks response');
     }
-
-    const currentPrice = parseFloat(quote['05. price']);
-    const priceChange = parseFloat(quote['09. change']);
-    const priceChangePercent = parseFloat(quote['10. change percent'].replace('%', ''));
 
     return {
       symbol: symbol,
-      currentPrice: currentPrice,
-      priceChange: priceChange,
-      priceChangePercent: priceChangePercent,
+      currentPrice: stockData.currentPrice,
+      priceChange: stockData.change || 0,
+      priceChangePercent: stockData.changePercent || 0,
       lastUpdated: new Date().toISOString()
     };
   } catch (error) {
-    console.warn(`Alpha Vantage API failed for ${symbol}:`, error);
+    console.warn(`Multiple stocks API failed for ${symbol}:`, error);
     return null;
   }
 }
@@ -134,10 +110,10 @@ export async function getCurrentStockPrice(symbol: string): Promise<StockPrice |
     return cachedPrice;
   }
 
-  // 여러 API를 순차적으로 시도
+  // 여러 API를 순차적으로 시도 (백엔드 API 우선 사용)
   const apiFunctions = [
-    fetchYahooFinancePrice,
-    fetchAlphaVantagePrice
+    fetchBackendStockPrice,
+    fetchMultipleStocksPrice
   ];
 
   for (const apiFunction of apiFunctions) {
@@ -158,35 +134,66 @@ export async function getCurrentStockPrice(symbol: string): Promise<StockPrice |
   return null;
 }
 
-// 배치로 여러 심볼의 주가 조회
+// 배치로 여러 심볼의 주가 조회 (백엔드 API 사용)
 export async function getMultipleStockPrices(symbols: string[]): Promise<Map<string, StockPrice>> {
   const results = new Map<string, StockPrice>();
 
-  // 동시에 너무 많은 요청을 보내지 않도록 배치 처리
-  const batchSize = 5;
-  const batches: string[][] = [];
-
-  for (let i = 0; i < symbols.length; i += batchSize) {
-    batches.push(symbols.slice(i, i + batchSize));
-  }
-
-  for (const batch of batches) {
-    const promises = batch.map(async (symbol) => {
-      const price = await getCurrentStockPrice(symbol);
-      return { symbol, price };
-    });
-
-    const batchResults = await Promise.allSettled(promises);
-
-    batchResults.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value.price) {
-        results.set(result.value.symbol, result.value.price);
+  try {
+    // 모든 심볼을 한 번에 백엔드로 요청
+    const tickersParam = symbols.join(',');
+    const response = await fetch(`/api/stocks?tickers=${tickersParam}`);
+    
+    if (!response.ok) {
+      throw new Error(`Backend API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const stocksArray = Array.isArray(data) ? data : [data];
+    
+    stocksArray.forEach((stockData: any) => {
+      if (stockData && stockData.ticker && stockData.currentPrice !== undefined) {
+        const stockPrice: StockPrice = {
+          symbol: stockData.ticker,
+          currentPrice: stockData.currentPrice,
+          priceChange: stockData.change || 0,
+          priceChangePercent: stockData.changePercent || 0,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        // 캐시에 저장
+        priceCache.set(stockData.ticker, stockPrice);
+        results.set(stockData.ticker, stockPrice);
       }
     });
+  } catch (error) {
+    console.error('Failed to fetch multiple stock prices from backend:', error);
+    
+    // 백엔드 API가 실패하면 개별 요청으로 폴백
+    const batchSize = 5;
+    const batches: string[][] = [];
 
-    // API 제한을 고려해 배치 간 대기
-    if (batches.indexOf(batch) < batches.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    for (let i = 0; i < symbols.length; i += batchSize) {
+      batches.push(symbols.slice(i, i + batchSize));
+    }
+
+    for (const batch of batches) {
+      const promises = batch.map(async (symbol) => {
+        const price = await getCurrentStockPrice(symbol);
+        return { symbol, price };
+      });
+
+      const batchResults = await Promise.allSettled(promises);
+
+      batchResults.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value.price) {
+          results.set(result.value.symbol, result.value.price);
+        }
+      });
+
+      // API 제한을 고려해 배치 간 대기
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
   }
 

@@ -172,7 +172,7 @@ export class StockPriceService {
             console.log(`⚠️ No real price data available for ${companyName} - skipping`);
           }
         } catch (error) {
-          console.error(`❌ Failed to update price for ${companyName}:`, error?.message || error);
+          console.error(`❌ Failed to update price for ${companyName}:`, (error as Error)?.message || error);
           // Continue with next company instead of crashing
           continue;
         }
