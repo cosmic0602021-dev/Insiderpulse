@@ -100,8 +100,11 @@ class StockPriceCache {
 
 const priceCache = new StockPriceCache();
 
-// 메인 주가 조회 함수 (여러 API 폴백 지원)
+// 메인 주가 조회 함수 (여러 API 폴백 지원) - 🚨 임시 비활성화로 무한 루프 방지
 export async function getCurrentStockPrice(symbol: string): Promise<StockPrice | null> {
+  console.log('🚨 getCurrentStockPrice called but temporarily disabled to prevent infinite loops for:', symbol);
+  return null; // 🚨 임시 비활성화
+  
   if (!symbol) return null;
 
   // 캐시에서 먼저 확인
@@ -134,8 +137,11 @@ export async function getCurrentStockPrice(symbol: string): Promise<StockPrice |
   return null;
 }
 
-// 배치로 여러 심볼의 주가 조회 (백엔드 API 사용)
+// 배치로 여러 심볼의 주가 조회 (백엔드 API 사용) - 🚨 임시 비활성화로 무한 루프 방지
 export async function getMultipleStockPrices(symbols: string[]): Promise<Map<string, StockPrice>> {
+  console.log('🚨 getMultipleStockPrices called but temporarily disabled to prevent infinite loops for:', symbols);
+  return new Map(); // 🚨 임시 비활성화
+  
   const results = new Map<string, StockPrice>();
 
   try {

@@ -26,15 +26,20 @@ export default function StockHistoryChart({
   const fromDate = new Date(tradeDate).toISOString().split('T')[0];
   const toDate = new Date().toISOString().split('T')[0];
 
-  // Fetch stock price history
+  // Fetch stock price history - 🚨 임시 비활성화
   const { data: historyData = [], isLoading, error } = useQuery<StockPriceHistory[]>({
     queryKey: ['/api/stocks', ticker, 'history', fromDate, toDate],
-    enabled: !!ticker,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    enabled: false, // 🚨 완전히 비활성화해서 무한 루프 방지
+    staleTime: 15 * 60 * 1000, // 15분으로 증가
+    cacheTime: 30 * 60 * 1000, // 30분 캐시
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchInterval: false, // 자동 리페치 비활성화
+    refetchOnReconnect: false, // 재연결시 리페치 비활성화
     queryFn: async () => {
+      console.log('🚨 stock-history-chart.tsx fetch called but temporarily disabled to prevent infinite loops');
+      return []; // 🚨 임시 비활성화
+      
       const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
       if (!response.ok) throw new Error('Failed to fetch stock price history');
       return response.json();

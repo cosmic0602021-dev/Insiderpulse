@@ -341,8 +341,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get multiple stock prices
+  // Get multiple stock prices - 🚨 임시 비활성화로 무한 루프 방지
   app.get('/api/stocks', async (req, res) => {
+    console.log('🚨 /api/stocks endpoint called but temporarily disabled to prevent infinite loops');
+    res.status(503).json({ error: 'Temporarily disabled to prevent infinite loops' });
+    return; // 🚨 임시 비활성화
+    
     try {
       const tickersParam = req.query.tickers as string;
       if (!tickersParam) {

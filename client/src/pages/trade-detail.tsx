@@ -32,12 +32,19 @@ export default function TradeDetail() {
 
   const trade = trades.find(t => t.id === id);
 
-  // Fetch stock price if we have a ticker
+  // Fetch stock price if we have a ticker - 🚨 임시 비활성화
   const { data: stockPrice } = useQuery<StockPrice>({
     queryKey: ['/api/stocks', trade?.ticker || trade?.companyName],
-    enabled: !!(trade?.ticker || trade?.companyName),
-    staleTime: 5 * 60 * 1000,
+    enabled: false, // 🚨 완전히 비활성화해서 무한 루프 방지
+    staleTime: 10 * 60 * 1000, // 10분으로 증가
+    cacheTime: 15 * 60 * 1000, // 15분 캐시
+    refetchOnWindowFocus: false, // 창 포커스시 리페치 비활성화
+    refetchOnMount: false, // 마운트시 리페치 비활성화
+    refetchInterval: false, // 자동 리페치 비활성화
     queryFn: async () => {
+      console.log('🚨 trade-detail.tsx stock fetch called but temporarily disabled to prevent infinite loops');
+      return null; // 🚨 임시 비활성화
+      
       if (trade?.ticker) {
         const response = await fetch(`/api/stocks/${trade.ticker}`);
         if (!response.ok) throw new Error('Failed to fetch stock price');

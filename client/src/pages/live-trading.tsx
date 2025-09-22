@@ -435,6 +435,10 @@ export default function LiveTrading() {
     queryFn: () => apiClient.getInsiderTrades(100, 0), // {t('liveTrading.quickLoadingFewer')}
     staleTime: 300000, // 5 minutes to reduce requery frequency
     gcTime: 600000, // 10 minute cache
+    refetchOnWindowFocus: false, // 🚨 창 포커스시 리페치 비활성화
+    refetchOnMount: false, // 🚨 마운트시 리페치 비활성화
+    refetchInterval: false, // 🚨 자동 리페치 비활성화
+    refetchOnReconnect: false, // 🚨 재연결시 리페치 비활성화
   });
 
   const { data: stats } = useQuery({
@@ -442,6 +446,10 @@ export default function LiveTrading() {
     queryFn: apiClient.getTradingStats,
     staleTime: 300000, // Increase to 5 minutes
     gcTime: 600000, // 10 minute cache
+    refetchOnWindowFocus: false, // 🚨 창 포커스시 리페치 비활성화
+    refetchOnMount: false, // 🚨 마운트시 리페치 비활성화
+    refetchInterval: false, // 🚨 자동 리페치 비활성화
+    refetchOnReconnect: false, // 🚨 재연결시 리페치 비활성화
   });
 
   // WebSocket for real-time updates
@@ -871,8 +879,11 @@ export default function LiveTrading() {
     return enhanced;
   }, []); // 의존성 없음으로 한 번만 생성
 
-  // 실시간 주가 업데이트 함수
+  // 실시간 주가 업데이트 함수 - 🚨 임시 비활성화로 무한 루프 방지
   const updateStockPrices = useCallback(async (symbols: string[]) => {
+    console.log('🚨 updateStockPrices called but temporarily disabled to prevent infinite loops');
+    return; // 🚨 임시 비활성화
+    
     if (symbols.length === 0) return;
 
     // 이미 로딩 중인 심볼들 제외
@@ -980,7 +991,7 @@ export default function LiveTrading() {
         return newSet;
       });
     }
-  }, [priceLoadingSymbols]);
+  }, []); // 🚨 의존성 제거로 무한 루프 방지
 
   // Initialize trades - 최적화된 버전
   useEffect(() => {
@@ -1004,30 +1015,32 @@ export default function LiveTrading() {
         .map(trade => trade.ticker)
         .filter(Boolean) as string[];
 
-      if (symbols.length > 0) {
-        updateStockPrices(symbols);
-      }
+      // 🚨 임시로 주가 업데이트 비활성화 - 무한 루프 방지
+      // if (symbols.length > 0) {
+      //   updateStockPrices(symbols);
+      // }
     }
-  }, [initialTrades, enhanceTradeWithAI, updateStockPrices]);
+  }, [initialTrades, enhanceTradeWithAI]); // 🚨 updateStockPrices 의존성 제거로 무한 루프 방지
 
   // 주기적으로 주가 업데이트 (5분마다) - useRef로 최신 trades 참조해서 무한 루프 방지
   const tradesRef = useRef<InsiderTrade[]>([]);
   tradesRef.current = trades;
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentTrades = tradesRef.current;
-      const symbols = currentTrades
-        .map(trade => trade.ticker)
-        .filter(Boolean) as string[];
+  // 🚨 임시로 주기적 주가 업데이트 비활성화 - 무한 루프 방지
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const currentTrades = tradesRef.current;
+  //     const symbols = currentTrades
+  //       .map(trade => trade.ticker)
+  //       .filter(Boolean) as string[];
 
-      if (symbols.length > 0) {
-        updateStockPrices(symbols);
-      }
-    }, 5 * 60 * 1000); // 5분
+  //     if (symbols.length > 0) {
+  //       updateStockPrices(symbols);
+  //     }
+  //   }, 5 * 60 * 1000); // 5분
 
-    return () => clearInterval(interval);
-  }, [updateStockPrices]); // updateStockPrices만 dependency로 사용
+  //   return () => clearInterval(interval);
+  // }, []); // 🚨 모든 의존성 제거로 무한 루프 방지 - 5분마다 실행되는 단순한 interval
 
   // Handle WebSocket messages
   useEffect(() => {
