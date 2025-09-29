@@ -13,6 +13,7 @@ import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
 import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
+import { TradeDetailModal } from '@/components/trade-detail-modal';
 import type { InsiderTrade } from '@shared/schema';
 
 interface DataQualityStatus {
@@ -29,6 +30,18 @@ export default function LiveTrading() {
   const queryClient = useQueryClient();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
+  const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleTradeClick = (trade: InsiderTrade) => {
+    setSelectedTrade(trade);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTrade(null);
+  };
 
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단
   const { data: allTrades, isLoading, error, refetch } = useQuery({
@@ -302,7 +315,9 @@ export default function LiveTrading() {
               {validatedData.trades.slice(0, 50).map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate"
+                  onClick={() => handleTradeClick(trade)}
+                  data-testid={`trade-card-${trade.id}`}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
@@ -338,6 +353,14 @@ export default function LiveTrading() {
           )}
         </CardContent>
       </Card>
+
+      {/* AI 분석 인사이트 모달 */}
+      <TradeDetailModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        trade={selectedTrade}
+        data-testid="trade-detail-modal"
+      />
     </div>
   );
 }

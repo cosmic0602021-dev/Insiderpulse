@@ -1777,22 +1777,26 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [language, setLanguage] = useState<Language>('en');
 
   useEffect(() => {
-    // Check localStorage for saved language
+    // Check localStorage for saved language first (user preference takes priority)
     const savedLanguage = localStorage.getItem('language') as Language;
     if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
+      console.log('🌍 Using saved language preference:', savedLanguage);
       setLanguage(savedLanguage);
+      return; // Exit early - user preference overrides browser detection
+    }
+    
+    // Only detect browser language if no saved preference exists
+    const browserLang = navigator.language.toLowerCase();
+    console.log('🌍 No saved language, detecting browser language:', browserLang);
+    
+    if (browserLang.startsWith('ko')) {
+      setLanguage('ko');
+    } else if (browserLang.startsWith('ja')) {
+      setLanguage('ja');
+    } else if (browserLang.startsWith('zh')) {
+      setLanguage('zh');
     } else {
-      // Try to detect browser language
-      const browserLang = navigator.language.toLowerCase();
-      if (browserLang.startsWith('ko')) {
-        setLanguage('ko');
-      } else if (browserLang.startsWith('ja')) {
-        setLanguage('ja');
-      } else if (browserLang.startsWith('zh')) {
-        setLanguage('zh');
-      } else {
-        setLanguage('en');
-      }
+      setLanguage('en');
     }
   }, []);
 

@@ -20,37 +20,19 @@ import logoDark from "@assets/inverted_with_green_1757888880166.png";
 
 const getMenuItems = (t: (key: string) => string) => [
   {
-    title: t('nav.dashboard'),
-    url: "/",
-    icon: Home,
-    key: 'dashboard'
-  },
-  {
-    title: t('nav.livetrading'),
+    title: "Live Trading",
     url: "/trades",
     icon: TrendingUp,
     key: 'live-trades'
   },
   {
-    title: t('nav.analytics'),
-    url: "/analytics",
-    icon: BarChart3,
-    key: 'analytics'
-  },
-  {
-    title: t('nav.alerts'),
+    title: "Alerts",
     url: "/alerts",
     icon: Bell,
     key: 'alerts'
   },
   {
-    title: t('nav.search'),
-    url: "/search",
-    icon: Search,
-    key: 'search'
-  },
-  {
-    title: t('nav.ranking'),
+    title: "Top Stocks",
     url: "/ranking",
     icon: Star,
     key: 'ranking'
