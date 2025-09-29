@@ -22,6 +22,13 @@ interface RankingItem {
   netBuying: number;
   lastTradeDate: string;
   insiderActivity: string;
+  // 패턴 정보 추가
+  detectedPatterns?: Array<{
+    type: string;
+    description: string;
+    significance: string;
+  }>;
+  patternSignals?: string | null;
 }
 
 interface RankingsResponse {
@@ -292,16 +299,35 @@ export default function Ranking() {
                     <p className="text-muted-foreground" data-testid={`text-company-${item.ticker.toLowerCase()}`}>
                       {item.companyName}
                     </p>
+                    {/* 🔍 패턴 기반 추천 이유 표시 */}
+                    {item.patternSignals && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                          추천 이유: {item.patternSignals}
+                        </Badge>
+                      </div>
+                    )}
+                    {/* 패턴이 없는 경우 기본 추천 이유 */}
+                    {!item.patternSignals && item.netBuying > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                          추천 이유: 순매수 ${(item.netBuying/1000000).toFixed(1)}M
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Right side - Recommendation and Score */}
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <div className="text-2xl font-bold" data-testid={`text-score-${item.ticker.toLowerCase()}`}>
+                    <div className="text-2xl font-bold text-primary" data-testid={`text-score-${item.ticker.toLowerCase()}`}>
                       {item.score}
                     </div>
-                    <p className="text-sm text-muted-foreground">Score</p>
+                    <p className="text-sm text-muted-foreground">동시 진입 점수</p>
+                    <div className="text-xs text-purple-600 font-medium">
+                      {item.uniqueInsiders}명 내부자
+                    </div>
                   </div>
                   <Badge 
                     className={`${getRecommendationColor(item.recommendation)} text-white px-3 py-1`}

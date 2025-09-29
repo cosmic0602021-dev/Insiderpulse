@@ -1,4 +1,5 @@
 import { storage } from './storage';
+import { dataIntegrityService } from './data-integrity-service';
 import type { InsertInsiderTrade } from '@shared/schema';
 
 // Break circular dependency - broadcaster function will be injected

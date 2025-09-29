@@ -3,7 +3,11 @@
  */
 
 import { Router } from 'express';
-import { newScrapingManager } from '../temp-scraper';
+// Conditional import for production only
+let newScrapingManager: any;
+if (process.env.NODE_ENV === 'production') {
+  newScrapingManager = require('../temp-scraper').newScrapingManager;
+}
 
 const router = Router();
 
@@ -12,6 +16,10 @@ const router = Router();
  */
 router.get('/trades', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({ trades: [], total: 0, message: 'Enhanced scraping disabled in development mode' });
+    }
+
     const {
       limit = 50,
       ticker,

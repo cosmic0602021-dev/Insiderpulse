@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DashboardStats from '@/components/dashboard-stats';
 import TradeList from '@/components/trade-list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, Wifi, WifiOff, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
+import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
 import type { TradingStats, InsiderTrade, AIAnalysis } from '@shared/schema';
 
 export default function Dashboard() {
@@ -27,17 +28,40 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  const { data: trades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
-    queryKey: queryKeys.trades.list({ 
-      limit: 20, 
-      offset: 0, 
+  const { data: rawTrades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
+    queryKey: queryKeys.trades.list({
+      limit: 20,
+      offset: 0,
       from: dateRange.fromDate?.toISOString().split('T')[0],
       to: dateRange.toDate?.toISOString().split('T')[0],
-      sortBy 
+      sortBy
     }),
     queryFn: () => apiClient.getInsiderTrades(20, 0, dateRange.fromDate, dateRange.toDate, sortBy),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates
   });
+
+  // 🚨 실제 데이터 검증 - 가짜 데이터 완전 차단
+  const validatedData = useMemo(() => {
+    if (!rawTrades) return { trades: [], isValid: true, issues: [] };
+
+    console.log('🔍 Dashboard: Validating trades data...');
+    const validation = dataValidator.validateTrades(rawTrades);
+    const freshness = dataFreshnessMonitor.checkDataFreshness(validation.validTrades);
+
+    if (validation.invalidTrades.length > 0) {
+      console.warn(`🚨 Dashboard: Filtered out ${validation.invalidTrades.length} invalid/fake trades`);
+    }
+
+    return {
+      trades: validation.validTrades,
+      isValid: validation.summary.valid > 0,
+      issues: [...validation.summary.issues, ...freshness.warnings],
+      validCount: validation.summary.valid,
+      totalCount: validation.summary.total
+    };
+  }, [rawTrades]);
+
+  const trades = validatedData.trades;
   
   // WebSocket connection for real-time updates
   const wsUrl = getWebSocketUrl();
@@ -84,28 +108,35 @@ export default function Dashboard() {
   const handleLoadMore = async () => {
     console.log('Load more clicked');
     console.log('Loading more trades...');
-    
+
     if (loadingMore || !hasMoreData) return;
-    
+
     setLoadingMore(true);
     try {
       const newOffset = currentOffset + 20;
-      const moreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy);
-      
-      if (moreTrades.length === 0) {
+      const rawMoreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy);
+
+      // 🚨 추가 데이터도 검증
+      const validation = dataValidator.validateTrades(rawMoreTrades);
+      const validMoreTrades = validation.validTrades;
+
+      if (validation.invalidTrades.length > 0) {
+        console.warn(`🚨 Dashboard: Filtered out ${validation.invalidTrades.length} invalid trades from load more`);
+      }
+
+      if (validMoreTrades.length === 0) {
         setHasMoreData(false);
       } else {
-        setAllTrades(prev => [...prev, ...moreTrades]);
+        setAllTrades(prev => [...prev, ...validMoreTrades]);
         setCurrentOffset(newOffset);
-        
+
         // If we got less than requested amount, probably no more data
-        if (moreTrades.length < 20) {
+        if (validMoreTrades.length < 20) {
           setHasMoreData(false);
         }
       }
     } catch (error) {
       console.error('Failed to load more trades:', error);
-      // TODO: Show user-friendly error notification
       alert(t('dashboard.loadMoreTradesError'));
     } finally {
       setLoadingMore(false);
@@ -132,18 +163,52 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 p-6" data-testid="dashboard">
       {/* Connection Status */}
-      <Alert className={isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}>
-        <div className="flex items-center gap-2">
-          {isConnected ? (
-            <Wifi className="h-4 w-4 text-chart-2" />
-          ) : (
-            <WifiOff className="h-4 w-4 text-destructive" />
-          )}
-          <AlertDescription className={isConnected ? 'text-chart-2' : 'text-destructive'}>
-            {isConnected ? t('connection.liveFeedActive') : t('connection.connectionLost')}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Alert className={isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}>
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <Wifi className="h-4 w-4 text-chart-2" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-destructive" />
+            )}
+            <AlertDescription className={isConnected ? 'text-chart-2' : 'text-destructive'}>
+              {isConnected ? t('connection.liveFeedActive') : t('connection.connectionLost')}
+            </AlertDescription>
+          </div>
+        </Alert>
+
+        {/* Data Validation Status */}
+        <Alert className={validatedData.isValid ? 'border-blue-500/50 bg-blue-50' : 'border-yellow-500/50 bg-yellow-50'}>
+          <div className="flex items-center gap-2">
+            {validatedData.isValid ? (
+              <Shield className="h-4 w-4 text-blue-600" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            )}
+            <AlertDescription className={validatedData.isValid ? 'text-blue-700' : 'text-yellow-700'}>
+              검증된 데이터: {validatedData.validCount || 0}/{validatedData.totalCount || 0}개
+            </AlertDescription>
+          </div>
+        </Alert>
+      </div>
+
+      {/* Data Quality Warning */}
+      {validatedData.issues && validatedData.issues.length > 0 && (
+        <Alert className="border-yellow-500/50 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-700">
+            <div className="font-semibold mb-1">데이터 품질 주의사항:</div>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {validatedData.issues.slice(0, 3).map((issue, index) => (
+                <li key={index}>{issue}</li>
+              ))}
+              {validatedData.issues.length > 3 && (
+                <li className="text-xs text-yellow-600">그 외 {validatedData.issues.length - 3}개 문제</li>
+              )}
+            </ul>
           </AlertDescription>
-        </div>
-      </Alert>
+        </Alert>
+      )}
 
       {/* Header */}
       <div className="flex flex-col gap-2">

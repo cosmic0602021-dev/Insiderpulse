@@ -29,7 +29,6 @@ const getMenuItems = (t: (key: string) => string) => [
     title: t('nav.livetrading'),
     url: "/trades",
     icon: TrendingUp,
-    badge: "12",
     key: 'live-trades'
   },
   {
@@ -42,7 +41,6 @@ const getMenuItems = (t: (key: string) => string) => [
     title: t('nav.alerts'),
     url: "/alerts",
     icon: Bell,
-    badge: "3",
     key: 'alerts'
   },
   {

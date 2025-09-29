@@ -145,11 +145,23 @@ class AutoScheduler {
 
   // Manual trigger methods for testing/admin use
   async manualOpenInsiderRun(limit: number = 100): Promise<number> {
+    // Block all data collection in development to prevent crashes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: Data collection disabled for stability');
+      return 0;
+    }
+
     console.log(`🔧 [MANUAL] Running OpenInsider collection (limit: ${limit})...`);
     return await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: Math.ceil(limit/100), perPage: 100 });
   }
 
   async manualMarketBeatRun(limit: number = 50): Promise<number> {
+    // Block all data collection in development to prevent crashes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: Data collection disabled for stability');
+      return 0;
+    }
+
     console.log(`🔧 [MANUAL] Running MarketBeat collection (limit: ${limit})...`);
     return await marketBeatCollector.collectLatestTrades(limit);
   }
@@ -158,9 +170,9 @@ class AutoScheduler {
 // Singleton instance
 export const autoScheduler = new AutoScheduler();
 
-// Auto-start the scheduler when the module is loaded
+// Auto-start the scheduler when the module is loaded ONLY in production
 // This ensures continuous data collection as soon as the server starts
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV === 'production') {
   // Start scheduler after a short delay to allow other services to initialize
   setTimeout(() => {
     autoScheduler.start();

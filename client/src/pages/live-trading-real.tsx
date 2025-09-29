@@ -24,7 +24,7 @@ interface DataQualityStatus {
   issues: string[];
 }
 
-export default function LiveTrading() {
+export default function LiveTradingReal() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);

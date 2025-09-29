@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
-  X, Mail, Bookmark, Brain, Check, Bell, Star, Lightbulb
+  X, Mail, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2
 } from 'lucide-react';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
 import logoDark from '@assets/inverted_with_green_1757888880166.png';
@@ -18,6 +18,41 @@ interface EnhancedTrade extends InsiderTrade {
   avgReturnAfterSimilar?: number;
   aiInsight?: string;
   impactPrediction?: string;
+  comprehensiveAnalysis?: {
+    executiveSummary: string;
+    actionableRecommendation: string;
+    priceTargets: {
+      conservative: number;
+      realistic: number;
+      optimistic: number;
+      timeHorizon: string;
+    };
+    riskAssessment: {
+      level: 'LOW' | 'MEDIUM' | 'HIGH';
+      factors: string[];
+      mitigation: string;
+    };
+    marketContext: {
+      sentiment: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+      reasoning: string;
+    };
+    catalysts: string[];
+    timeHorizon: string;
+    confidence: number;
+    newsAnalysis?: {
+      totalNews: number;
+      positiveCount: number;
+      negativeCount: number;
+      majorNews: Array<{
+        title: string;
+        summary: string;
+        sentiment: string;
+        published: Date;
+        relevanceScore: number;
+        source?: string;
+      }>;
+    };
+  };
 }
 
 interface TradeDetailModalProps {
@@ -306,84 +341,168 @@ export function TradeDetailModal({
                 <div className="flex-1">
                   <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
                   <div className="space-y-3 text-sm leading-relaxed text-blue-800 dark:text-blue-200" data-testid="text-ai-analysis">
-                    {(() => {
-                      const tradeValue = trade.totalValue;
-                      const tradeTypeUpper = (trade.tradeType || '').toUpperCase();
-                      const isSell = tradeTypeUpper === 'SELL' || tradeTypeUpper === 'SALE';
-                      const isBuy = tradeTypeUpper === 'BUY' || tradeTypeUpper === 'PURCHASE';
-                      
-                      // 회사별 맞춤 분석
-                      const getCompanySpecificAnalysis = () => {
-                        const companyName = trade.companyName.toLowerCase();
-                        
-                        if (companyName.includes('nextdecade')) {
-                          return isBuy ? 
-                            `NextDecade Corp의 내부자 매수는 특히 주목할 만합니다. 회사는 최근 Train 4에 대한 47억 달러 규모의 최종 투자 결정을 완료했으며, ConocoPhillips와 20년 LNG 공급 계약을 체결했습니다. 이러한 대규모 프로젝트 진행 상황을 고려할 때, 내부자의 ${(tradeValue/1000000).toFixed(1)}백만 달러 규모 매수는 회사의 LNG 사업 전망에 대한 강한 확신을 보여줍니다. TD Cowen이 최근 목표가를 $11로 상향 조정한 점도 이를 뒷받침합니다.` :
-                            `NextDecade Corp의 내부자 매도는 신중한 해석이 필요합니다. 회사가 Train 4-8 확장 프로젝트로 인한 높은 자본 요구사항과 부채비율 20.41을 기록하고 있어, 내부자들이 리스크 관리 차원에서 포지션을 조정했을 가능성이 있습니다. 다만 LNG 시장 전망은 여전히 긍정적이므로 단기적 조정으로 봐야 할 것 같습니다.`;
-                        }
-                        
-                        // 기본 분석 (다른 회사들)
-                        return isBuy ?
-                          `${trade.companyName}의 ${(tradeValue/1000000).toFixed(1)}백만 달러 규모 내부자 매수는 경영진의 회사 전망에 대한 강한 확신을 나타냅니다. 내부 정보에 접근 가능한 임원진의 대규모 매수는 일반적으로 향후 긍정적 재료나 실적 개선 기대를 의미합니다.` :
-                          `${trade.companyName}의 내부자 매도는 다각도로 분석해야 합니다. ${(tradeValue/1000000).toFixed(1)}백만 달러 규모의 매도가 개인적 자금 필요에 의한 것인지, 회사 전망에 대한 우려 때문인지 면밀한 관찰이 필요합니다.`;
-                      };
-                      
-                      const getTradePatternAnalysis = () => {
-                        if (tradeValue < 1000000) {
-                          return `${(tradeValue/1000).toFixed(0)}K 달러 규모의 소액 거래는 일반적인 포트폴리오 리밸런싱으로 해석되며, 주가에 대한 직접적 영향은 제한적일 것으로 예상됩니다.`;
-                        } else if (tradeValue < 5000000) {
-                          return `${(tradeValue/1000000).toFixed(1)}백만 달러 규모의 중간 규모 거래로, 시장의 주목을 받을 수 있는 수준입니다. 다른 내부자들의 후속 거래 패턴을 면밀히 관찰해야 합니다.`;
-                        } else {
-                          return `${(tradeValue/1000000).toFixed(1)}백만 달러의 대규모 거래로, 시장에 강한 시그널을 보내는 수준입니다. 이러한 규모의 거래는 일반적으로 회사의 중장기 전망에 대한 명확한 확신 또는 우려를 반영합니다.`;
-                        }
-                      };
-                      
-                      const getInvestmentRecommendation = () => {
-                        if (isBuy) {
-                          return tradeValue > 2000000 ?
-                            `투자 관점에서는 긍정적 신호로 해석됩니다. 다만 내부자 거래만을 근거로 투자 결정을 내리기보다는, 회사의 펀더멘털과 업계 동향을 종합적으로 검토한 후 투자 비중을 결정하시기 바랍니다.` :
-                            `소규모 매수이므로 즉시적인 투자 액션보다는 지켜보기 전략이 적절해 보입니다. 향후 추가적인 내부자 매수나 회사 발표를 주시하면서 투자 타이밍을 결정하시기 바랍니다.`;
-                        } else {
-                          return `투자자들은 신중한 접근이 필요합니다. 추가적인 내부자 매도가 이어지는지, 회사 측의 해명이나 실적 가이던스 변화가 있는지 면밀히 모니터링하시기 바랍니다. 기존 보유 포지션이 있다면 손절 라인을 설정하는 것이 바람직합니다.`;
-                        }
-                      };
-                      
-                      return (
-                        <>
-                          <p>{getCompanySpecificAnalysis()}</p>
-                          <p className="flex items-start gap-2">
-                            <BarChart3 className="h-4 w-4 mt-0.5 text-blue-600" />
-                            <span><strong>{t('tradeDetail.tradingPatternAnalysis')}:</strong> {getTradePatternAnalysis()}</span>
-                          </p>
-                          <p className="flex items-start gap-2">
-                            <Lightbulb className="h-4 w-4 mt-0.5 text-blue-600" />
-                            <span><strong>{t('tradeDetail.investmentStrategy')}:</strong> {getInvestmentRecommendation()}</span>
-                          </p>
-                          {trade.predictionAccuracy && (
-                            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-blue-200/50">
-                              <div className="text-center">
-                                <p className="text-xs text-blue-600/80 mb-1">AI 예측 정확도</p>
-                                <p className="text-lg font-bold text-green-600">{trade.predictionAccuracy}%</p>
+                    {trade.comprehensiveAnalysis ? (
+                      // 실제 AI 분석 결과 표시
+                      <>
+                        <div className="mb-4">
+                          <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📊 AI 종합 분석</h5>
+                          <p className="text-sm">{trade.comprehensiveAnalysis.executiveSummary}</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                            <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
+                              <Target className="h-3 w-3" />
+                              목표가격 분석
+                            </h6>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between">
+                                <span>보수적:</span>
+                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}</span>
                               </div>
-                              {trade.impactPrediction && (
-                                <div className="text-center">
-                                  <p className="text-xs text-blue-600/80 mb-1">예상 영향</p>
-                                  <p className={`text-lg font-bold ${trade.impactPrediction?.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                                    {trade.impactPrediction}
-                                  </p>
+                              <div className="flex justify-between">
+                                <span>현실적:</span>
+                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>낙관적:</span>
+                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                            <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
+                              <Calculator className="h-3 w-3" />
+                              리스크 평가
+                            </h6>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex items-center gap-2">
+                                <span>위험도:</span>
+                                <Badge className={`text-xs px-2 py-0.5 ${
+                                  trade.comprehensiveAnalysis.riskAssessment.level === 'LOW' ? 'bg-green-100 text-green-800' :
+                                  trade.comprehensiveAnalysis.riskAssessment.level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {trade.comprehensiveAnalysis.riskAssessment.level}
+                                </Badge>
+                              </div>
+                              <p className="text-xs">{trade.comprehensiveAnalysis.riskAssessment.mitigation}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-3 mb-4">
+                          <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
+                            <Lightbulb className="h-3 w-3" />
+                            투자 권고사항
+                          </h6>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">{trade.comprehensiveAnalysis.actionableRecommendation}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-blue-200/50">
+                          <div className="text-center">
+                            <p className="text-xs text-blue-600/80 mb-1">AI 신뢰도</p>
+                            <p className="text-lg font-bold text-green-600">{trade.comprehensiveAnalysis.confidence}%</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-blue-600/80 mb-1">분석 기간</p>
+                            <p className="text-sm font-medium">{trade.comprehensiveAnalysis.timeHorizon}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-blue-600/80 mb-1">시장 심리</p>
+                            <Badge className={`text-xs px-2 py-1 ${
+                              trade.comprehensiveAnalysis.marketContext.sentiment === 'BULLISH' ? 'bg-green-100 text-green-800' :
+                              trade.comprehensiveAnalysis.marketContext.sentiment === 'BEARISH' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {trade.comprehensiveAnalysis.marketContext.sentiment}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {trade.comprehensiveAnalysis.catalysts?.length > 0 && (
+                          <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50">
+                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">주요 촉매 요인</p>
+                            <ul className="text-xs list-disc list-inside space-y-1">
+                              {trade.comprehensiveAnalysis.catalysts.map((catalyst, index) => (
+                                <li key={index}>{catalyst}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* 뉴스 분석 섹션 */}
+                        {trade.comprehensiveAnalysis.newsAnalysis && (
+                          <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/20 dark:to-red-950/20 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                              <Newspaper className="h-4 w-4 text-blue-600" />
+                              📰 최신 뉴스 분석 ({trade.comprehensiveAnalysis.newsAnalysis.totalNews}건)
+                            </h6>
+
+                            {/* 뉴스 감정 요약 */}
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                              <div className="text-center p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                                <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                                  {trade.comprehensiveAnalysis.newsAnalysis.positiveCount}
                                 </div>
-                              )}
+                                <div className="text-xs text-green-600 dark:text-green-400">호재</div>
+                              </div>
+                              <div className="text-center p-2 bg-red-100 dark:bg-red-900/30 rounded">
+                                <div className="text-lg font-bold text-red-700 dark:text-red-300">
+                                  {trade.comprehensiveAnalysis.newsAnalysis.negativeCount}
+                                </div>
+                                <div className="text-xs text-red-600 dark:text-red-400">악재</div>
+                              </div>
+                              <div className="text-center p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                                  {trade.comprehensiveAnalysis.newsAnalysis.totalNews - trade.comprehensiveAnalysis.newsAnalysis.positiveCount - trade.comprehensiveAnalysis.newsAnalysis.negativeCount}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">중립</div>
+                              </div>
                             </div>
-                          )}
-                          {trade.aiInsight && (
-                            <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50">
-                              <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">{t('tradeDetail.additionalInsights')}</p>
-                              <p className="text-sm">{trade.aiInsight}</p>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+
+                            {/* 주요 뉴스 목록 */}
+                            {trade.comprehensiveAnalysis.newsAnalysis.majorNews.length > 0 && (
+                              <div className="space-y-3">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔥 주요 뉴스</p>
+                                {trade.comprehensiveAnalysis.newsAnalysis.majorNews.map((news, index) => (
+                                  <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <h7 className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
+                                        {news.title}
+                                      </h7>
+                                      <Badge className={`ml-2 text-xs px-2 py-1 ${
+                                        news.sentiment === 'positive' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                        news.sentiment === 'negative' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                      }`}>
+                                        {news.sentiment === 'positive' ? '📈 호재' :
+                                         news.sentiment === 'negative' ? '📉 악재' : '⚖️ 중립'}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                      {news.summary.slice(0, 120)}...
+                                    </p>
+                                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                      <span>관련도: {Math.round(news.relevanceScore * 100)}%</span>
+                                      <span>{news.source || 'Market Analysis'}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      // AI 분석이 없을 때 기본 메시지
+                      <div className="text-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
+                        <p className="text-sm text-blue-600">AI 분석이 진행 중입니다...</p>
+                        <p className="text-xs text-blue-500 mt-1">고급 AI 분석 결과를 준비하고 있습니다</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

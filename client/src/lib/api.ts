@@ -32,11 +32,15 @@ class ApiClient {
   }
 
   // Insider trades
+  getTrades = async (): Promise<InsiderTrade[]> => {
+    return this.getInsiderTrades();
+  }
+
   getInsiderTrades = async (
-    limit = 20, 
-    offset = 0, 
-    fromDate?: Date, 
-    toDate?: Date, 
+    limit = 20,
+    offset = 0,
+    fromDate?: Date,
+    toDate?: Date,
     sortBy?: string
   ): Promise<InsiderTrade[]> => {
     const params = new URLSearchParams({
@@ -78,7 +82,13 @@ export const queryKeys = {
   stats: ['stats'] as const,
   trades: {
     all: ['trades'] as const,
-    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) => 
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) =>
+      ['trades', 'list', params] as const,
+    detail: (id: string) => ['trades', 'detail', id] as const,
+  },
+  tradesList: {
+    all: ['trades', 'list'] as const,
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
   },

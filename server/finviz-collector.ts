@@ -385,19 +385,19 @@ export class FinvizCollector {
     try {
       // Handle various date formats from Finviz
       let normalized = dateStr;
-      
+
       // Format: "Sep 12 '25" -> "Sep 12 2025"
       if (normalized.includes("'")) {
         normalized = normalized.replace(/'(\d{2})/, '20$1');
       }
-      
+
       // If just "Sep 12", add current year
       if (/^[A-Z][a-z]{2}\s+\d{1,2}$/.test(normalized)) {
         normalized += ` ${new Date().getFullYear()}`;
       }
-      
+
       const parsed = new Date(normalized);
-      
+
       // If parsing fails, try alternative approaches
       if (isNaN(parsed.getTime())) {
         // Try manual month parsing
@@ -408,20 +408,27 @@ export class FinvizCollector {
             'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
             'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
           };
-          
+
           if (monthMap[monthStr] !== undefined) {
-            return new Date(parseInt(year), monthMap[monthStr], parseInt(day));
+            // Set to market close time (4:00 PM EST = 21:00 UTC)
+            const date = new Date(Date.UTC(parseInt(year), monthMap[monthStr], parseInt(day), 21, 0, 0));
+            return date;
           }
         }
-        
-        console.warn(`⚠️ Could not parse date: ${dateStr}, using current date`);
-        return new Date();
+
+        console.warn(`⚠️ Could not parse date: ${dateStr}, using current date with market time`);
+        const now = new Date();
+        return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 21, 0, 0));
       }
-      
-      return parsed;
+
+      // Set to market close time (4:00 PM EST = 21:00 UTC) instead of midnight
+      const marketTime = new Date(parsed);
+      marketTime.setUTCHours(21, 0, 0, 0); // 4:00 PM EST
+      return marketTime;
     } catch (error) {
       console.warn(`⚠️ Date parsing error for "${dateStr}":`, error);
-      return new Date();
+      const now = new Date();
+      return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 21, 0, 0));
     }
   }
 

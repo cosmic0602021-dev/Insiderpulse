@@ -12,6 +12,7 @@ const db = drizzle(process.env.DATABASE_URL!);
 export interface IStorage {
   // User management
   getUser(id: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
@@ -79,6 +80,10 @@ export class MemStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -422,5 +427,6 @@ export class MemStorage implements IStorage {
 
 import { DatabaseStorage } from "./db-storage";
 
-// Temporarily use memory storage due to disabled database endpoint
+// Use database storage for real insider trading data
+// Temporarily using MemStorage due to Neon database endpoint being disabled
 export const storage = new MemStorage(); // process.env.NODE_ENV === 'test' ? new MemStorage() : new DatabaseStorage();
