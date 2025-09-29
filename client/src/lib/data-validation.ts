@@ -115,12 +115,28 @@ export class DataValidator {
   }
 
   /**
-   * SEC 번호 형식 검증
+   * SEC 번호 형식 검증 - 실제 데이터 소스들의 다양한 형식 지원
+   * MarketBeat, OpenInsider 등 실제 거래 데이터 플랫폼들의 형식 포함
    */
   private validateSecAccessionNumber(accessionNumber: string): boolean {
-    // SEC 번호 형식: 0000000000-00-000000 (10-2-6 digits)
+    // 1. 전통적인 SEC 번호 형식: 0000000000-00-000000 (10-2-6 digits)
     const secPattern = /^\d{10}-\d{2}-\d{6}$/;
-    return secPattern.test(accessionNumber);
+    
+    // 2. MarketBeat 실제 거래 데이터 형식: marketbeat-TICKER-hash
+    const marketBeatPattern = /^marketbeat-[A-Z]+(-[a-f0-9]+)?$/i;
+    
+    // 3. OpenInsider 실제 거래 데이터 형식: openinsider-TICKER-hash 또는 유사 패턴
+    const openInsiderPattern = /^openinsider-[A-Z]+(-[a-f0-9]+)?$/i;
+    
+    // 4. 기타 실제 거래 플랫폼 형식들
+    const realDataPatterns = [
+      secPattern,
+      marketBeatPattern, 
+      openInsiderPattern
+    ];
+    
+    // 어떤 실제 데이터 패턴이라도 맞으면 유효한 것으로 간주
+    return realDataPatterns.some(pattern => pattern.test(accessionNumber));
   }
 
   /**
