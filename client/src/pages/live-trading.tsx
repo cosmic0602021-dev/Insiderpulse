@@ -26,7 +26,7 @@ interface DataQualityStatus {
 }
 
 export default function LiveTrading() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
@@ -122,7 +122,8 @@ export default function LiveTrading() {
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('ko-KR', {
+    const locale = language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US';
+    return new Date(date).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -149,7 +150,7 @@ export default function LiveTrading() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>실제 내부자 거래 데이터 로딩 중...</p>
+          <p>{t('liveTrading.loadingRealData')}</p>
         </div>
       </div>
     );
@@ -161,7 +162,7 @@ export default function LiveTrading() {
         <Alert className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4 text-destructive" />
           <AlertDescription className="text-destructive">
-            데이터 로딩 실패: {error.message}
+            {t('liveTrading.dataLoadingFailed')}: {error.message}
           </AlertDescription>
         </Alert>
       </div>
@@ -181,7 +182,7 @@ export default function LiveTrading() {
               <WifiOff className="h-4 w-4 text-red-600" />
             )}
             <AlertDescription className={isConnected ? 'text-green-700' : 'text-red-700'}>
-              {isConnected ? '실시간 연결 활성' : '연결 끊김'}
+              {isConnected ? t('liveTrading.connectionActive') : t('connection.connectionLost')}
             </AlertDescription>
           </div>
         </Alert>
@@ -195,7 +196,7 @@ export default function LiveTrading() {
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
             )}
             <AlertDescription className={dataQuality?.isValid ? 'text-blue-700' : 'text-yellow-700'}>
-              검증된 거래: {dataQuality?.validTradeCount || 0}개
+              {t('liveTrading.verifiedTrades')}: {dataQuality?.validTradeCount || 0}{t('liveTrading.count')}
             </AlertDescription>
           </div>
         </Alert>
@@ -205,7 +206,7 @@ export default function LiveTrading() {
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-green-600" />
             <AlertDescription className={dataQuality?.isFresh ? 'text-green-700' : 'text-orange-700'}>
-              {dataQuality?.isFresh ? '최신 데이터' : '데이터 업데이트 필요'}
+              {dataQuality?.isFresh ? t('liveTrading.freshData') : t('liveTrading.dataUpdateNeeded')}
             </AlertDescription>
           </div>
         </Alert>
@@ -216,7 +217,7 @@ export default function LiveTrading() {
         <Alert className="border-yellow-500/50 bg-yellow-50">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-700">
-            <div className="font-semibold mb-1">데이터 품질 주의사항:</div>
+            <div className="font-semibold mb-1">{t('liveTrading.qualityWarnings')}</div>
             <ul className="list-disc list-inside text-sm space-y-1">
               {dataQuality.issues.map((issue, index) => (
                 <li key={index}>{issue}</li>
@@ -229,19 +230,19 @@ export default function LiveTrading() {
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">실시간 내부자 거래</h1>
+          <h1 className="text-3xl font-bold">{t('page.livetrading.title')}</h1>
           <p className="text-muted-foreground">
-            검증된 실제 데이터만 표시 • 마지막 검증: {lastValidationTime?.toLocaleTimeString('ko-KR')}
+            {t('page.livetrading.subtitle')} • {t('liveTrading.lastValidation')}: {lastValidationTime?.toLocaleTimeString(language === 'ko' ? 'ko-KR' : 'en-US')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => refetch()} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
-            새로고침
+            {t('general.refresh')}
           </Button>
           <Badge variant="outline" className="flex items-center gap-1">
             <Database className="h-3 w-3" />
-            실제 데이터
+            {t('liveTrading.realData')}
           </Badge>
         </div>
       </div>
@@ -251,7 +252,7 @@ export default function LiveTrading() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">오늘 거래</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('liveTrading.todayTrades')}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -261,7 +262,7 @@ export default function LiveTrading() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 거래량</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('liveTrading.totalVolume')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -271,7 +272,7 @@ export default function LiveTrading() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">검증된 거래</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('liveTrading.verifiedTrades')}</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -281,7 +282,7 @@ export default function LiveTrading() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">활성 내부자</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('liveTrading.activeInsiders')}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -298,16 +299,16 @@ export default function LiveTrading() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            검증된 내부자 거래 목록
+            {t('liveTrading.verifiedTradesList')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {validatedData.trades.length === 0 ? (
             <div className="text-center py-8">
               <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">검증된 거래 데이터가 없습니다.</p>
+              <p className="text-muted-foreground">{t('liveTrading.noValidatedTrades')}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                데이터 수집기가 실행 중이거나 새로운 거래를 기다리고 있습니다.
+                {t('liveTrading.collectorRunning')}
               </p>
             </div>
           ) : (
@@ -340,7 +341,7 @@ export default function LiveTrading() {
                         {formatCurrency(Math.abs(trade.totalValue))}
                       </span>
                       <Badge variant="secondary" className="text-xs">
-                        {trade.shares?.toLocaleString()} 주
+                        {trade.shares?.toLocaleString()} {t('liveTrading.shares')}
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
