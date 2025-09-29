@@ -1,4 +1,4 @@
-import { BarChart3, Home, TrendingUp, AlertCircle, Settings, Search, Bell, Star } from "lucide-react";
+import { BarChart3, Home, TrendingUp, AlertCircle, Settings, Search, Bell, Star, Crown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -151,11 +151,23 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-3">
+        <Button 
+          className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
+          asChild
+          data-testid="button-upgrade-premium"
+        >
+          <Link href="/premium-checkout" onClick={() => console.log('Premium checkout clicked')}>
+            <Crown className="h-4 w-4 mr-2" />
+            Upgrade to Premium
+          </Link>
+        </Button>
+        
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="w-2 h-2 bg-chart-2 rounded-full animate-pulse"></div>
           <span>Live data feed active</span>
         </div>
+        
         <Button 
           variant="ghost" 
           size="sm" 

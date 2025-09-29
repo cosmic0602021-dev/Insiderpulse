@@ -8,6 +8,7 @@ import { z } from "zod";
 import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 import dataCollectionRouter from "./data-collection-api";
+import Stripe from "stripe";
 // Disable heavy data imports in development
 if (process.env.NODE_ENV === 'production') {
   var { massiveDataImporter } = require('./massive-data-import');
@@ -24,10 +25,144 @@ import { newsCorrelationService } from "./news-correlation-service";
 import { insiderCredibilityService } from "./insider-credibility-service";
 // import { dataIntegrityService } from "./data-integrity-service"; // Temporarily disabled
 
+// Initialize Stripe with secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
+
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // 💳 STRIPE PAYMENT ENDPOINTS FOR REAL CARD PROCESSING
+  
+  // Create payment intent for one-time premium features
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount || amount < 1) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          service: 'InsiderTrack Pro Premium Features'
+        }
+      });
+      
+      console.log(`💳 Created payment intent for $${amount}: ${paymentIntent.id}`);
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error('❌ Stripe payment intent error:', error);
+      res.status(500).json({ 
+        error: "Error creating payment intent: " + error.message 
+      });
+    }
+  });
+
+  // Create subscription for premium insider trading access
+  app.post("/api/create-subscription", async (req, res) => {
+    try {
+      const { priceId, customerEmail, customerName } = req.body;
+      
+      if (!priceId || !customerEmail) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: priceId and customerEmail' 
+        });
+      }
+
+      // Create or find customer
+      const customer = await stripe.customers.create({
+        email: customerEmail,
+        name: customerName || 'InsiderTrack Pro User',
+        metadata: {
+          service: 'InsiderTrack Pro Subscription'
+        }
+      });
+
+      // Create subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: priceId }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          service: 'InsiderTrack Pro Premium Subscription'
+        }
+      });
+
+      console.log(`💳 Created subscription for ${customerEmail}: ${subscription.id}`);
+      
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        customerId: customer.id
+      });
+    } catch (error: any) {
+      console.error('❌ Stripe subscription error:', error);
+      res.status(500).json({ 
+        error: "Error creating subscription: " + error.message 
+      });
+    }
+  });
+
+  // Get subscription status
+  app.get("/api/subscription/:subscriptionId", async (req, res) => {
+    try {
+      const { subscriptionId } = req.params;
+      
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      res.json({
+        id: subscription.id,
+        status: subscription.status,
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+    } catch (error: any) {
+      console.error('❌ Stripe subscription retrieval error:', error);
+      res.status(500).json({ 
+        error: "Error retrieving subscription: " + error.message 
+      });
+    }
+  });
+
+  // Cancel subscription
+  app.post("/api/cancel-subscription", async (req, res) => {
+    try {
+      const { subscriptionId } = req.body;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ error: 'Missing subscriptionId' });
+      }
+
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true
+      });
+
+      console.log(`💳 Cancelled subscription: ${subscriptionId}`);
+      
+      res.json({
+        id: subscription.id,
+        status: subscription.status,
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+    } catch (error: any) {
+      console.error('❌ Stripe subscription cancellation error:', error);
+      res.status(500).json({ 
+        error: "Error cancelling subscription: " + error.message 
+      });
+    }
+  });
+
+  // 📊 EXISTING INSIDER TRADING DATA ENDPOINTS
   // Get trading statistics (verified trades only by default)
   app.get('/api/stats', async (req, res) => {
     try {

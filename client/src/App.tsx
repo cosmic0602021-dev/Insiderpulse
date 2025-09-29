@@ -18,6 +18,8 @@ import LiveTrading from "@/pages/live-trading";
 import Ranking from "@/pages/ranking";
 import PasswordDemo from "@/pages/password-demo";
 import EnhancedInsiderTradingDashboard from "@/components/EnhancedInsiderTradingDashboard";
+import PremiumCheckout from "@/pages/premium-checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/ranking" component={Ranking} />
       <Route path="/password-demo" component={PasswordDemo} />
       <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
+      <Route path="/premium-checkout" component={PremiumCheckout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
