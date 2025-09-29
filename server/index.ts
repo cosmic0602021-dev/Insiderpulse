@@ -96,9 +96,7 @@ app.use((req, res, next) => {
             console.log(`✅ OpenInsider backup collection completed: ${processedCount} trades processed`);
           } catch (backupError) {
             console.error('❌ All data collectors failed:', backupError);
-
-            // 최후 수단: 검증된 샘플 데이터 생성
-            await generateValidatedSampleData();
+            console.error('❌ No data collectors available - app requires real SEC data');
           }
         }
 
@@ -107,11 +105,9 @@ app.use((req, res, next) => {
         const { storage } = await import('./storage');
         const existingTrades = await storage.getInsiderTrades(5, 0);
         if (existingTrades.length === 0) {
-          console.log('🚨 Database is empty, generating immediate data...');
-
-          // Development: Only use simple sample data - no complex data collection
-          await generateValidatedSampleData();
-          console.log(`✅ Generated sample data for development`);
+          console.log('🚨 Database is empty, need real data collection...');
+          console.error('❌ No real data available - please check data collectors');
+          console.log(`⚠️ App requires real SEC data - no sample data generated`);
         } else {
           console.log(`✅ Found ${existingTrades.length} existing trades in database`);
         }
@@ -120,12 +116,11 @@ app.use((req, res, next) => {
         console.log('🚨 Generating sample data as fallback...');
 
         try {
-          // Development: Only use simple sample data - no complex data collection
-          await generateValidatedSampleData();
-          console.log(`✅ Fallback sample data generated for development`);
+          console.error('❌ No real data available - please check data collectors');
+          console.log(`⚠️ App requires real SEC data - no sample data generated`);
         } catch (immediateError) {
-          console.error('❌ Sample data generation failed:', immediateError);
-          await generateValidatedSampleData();
+          console.error('❌ Database initialization failed:', immediateError);
+          console.error('❌ App requires real SEC data');
         }
       }
     } catch (error) {
@@ -181,27 +176,40 @@ app.use((req, res, next) => {
     }, 30 * 60 * 1000); // 30분마다 실행
   }
 
-  // Development mode: NO monitoring, NO data collection, NO background services
+  // Development mode: Enable real data collection but no monitoring services
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 Development mode: Clean and simple startup');
-    // Only ensure we have basic sample data for the UI
+    console.log('🔧 Development mode: Real data collection enabled');
+    
+    // Force real data collection in development
     setTimeout(async () => {
       try {
-        const { storage } = await import('./storage');
-        const existingTrades = await storage.getInsiderTrades(5, 0);
-        if (existingTrades.length === 0) {
-          console.log('📊 Loading minimal sample data for development...');
-          await generateValidatedSampleData();
-        } else {
-          console.log(`✅ Found ${existingTrades.length} existing trades - no background services will run`);
-        }
-      } catch (error) {
-        console.log('📊 Generating minimal sample data for development...');
-        await generateValidatedSampleData();
-      }
-    }, 1000);
+        console.log('🚀 Starting MarketBeat data collection...');
+        const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
+        setBroadcaster((type: string, data: any) => {
+          console.log(`📡 MarketBeat Broadcast: ${type}`);
+        });
 
-    console.log('✅ Development mode: All background services disabled for stability');
+        const processedCount = await marketBeatCollector.collectLatestTrades(100);
+        console.log(`✅ MarketBeat collection completed: ${processedCount} trades processed`);
+
+      } catch (error) {
+        console.warn('⚠️ MarketBeat collector failed, trying OpenInsider backup:', error);
+        
+        try {
+          const { advancedOpenInsiderCollector, setBroadcaster } = await import('./openinsider-collector-advanced');
+          setBroadcaster((type: string, data: any) => {
+            console.log(`📡 OpenInsider Broadcast: ${type}`);
+          });
+
+          const processedCount = await advancedOpenInsiderCollector.collectLatestTrades(50);
+          console.log(`✅ OpenInsider backup collection completed: ${processedCount} trades processed`);
+        } catch (backupError) {
+          console.error('❌ All data collectors failed:', backupError);
+        }
+      }
+    }, 2000);
+
+    console.log('✅ Development mode: Real data collection enabled, monitoring disabled');
   } else {
     // Production mode: Full monitoring
     console.log('🛡️ Starting crash prevention system...');
@@ -277,37 +285,19 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   let port = parseInt(process.env.PORT || '5000', 10);
 
-  // Try multiple ports if the preferred one is busy
-  const tryPort = (attemptPort: number): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const serverInstance = server.listen({
-        port: attemptPort,
-        host: "0.0.0.0",
-        reusePort: true,
-      }, () => {
-        log(`serving on port ${attemptPort}`);
-
-        // Start stock price service after server is running
-        setTimeout(() => {
-          stockPriceService.startPeriodicUpdates();
-        }, 5000); // Wait 5 seconds for everything to initialize
-
-        resolve();
-      });
-
-      serverInstance.on('error', (err: any) => {
-        if (err.code === 'EADDRINUSE') {
-          log(`⚠️ Port ${attemptPort} is busy, trying ${attemptPort + 1}...`);
-          tryPort(attemptPort + 1).then(resolve).catch(reject);
-        } else {
-          reject(err);
-        }
-      });
-    });
-  };
-
+  // Start server with proper error handling
   try {
-    await tryPort(port);
+    server.listen({
+      port: port,
+      host: "0.0.0.0"
+    }, () => {
+      log(`serving on port ${port}`);
+
+      // Start stock price service after server is running
+      setTimeout(() => {
+        stockPriceService.startPeriodicUpdates();
+      }, 5000); // Wait 5 seconds for everything to initialize
+    });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -361,105 +351,4 @@ app.use((req, res, next) => {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 })();
 
-/**
- * 최후 수단: 검증된 샘플 데이터 생성
- * 실제 SEC 패턴을 따르는 유효한 데이터만 생성
- */
-async function generateValidatedSampleData(): Promise<void> {
-  try {
-    console.log('🚨 Generating validated sample data as last resort...');
-
-    const { storage } = await import('./storage');
-    const { dataIntegrityService } = await import('./data-integrity-service');
-
-    const companies = [
-      { name: 'Apple Inc', ticker: 'AAPL', cik: '0000320193' },
-      { name: 'Microsoft Corporation', ticker: 'MSFT', cik: '0000789019' },
-      { name: 'Tesla Inc', ticker: 'TSLA', cik: '0001318605' },
-      { name: 'Amazon.com Inc', ticker: 'AMZN', cik: '0001018724' },
-      { name: 'Alphabet Inc', ticker: 'GOOGL', cik: '0001652044' },
-      { name: 'Meta Platforms Inc', ticker: 'META', cik: '0001326801' },
-      { name: 'NVIDIA Corporation', ticker: 'NVDA', cik: '0001045810' },
-      { name: 'Berkshire Hathaway Inc', ticker: 'BRK.A', cik: '0001067983' },
-      { name: 'Johnson & Johnson', ticker: 'JNJ', cik: '0000200406' },
-      { name: 'JPMorgan Chase & Co', ticker: 'JPM', cik: '0000019617' }
-    ];
-
-    let generated = 0;
-
-    const executives = [
-      { name: 'Timothy D. Cook', title: 'Chief Executive Officer' },
-      { name: 'Luca Maestri', title: 'Chief Financial Officer' },
-      { name: 'Katherine L. Adams', title: 'Senior Vice President, General Counsel' },
-      { name: 'Satya Nadella', title: 'Chief Executive Officer' },
-      { name: 'Amy Hood', title: 'Chief Financial Officer' },
-      { name: 'Elon Musk', title: 'Chief Executive Officer' },
-      { name: 'Zachary Kirkhorn', title: 'Chief Financial Officer' },
-      { name: 'Andrew Jassy', title: 'Chief Executive Officer' },
-      { name: 'Brian Olsavsky', title: 'Chief Financial Officer' },
-      { name: 'Sundar Pichai', title: 'Chief Executive Officer' },
-      { name: 'Ruth Porat', title: 'Chief Financial Officer' },
-      { name: 'Mark Zuckerberg', title: 'Chief Executive Officer' },
-      { name: 'David Wehner', title: 'Chief Financial Officer' },
-      { name: 'Jensen Huang', title: 'Chief Executive Officer' },
-      { name: 'Colette Kress', title: 'Chief Financial Officer' }
-    ];
-
-    // 총 20개의 거래 생성
-    for (let i = 0; i < 20; i++) {
-      const company = companies[Math.floor(Math.random() * companies.length)];
-      const executive = executives[Math.floor(Math.random() * executives.length)];
-
-      const now = new Date();
-      const daysAgo = Math.floor(Math.random() * 5) + 1; // 1-5일 전
-      const tradeDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-      const filedDate = new Date(tradeDate.getTime() + Math.random() * 2 * 24 * 60 * 60 * 1000); // 거래 후 1-2일
-
-      const shares = Math.floor(Math.random() * 100000) + 5000; // 5K-105K shares
-      const pricePerShare = Math.floor(Math.random() * 500) + 100; // $100-600
-      const isAcquisition = Math.random() > 0.4; // 60% 매수, 40% 매도
-
-      const totalValue = shares * pricePerShare;
-
-      const sampleTrade = {
-        accessionNumber: `${company.cik.slice(-4)}-24-${String(Date.now() + i).slice(-6)}`,
-        companyName: company.name,
-        ticker: company.ticker,
-        traderName: executive.name,
-        traderTitle: executive.title,
-        tradeType: isAcquisition ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
-        shares,
-        pricePerShare,
-        totalValue,
-        tradeDate,
-        filedDate,
-        sharesAfter: shares + Math.floor(Math.random() * 500000),
-        ownershipPercentage: Math.random() * 10, // 0-10%
-        significanceScore: Math.floor(Math.random() * 40) + 60, // 60-100
-        signalType: isAcquisition ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
-        isVerified: true,
-        verificationStatus: 'VERIFIED' as const,
-        verificationNotes: 'Live insider trade - SEC Form 4 verified',
-        secFilingUrl: `https://www.sec.gov/Archives/edgar/data/${company.cik}/form4-${Date.now()}.xml`,
-        marketPrice: pricePerShare,
-        createdAt: new Date()
-      };
-
-      // 데이터 무결성 검증
-      const integrityCheck = await dataIntegrityService.validateNewTrade(sampleTrade);
-      if (integrityCheck.shouldSave) {
-        await storage.createInsiderTrade(integrityCheck.validatedTrade!);
-        generated++;
-
-        const emoji = isAcquisition ? '🟢' : '🔴';
-        const shortName = executive.name.split(' ')[0] + ' ' + executive.name.split(' ')[executive.name.split(' ').length - 1];
-        console.log(`${emoji} ${company.ticker} - ${shortName} (${sampleTrade.tradeType}) - $${totalValue.toLocaleString()}`);
-      }
-    }
-
-    console.log(`✅ Generated ${generated} validated sample trades`);
-
-  } catch (error) {
-    console.error('❌ Failed to generate sample data:', error);
-  }
-}
+// REMOVED: No fake data generation - only real SEC data allowed
