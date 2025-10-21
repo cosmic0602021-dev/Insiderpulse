@@ -14,6 +14,8 @@ import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
 import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { formatDistanceToNow } from 'date-fns';
+import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import type { InsiderTrade } from '@shared/schema';
 
 interface DataQualityStatus {
@@ -144,6 +146,14 @@ export default function LiveTrading() {
     });
 
     return `${filedDateStr} (UTC)`;
+  };
+
+  const formatTimeAgo = (date: string | Date) => {
+    const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
+    return formatDistanceToNow(new Date(date), { 
+      addSuffix: true, 
+      locale: dateLocale 
+    });
   };
 
   const getTradeTypeColor = (tradeType: string) => {
@@ -382,8 +392,13 @@ export default function LiveTrading() {
                       <div className={`text-2xl font-bold mb-1 ${getTradeTypeColor(trade.tradeType)}`}>
                         {formatCurrency(Math.abs(trade.totalValue))}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDateTime(trade.filedDate)}
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="text-sm font-semibold text-primary">
+                          {formatTimeAgo(trade.filedDate)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(trade.filedDate)}
+                        </div>
                       </div>
                       {/* SEC 링크 표시 */}
                       {trade.secFilingUrl && (
