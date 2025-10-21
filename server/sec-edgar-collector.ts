@@ -175,9 +175,10 @@ class SECEdgarCollector {
 
     } catch (error) {
       console.error('Error fetching Form 4 filings from SEC:', error);
+      console.error('⚠️ NO FAKE DATA will be generated - returning empty array');
 
-      // 백업: 가상의 최신 데이터 생성 (실제 구현에서는 제거)
-      return this.generateSampleSECFilings();
+      // 가짜 데이터 생성 완전 제거 - 빈 배열 반환
+      return [];
     }
   }
 
@@ -239,25 +240,16 @@ class SECEdgarCollector {
 
   /**
    * Form 4 파일링 파싱
+   * 가짜 데이터 생성 완전 제거 - 실제 XML 파싱만 수행
    */
   private async parseForm4Filing(filing: SECFiling): Promise<Form4Data | null> {
     try {
-      // 실제 구현에서는 XML 파싱 필요
-      // 여기서는 샘플 데이터 생성
-      const sampleTransactions = this.generateSampleTransactions(filing);
+      console.error('⚠️ Real XML parsing not implemented yet - skipping filing');
+      console.error('🚫 NO FAKE DATA will be generated');
 
-      return {
-        accessionNumber: filing.accession_number,
-        companyName: filing.company_name,
-        ticker: filing.ticker,
-        cik: filing.cik,
-        filingDate: filing.filing_date,
-        reportOwner: {
-          name: this.generateRealisticExecutiveName(),
-          title: this.generateRealisticTitle()
-        },
-        transactions: sampleTransactions
-      };
+      // 실제 XML 파싱이 구현될 때까지 null 반환
+      // 가짜 데이터 생성 완전 제거
+      return null;
 
     } catch (error) {
       console.error(`Error parsing Form 4 filing ${filing.accession_number}:`, error);

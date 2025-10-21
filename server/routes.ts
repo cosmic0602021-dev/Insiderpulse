@@ -23,7 +23,7 @@ import { emailNotificationService } from "./email-notification-service";
 import { timingAnalysisService } from "./timing-analysis-service";
 import { newsCorrelationService } from "./news-correlation-service";
 import { insiderCredibilityService } from "./insider-credibility-service";
-// import { dataIntegrityService } from "./data-integrity-service"; // Temporarily disabled
+import { dataIntegrityService } from "./data-integrity-service";
 
 // Initialize Stripe with secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -2202,7 +2202,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  console.log('✅ API routes registered with WebSocket support and enhanced data collection');
+  // 🔔 PUSH NOTIFICATION ENDPOINTS
+
+  // Store push subscriptions in memory (in production, use a database)
+  const pushSubscriptions = new Map<string, any>();
+
+  // Subscribe to push notifications
+  app.post("/api/push/subscribe", async (req, res) => {
+    try {
+      const subscription = req.body;
+
+      if (!subscription || !subscription.endpoint) {
+        return res.status(400).json({ error: 'Invalid subscription' });
+      }
+
+      // Store subscription (use endpoint as unique key)
+      const subscriptionKey = subscription.endpoint;
+      pushSubscriptions.set(subscriptionKey, {
+        subscription,
+        subscribedAt: new Date(),
+      });
+
+      console.log('✅ Push subscription registered:', subscriptionKey.substring(0, 50) + '...');
+
+      res.json({
+        success: true,
+        message: 'Successfully subscribed to push notifications',
+      });
+    } catch (error) {
+      console.error('❌ Push subscription failed:', error);
+      res.status(500).json({
+        error: 'Failed to subscribe to push notifications',
+      });
+    }
+  });
+
+  // Unsubscribe from push notifications
+  app.post("/api/push/unsubscribe", async (req, res) => {
+    try {
+      const subscription = req.body;
+
+      if (!subscription || !subscription.endpoint) {
+        return res.status(400).json({ error: 'Invalid subscription' });
+      }
+
+      const subscriptionKey = subscription.endpoint;
+      pushSubscriptions.delete(subscriptionKey);
+
+      console.log('✅ Push subscription removed:', subscriptionKey.substring(0, 50) + '...');
+
+      res.json({
+        success: true,
+        message: 'Successfully unsubscribed from push notifications',
+      });
+    } catch (error) {
+      console.error('❌ Push unsubscription failed:', error);
+      res.status(500).json({
+        error: 'Failed to unsubscribe from push notifications',
+      });
+    }
+  });
+
+  // Get subscription count (for admin/debugging)
+  app.get("/api/push/subscriptions/count", async (req, res) => {
+    res.json({
+      count: pushSubscriptions.size,
+      subscriptions: Array.from(pushSubscriptions.keys()).map(key => ({
+        endpoint: key.substring(0, 50) + '...',
+        subscribedAt: pushSubscriptions.get(key)?.subscribedAt,
+      })),
+    });
+  });
+
+  // Test push notification endpoint
+  app.post("/api/push/test", async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+
+      if (!endpoint) {
+        return res.status(400).json({ error: 'Endpoint required' });
+      }
+
+      const subscriptionData = pushSubscriptions.get(endpoint);
+
+      if (!subscriptionData) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+
+      // Note: Actual push notification sending would require web-push library
+      // and VAPID keys. For now, we just confirm the subscription exists.
+
+      res.json({
+        success: true,
+        message: 'Test notification would be sent',
+        subscription: {
+          endpoint: endpoint.substring(0, 50) + '...',
+          subscribedAt: subscriptionData.subscribedAt,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Test notification failed:', error);
+      res.status(500).json({
+        error: 'Failed to send test notification',
+      });
+    }
+  });
+
+  console.log('✅ API routes registered with WebSocket support, enhanced data collection, and push notifications');
   return httpServer;
 }
 

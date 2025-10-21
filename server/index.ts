@@ -63,217 +63,157 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // Reduced data collection in development for stability
-  if (process.env.NODE_ENV === 'production') {
-    console.log('🔄 Starting data collection system...');
-    setTimeout(async () => {
+  // 🚀 REAL-TIME DATA COLLECTION - NO FAKE DATA EVER
+  console.log('🚀 Production mode: Real-time data collection ACTIVE');
+  console.log('⚠️  ZERO TOLERANCE for fake/simulation data');
+
+  setTimeout(async () => {
+    try {
+      const { storage } = await import('./storage');
+      const existingTrades = await storage.getInsiderTrades(5, 0);
+
+      console.log(`📊 Current database: ${existingTrades.length} trades`);
+
+      // ALWAYS collect fresh real data on startup
+      console.log('🔄 Starting real-time data collection...');
+
+      // Primary: SEC EDGAR (most authoritative)
       try {
-        console.log('🚀 Starting initial data collection...');
+        console.log('🚀 [1/3] SEC EDGAR data collection...');
+        const { secEdgarCollector, setBroadcaster } = await import('./sec-edgar-collector');
+        setBroadcaster((type: string, data: any) => {
+          console.log(`  📡 SEC: ${type}`);
+        });
 
-        // Import and start data collectors
-        try {
-          console.log('🚀 Starting SEC EDGAR data collection...');
-          const { secEdgarCollector, setBroadcaster } = await import('./sec-edgar-collector');
-          setBroadcaster((type: string, data: any) => {
-            console.log(`📡 SEC Broadcast: ${type}`);
-          });
-
-          // Collect latest SEC Form 4 filings
-          const processedCount = await secEdgarCollector.collectLatestForm4Filings(25);
-          console.log(`✅ SEC EDGAR data collection completed: ${processedCount} trades processed`);
-
-        } catch (secError) {
-          console.warn('⚠️ SEC collector failed, trying OpenInsider backup:', secError);
-
-          // Fallback to OpenInsider
-          try {
-            const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector');
-            setBroadcaster((type: string, data: any) => {
-              console.log(`📡 OpenInsider Broadcast: ${type}`);
-            });
-
-            const processedCount = await openInsiderCollector.collectLatestTrades(50);
-            console.log(`✅ OpenInsider backup collection completed: ${processedCount} trades processed`);
-          } catch (backupError) {
-            console.error('❌ All data collectors failed:', backupError);
-
-            // 최후 수단: 검증된 샘플 데이터 생성
-            await generateValidatedSampleData();
-          }
-        }
-
-      // 🚨 즉시 실제 데이터 수집 (빈 데이터베이스 해결 - 가짜 데이터 절대 사용 금지)
-      try {
-        const { storage } = await import('./storage');
-        const existingTrades = await storage.getInsiderTrades(5, 0);
-        if (existingTrades.length === 0) {
-          console.log('🚨 Database is empty, starting REAL data collection...');
-
-          // 실제 MarketBeat 데이터 수집 (개발 모드에서도 진짜 데이터만 사용)
-          try {
-            console.log('🚀 Starting MarketBeat data collection...');
-            const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
-            setBroadcaster((type: string, data: any) => {
-              console.log(`📡 MarketBeat Broadcast: ${type}`);
-            });
-
-            const processedCount = await marketBeatCollector.collectLatestTrades(50);
-            console.log(`✅ MarketBeat collection completed: ${processedCount} trades processed`);
-          } catch (marketBeatError) {
-            console.warn('⚠️ MarketBeat collector failed, trying OpenInsider:', marketBeatError);
-            
-            try {
-              const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector-advanced');
-              setBroadcaster((type: string, data: any) => {
-                console.log(`📡 OpenInsider Broadcast: ${type}`);
-              });
-
-              const processedCount = await openInsiderCollector.collectLatestTrades(50);
-              console.log(`✅ OpenInsider backup collection completed: ${processedCount} trades processed`);
-            } catch (backupError) {
-              console.error('❌ All real data collectors failed - NO FAKE DATA WILL BE GENERATED');
-              console.log('⚠️ App will run with empty data until next collection cycle');
-            }
-          }
-        } else {
-          console.log(`✅ Found ${existingTrades.length} existing trades in database`);
-        }
-      } catch (dbError) {
-        console.error('❌ Database check failed:', dbError);
-        console.log('🚨 Starting real data collection as fallback...');
-
-        try {
-          console.log('🚀 Starting MarketBeat data collection (fallback)...');
-          const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
-          setBroadcaster((type: string, data: any) => {
-            console.log(`📡 MarketBeat Fallback Broadcast: ${type}`);
-          });
-
-          const processedCount = await marketBeatCollector.collectLatestTrades(50);
-          console.log(`✅ MarketBeat fallback collection completed: ${processedCount} trades processed`);
-        } catch (immediateError) {
-          console.error('❌ Fallback real data collection failed - NO FAKE DATA WILL BE GENERATED');
-          console.log('⚠️ App will run with empty data until next collection cycle');
-        }
+        const secCount = await secEdgarCollector.collectLatestForm4Filings(25);
+        console.log(`  ✅ SEC: ${secCount} real trades collected`);
+      } catch (secError) {
+        console.warn('  ⚠️ SEC collector error:', secError);
       }
+
+      // Secondary: MarketBeat (reliable backup)
+      try {
+        console.log('🚀 [2/3] MarketBeat data collection...');
+        const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
+        setBroadcaster((type: string, data: any) => {
+          console.log(`  📡 MarketBeat: ${type}`);
+        });
+
+        const mbCount = await marketBeatCollector.collectLatestTrades(50);
+        console.log(`  ✅ MarketBeat: ${mbCount} real trades collected`);
+      } catch (mbError) {
+        console.warn('  ⚠️ MarketBeat collector error:', mbError);
+      }
+
+      // Tertiary: OpenInsider (additional coverage)
+      try {
+        console.log('🚀 [3/3] OpenInsider data collection...');
+        const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector-advanced');
+        setBroadcaster((type: string, data: any) => {
+          console.log(`  📡 OpenInsider: ${type}`);
+        });
+
+        const oiCount = await openInsiderCollector.collectLatestTrades(30);
+        console.log(`  ✅ OpenInsider: ${oiCount} real trades collected`);
+      } catch (oiError) {
+        console.warn('  ⚠️ OpenInsider collector error:', oiError);
+      }
+
+      // Final count
+      const finalTrades = await storage.getInsiderTrades(5, 0);
+      console.log(`\n✅ Data collection complete: ${finalTrades.length} total trades`);
+
+      if (finalTrades.length > 0) {
+        const latest = finalTrades[0];
+        console.log(`📅 Latest: ${latest.companyName} (${latest.ticker}) - ${latest.filedDate}`);
+      }
+
     } catch (error) {
-      console.error('❌ Data collection failed, continuing with existing data:', error);
+      console.error('❌ Startup data collection error:', error);
     }
-  }, 5000); // Wait 5 seconds for stabilization
-  } // Close first production block
+  }, 3000); // Start after 3 seconds
 
-  // 🔄 REGULAR DATA COLLECTION - Only in production
-  if (process.env.NODE_ENV === 'production') {
-    setInterval(async () => {
-      try {
-        console.log('🔄 Running scheduled SEC EDGAR data collection...');
+  // 🔄 CONTINUOUS REAL-TIME DATA COLLECTION (every 15 minutes)
+  // 실시간 최신 데이터 보장을 위한 자동 수집
+  setInterval(async () => {
+    try {
+      console.log('\n🔄 [AUTO] Scheduled real-time data refresh...');
+      const startTime = Date.now();
 
-        try {
-          const { secEdgarCollector, setBroadcaster } = await import('./sec-edgar-collector');
-          setBroadcaster((type: string, data: any) => {
-            console.log(`📡 Scheduled SEC Broadcast: ${type}`);
-          });
-
-          const processedCount = await secEdgarCollector.collectLatestForm4Filings(15);
-          console.log(`✅ Scheduled SEC data collection completed: ${processedCount} trades processed`);
-        } catch (secError) {
-          console.warn('⚠️ Scheduled SEC collector failed, trying OpenInsider:', secError);
-
+      // Multi-source parallel collection for maximum coverage
+      const collectors = [
+        // SEC EDGAR - Most authoritative
+        (async () => {
           try {
-            const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector');
-            setBroadcaster((type: string, data: any) => {
-              console.log(`📡 Scheduled OpenInsider Broadcast: ${type}`);
-            });
-
-            const processedCount = await openInsiderCollector.collectLatestTrades(25);
-            console.log(`✅ Scheduled OpenInsider collection completed: ${processedCount} trades processed`);
-          } catch (backupError) {
-            console.warn('⚠️ All scheduled collectors failed:', backupError);
+            const { secEdgarCollector, setBroadcaster } = await import('./sec-edgar-collector');
+            setBroadcaster((type: string) => console.log(`  📡 SEC: ${type}`));
+            return await secEdgarCollector.collectLatestForm4Filings(20);
+          } catch (e) {
+            console.warn('  ⚠️ SEC collection error');
+            return 0;
           }
-        }
-      } catch (error) {
-        console.error('❌ Scheduled data collection failed:', error);
-      }
-    }, 30 * 60 * 1000); // 30분마다 실행
+        })(),
 
-    // 🔍 패턴 감지 스케줄러 - 30분마다 실행 (프로덕션만)
-    setInterval(async () => {
-      try {
-        console.log('🔍 Running scheduled pattern detection...');
-        const { patternDetectionService } = await import('./pattern-detection-service');
-        await patternDetectionService.detectAllPatterns();
-        console.log('✅ Scheduled pattern detection completed');
-      } catch (error) {
-        console.error('❌ Scheduled pattern detection failed:', error);
-      }
-    }, 30 * 60 * 1000); // 30분마다 실행
-  }
-
-  // Development mode: REAL data collection enabled, NO fake data EVER
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 Development mode: Real data collection enabled');
-    // Ensure we always have REAL insider trading data, never fake data
-    setTimeout(async () => {
-      try {
-        const { storage } = await import('./storage');
-        const existingTrades = await storage.getInsiderTrades(5, 0);
-        if (existingTrades.length === 0) {
-          console.log('🚨 Database is empty - starting REAL data collection...');
-          
-          // REAL MarketBeat data collection (NO FAKE DATA ALLOWED)
+        // MarketBeat - High reliability
+        (async () => {
           try {
-            console.log('🚀 Starting MarketBeat data collection...');
             const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
-            setBroadcaster((type: string, data: any) => {
-              console.log(`📡 MarketBeat Broadcast: ${type}`);
-            });
-
-            const processedCount = await marketBeatCollector.collectLatestTrades(50);
-            console.log(`✅ MarketBeat collection completed: ${processedCount} real trades processed`);
-          } catch (marketBeatError) {
-            console.warn('⚠️ MarketBeat collector failed, trying OpenInsider backup:', marketBeatError);
-            
-            try {
-              const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector-advanced');
-              setBroadcaster((type: string, data: any) => {
-                console.log(`📡 OpenInsider Backup Broadcast: ${type}`);
-              });
-
-              const processedCount = await openInsiderCollector.collectLatestTrades(50);
-              console.log(`✅ OpenInsider backup collection completed: ${processedCount} real trades processed`);
-            } catch (backupError) {
-              console.error('❌ ALL REAL DATA COLLECTORS FAILED - NO FAKE DATA WILL BE GENERATED');
-              console.log('⚠️ App will run with empty data until next collection cycle');
-            }
+            setBroadcaster((type: string) => console.log(`  📡 MarketBeat: ${type}`));
+            return await marketBeatCollector.collectLatestTrades(30);
+          } catch (e) {
+            console.warn('  ⚠️ MarketBeat collection error');
+            return 0;
           }
-        } else {
-          console.log(`✅ Found ${existingTrades.length} existing real trades - no additional collection needed`);
-        }
-      } catch (error) {
-        console.error('❌ Database check failed - attempting real data collection anyway:', error);
-        
-        try {
-          console.log('🚀 Starting MarketBeat data collection (fallback)...');
-          const { marketBeatCollector, setBroadcaster } = await import('./marketbeat-collector');
-          setBroadcaster((type: string, data: any) => {
-            console.log(`📡 MarketBeat Fallback Broadcast: ${type}`);
-          });
+        })(),
 
-          const processedCount = await marketBeatCollector.collectLatestTrades(50);
-          console.log(`✅ MarketBeat fallback collection completed: ${processedCount} real trades processed`);
-        } catch (fallbackError) {
-          console.error('❌ Fallback real data collection failed - NO FAKE DATA WILL BE GENERATED');
-          console.log('⚠️ App will run with empty data until next collection cycle');
-        }
-      }
-    }, 1000);
+        // OpenInsider - Additional coverage
+        (async () => {
+          try {
+            const { openInsiderCollector, setBroadcaster } = await import('./openinsider-collector-advanced');
+            setBroadcaster((type: string) => console.log(`  📡 OpenInsider: ${type}`));
+            return await openInsiderCollector.collectLatestTrades(20);
+          } catch (e) {
+            console.warn('  ⚠️ OpenInsider collection error');
+            return 0;
+          }
+        })()
+      ];
 
-    console.log('✅ Development mode: Real data collection enabled, monitoring disabled');
-  } else {
-    // Production mode: Full monitoring
-    console.log('🛡️ Starting crash prevention system...');
-    const { crashPreventionSystem } = await import('./crash-prevention-system');
-    crashPreventionSystem.start();
+      const results = await Promise.allSettled(collectors);
+      const counts = results.map(r => r.status === 'fulfilled' ? r.value : 0);
+      const totalCollected = counts.reduce((sum, c) => sum + c, 0);
+
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`  ✅ Auto-refresh complete: ${totalCollected} trades in ${duration}s`);
+
+    } catch (error) {
+      console.error('  ❌ Scheduled collection error:', error);
+    }
+  }, 15 * 60 * 1000); // 15분마다 실행 - 더 신선한 데이터
+
+  // 🔍 INTELLIGENT PATTERN DETECTION (every 20 minutes)
+  setInterval(async () => {
+    try {
+      console.log('\n🔍 [AUTO] Running pattern detection on real data...');
+      const { patternDetectionService } = await import('./pattern-detection-service');
+      await patternDetectionService.detectAllPatterns();
+      console.log('  ✅ Pattern detection completed');
+    } catch (error) {
+      console.error('  ❌ Pattern detection error:', error);
+    }
+  }, 20 * 60 * 1000); // 20분마다 실행
+
+  // 🛡️ PRODUCTION MONITORING & QUALITY SYSTEMS
+  if (process.env.NODE_ENV === 'production') {
+    console.log('\n🛡️ Initializing production monitoring systems...');
+
+    try {
+      const { crashPreventionSystem } = await import('./crash-prevention-system');
+      crashPreventionSystem.start();
+      console.log('  ✅ Crash prevention active');
+    } catch (e) {
+      console.warn('  ⚠️ Crash prevention unavailable');
+    }
 
     console.log('🚀 Starting data quality monitoring...');
     const { dataQualityMonitor } = await import('./data-quality-monitor');
@@ -414,101 +354,4 @@ app.use((req, res, next) => {
  * 최후 수단: 검증된 샘플 데이터 생성
  * 실제 SEC 패턴을 따르는 유효한 데이터만 생성
  */
-async function generateValidatedSampleData(): Promise<void> {
-  try {
-    console.log('🚨 Generating validated sample data as last resort...');
-
-    const { storage } = await import('./storage');
-    const { dataIntegrityService } = await import('./data-integrity-service');
-
-    const companies = [
-      { name: 'Apple Inc', ticker: 'AAPL', cik: '0000320193' },
-      { name: 'Microsoft Corporation', ticker: 'MSFT', cik: '0000789019' },
-      { name: 'Tesla Inc', ticker: 'TSLA', cik: '0001318605' },
-      { name: 'Amazon.com Inc', ticker: 'AMZN', cik: '0001018724' },
-      { name: 'Alphabet Inc', ticker: 'GOOGL', cik: '0001652044' },
-      { name: 'Meta Platforms Inc', ticker: 'META', cik: '0001326801' },
-      { name: 'NVIDIA Corporation', ticker: 'NVDA', cik: '0001045810' },
-      { name: 'Berkshire Hathaway Inc', ticker: 'BRK.A', cik: '0001067983' },
-      { name: 'Johnson & Johnson', ticker: 'JNJ', cik: '0000200406' },
-      { name: 'JPMorgan Chase & Co', ticker: 'JPM', cik: '0000019617' }
-    ];
-
-    let generated = 0;
-
-    const executives = [
-      { name: 'Timothy D. Cook', title: 'Chief Executive Officer' },
-      { name: 'Luca Maestri', title: 'Chief Financial Officer' },
-      { name: 'Katherine L. Adams', title: 'Senior Vice President, General Counsel' },
-      { name: 'Satya Nadella', title: 'Chief Executive Officer' },
-      { name: 'Amy Hood', title: 'Chief Financial Officer' },
-      { name: 'Elon Musk', title: 'Chief Executive Officer' },
-      { name: 'Zachary Kirkhorn', title: 'Chief Financial Officer' },
-      { name: 'Andrew Jassy', title: 'Chief Executive Officer' },
-      { name: 'Brian Olsavsky', title: 'Chief Financial Officer' },
-      { name: 'Sundar Pichai', title: 'Chief Executive Officer' },
-      { name: 'Ruth Porat', title: 'Chief Financial Officer' },
-      { name: 'Mark Zuckerberg', title: 'Chief Executive Officer' },
-      { name: 'David Wehner', title: 'Chief Financial Officer' },
-      { name: 'Jensen Huang', title: 'Chief Executive Officer' },
-      { name: 'Colette Kress', title: 'Chief Financial Officer' }
-    ];
-
-    // 총 20개의 거래 생성
-    for (let i = 0; i < 20; i++) {
-      const company = companies[Math.floor(Math.random() * companies.length)];
-      const executive = executives[Math.floor(Math.random() * executives.length)];
-
-      const now = new Date();
-      const daysAgo = Math.floor(Math.random() * 5) + 1; // 1-5일 전
-      const tradeDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-      const filedDate = new Date(tradeDate.getTime() + Math.random() * 2 * 24 * 60 * 60 * 1000); // 거래 후 1-2일
-
-      const shares = Math.floor(Math.random() * 100000) + 5000; // 5K-105K shares
-      const pricePerShare = Math.floor(Math.random() * 500) + 100; // $100-600
-      const isAcquisition = Math.random() > 0.4; // 60% 매수, 40% 매도
-
-      const totalValue = shares * pricePerShare;
-
-      const sampleTrade = {
-        accessionNumber: `${company.cik.slice(-4)}-24-${String(Date.now() + i).slice(-6)}`,
-        companyName: company.name,
-        ticker: company.ticker,
-        traderName: executive.name,
-        traderTitle: executive.title,
-        tradeType: isAcquisition ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
-        shares,
-        pricePerShare,
-        totalValue,
-        tradeDate,
-        filedDate,
-        sharesAfter: shares + Math.floor(Math.random() * 500000),
-        ownershipPercentage: Math.random() * 10, // 0-10%
-        significanceScore: Math.floor(Math.random() * 40) + 60, // 60-100
-        signalType: isAcquisition ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
-        isVerified: true,
-        verificationStatus: 'VERIFIED' as const,
-        verificationNotes: 'Live insider trade - SEC Form 4 verified',
-        secFilingUrl: `https://www.sec.gov/Archives/edgar/data/${company.cik}/form4-${Date.now()}.xml`,
-        marketPrice: pricePerShare,
-        createdAt: new Date()
-      };
-
-      // 데이터 무결성 검증
-      const integrityCheck = await dataIntegrityService.validateNewTrade(sampleTrade);
-      if (integrityCheck.shouldSave) {
-        await storage.createInsiderTrade(integrityCheck.validatedTrade!);
-        generated++;
-
-        const emoji = isAcquisition ? '🟢' : '🔴';
-        const shortName = executive.name.split(' ')[0] + ' ' + executive.name.split(' ')[executive.name.split(' ').length - 1];
-        console.log(`${emoji} ${company.ticker} - ${shortName} (${sampleTrade.tradeType}) - $${totalValue.toLocaleString()}`);
-      }
-    }
-
-    console.log(`✅ Generated ${generated} validated sample trades`);
-
-  } catch (error) {
-    console.error('❌ Failed to generate sample data:', error);
-  }
-}
+// 가짜 데이터 생성 함수 완전 제거 - 실제 데이터만 사용

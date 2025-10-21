@@ -406,6 +406,34 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.noData': 'No ranking data available',
     'ranking.refreshData': 'Refresh Data',
 
+    // PWA Install Prompt
+    'pwa.prompt.title': 'Add InsiderPulse to Home Screen',
+    'pwa.prompt.subtitle': 'No installation needed! Add directly to your home screen',
+    'pwa.benefits.notifications.title': 'Real-time Alerts',
+    'pwa.benefits.notifications.description': 'Instant push notifications for trades',
+    'pwa.benefits.fast.title': 'Lightning Fast',
+    'pwa.benefits.fast.description': 'Quick access from your home screen',
+    'pwa.benefits.access.title': 'Easy Access',
+    'pwa.benefits.access.description': 'Works like a native mobile app',
+    'pwa.button.install': 'Install Now',
+    'pwa.button.later': 'Maybe Later',
+    'pwa.button.understood': 'Got it',
+    'pwa.ios.instruction': 'Tap Share button and select "Add to Home Screen"',
+
+    // Push Notifications
+    'notification.permission.title': 'Enable Notifications',
+    'notification.permission.description': 'Stay updated with real-time insider trading alerts',
+    'notification.permission.allow': 'Allow Notifications',
+    'notification.permission.deny': 'Not Now',
+    'notification.settings.title': 'Notification Settings',
+    'notification.settings.enabled': 'Push notifications enabled',
+    'notification.settings.disabled': 'Push notifications disabled',
+    'notification.settings.enable': 'Enable',
+    'notification.settings.disable': 'Disable',
+    'notification.type.trade': 'Large Trade Alerts',
+    'notification.type.pattern': 'Pattern Alerts',
+    'notification.type.digest': 'Weekly Digest',
+
     // Not Found page
     'notFound.title': '404 - Page Not Found',
     'notFound.message': 'The page you are looking for does not exist.',
@@ -1062,6 +1090,34 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.noData': '순위 데이터가 없습니다',
     'ranking.refreshData': '데이터 새로고침',
 
+    // PWA Install Prompt
+    'pwa.prompt.title': 'InsiderPulse 홈 화면에 추가',
+    'pwa.prompt.subtitle': '설치 필요 없이 홈 화면에 바로 추가!',
+    'pwa.benefits.notifications.title': '실시간 알림',
+    'pwa.benefits.notifications.description': '거래 발생 시 즉시 푸시 알림',
+    'pwa.benefits.fast.title': '빠른 속도',
+    'pwa.benefits.fast.description': '홈 화면에서 빠르게 접근',
+    'pwa.benefits.access.title': '간편한 접근',
+    'pwa.benefits.access.description': '네이티브 앱처럼 작동',
+    'pwa.button.install': '지금 설치',
+    'pwa.button.later': '나중에',
+    'pwa.button.understood': '확인',
+    'pwa.ios.instruction': '공유 버튼을 누르고 "홈 화면에 추가"를 선택하세요',
+
+    // Push Notifications
+    'notification.permission.title': '알림 활성화',
+    'notification.permission.description': '실시간 내부자 거래 알림을 받아보세요',
+    'notification.permission.allow': '알림 허용',
+    'notification.permission.deny': '나중에',
+    'notification.settings.title': '알림 설정',
+    'notification.settings.enabled': '푸시 알림 활성화됨',
+    'notification.settings.disabled': '푸시 알림 비활성화됨',
+    'notification.settings.enable': '활성화',
+    'notification.settings.disable': '비활성화',
+    'notification.type.trade': '대규모 거래 알림',
+    'notification.type.pattern': '패턴 알림',
+    'notification.type.digest': '주간 요약',
+
     // Not Found page
     'notFound.title': '404 - 페이지를 찾을 수 없습니다',
     'notFound.message': '요청하신 페이지가 존재하지 않습니다.',
@@ -1430,6 +1486,34 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.noData': 'ランキングデータがありません',
     'ranking.refreshData': 'データを更新',
 
+    // PWA Install Prompt
+    'pwa.prompt.title': 'InsiderPulseをホーム画面に追加',
+    'pwa.prompt.subtitle': 'インストール不要！ホーム画面に直接追加',
+    'pwa.benefits.notifications.title': 'リアルタイム通知',
+    'pwa.benefits.notifications.description': '取引発生時に即座にプッシュ通知',
+    'pwa.benefits.fast.title': '高速アクセス',
+    'pwa.benefits.fast.description': 'ホーム画面から素早くアクセス',
+    'pwa.benefits.access.title': '簡単アクセス',
+    'pwa.benefits.access.description': 'ネイティブアプリのように動作',
+    'pwa.button.install': '今すぐインストール',
+    'pwa.button.later': '後で',
+    'pwa.button.understood': '了解',
+    'pwa.ios.instruction': '共有ボタンをタップして「ホーム画面に追加」を選択してください',
+
+    // Push Notifications
+    'notification.permission.title': '通知を有効にする',
+    'notification.permission.description': 'リアルタイムのインサイダー取引通知を受け取る',
+    'notification.permission.allow': '通知を許可',
+    'notification.permission.deny': '後で',
+    'notification.settings.title': '通知設定',
+    'notification.settings.enabled': 'プッシュ通知が有効',
+    'notification.settings.disabled': 'プッシュ通知が無効',
+    'notification.settings.enable': '有効にする',
+    'notification.settings.disable': '無効にする',
+    'notification.type.trade': '大規模取引通知',
+    'notification.type.pattern': 'パターン通知',
+    'notification.type.digest': '週次サマリー',
+
     // Not Found page
     'notFound.title': '404 - ページが見つかりません',
     'notFound.message': 'お探しのページは存在しません。',
@@ -1797,6 +1881,34 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.loading': '正在加载股票排名...',
     'ranking.noData': '没有排名数据',
     'ranking.refreshData': '刷新数据',
+
+    // PWA Install Prompt
+    'pwa.prompt.title': '添加 InsiderPulse 到主屏幕',
+    'pwa.prompt.subtitle': '无需安装！直接添加到主屏幕',
+    'pwa.benefits.notifications.title': '实时通知',
+    'pwa.benefits.notifications.description': '交易发生时立即推送通知',
+    'pwa.benefits.fast.title': '快速访问',
+    'pwa.benefits.fast.description': '从主屏幕快速访问',
+    'pwa.benefits.access.title': '便捷访问',
+    'pwa.benefits.access.description': '像原生应用一样运行',
+    'pwa.button.install': '立即安装',
+    'pwa.button.later': '稍后',
+    'pwa.button.understood': '知道了',
+    'pwa.ios.instruction': '点击分享按钮，然后选择"添加到主屏幕"',
+
+    // Push Notifications
+    'notification.permission.title': '启用通知',
+    'notification.permission.description': '接收实时内幕交易提醒',
+    'notification.permission.allow': '允许通知',
+    'notification.permission.deny': '稍后',
+    'notification.settings.title': '通知设置',
+    'notification.settings.enabled': '推送通知已启用',
+    'notification.settings.disabled': '推送通知已禁用',
+    'notification.settings.enable': '启用',
+    'notification.settings.disable': '禁用',
+    'notification.type.trade': '大额交易提醒',
+    'notification.type.pattern': '模式提醒',
+    'notification.type.digest': '每周摘要',
 
     // Not Found page
     'notFound.title': '404 - 页面未找到',

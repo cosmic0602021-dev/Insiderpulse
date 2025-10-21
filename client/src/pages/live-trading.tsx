@@ -43,7 +43,7 @@ export default function LiveTrading() {
     setSelectedTrade(null);
   };
 
-  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단
+  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 제출일순 정렬
   const { data: allTrades, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: 100,
@@ -126,9 +126,24 @@ export default function LiveTrading() {
     return new Date(date).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
+  };
+
+  const formatDateTime = (date: string | Date) => {
+    const locale = language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US';
+    const dateObj = new Date(date);
+
+    // SEC 파일링 날짜는 UTC 날짜만 있음 (시간 정보 없음)
+    // 정확한 UTC 날짜만 표시
+    const filedDateStr = dateObj.toLocaleDateString(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC'
+    });
+
+    return `${filedDateStr} (UTC)`;
   };
 
   const getTradeTypeColor = (tradeType: string) => {
@@ -313,43 +328,73 @@ export default function LiveTrading() {
             </div>
           ) : (
             <div className="space-y-4">
-              {validatedData.trades.slice(0, 50).map((trade) => (
-                <div
-                  key={trade.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate"
-                  onClick={() => handleTradeClick(trade)}
-                  data-testid={`trade-card-${trade.id}`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
-                      {getTradeTypeIcon(trade.tradeType)}
+              {validatedData.trades.slice(0, 50).map((trade) => {
+                const pricePerShare = trade.pricePerShare || (trade.totalValue / (trade.shares || 1));
+                const isRecent = new Date(trade.filedDate).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000); // 7일 이내
+
+                return (
+                  <div
+                    key={trade.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate relative"
+                    onClick={() => handleTradeClick(trade)}
+                    data-testid={`trade-card-${trade.id}`}
+                  >
+                    {/* 신규 거래 표시 */}
+                    {isRecent && (
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="destructive" className="text-xs animate-pulse">NEW</Badge>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-4 flex-1">
+                      {/* 거래 타입 아이콘 */}
+                      <div className={`flex items-center justify-center w-12 h-12 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
+                        {getTradeTypeIcon(trade.tradeType)}
+                      </div>
+
+                      {/* 회사 & 트레이더 정보 */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-lg">{trade.companyName}</span>
+                          <Badge variant="outline" className="font-mono font-bold">{trade.ticker}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="font-medium">{trade.traderName}</span>
+                          <span>•</span>
+                          <span className="text-xs">{trade.traderTitle}</span>
+                        </div>
+
+                        {/* 거래 세부사항 */}
+                        <div className="flex items-center gap-3 mt-2 text-xs">
+                          <Badge variant="secondary" className="font-mono">
+                            {trade.shares?.toLocaleString()} 주
+                          </Badge>
+                          <span className="text-muted-foreground">@</span>
+                          <span className="font-semibold">
+                            ${pricePerShare.toFixed(2)}/주
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{trade.companyName}</span>
-                        <Badge variant="outline">{trade.ticker}</Badge>
+
+                    {/* 거래 금액 & 날짜 */}
+                    <div className="text-right">
+                      <div className={`text-2xl font-bold mb-1 ${getTradeTypeColor(trade.tradeType)}`}>
+                        {formatCurrency(Math.abs(trade.totalValue))}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {trade.traderName} • {trade.traderTitle}
+                        {formatDateTime(trade.filedDate)}
                       </div>
+                      {/* SEC 링크 표시 */}
+                      {trade.secFilingUrl && (
+                        <div className="text-xs text-blue-600 hover:underline mt-1">
+                          SEC Filing ↗
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${getTradeTypeColor(trade.tradeType)}`}>
-                        {formatCurrency(Math.abs(trade.totalValue))}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">
-                        {trade.shares?.toLocaleString()} {t('liveTrading.shares')}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDate(trade.filedDate)}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

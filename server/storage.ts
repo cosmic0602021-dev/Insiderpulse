@@ -121,7 +121,7 @@ export class MemStorage implements IStorage {
       });
     }
     
-    // Sort by specified field
+    // Sort by specified field - default to filedDate (최신 제출일순)
     return trades
       .sort((a, b) => {
         const dateA = new Date(sortBy === 'filedDate' ? a.filedDate : a.createdAt!);
@@ -428,5 +428,4 @@ export class MemStorage implements IStorage {
 import { DatabaseStorage } from "./db-storage";
 
 // Use database storage for real insider trading data
-// Temporarily using MemStorage due to Neon database endpoint being disabled
-export const storage = new MemStorage(); // process.env.NODE_ENV === 'test' ? new MemStorage() : new DatabaseStorage();
+export const storage = process.env.NODE_ENV === 'test' ? new MemStorage() : new DatabaseStorage();

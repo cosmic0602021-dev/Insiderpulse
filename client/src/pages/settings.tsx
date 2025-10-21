@@ -3,13 +3,24 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Languages, Palette, Bell, Monitor, Sun, Moon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Languages, Palette, Bell, Monitor, Sun, Moon, BellOff } from 'lucide-react';
 import { useLanguage, type Language } from '@/contexts/language-context';
 import { useState, useEffect } from 'react';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState<string>('system');
+  const { toast } = useToast();
+  const {
+    isSupported,
+    isSubscribed,
+    isLoading,
+    subscribe,
+    unsubscribe,
+  } = usePushNotifications();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'system';
@@ -43,6 +54,32 @@ export default function Settings() {
     { value: 'dark', label: t('settings.theme.dark'), icon: Moon },
     { value: 'system', label: t('settings.theme.system'), icon: Monitor },
   ];
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const subscription = await subscribe();
+      if (subscription) {
+        toast({
+          title: t('notification.permission.title'),
+          description: t('notification.settings.enabled'),
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to enable notifications',
+          variant: 'destructive',
+        });
+      }
+    } else {
+      const success = await unsubscribe();
+      if (success) {
+        toast({
+          title: t('notification.permission.title'),
+          description: t('notification.settings.disabled'),
+        });
+      }
+    }
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -125,13 +162,88 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            {t('settings.notifications')}
+            {t('notification.settings.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground">
-            {t('settings.notificationsFuture')}
-          </div>
+          {!isSupported ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <BellOff className="h-4 w-4" />
+              <span>Push notifications are not supported on this device</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="notifications-toggle">
+                    {t('notification.permission.title')}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('notification.permission.description')}
+                  </p>
+                </div>
+                <Switch
+                  id="notifications-toggle"
+                  checked={isSubscribed}
+                  onCheckedChange={handleNotificationToggle}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Notification Types</Label>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">{t('notification.type.trade')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Get notified of large insider trades
+                    </p>
+                  </div>
+                  <Switch
+                    disabled={!isSubscribed}
+                    defaultChecked={true}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">{t('notification.type.pattern')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Get notified of unusual trading patterns
+                    </p>
+                  </div>
+                  <Switch
+                    disabled={!isSubscribed}
+                    defaultChecked={true}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium">{t('notification.type.digest')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Receive weekly summary of insider activity
+                    </p>
+                  </div>
+                  <Switch
+                    disabled={!isSubscribed}
+                    defaultChecked={false}
+                  />
+                </div>
+              </div>
+
+              {isSubscribed && (
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm">
+                  <p className="text-blue-900 dark:text-blue-100">
+                    ✓ {t('notification.settings.enabled')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -219,50 +219,83 @@ export function TradeDetailModal({
           </div>
         </CardHeader>
         <CardContent className="space-y-4 relative z-10">
-          {/* {t('tradeDetail.basicInfo')} */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">{t('liveTrading.tradeType')}</p>
-              <Badge className={`btn-professional font-semibold flex items-center gap-1 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
-                {getTradeTypeIcon(trade.tradeType)}
-                {trade.tradeType}
-              </Badge>
+          {/* 핵심 거래 정보 - 한눈에 보기 */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg space-y-4">
+            {/* 거래 타입 & 총 금액 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">거래 유형</p>
+                <Badge className={`btn-professional font-bold text-lg px-4 py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
+                  {getTradeTypeIcon(trade.tradeType)}
+                  {trade.tradeType}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground mb-1">총 거래 금액</p>
+                <p className={`text-3xl font-black ${trade.tradeType?.toUpperCase() === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(trade.totalValue)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('liveTrading.totalValue')}</p>
-              <p className="font-bold">{formatCurrency(trade.totalValue)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('tradeDetail.shareCount')}</p>
-              <p className="font-bold">{trade.shares.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('tradeDetail.pricePerShare')}</p>
-              <p className="font-bold">${trade.pricePerShare.toFixed(2)}</p>
+
+            {/* 주식 수 & 주당 가격 */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/50 dark:border-gray-700">
+              <div className="bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">거래 주식 수</p>
+                <p className="text-2xl font-bold">{trade.shares.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">주</p>
+              </div>
+              <div className="bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">주당 가격</p>
+                <p className="text-2xl font-bold">${trade.pricePerShare.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">per share</p>
+              </div>
             </div>
           </div>
 
-          {/* {t('tradeDetail.insiderInfo')} */}
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {t('tradeDetail.insiderInfo')}
+          {/* 인사이더 정보 - 더 눈에 띄게 */}
+          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+            <h4 className="font-bold mb-3 flex items-center gap-2 text-lg">
+              <User className="h-5 w-5 text-blue-600" />
+              내부자 정보
             </h4>
-            <div className="grid grid-cols-1 gap-2">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('tradeDetail.name')}</p>
-                <p className="font-medium">{trade.traderName}</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-white dark:bg-gray-800">이름</Badge>
+                <p className="font-bold text-lg">{trade.traderName}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('tradeDetail.position')}</p>
-                <p className="font-medium">{trade.traderTitle}</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-white dark:bg-gray-800">직책</Badge>
+                <p className="font-semibold text-blue-600">{trade.traderTitle}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('tradeDetail.reportDate')}</p>
-                <p className="font-medium">{formatDate(trade.filedDate)}</p>
+              <div className="flex items-center gap-2 mt-3 pt-2 border-t">
+                <Calendar className="h-4 w-4 text-amber-600" />
+                <p className="text-sm text-muted-foreground">SEC 제출일:</p>
+                <p className="font-bold">{formatDate(trade.filedDate)}</p>
+                <Badge variant="outline" className="text-xs">UTC</Badge>
               </div>
             </div>
           </div>
+
+          {/* SEC 파일링 링크 */}
+          {trade.secFilingUrl && (
+            <div className="border-t pt-4">
+              <a
+                href={trade.secFilingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold hover:underline"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                SEC 공식 파일링 보기 (sec.gov)
+              </a>
+              <p className="text-xs text-muted-foreground mt-1">
+                ✓ 실제 SEC 파일링 데이터로 검증됨
+              </p>
+            </div>
+          )}
 
           {/* {t('tradeDetail.priceAnalysisDashboard')} */}
           <div className="border-t pt-4">

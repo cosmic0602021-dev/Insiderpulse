@@ -7,7 +7,10 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import ThemeToggle from "@/components/theme-toggle";
 import LanguageSelector from "@/components/language-selector";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
+import { useState, useEffect } from "react";
+import LanguageSelection from "@/pages/language-selection";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
 import TradeDetail from "@/pages/trade-detail";
@@ -27,9 +30,10 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={LiveTrading} />
       <Route path="/trade/:tradeId" component={TradeDetail} />
       <Route path="/trades" component={LiveTrading} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/search" component={Search} />
@@ -45,8 +49,25 @@ function Router() {
 }
 
 function AppContent() {
-  const { t } = useLanguage();
-  
+  const { t, language } = useLanguage();
+  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
+
+  useEffect(() => {
+    // Check if user has already selected a language
+    const languageSelected = localStorage.getItem('language-selected');
+    const savedLanguage = localStorage.getItem('language');
+
+    if (languageSelected === 'true' || savedLanguage) {
+      setHasSelectedLanguage(true);
+    }
+  }, []);
+
+
+  // Show language selection screen if user hasn't selected a language
+  if (!hasSelectedLanguage) {
+    return <LanguageSelection onLanguageSelected={() => setHasSelectedLanguage(true)} />;
+  }
+
   // Custom sidebar width for financial dashboard
   const style = {
     "--sidebar-width": "18rem",       // 288px for better content
@@ -85,6 +106,7 @@ export default function App() {
       <LanguageProvider>
         <TooltipProvider>
           <AppContent />
+          <PWAInstallPrompt />
           <Toaster />
         </TooltipProvider>
       </LanguageProvider>
