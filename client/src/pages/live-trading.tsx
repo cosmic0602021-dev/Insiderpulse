@@ -195,9 +195,9 @@ export default function LiveTrading() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
       {/* 데이터 품질 상태 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
         {/* 연결 상태 */}
         <Alert className={isConnected ? 'border-green-500/50 bg-green-50' : 'border-red-500/50 bg-red-50'}>
           <div className="flex items-center gap-2">
@@ -253,65 +253,65 @@ export default function LiveTrading() {
       )}
 
       {/* 헤더 */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{t('page.livetrading.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('page.livetrading.subtitle')} • {t('liveTrading.lastValidation')}: {lastValidationTime?.toLocaleTimeString(language === 'ko' ? 'ko-KR' : 'en-US')}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('page.livetrading.title')}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            {t('page.livetrading.subtitle')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t('general.refresh')}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
+            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t('general.refresh')}</span>
           </Button>
-          <Badge variant="outline" className="flex items-center gap-1">
+          <Badge variant="outline" className="flex items-center gap-1 text-xs">
             <Database className="h-3 w-3" />
-            {t('liveTrading.realData')}
+            <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
           </Badge>
         </div>
       </div>
 
-      {/* 통계 카드 */}
+      {/* 통계 카드 - 모바일 최적화 */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('liveTrading.todayTrades')}</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.todayTrades')}</CardTitle>
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.todayTrades}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats.todayTrades}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('liveTrading.totalVolume')}</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.totalVolume')}</CardTitle>
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.totalVolume)}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('liveTrading.verifiedTrades')}</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.verifiedTrades')}</CardTitle>
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dataQuality?.validTradeCount || 0}</div>
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{dataQuality?.validTradeCount || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('liveTrading.activeInsiders')}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.activeInsiders')}</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-bold">
                 {new Set(validatedData.trades.map(t => t.traderName)).size}
               </div>
             </CardContent>
@@ -337,75 +337,78 @@ export default function LiveTrading() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {validatedData.trades.slice(0, 50).map((trade) => {
                 const pricePerShare = trade.pricePerShare || (trade.totalValue / (trade.shares || 1));
-                const isRecent = new Date(trade.filedDate).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000); // 7일 이내
+                const isRecent = trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - (24 * 60 * 60 * 1000); // 24시간 이내
 
                 return (
                   <div
                     key={trade.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate relative"
+                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate relative p-3"
                     onClick={() => handleTradeClick(trade)}
                     data-testid={`trade-card-${trade.id}`}
                   >
-                    {/* 신규 거래 표시 */}
-                    {isRecent && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive" className="text-xs animate-pulse">NEW</Badge>
-                      </div>
-                    )}
-
-                    <div className="flex items-center space-x-4 flex-1">
-                      {/* 거래 타입 아이콘 */}
-                      <div className={`flex items-center justify-center w-12 h-12 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
-                        {getTradeTypeIcon(trade.tradeType)}
-                      </div>
-
-                      {/* 회사 & 트레이더 정보 */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-lg">{trade.companyName}</span>
-                          <Badge variant="outline" className="font-mono font-bold">{trade.ticker}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="font-medium">{trade.traderName}</span>
-                          <span>•</span>
-                          <span className="text-xs">{trade.traderTitle}</span>
+                    {/* 모바일 최적화: 반응형 레이아웃 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      {/* 왼쪽: 아이콘 + 회사정보 */}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* 거래 타입 아이콘 */}
+                        <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
+                          {getTradeTypeIcon(trade.tradeType)}
                         </div>
 
-                        {/* 거래 세부사항 */}
-                        <div className="flex items-center gap-3 mt-2 text-xs">
-                          <Badge variant="secondary" className="font-mono">
-                            {trade.shares?.toLocaleString()} 주
-                          </Badge>
-                          <span className="text-muted-foreground">@</span>
-                          <span className="font-semibold">
-                            ${pricePerShare.toFixed(2)}/주
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                        {/* 회사 & 트레이더 정보 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-bold text-base sm:text-lg truncate">{trade.companyName}</span>
+                            <Badge variant="outline" className="font-mono text-xs flex-shrink-0">{trade.ticker}</Badge>
+                            {isRecent && (
+                              <Badge variant="destructive" className="text-xs animate-pulse flex-shrink-0">NEW</Badge>
+                            )}
+                          </div>
+                          
+                          <div className="text-xs sm:text-sm text-muted-foreground truncate">
+                            {trade.traderName} • {trade.traderTitle}
+                          </div>
 
-                    {/* 거래 금액 & 날짜 */}
-                    <div className="text-right">
-                      <div className={`text-2xl font-bold mb-1 ${getTradeTypeColor(trade.tradeType)}`}>
-                        {formatCurrency(Math.abs(trade.totalValue))}
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="text-sm font-semibold text-primary">
-                          {formatTimeAgo(trade.filedDate)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDateTime(trade.filedDate)}
+                          {/* 모바일에서만: 거래 정보 */}
+                          <div className="flex items-center gap-2 mt-2 text-xs sm:hidden">
+                            <span className="font-semibold">{trade.shares?.toLocaleString()} 주</span>
+                            <span className="text-muted-foreground">@</span>
+                            <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                          </div>
                         </div>
                       </div>
-                      {/* SEC 링크 표시 */}
-                      {trade.secFilingUrl && (
-                        <div className="text-xs text-blue-600 hover:underline mt-1">
-                          SEC Filing ↗
+
+                      {/* 오른쪽: 금액 & 시간 */}
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:gap-1">
+                        {/* 거래 금액 */}
+                        <div className={`text-xl sm:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
+                          {formatCurrency(Math.abs(trade.totalValue))}
                         </div>
-                      )}
+
+                        {/* 업데이트 시간 */}
+                        <div className="flex flex-col items-end gap-0.5">
+                          {trade.createdAt && (
+                            <div className="text-xs sm:text-sm font-semibold text-primary whitespace-nowrap">
+                              {formatTimeAgo(trade.createdAt)}
+                            </div>
+                          )}
+                          {trade.secFilingUrl && (
+                            <div className="text-xs text-blue-600 hover:underline whitespace-nowrap">
+                              SEC ↗
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 데스크톱에서만: 거래 세부정보 */}
+                      <div className="hidden sm:flex items-center gap-2 text-xs absolute top-3 left-16">
+                        <span className="text-muted-foreground">{trade.shares?.toLocaleString()} 주</span>
+                        <span className="text-muted-foreground">@</span>
+                        <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 );
