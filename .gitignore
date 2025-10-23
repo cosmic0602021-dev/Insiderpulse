@@ -4,3 +4,8 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment variables (보안 중요!)
+.env
+.env.local
+.env.*.local
