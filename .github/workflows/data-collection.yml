@@ -16,7 +16,7 @@ jobs:
           echo "🚀 Starting data collection..."
 
           # API 호출하여 데이터 수집
-          response=$(curl -X GET \
+          response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
             -s \
