@@ -45,14 +45,14 @@ export default function LiveTrading() {
     setSelectedTrade(null);
   };
 
-  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 제출일순 정렬
+  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 업데이트순 정렬 (createdAt)
   const { data: allTrades, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: 100,
       offset: 0,
-      sortBy: 'filedDate'
+      sortBy: 'createdAt'
     }),
-    queryFn: () => apiClient.getInsiderTrades(100, 0, undefined, undefined, 'filedDate'),
+    queryFn: () => apiClient.getInsiderTrades(100, 0, undefined, undefined, 'createdAt'),
     staleTime: 60000, // 1분 캐시
     refetchInterval: 300000, // 5분마다 자동 갱신
     refetchOnWindowFocus: true,
