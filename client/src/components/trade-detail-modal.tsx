@@ -194,12 +194,12 @@ export function TradeDetailModal({
                       }
                     }}
                   />
-                  <div className="fallback-logo w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold hidden" style={{display: 'none'}}>
+                  <div className="fallback-logo w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold hidden" style={{display: 'none'}}>
                     {getCompanyInitials(trade.companyName)}
                   </div>
                 </div>
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold">
                   {getCompanyInitials(trade.companyName)}
                 </div>
               )}
@@ -220,7 +220,7 @@ export function TradeDetailModal({
         </CardHeader>
         <CardContent className="space-y-4 relative z-10">
           {/* 핵심 거래 정보 - 한눈에 보기 */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-lg space-y-4">
+          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg space-y-4">
             {/* 거래 타입 & 총 금액 */}
             <div className="flex items-center justify-between">
               <div>
@@ -254,9 +254,9 @@ export function TradeDetailModal({
           </div>
 
           {/* 인사이더 정보 - 더 눈에 띄게 */}
-          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-            <h4 className="font-bold mb-3 flex items-center gap-2 text-lg">
-              <User className="h-5 w-5 text-blue-600" />
+          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+            <h4 className="font-bold mb-3 flex items-center gap-2 text-base">
+              <User className="h-5 w-5 text-slate-600 dark:text-slate-400" />
               내부자 정보
             </h4>
             <div className="space-y-2">
@@ -266,7 +266,7 @@ export function TradeDetailModal({
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-white dark:bg-gray-800">직책</Badge>
-                <p className="font-semibold text-blue-600">{trade.traderTitle}</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">{trade.traderTitle}</p>
               </div>
               <div className="flex items-center gap-2 mt-3 pt-2 border-t">
                 <Calendar className="h-4 w-4 text-amber-600" />
@@ -299,8 +299,8 @@ export function TradeDetailModal({
 
           {/* {t('tradeDetail.priceAnalysisDashboard')} */}
           <div className="border-t pt-4">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
+            <h4 className="font-semibold mb-4 flex items-center gap-2 text-base">
+              <BarChart3 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
               {t('tradeDetail.priceAnalysis')}
             </h4>
 
@@ -366,25 +366,25 @@ export function TradeDetailModal({
 
           {/* {t('tradeDetail.integratedAiAnalysis')} */}
           <div className="border-t pt-4" data-testid="section-ai-analysis">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Brain className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
-                  <div className="space-y-3 text-sm leading-relaxed text-blue-800 dark:text-blue-200" data-testid="text-ai-analysis">
+                  <h4 className="font-semibold text-sm mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
+                  <div className="space-y-3 text-sm leading-relaxed" data-testid="text-ai-analysis">
                     {trade.comprehensiveAnalysis ? (
                       // 실제 AI 분석 결과 표시
                       <>
                         <div className="mb-4">
-                          <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📊 AI 종합 분석</h5>
-                          <p className="text-sm">{trade.comprehensiveAnalysis.executiveSummary}</p>
+                          <h5 className="font-semibold mb-2">📊 AI 종합 분석</h5>
+                          <p className="text-sm text-muted-foreground">{trade.comprehensiveAnalysis.executiveSummary}</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                            <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
+                          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                            <h6 className="font-medium mb-2 flex items-center gap-1">
                               <Target className="h-3 w-3" />
                               목표가격 분석
                             </h6>
@@ -404,8 +404,8 @@ export function TradeDetailModal({
                             </div>
                           </div>
 
-                          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                            <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
+                          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                            <h6 className="font-medium mb-2 flex items-center gap-1">
                               <Calculator className="h-3 w-3" />
                               리스크 평가
                             </h6>
@@ -425,21 +425,21 @@ export function TradeDetailModal({
                           </div>
                         </div>
 
-                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-3 mb-4">
-                          <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-1">
-                            <Lightbulb className="h-3 w-3" />
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+                          <h6 className="font-medium mb-2 flex items-center gap-1">
+                            <Lightbulb className="h-3 w-3 text-amber-600" />
                             투자 권고사항
                           </h6>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">{trade.comprehensiveAnalysis.actionableRecommendation}</p>
+                          <p className="text-sm">{trade.comprehensiveAnalysis.actionableRecommendation}</p>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-blue-200/50">
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
                           <div className="text-center">
-                            <p className="text-xs text-blue-600/80 mb-1">AI 신뢰도</p>
-                            <p className="text-lg font-bold text-green-600">{trade.comprehensiveAnalysis.confidence}%</p>
+                            <p className="text-xs text-muted-foreground mb-1">AI 신뢰도</p>
+                            <p className="text-lg font-bold text-green-600 dark:text-green-500">{trade.comprehensiveAnalysis.confidence}%</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-xs text-blue-600/80 mb-1">분석 기간</p>
+                            <p className="text-xs text-muted-foreground mb-1">분석 기간</p>
                             <p className="text-sm font-medium">{trade.comprehensiveAnalysis.timeHorizon}</p>
                           </div>
                           <div className="text-center">
