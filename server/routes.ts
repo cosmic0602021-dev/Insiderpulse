@@ -2035,24 +2035,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 🚀 Register Mega Data Collection API endpoints
   registerMegaApiEndpoints(app);
 
-  // 🚀 Initialize new data collection service (only in production)
-  if (process.env.NODE_ENV === 'production' && typeof newScrapingManager !== 'undefined') {
-    try {
-      console.log('🚀 Starting new data collection service...');
-      // Start the new enhanced scraping system
-      const result = await newScrapingManager.executeFullCollection();
-      console.log(`✅ New enhanced scraping system initialized with ${result.length} trades`);
-
-      // Start scheduled jobs for new data collection
-      // await newDataCollectionService.startAllJobs();
-      console.log('✅ New data collection service initialized');
-    } catch (error) {
-      console.error('❌ Failed to start new data collection service:', error);
-      console.log('🔄 Continuing with basic enhanced API endpoints...');
-    }
-  } else {
-    console.log('🔄 Development mode: Skipping data collection service initialization');
-  }
+  // 🚀 AUTOSCALE: Data collection via GitHub Actions cron
+  console.log('🔄 Autoscale mode: Use /api/enhanced/collect for data collection');
 
   // Data quality status endpoint
   app.get('/api/data-quality', async (req, res) => {

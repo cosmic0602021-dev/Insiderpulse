@@ -11,24 +11,24 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
 });
 
-// Register Service Worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        console.log('✅ Service Worker registered successfully:', registration.scope);
+// Register Service Worker for PWA (temporarily disabled)
+// if ('serviceWorker' in navigator) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker
+//       .register('/sw.js')
+//       .then((registration) => {
+//         console.log('✅ Service Worker registered successfully:', registration.scope);
 
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 60000); // Check every minute
-      })
-      .catch((error) => {
-        console.error('❌ Service Worker registration failed:', error);
-      });
-  });
-}
+//         // Check for updates periodically
+//         setInterval(() => {
+//           registration.update();
+//         }, 60000); // Check every minute
+//       })
+//       .catch((error) => {
+//         console.error('❌ Service Worker registration failed:', error);
+//       });
+//   });
+// }
 
 try {
   const root = document.getElementById("root");

@@ -48,7 +48,10 @@
       "WebFetch(domain:finnhub.io)",
       "Bash(FINNHUB_API_KEY=d3rgqf1r01qopgh8fgj0d3rgqf1r01qopgh8fgjg curl -s \"https://finnhub.io/api/v1/stock/insider-transactions?symbol=AAPL&token=d3rgqf1r01qopgh8fgj0d3rgqf1r01qopgh8fgjg\")",
       "Bash(FINNHUB_API_KEY=d3rgqf1r01qopgh8fgj0d3rgqf1r01qopgh8fgjg npx tsx:*)",
-      "Bash(cat .env)"
+      "Bash(cat .env)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

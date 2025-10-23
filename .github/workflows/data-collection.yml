@@ -1,0 +1,40 @@
+name: Auto Data Collection
+
+on:
+  schedule:
+    # 15분마다 실행 (GitHub Actions는 최소 5분 간격)
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  collect-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Collect insider trading data
+        run: |
+          echo "🚀 Starting data collection..."
+
+          # API 호출하여 데이터 수집
+          response=$(curl -X GET \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s \
+            https://insiderpulse.replit.app/api/enhanced/collect)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Data collection successful!"
+            echo "$body" | jq '.' || echo "$body"
+          else
+            echo "❌ Data collection failed with status: $http_code"
+            echo "$body"
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "📊 Data collection job completed at $(date)"
