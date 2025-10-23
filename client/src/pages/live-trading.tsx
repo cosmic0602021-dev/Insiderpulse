@@ -259,6 +259,13 @@ export default function LiveTrading() {
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {t('page.livetrading.subtitle')}
           </p>
+          {/* 마지막 업데이트 시간 표시 */}
+          {lastValidationTime && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {t('liveTrading.lastUpdated')}: {formatTimeAgo(lastValidationTime)}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
@@ -345,14 +352,14 @@ export default function LiveTrading() {
                 return (
                   <div
                     key={trade.id}
-                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate relative p-3"
+                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 overflow-hidden"
                     onClick={() => handleTradeClick(trade)}
                     data-testid={`trade-card-${trade.id}`}
                   >
                     {/* 모바일 최적화: 반응형 레이아웃 */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      {/* 왼쪽: 아이콘 + 회사정보 */}
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex flex-col gap-3">
+                      {/* 상단: 회사 정보 */}
+                      <div className="flex items-start gap-3">
                         {/* 거래 타입 아이콘 */}
                         <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
                           {getTradeTypeIcon(trade.tradeType)}
@@ -361,53 +368,49 @@ export default function LiveTrading() {
                         {/* 회사 & 트레이더 정보 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-bold text-base sm:text-lg truncate">{trade.companyName}</span>
+                            <span className="font-bold text-base sm:text-lg">{trade.companyName}</span>
                             <Badge variant="outline" className="font-mono text-xs flex-shrink-0">{trade.ticker}</Badge>
                             {isRecent && (
                               <Badge variant="destructive" className="text-xs animate-pulse flex-shrink-0">NEW</Badge>
                             )}
                           </div>
-                          
-                          <div className="text-xs sm:text-sm text-muted-foreground truncate">
+
+                          <div className="text-xs sm:text-sm text-muted-foreground">
                             {trade.traderName} • {trade.traderTitle}
                           </div>
+                        </div>
+                      </div>
 
-                          {/* 모바일에서만: 거래 정보 */}
-                          <div className="flex items-center gap-2 mt-2 text-xs sm:hidden">
-                            <span className="font-semibold">{trade.shares?.toLocaleString()} 주</span>
-                            <span className="text-muted-foreground">@</span>
-                            <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                      {/* 하단: 거래 세부정보 */}
+                      <div className="flex items-center justify-between gap-3">
+                        {/* 왼쪽: 주식 정보 */}
+                        <div className="flex items-center gap-2 text-xs sm:text-sm">
+                          <span className="font-semibold">{trade.shares?.toLocaleString()}</span>
+                          <span className="text-muted-foreground">주 @</span>
+                          <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                        </div>
+
+                        {/* 오른쪽: 금액 & 시간 */}
+                        <div className="flex flex-col items-end gap-1">
+                          {/* 거래 금액 */}
+                          <div className={`text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
+                            {formatCurrency(Math.abs(trade.totalValue))}
+                          </div>
+
+                          {/* 업데이트 시간 */}
+                          <div className="flex items-center gap-2">
+                            {trade.createdAt && (
+                              <div className="text-xs text-muted-foreground">
+                                {formatTimeAgo(trade.createdAt)}
+                              </div>
+                            )}
+                            {trade.secFilingUrl && (
+                              <div className="text-xs text-blue-600 hover:underline">
+                                SEC ↗
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-
-                      {/* 오른쪽: 금액 & 시간 */}
-                      <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 sm:gap-1">
-                        {/* 거래 금액 */}
-                        <div className={`text-xl sm:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
-                          {formatCurrency(Math.abs(trade.totalValue))}
-                        </div>
-
-                        {/* 업데이트 시간 */}
-                        <div className="flex flex-col items-end gap-0.5">
-                          {trade.createdAt && (
-                            <div className="text-xs sm:text-sm font-semibold text-primary whitespace-nowrap">
-                              {formatTimeAgo(trade.createdAt)}
-                            </div>
-                          )}
-                          {trade.secFilingUrl && (
-                            <div className="text-xs text-blue-600 hover:underline whitespace-nowrap">
-                              SEC ↗
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* 데스크톱에서만: 거래 세부정보 */}
-                      <div className="hidden sm:flex items-center gap-2 text-xs absolute top-3 left-16">
-                        <span className="text-muted-foreground">{trade.shares?.toLocaleString()} 주</span>
-                        <span className="text-muted-foreground">@</span>
-                        <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
