@@ -372,9 +372,6 @@ export default function LiveTrading() {
                             <span className="font-bold text-sm sm:text-base break-words max-w-full">{trade.companyName}</span>
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <Badge variant="outline" className="font-mono text-xs">{trade.ticker}</Badge>
-                              {isRecent && (
-                                <Badge variant="destructive" className="text-xs">NEW</Badge>
-                              )}
                             </div>
                           </div>
 
@@ -389,7 +386,7 @@ export default function LiveTrading() {
                         {/* 왼쪽: 주식 정보 */}
                         <div className="flex items-center gap-1 text-xs flex-shrink-0">
                           <span className="font-semibold">{trade.shares?.toLocaleString()}</span>
-                          <span className="text-muted-foreground">주 @</span>
+                          <span className="text-muted-foreground">{t('liveTrading.shares')} @</span>
                           <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
                         </div>
 

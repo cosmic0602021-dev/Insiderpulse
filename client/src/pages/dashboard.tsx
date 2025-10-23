@@ -187,7 +187,7 @@ export default function Dashboard() {
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
             )}
             <AlertDescription className={validatedData.isValid ? 'text-blue-700' : 'text-yellow-700'}>
-              검증된 데이터: {validatedData.validCount || 0}/{validatedData.totalCount || 0}개
+              {t('liveTrading.validatedData')}: {validatedData.validCount || 0}/{validatedData.totalCount || 0}{t('liveTrading.count')}
             </AlertDescription>
           </div>
         </Alert>

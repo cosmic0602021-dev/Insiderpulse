@@ -274,6 +274,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.follow': 'Follow',
     'liveTrading.opportunistic': 'Opportunistic',
     'liveTrading.lastUpdated': 'Last updated',
+    'liveTrading.validatedData': 'Validated data',
 
     // Trade Card
     'tradeCard.filed': 'Filed',
@@ -958,6 +959,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.loadingRealData': '실제 내부자 거래 데이터 로딩 중...',
     'liveTrading.dataLoadingFailed': '데이터 로딩 실패',
     'liveTrading.lastUpdated': '마지막 업데이트',
+    'liveTrading.validatedData': '검증된 데이터',
 
     // Trade Card
     'tradeCard.filed': '신고됨',
@@ -1355,6 +1357,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.dataQualityReport': 'データ品質レポート',
     'liveTrading.validTrades': '有効な取引',
     'liveTrading.lastUpdated': '最終更新',
+    'liveTrading.validatedData': '検証済みデータ',
 
     // Trade Card
     'tradeCard.filed': '提出済み',
@@ -1752,6 +1755,7 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.dataQualityReport': '数据质量报告',
     'liveTrading.validTrades': '有效交易',
     'liveTrading.lastUpdated': '最后更新',
+    'liveTrading.validatedData': '已验证数据',
 
     // Trade Card
     'tradeCard.filed': '已提交',
