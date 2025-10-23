@@ -195,18 +195,19 @@ export default function LiveTrading() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
       {/* 데이터 품질 상태 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
         {/* 연결 상태 */}
         <Alert className={isConnected ? 'border-green-500/50 bg-green-50' : 'border-red-500/50 bg-red-50'}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {isConnected ? (
-              <Wifi className="h-4 w-4 text-green-600" />
+              <Wifi className="h-4 w-4 text-green-600 flex-shrink-0" />
             ) : (
-              <WifiOff className="h-4 w-4 text-red-600" />
+              <WifiOff className="h-4 w-4 text-red-600 flex-shrink-0" />
             )}
-            <AlertDescription className={isConnected ? 'text-green-700' : 'text-red-700'}>
+            <AlertDescription className={`${isConnected ? 'text-green-700' : 'text-red-700'} text-xs sm:text-sm truncate`}>
               {isConnected ? t('liveTrading.connectionActive') : t('connection.connectionLost')}
             </AlertDescription>
           </div>
@@ -214,13 +215,13 @@ export default function LiveTrading() {
 
         {/* 데이터 품질 */}
         <Alert className={dataQuality?.isValid ? 'border-blue-500/50 bg-blue-50' : 'border-yellow-500/50 bg-yellow-50'}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {dataQuality?.isValid ? (
-              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <CheckCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
             ) : (
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
             )}
-            <AlertDescription className={dataQuality?.isValid ? 'text-blue-700' : 'text-yellow-700'}>
+            <AlertDescription className={`${dataQuality?.isValid ? 'text-blue-700' : 'text-yellow-700'} text-xs sm:text-sm truncate`}>
               {t('liveTrading.verifiedTrades')}: {dataQuality?.validTradeCount || 0}{t('liveTrading.count')}
             </AlertDescription>
           </div>
@@ -228,9 +229,9 @@ export default function LiveTrading() {
 
         {/* 데이터 신선도 */}
         <Alert className={dataQuality?.isFresh ? 'border-green-500/50 bg-green-50' : 'border-orange-500/50 bg-orange-50'}>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-green-600" />
-            <AlertDescription className={dataQuality?.isFresh ? 'text-green-700' : 'text-orange-700'}>
+          <div className="flex items-center gap-2 min-w-0">
+            <Clock className="h-4 w-4 text-green-600 flex-shrink-0" />
+            <AlertDescription className={`${dataQuality?.isFresh ? 'text-green-700' : 'text-orange-700'} text-xs sm:text-sm truncate`}>
               {dataQuality?.isFresh ? t('liveTrading.freshData') : t('liveTrading.dataUpdateNeeded')}
             </AlertDescription>
           </div>
@@ -352,61 +353,61 @@ export default function LiveTrading() {
                 return (
                   <div
                     key={trade.id}
-                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 overflow-hidden"
+                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 w-full"
                     onClick={() => handleTradeClick(trade)}
                     data-testid={`trade-card-${trade.id}`}
                   >
                     {/* 모바일 최적화: 반응형 레이아웃 */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 w-full min-w-0">
                       {/* 상단: 회사 정보 */}
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2 w-full min-w-0">
                         {/* 거래 타입 아이콘 */}
-                        <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
+                        <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
                           {getTradeTypeIcon(trade.tradeType)}
                         </div>
 
                         {/* 회사 & 트레이더 정보 */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-bold text-base sm:text-lg">{trade.companyName}</span>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-1 mb-1 w-full min-w-0">
+                            <span className="font-bold text-sm sm:text-base truncate">{trade.companyName}</span>
                             <Badge variant="outline" className="font-mono text-xs flex-shrink-0">{trade.ticker}</Badge>
                             {isRecent && (
-                              <Badge variant="destructive" className="text-xs animate-pulse flex-shrink-0">NEW</Badge>
+                              <Badge variant="destructive" className="text-xs flex-shrink-0">NEW</Badge>
                             )}
                           </div>
 
-                          <div className="text-xs sm:text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate">
                             {trade.traderName} • {trade.traderTitle}
                           </div>
                         </div>
                       </div>
 
                       {/* 하단: 거래 세부정보 */}
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center justify-between gap-2 w-full min-w-0">
                         {/* 왼쪽: 주식 정보 */}
-                        <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <div className="flex items-center gap-1 text-xs flex-shrink-0">
                           <span className="font-semibold">{trade.shares?.toLocaleString()}</span>
                           <span className="text-muted-foreground">주 @</span>
                           <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
                         </div>
 
                         {/* 오른쪽: 금액 & 시간 */}
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                           {/* 거래 금액 */}
-                          <div className={`text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
+                          <div className={`text-base sm:text-lg font-bold ${getTradeTypeColor(trade.tradeType)}`}>
                             {formatCurrency(Math.abs(trade.totalValue))}
                           </div>
 
                           {/* 업데이트 시간 */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {trade.createdAt && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-muted-foreground whitespace-nowrap">
                                 {formatTimeAgo(trade.createdAt)}
                               </div>
                             )}
                             {trade.secFilingUrl && (
-                              <div className="text-xs text-blue-600 hover:underline">
-                                SEC ↗
+                              <div className="text-xs text-blue-600">
+                                SEC
                               </div>
                             )}
                           </div>
@@ -428,6 +429,7 @@ export default function LiveTrading() {
         trade={selectedTrade}
         data-testid="trade-detail-modal"
       />
+      </div>
     </div>
   );
 }
