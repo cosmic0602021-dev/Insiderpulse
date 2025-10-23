@@ -957,7 +957,6 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.shares': '주',
     'liveTrading.loadingRealData': '실제 내부자 거래 데이터 로딩 중...',
     'liveTrading.dataLoadingFailed': '데이터 로딩 실패',
-    'liveTrading.count': '개',
     'liveTrading.lastUpdated': '마지막 업데이트',
 
     // Trade Card
