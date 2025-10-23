@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   TrendingUp, TrendingDown, DollarSign, Users,
   Wifi, WifiOff, AlertTriangle, CheckCircle, Clock,
-  RefreshCw, Database, Shield
+  RefreshCw, Database, Shield, Info
 } from 'lucide-react';
 import { apiClient, queryKeys } from '@/lib/api';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
@@ -252,6 +252,19 @@ export default function LiveTrading() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* SEC 공시일 안내 */}
+      <Alert className="border-slate-300 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
+        <Info className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+        <AlertDescription className="text-slate-700 dark:text-slate-300">
+          <div className="space-y-1">
+            <div className="font-semibold text-sm">{t('liveTrading.filingDateNotice.title')}</div>
+            <div className="text-xs leading-relaxed">
+              {t('liveTrading.filingDateNotice.description')}
+            </div>
+          </div>
+        </AlertDescription>
+      </Alert>
 
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">

@@ -255,6 +255,8 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.noValidatedTrades': 'No validated trade data available.',
     'liveTrading.collectorRunning': 'Data collector is running or waiting for new trades.',
     'liveTrading.shares': 'shares',
+    'liveTrading.filingDateNotice.title': 'About SEC Filing Dates',
+    'liveTrading.filingDateNotice.description': 'The dates shown are SEC filing dates, not the actual trade dates. SEC regulations require insiders to report trades within 2 business days, but some filings may be delayed. The "Last Updated" timestamp shows when our system collected this data from SEC servers.',
     'liveTrading.loadingRealData': 'Loading real insider trading data...',
     'liveTrading.dataLoadingFailed': 'Data loading failed',
     'liveTrading.insiderBuyPrice': 'Insider Buy Price',
@@ -305,6 +307,13 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboardStats.marketCoverage': 'Market Coverage',
     'dashboardStats.realTimeAnalysis': 'Real-time SEC filing analysis and trade classification',
     'dashboardStats.topMovers': 'Top Movers Today',
+    'dashboardStats.topStocks': 'Most Active Stocks',
+    'dashboardStats.trades': 'trades',
+    'dashboardStats.shares': 'Shares',
+    'dashboardStats.price': 'Price',
+    'dashboardStats.total': 'Total',
+    'dashboardStats.moreTrades': 'more trades',
+    'dashboardStats.noData': 'No trading data available',
     
     // Analytics page
     'analytics.subtitle': 'Comprehensive insider trading market analysis and insights',
@@ -956,6 +965,8 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.noValidatedTrades': '검증된 거래 데이터가 없습니다.',
     'liveTrading.collectorRunning': '데이터 수집기가 실행 중이거나 새로운 거래를 기다리고 있습니다.',
     'liveTrading.shares': '주',
+    'liveTrading.filingDateNotice.title': 'SEC 공시일 안내',
+    'liveTrading.filingDateNotice.description': '표시된 날짜는 실제 거래일이 아닌 SEC 공시일입니다. SEC 규정상 내부자는 거래 후 2영업일 이내에 신고해야 하지만, 일부 공시는 지연될 수 있습니다. "마지막 업데이트" 시간은 저희 시스템이 SEC 서버에서 이 데이터를 수집한 시점을 나타냅니다.',
     'liveTrading.loadingRealData': '실제 내부자 거래 데이터 로딩 중...',
     'liveTrading.dataLoadingFailed': '데이터 로딩 실패',
     'liveTrading.lastUpdated': '마지막 업데이트',
@@ -990,6 +1001,13 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboardStats.marketCoverage': '시장 커버리지',
     'dashboardStats.realTimeAnalysis': '실시간 SEC 신고 분석 및 거래 분류',
     'dashboardStats.topMovers': '오늘의 최고 상승주',
+    'dashboardStats.topStocks': '가장 활발한 종목',
+    'dashboardStats.trades': '거래',
+    'dashboardStats.shares': '주식수',
+    'dashboardStats.price': '주가',
+    'dashboardStats.total': '총액',
+    'dashboardStats.moreTrades': '개 추가 거래',
+    'dashboardStats.noData': '거래 데이터가 없습니다',
     
     // Analytics page
     'analytics.subtitle': '포괄적인 내부자 거래 시장 분석 및 인사이트',
@@ -1358,6 +1376,9 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.validTrades': '有効な取引',
     'liveTrading.lastUpdated': '最終更新',
     'liveTrading.validatedData': '検証済みデータ',
+    'liveTrading.shares': '株',
+    'liveTrading.filingDateNotice.title': 'SEC提出日について',
+    'liveTrading.filingDateNotice.description': '表示されている日付は実際の取引日ではなく、SEC提出日です。SEC規則により、インサイダーは取引後2営業日以内に報告する必要がありますが、一部の提出は遅延する場合があります。「最終更新」のタイムスタンプは、当システムがSECサーバーからこのデータを収集した時点を示しています。',
 
     // Trade Card
     'tradeCard.filed': '提出済み',
@@ -1388,6 +1409,13 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboardStats.marketCoverage': '市場カバレッジ',
     'dashboardStats.realTimeAnalysis': 'リアルタイムSEC申告分析と取引分類',
     'dashboardStats.topMovers': '今日のトップムーバー',
+    'dashboardStats.topStocks': '最も活発な銘柄',
+    'dashboardStats.trades': '取引',
+    'dashboardStats.shares': '株式数',
+    'dashboardStats.price': '株価',
+    'dashboardStats.total': '合計',
+    'dashboardStats.moreTrades': '件の追加取引',
+    'dashboardStats.noData': '取引データがありません',
     
     // Analytics page
     'analytics.subtitle': '包括的なインサイダー取引市場分析とインサイト',
@@ -1756,6 +1784,9 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.validTrades': '有效交易',
     'liveTrading.lastUpdated': '最后更新',
     'liveTrading.validatedData': '已验证数据',
+    'liveTrading.shares': '股',
+    'liveTrading.filingDateNotice.title': '关于SEC提交日期',
+    'liveTrading.filingDateNotice.description': '显示的日期是SEC提交日期，而非实际交易日期。根据SEC规定，内部人员必须在交易后2个工作日内报告，但某些提交可能会延迟。"最后更新"时间戳显示我们的系统从SEC服务器收集此数据的时间。',
 
     // Trade Card
     'tradeCard.filed': '已提交',
@@ -1786,6 +1817,13 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboardStats.marketCoverage': '市场覆盖',
     'dashboardStats.realTimeAnalysis': '实时SEC文件分析和交易分类',
     'dashboardStats.topMovers': '今日热门',
+    'dashboardStats.topStocks': '最活跃股票',
+    'dashboardStats.trades': '笔交易',
+    'dashboardStats.shares': '股数',
+    'dashboardStats.price': '股价',
+    'dashboardStats.total': '总额',
+    'dashboardStats.moreTrades': '笔额外交易',
+    'dashboardStats.noData': '暂无交易数据',
     
     // Analytics page
     'analytics.subtitle': '全面的内幕交易市场分析和洞察',

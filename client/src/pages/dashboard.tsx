@@ -160,6 +160,30 @@ export default function Dashboard() {
   // No AI analysis - just pass trades directly
   const tradesData = allTrades || [];
 
+  // Calculate top stocks by grouping trades by ticker symbol
+  const topStocks = useMemo(() => {
+    if (!trades || trades.length === 0) return [];
+
+    // Group trades by ticker symbol
+    const stockGroups = trades.reduce((acc, trade) => {
+      const key = trade.tickerSymbol;
+      if (!acc[key]) {
+        acc[key] = {
+          symbol: trade.tickerSymbol,
+          companyName: trade.companyName,
+          trades: []
+        };
+      }
+      acc[key].trades.push(trade);
+      return acc;
+    }, {} as Record<string, { symbol: string; companyName: string; trades: InsiderTrade[] }>);
+
+    // Convert to array and sort by number of trades (most active stocks)
+    return Object.values(stockGroups)
+      .sort((a, b) => b.trades.length - a.trades.length)
+      .slice(0, 3); // Top 3 stocks
+  }, [trades]);
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <div className="space-y-3 sm:space-y-6 p-3 sm:p-6" data-testid="dashboard">
@@ -286,35 +310,76 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Top Movers */}
-          <Card data-testid="top-movers">
+          {/* Top Stocks */}
+          <Card data-testid="top-stocks">
             <CardHeader>
-              <CardTitle className="text-base">{t('dashboardStats.topMovers')}</CardTitle>
+              <CardTitle className="text-base">{t('dashboardStats.topStocks')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {[
-                  { symbol: 'NVDA', name: 'NVIDIA Corp', change: '+3.2%', volume: '$7.0M', positive: true },
-                  { symbol: 'MSFT', name: 'Microsoft Corp', change: '+1.8%', volume: '$6.3M', positive: true },
-                  { symbol: 'AAPL', name: 'Apple Inc', change: '+2.1%', volume: '$4.6M', positive: true }
-                ].map((stock, index) => (
-                  <div key={stock.symbol} className="flex items-center justify-between p-2 rounded hover-elevate cursor-pointer"
-                       onClick={() => console.log(`Top mover ${stock.symbol} clicked`)}
-                       data-testid={`top-mover-${stock.symbol.toLowerCase()}`}>
-                    <div>
-                      <div className="font-mono text-sm font-medium">{stock.symbol}</div>
-                      <div className="text-xs text-muted-foreground">{stock.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-medium ${
-                        stock.positive ? 'text-chart-2' : 'text-destructive'
-                      }`}>
-                        {stock.change}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{stock.volume}</div>
-                    </div>
+              <div className="space-y-4">
+                {topStocks.length === 0 ? (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    {t('dashboardStats.noData')}
                   </div>
-                ))}
+                ) : (
+                  topStocks.map((stock) => (
+                    <div key={stock.symbol} className="border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-2">
+                      {/* Stock Header */}
+                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <div>
+                          <div className="font-mono text-sm font-semibold">{stock.symbol}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[180px]">{stock.companyName}</div>
+                        </div>
+                        <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                          {stock.trades.length} {t('dashboardStats.trades')}
+                        </div>
+                      </div>
+
+                      {/* Individual Trades */}
+                      <div className="space-y-2">
+                        {stock.trades.slice(0, 3).map((trade, idx) => (
+                          <div key={idx} className="bg-slate-50 dark:bg-slate-900 rounded p-2 space-y-1">
+                            {/* Name and Position */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-medium truncate">{trade.insiderName}</div>
+                                <div className="text-xs text-muted-foreground truncate">{trade.insiderPosition}</div>
+                              </div>
+                              <div className="text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(trade.filedDate).toLocaleDateString(t('locale'), { month: 'short', day: 'numeric' })}
+                              </div>
+                            </div>
+
+                            {/* Trade Details */}
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div>
+                                <div className="text-muted-foreground">{t('dashboardStats.shares')}</div>
+                                <div className="font-medium">{trade.shares?.toLocaleString() || 'N/A'}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">{t('dashboardStats.price')}</div>
+                                <div className="font-medium">${trade.price?.toFixed(2) || 'N/A'}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">{t('dashboardStats.total')}</div>
+                                <div className="font-medium text-amber-600 dark:text-amber-500">
+                                  ${((trade.shares || 0) * (trade.price || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Show more indicator */}
+                        {stock.trades.length > 3 && (
+                          <div className="text-xs text-center text-muted-foreground pt-1">
+                            +{stock.trades.length - 3} {t('dashboardStats.moreTrades')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
