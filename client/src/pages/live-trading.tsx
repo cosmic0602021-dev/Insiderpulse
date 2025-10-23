@@ -368,15 +368,17 @@ export default function LiveTrading() {
 
                         {/* 회사 & 트레이더 정보 */}
                         <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-center gap-1 mb-1 w-full min-w-0">
-                            <span className="font-bold text-sm sm:text-base truncate">{trade.companyName}</span>
-                            <Badge variant="outline" className="font-mono text-xs flex-shrink-0">{trade.ticker}</Badge>
-                            {isRecent && (
-                              <Badge variant="destructive" className="text-xs flex-shrink-0">NEW</Badge>
-                            )}
+                          <div className="flex items-start gap-1 mb-1 w-full min-w-0 flex-wrap">
+                            <span className="font-bold text-sm sm:text-base break-words max-w-full">{trade.companyName}</span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Badge variant="outline" className="font-mono text-xs">{trade.ticker}</Badge>
+                              {isRecent && (
+                                <Badge variant="destructive" className="text-xs">NEW</Badge>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="text-xs text-muted-foreground truncate">
+                          <div className="text-xs text-muted-foreground break-words max-w-full">
                             {trade.traderName} • {trade.traderTitle}
                           </div>
                         </div>

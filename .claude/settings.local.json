@@ -52,7 +52,11 @@
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(gh repo view:*)",
+      "Bash(for file in client/src/pages/*.tsx)",
+      "Bash(do echo \"=== $file ===\")"
     ],
     "deny": [],
     "ask": []

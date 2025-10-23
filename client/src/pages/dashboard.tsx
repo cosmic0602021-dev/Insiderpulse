@@ -161,7 +161,8 @@ export default function Dashboard() {
   const tradesData = allTrades || [];
 
   return (
-    <div className="space-y-6 p-6" data-testid="dashboard">
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6" data-testid="dashboard">
       {/* Connection Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Alert className={isConnected ? 'border-chart-2/50 bg-chart-2/10' : 'border-destructive/50 bg-destructive/10'}>
@@ -318,6 +319,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );
