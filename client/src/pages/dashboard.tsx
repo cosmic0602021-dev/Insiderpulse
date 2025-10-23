@@ -162,10 +162,12 @@ export default function Dashboard() {
 
   // Calculate top stocks by grouping trades by ticker symbol
   const topStocks = useMemo(() => {
-    if (!trades || trades.length === 0) return [];
+    // Use tradesData which includes all loaded trades
+    const dataToUse = tradesData.length > 0 ? tradesData : trades;
+    if (!dataToUse || dataToUse.length === 0) return [];
 
     // Group trades by ticker symbol
-    const stockGroups = trades.reduce((acc, trade) => {
+    const stockGroups = dataToUse.reduce((acc, trade) => {
       const key = trade.tickerSymbol;
       if (!acc[key]) {
         acc[key] = {
@@ -182,7 +184,7 @@ export default function Dashboard() {
     return Object.values(stockGroups)
       .sort((a, b) => b.trades.length - a.trades.length)
       .slice(0, 3); // Top 3 stocks
-  }, [trades]);
+  }, [tradesData, trades]);
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
