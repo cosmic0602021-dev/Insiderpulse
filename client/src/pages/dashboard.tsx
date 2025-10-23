@@ -30,13 +30,13 @@ export default function Dashboard() {
   
   const { data: rawTrades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: 20,
+      limit: 100, // Increased for Top Stocks calculation
       offset: 0,
       from: dateRange.fromDate?.toISOString().split('T')[0],
       to: dateRange.toDate?.toISOString().split('T')[0],
       sortBy
     }),
-    queryFn: () => apiClient.getInsiderTrades(20, 0, dateRange.fromDate, dateRange.toDate, sortBy),
+    queryFn: () => apiClient.getInsiderTrades(100, 0, dateRange.fromDate, dateRange.toDate, sortBy),
     staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates
   });
 
@@ -158,16 +158,21 @@ export default function Dashboard() {
   };
   
   // No AI analysis - just pass trades directly
-  const tradesData = allTrades || [];
+  // For TradeList display, limit to 20 initially (will load more with button)
+  const tradesData = allTrades.length > 0 ? allTrades.slice(0, 20) : trades.slice(0, 20);
 
   // Calculate top stocks by grouping trades by ticker symbol
   const topStocks = useMemo(() => {
-    // Use tradesData which includes all loaded trades
-    const dataToUse = tradesData.length > 0 ? tradesData : trades;
-    if (!dataToUse || dataToUse.length === 0) return [];
+    // Use ALL trades (100) for better Top Stocks calculation, not just the 20 displayed
+    console.log('🔍 Top Stocks - Using', trades.length, 'trades for calculation');
+
+    if (!trades || trades.length === 0) {
+      console.log('❌ Top Stocks - No data available');
+      return [];
+    }
 
     // Group trades by ticker symbol
-    const stockGroups = dataToUse.reduce((acc, trade) => {
+    const stockGroups = trades.reduce((acc, trade) => {
       const key = trade.tickerSymbol;
       if (!acc[key]) {
         acc[key] = {
@@ -181,10 +186,13 @@ export default function Dashboard() {
     }, {} as Record<string, { symbol: string; companyName: string; trades: InsiderTrade[] }>);
 
     // Convert to array and sort by number of trades (most active stocks)
-    return Object.values(stockGroups)
+    const topStocksResult = Object.values(stockGroups)
       .sort((a, b) => b.trades.length - a.trades.length)
       .slice(0, 3); // Top 3 stocks
-  }, [tradesData, trades]);
+
+    console.log('✅ Top Stocks calculated:', topStocksResult.map(s => `${s.symbol} (${s.trades.length} trades)`));
+    return topStocksResult;
+  }, [trades]);
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
