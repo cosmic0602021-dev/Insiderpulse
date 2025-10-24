@@ -100,31 +100,24 @@ const CheckoutForm = ({ amount, description }: { amount: number; description: st
 
 export default function PremiumCheckout() {
   const [clientSecret, setClientSecret] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'pro'>('basic');
+  const [selectedPlan] = useState<'monthly'>('monthly');
 
   const plans = {
-    basic: {
-      name: "Premium Basic",
-      price: 29.99,
-      description: "Enhanced insider trading insights",
+    monthly: {
+      name: "Insider Pro",
+      price: 29,
+      interval: "/month",
+      description: "Real-time insider trading data & AI analysis",
       features: [
-        "Real-time SEC filing alerts",
-        "AI-powered trade analysis", 
-        "Historical pattern detection",
-        "Email notifications"
-      ]
-    },
-    pro: {
-      name: "Premium Pro",
-      price: 49.99,
-      description: "Complete insider trading intelligence",
-      features: [
-        "Everything in Basic",
-        "Advanced pattern recognition",
-        "Credibility scoring",
-        "News correlation analysis",
-        "Priority support"
-      ]
+        "✨ Real-time insider trade alerts (no 48h delay)",
+        "🚀 AI-powered trade analysis & predictions",
+        "📊 Advanced pattern detection & signals",
+        "🎯 Executive trade tracking (CEO, CFO, etc.)",
+        "⚡ Live data updates & push notifications",
+        "📈 Historical insider performance analytics",
+        "💎 Exclusive market intelligence reports"
+      ],
+      savings: "Save $120/year vs. competitors"
     }
   };
 
@@ -158,72 +151,80 @@ export default function PremiumCheckout() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4" data-testid="text-checkout-title">
-            Upgrade to InsiderTrack Pro Premium
+          <Badge className="mb-4 bg-amber-500 text-slate-900 font-bold">
+            <Zap className="w-3 h-3 mr-1" />
+            LIMITED TIME OFFER
+          </Badge>
+          <h1 className="text-4xl font-bold mb-4 text-white" data-testid="text-checkout-title">
+            Upgrade to Insider Pro
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Get exclusive access to advanced insider trading analytics and real-time market intelligence
+          <p className="text-slate-300 max-w-2xl mx-auto text-lg">
+            Get real-time insider trading alerts and never miss a profitable opportunity
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Plan Selection */}
+          {/* Plan Card */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold mb-4">Choose Your Plan</h2>
-            
-            {Object.entries(plans).map(([key, plan]) => (
-              <Card 
-                key={key}
-                className={`cursor-pointer transition-all hover-elevate ${
-                  selectedPlan === key ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() => setSelectedPlan(key as 'basic' | 'pro')}
-                data-testid={`card-plan-${key}`}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {plan.name}
-                        {key === 'pro' && (
-                          <Badge variant="default">
-                            <Zap className="w-3 h-3 mr-1" />
-                            Most Popular
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold">${plan.price}</div>
-                      <div className="text-sm text-muted-foreground">one-time</div>
-                    </div>
+            <Card className="border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-white text-2xl">
+                      {currentPlan.name}
+                      <Badge variant="default" className="bg-amber-500 text-slate-900">
+                        <Zap className="w-3 h-3 mr-1" />
+                        Most Popular
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="text-slate-300 text-base mt-2">
+                      {currentPlan.description}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold text-amber-500">${currentPlan.price}</span>
+                    <span className="text-xl text-slate-400">{currentPlan.interval}</span>
+                  </div>
+                  <p className="text-sm text-green-400 mt-2 font-semibold">{currentPlan.savings}</p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {currentPlan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3 text-sm text-slate-200">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
 
-            <div className="mt-6 p-4 bg-muted rounded-lg">
+            <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
               <div className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 text-primary mt-0.5" />
+                <Shield className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-sm">Real Insider Trading Data</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    All data is sourced directly from SEC filings and verified market sources. 
-                    No fake or simulated data - only real, actionable insider trading intelligence.
+                  <h3 className="font-semibold text-sm text-white">Secure Payment</h3>
+                  <p className="text-sm text-slate-300 mt-1">
+                    All transactions are encrypted and processed securely through Stripe.
+                    Cancel anytime with one click.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
+              <div className="flex items-start gap-3">
+                <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-sm text-white">Real SEC Data</h3>
+                  <p className="text-sm text-slate-300 mt-1">
+                    All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.
                   </p>
                 </div>
               </div>

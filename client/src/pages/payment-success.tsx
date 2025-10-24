@@ -54,53 +54,57 @@ export default function PaymentSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-slate-900 to-slate-800 flex items-center justify-center p-4">
       <div className="max-w-2xl mx-auto text-center space-y-8">
         <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+          <div className="mx-auto w-20 h-20 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+            <CheckCircle className="w-12 h-12 text-white" />
           </div>
-          
-          <h1 className="text-3xl font-bold" data-testid="text-success-title">
-            Payment Successful!
+
+          <h1 className="text-4xl font-bold text-white" data-testid="text-success-title">
+            🎉 Welcome to Insider Pro!
           </h1>
-          
-          <p className="text-muted-foreground text-lg">
-            Welcome to InsiderTrack Pro Premium. Your payment has been processed successfully.
+
+          <p className="text-green-300 text-xl">
+            Your subscription is now active. Start tracking insider trades in real-time!
           </p>
         </div>
 
-        <Card className="text-left">
+        <Card className="text-left bg-slate-800 border-green-500 border-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Premium Features Unlocked
+            <CardTitle className="flex items-center gap-2 text-white text-2xl">
+              <Shield className="h-6 w-6 text-green-400" />
+              All Premium Features Unlocked
             </CardTitle>
-            <CardDescription>
-              You now have access to all premium insider trading analytics
+            <CardDescription className="text-slate-300">
+              You now have full access to real-time insider trading intelligence
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Real-time SEC filing alerts</span>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">✨ Real-time insider trade alerts (no 48h delay)</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">AI-powered trade analysis</span>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">🚀 AI-powered trade analysis & predictions</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Advanced pattern detection</span>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">📊 Advanced pattern detection & signals</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Insider credibility scoring</span>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">🎯 Executive trade tracking (CEO, CFO, etc.)</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Priority email notifications</span>
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">⚡ Live data updates & push notifications</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-slate-200">📈 Historical insider performance analytics</span>
               </div>
             </div>
           </CardContent>
@@ -108,15 +112,15 @@ export default function PaymentSuccess() {
 
         <div className="space-y-3">
           <Link href="/">
-            <Button size="lg" className="w-full" data-testid="button-start-exploring">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Start Exploring Premium Features
-              <ArrowRight className="w-4 h-4 ml-2" />
+            <Button size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white" data-testid="button-start-exploring">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              Start Tracking Insider Trades
+              <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
-          
-          <p className="text-sm text-muted-foreground">
-            Your premium access is now active. Start analyzing real insider trading data with enhanced AI insights.
+
+          <p className="text-sm text-slate-300">
+            🎯 Your Insider Pro subscription is active. Cancel anytime from your account settings.
           </p>
         </div>
       </div>
