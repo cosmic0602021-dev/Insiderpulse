@@ -81,6 +81,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.realtimeLocked': '🔒 Real-Time Data Locked',
     'freeZone.unlockMessage': 'Try 24-hour Insider access for free!',
     'freeZone.unlockButton': 'Unlock Now ($0)',
+
+    // Locked Trade Card
+    'lockedTrade.realtimeInsider': '🚨 Real-Time Insider Trade Detected',
+    'lockedTrade.executive': 'Executive',
+    'lockedTrade.insiders': 'Insiders',
+    'lockedTrade.detected': 'detected',
+    'lockedTrade.realtimeZone': '🔥 Real-Time Zone',
+    'lockedTrade.lockedTrades': 'locked trades',
+    'lockedTrade.unlockPrompt': 'Unlock {count} real-time insider trades and see what the insiders are doing right now!',
+    'lockedTrade.startTrial': '🎯 Start 24-Hour Free Trial',
     
     // Page specific
     'page.dashboard.subtitle': 'Real-time insider trading monitoring and market intelligence',
@@ -798,6 +808,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.realtimeLocked': '🔒 실시간 데이터 잠금',
     'freeZone.unlockMessage': '24시간 Insider 등급을 무료로 체험하세요!',
     'freeZone.unlockButton': '지금 해제 ($0)',
+
+    // Locked Trade Card
+    'lockedTrade.realtimeInsider': '🚨 실시간 내부자 거래 감지',
+    'lockedTrade.executive': '임원',
+    'lockedTrade.insiders': '내부자',
+    'lockedTrade.detected': '감지됨',
+    'lockedTrade.realtimeZone': '🔥 실시간 구역',
+    'lockedTrade.lockedTrades': '개 잠금 거래',
+    'lockedTrade.unlockPrompt': '{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!',
+    'lockedTrade.startTrial': '🎯 24시간 무료 체험 시작',
     
     // Page specific
     'page.dashboard.subtitle': '실시간 내부자 거래 모니터링 및 시장 인텔리전스',
@@ -1229,6 +1249,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.realtimeLocked': '🔒 リアルタイムデータロック中',
     'freeZone.unlockMessage': '24時間Insiderアクセスを無料でお試しください！',
     'freeZone.unlockButton': '今すぐ解除 ($0)',
+
+    // Locked Trade Card
+    'lockedTrade.realtimeInsider': '🚨 リアルタイムインサイダー取引検出',
+    'lockedTrade.executive': '役員',
+    'lockedTrade.insiders': 'インサイダー',
+    'lockedTrade.detected': '検出',
+    'lockedTrade.realtimeZone': '🔥 リアルタイムゾーン',
+    'lockedTrade.lockedTrades': '件のロック取引',
+    'lockedTrade.unlockPrompt': '{count}件のリアルタイムインサイダー取引をアンロックして、インサイダーが今何をしているか確認！',
+    'lockedTrade.startTrial': '🎯 24時間無料トライアル開始',
     
     // Page specific
     'page.dashboard.subtitle': 'リアルタイムインサイダー取引監視と市場インテリジェンス',
@@ -1644,6 +1674,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.realtimeLocked': '🔒 实时数据已锁定',
     'freeZone.unlockMessage': '免费试用24小时Insider访问！',
     'freeZone.unlockButton': '立即解锁 ($0)',
+
+    // Locked Trade Card
+    'lockedTrade.realtimeInsider': '🚨 检测到实时内幕交易',
+    'lockedTrade.executive': '高管',
+    'lockedTrade.insiders': '内幕人士',
+    'lockedTrade.detected': '检测到',
+    'lockedTrade.realtimeZone': '🔥 实时区域',
+    'lockedTrade.lockedTrades': '笔锁定交易',
+    'lockedTrade.unlockPrompt': '解锁{count}笔实时内幕交易，看看内幕人士现在在做什么！',
+    'lockedTrade.startTrial': '🎯 开始24小时免费试用',
     
     // Page specific
     'page.dashboard.subtitle': '实时内幕交易监控和市场情报',

@@ -9,11 +9,14 @@ import {
   Wifi, WifiOff, AlertTriangle, CheckCircle, Clock,
   RefreshCw, Database, Shield, Info
 } from 'lucide-react';
-import { apiClient, queryKeys } from '@/lib/api';
+import { apiClient, queryKeys, type TradesResponse } from '@/lib/api';
+import { useAccess } from '@/contexts/access-context';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
 import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { LockedTradesSection } from '@/components/locked-trade-card';
+import { FreeZoneBanner } from '@/components/free-zone-banner';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import type { InsiderTrade } from '@shared/schema';
@@ -30,6 +33,7 @@ interface DataQualityStatus {
 export default function LiveTrading() {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  const { accessLevel, setAccessLevel } = useAccess();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
@@ -45,19 +49,34 @@ export default function LiveTrading() {
     setSelectedTrade(null);
   };
 
+  const handleUnlock = () => {
+    // TODO: Phase 3 - Implement trial activation
+    console.log('🎯 Unlock trial activated!');
+    alert('24-hour trial activation coming in Phase 3!');
+  };
+
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 업데이트순 정렬 (createdAt)
-  const { data: allTrades, isLoading, error, refetch } = useQuery({
+  const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: 100,
       offset: 0,
       sortBy: 'createdAt'
     }),
-    queryFn: () => apiClient.getInsiderTrades(100, 0, undefined, undefined, 'createdAt'),
+    queryFn: async () => {
+      const response = await apiClient.getInsiderTradesWithAccess(100, 0, undefined, undefined, 'createdAt');
+      // Update global access level
+      if (response.accessLevel) {
+        setAccessLevel(response.accessLevel);
+      }
+      return response;
+    },
     staleTime: 60000, // 1분 캐시
     refetchInterval: 300000, // 5분마다 자동 갱신
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
+
+  const allTrades = tradesResponse?.trades || [];
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
@@ -266,6 +285,11 @@ export default function LiveTrading() {
         </AlertDescription>
       </Alert>
 
+      {/* Free Zone Banner - 48h delay notice */}
+      {accessLevel && !accessLevel.hasRealtimeAccess && accessLevel.delayHours > 0 && (
+        <FreeZoneBanner delayHours={accessLevel.delayHours} />
+      )}
+
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="flex-1">
@@ -340,12 +364,25 @@ export default function LiveTrading() {
         </div>
       )}
 
+      {/* Locked Real-Time Trades Section - FOMO Zone */}
+      {accessLevel && !accessLevel.hasRealtimeAccess && (
+        <LockedTradesSection
+          trades={validatedData.trades.slice(0, 5)} // Show 5 locked trades as teaser
+          onUnlock={handleUnlock}
+        />
+      )}
+
       {/* 거래 목록 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             {t('liveTrading.verifiedTradesList')}
+            {accessLevel && !accessLevel.hasRealtimeAccess && (
+              <Badge variant="outline" className="text-xs">
+                {t('freeZone.delayedData')}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

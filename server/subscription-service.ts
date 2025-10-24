@@ -3,9 +3,11 @@
  * Manages user subscription status, trial access, and data access control
  */
 
-import { db } from "@db";
+import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+
+const db = drizzle(process.env.DATABASE_URL!);
 
 export type SubscriptionTier = "free" | "insider_pro";
 export type SubscriptionStatus = "active" | "inactive" | "trialing" | "canceled";
