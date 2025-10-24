@@ -2,6 +2,17 @@ import type { TradingStats, InsiderTrade } from '@shared/schema';
 
 const API_BASE_URL = '/api';
 
+export interface AccessLevel {
+  hasRealtimeAccess: boolean;
+  isDelayed: boolean;
+  delayHours: number;
+}
+
+export interface TradesResponse {
+  trades: InsiderTrade[];
+  accessLevel: AccessLevel;
+}
+
 class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -43,6 +54,17 @@ class ApiClient {
     toDate?: Date,
     sortBy?: string
   ): Promise<InsiderTrade[]> => {
+    const response = await this.getInsiderTradesWithAccess(limit, offset, fromDate, toDate, sortBy);
+    return response.trades;
+  }
+
+  getInsiderTradesWithAccess = async (
+    limit = 20,
+    offset = 0,
+    fromDate?: Date,
+    toDate?: Date,
+    sortBy?: string
+  ): Promise<TradesResponse> => {
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),
@@ -60,8 +82,8 @@ class ApiClient {
 
     const url = `/trades?${params.toString()}`;
     console.log(`🌐 [API] Requesting: ${url}`);
-    const result = await this.request<InsiderTrade[]>(url);
-    console.log(`[API] Received ${result.length} trades`);
+    const result = await this.request<TradesResponse>(url);
+    console.log(`[API] Received ${result.trades.length} trades, access level:`, result.accessLevel);
     return result;
   }
 

@@ -56,7 +56,9 @@
       "Bash(git rev-parse:*)",
       "Bash(gh repo view:*)",
       "Bash(for file in client/src/pages/*.tsx)",
-      "Bash(do echo \"=== $file ===\")"
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(git tag:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

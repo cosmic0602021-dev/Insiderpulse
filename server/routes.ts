@@ -24,6 +24,7 @@ import { timingAnalysisService } from "./timing-analysis-service";
 import { newsCorrelationService } from "./news-correlation-service";
 import { insiderCredibilityService } from "./insider-credibility-service";
 import { dataIntegrityService } from "./data-integrity-service";
+import { subscriptionService } from "./subscription-service";
 
 // Initialize Stripe with secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -185,9 +186,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const toDate = req.query.to as string;
       const sortBy = (req.query.sortBy as 'createdAt' | 'filedDate') || 'filedDate';
 
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, toDate, sortBy);
+      // Access control: check if user has real-time access
+      // TODO: Implement proper authentication and get userId from session/token
+      const userId = req.headers['x-user-id'] as string; // Placeholder for now
 
-      res.json(rawTrades);
+      let hasRealtimeAccess = false;
+      if (userId) {
+        const accessLevel = await subscriptionService.getUserAccessLevel(userId);
+        hasRealtimeAccess = accessLevel.canAccessRealtime;
+      }
+
+      // If user doesn't have real-time access, filter to 48h+ old trades
+      let adjustedToDate = toDate;
+      if (!hasRealtimeAccess) {
+        const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        adjustedToDate = fortyEightHoursAgo.toISOString().split('T')[0];
+        console.log(`🔒 Free user - limiting to trades before ${adjustedToDate}`);
+      }
+
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy);
+
+      // Add access level info to response
+      res.json({
+        trades: rawTrades,
+        accessLevel: {
+          hasRealtimeAccess,
+          isDelayed: !hasRealtimeAccess,
+          delayHours: hasRealtimeAccess ? 0 : 48,
+        }
+      });
     } catch (error) {
       console.error('Error fetching trades:', error);
       res.status(500).json({ error: 'Failed to fetch insider trades' });

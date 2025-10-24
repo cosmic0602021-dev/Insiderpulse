@@ -8,6 +8,22 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+
+  // Subscription & Trial Management
+  subscriptionTier: text("subscription_tier").notNull().default("free"), // "free" | "insider_pro"
+  subscriptionStatus: text("subscription_status").notNull().default("inactive"), // "active" | "inactive" | "trialing" | "canceled"
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+
+  // 24-hour Trial System
+  trialActivatedAt: timestamp("trial_activated_at"), // When user started 24h trial
+  trialExpiresAt: timestamp("trial_expires_at"), // When trial ends
+  hasUsedTrial: boolean("has_used_trial").notNull().default(false), // Prevent multiple trials
+
+  // FOMO tracking
+  lastTrialNotificationSent: timestamp("last_trial_notification_sent"),
 });
 
 export const insiderTrades = pgTable("insider_trades", {
