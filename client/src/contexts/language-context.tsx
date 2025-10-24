@@ -74,6 +74,13 @@ const translations: Record<Language, Record<string, string>> = {
     'general.save': 'Save',
     'general.cancel': 'Cancel',
     'general.delete': 'Delete',
+
+    // Free Zone & Access Control
+    'freeZone.delayedData': '⏰ 48-Hour Delayed Data',
+    'freeZone.description': 'You are viewing trades from {hours} hours ago. Upgrade to Insider Pro for real-time access.',
+    'freeZone.realtimeLocked': '🔒 Real-Time Data Locked',
+    'freeZone.unlockMessage': 'Try 24-hour Insider access for free!',
+    'freeZone.unlockButton': 'Unlock Now ($0)',
     
     // Page specific
     'page.dashboard.subtitle': 'Real-time insider trading monitoring and market intelligence',
@@ -784,6 +791,13 @@ const translations: Record<Language, Record<string, string>> = {
     'general.save': '저장',
     'general.cancel': '취소',
     'general.delete': '삭제',
+
+    // Free Zone & Access Control
+    'freeZone.delayedData': '⏰ 48시간 지연 데이터',
+    'freeZone.description': '{hours}시간 전 거래를 보고 있습니다. Insider Pro로 업그레이드하여 실시간 접근하세요.',
+    'freeZone.realtimeLocked': '🔒 실시간 데이터 잠금',
+    'freeZone.unlockMessage': '24시간 Insider 등급을 무료로 체험하세요!',
+    'freeZone.unlockButton': '지금 해제 ($0)',
     
     // Page specific
     'page.dashboard.subtitle': '실시간 내부자 거래 모니터링 및 시장 인텔리전스',
@@ -1208,6 +1222,13 @@ const translations: Record<Language, Record<string, string>> = {
     'general.save': '保存',
     'general.cancel': 'キャンセル',
     'general.delete': '削除',
+
+    // Free Zone & Access Control
+    'freeZone.delayedData': '⏰ 48時間遅延データ',
+    'freeZone.description': '{hours}時間前の取引を表示しています。Insider Proにアップグレードしてリアルタイムアクセス。',
+    'freeZone.realtimeLocked': '🔒 リアルタイムデータロック中',
+    'freeZone.unlockMessage': '24時間Insiderアクセスを無料でお試しください！',
+    'freeZone.unlockButton': '今すぐ解除 ($0)',
     
     // Page specific
     'page.dashboard.subtitle': 'リアルタイムインサイダー取引監視と市場インテリジェンス',
@@ -1616,6 +1637,13 @@ const translations: Record<Language, Record<string, string>> = {
     'general.save': '保存',
     'general.cancel': '取消',
     'general.delete': '删除',
+
+    // Free Zone & Access Control
+    'freeZone.delayedData': '⏰ 48小时延迟数据',
+    'freeZone.description': '您正在查看{hours}小时前的交易。升级到Insider Pro以获得实时访问。',
+    'freeZone.realtimeLocked': '🔒 实时数据已锁定',
+    'freeZone.unlockMessage': '免费试用24小时Insider访问！',
+    'freeZone.unlockButton': '立即解锁 ($0)',
     
     // Page specific
     'page.dashboard.subtitle': '实时内幕交易监控和市场情报',
@@ -1995,10 +2023,19 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     localStorage.setItem('language', lang);
   };
 
-  const t = (key: string): string => {
+  const t = (key: string, variables?: Record<string, string | number>): string => {
     const currentTranslations = translations[language] as Record<string, string>;
     const fallbackTranslations = translations.en as Record<string, string>;
-    return currentTranslations[key] || fallbackTranslations[key] || key;
+    let text = currentTranslations[key] || fallbackTranslations[key] || key;
+
+    // Replace variables like {hours} with actual values
+    if (variables) {
+      Object.entries(variables).forEach(([varKey, varValue]) => {
+        text = text.replace(`{${varKey}}`, String(varValue));
+      });
+    }
+
+    return text;
   };
 
   return (

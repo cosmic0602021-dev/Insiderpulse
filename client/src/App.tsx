@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import LanguageSelector from "@/components/language-selector";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
+import { AccessProvider } from "@/contexts/access-context";
 import { useState, useEffect } from "react";
 import LanguageSelection from "@/pages/language-selection";
 import Dashboard from "@/pages/dashboard";
@@ -104,11 +105,13 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <TooltipProvider>
-          <AppContent />
-          <PWAInstallPrompt />
-          <Toaster />
-        </TooltipProvider>
+        <AccessProvider>
+          <TooltipProvider>
+            <AppContent />
+            <PWAInstallPrompt />
+            <Toaster />
+          </TooltipProvider>
+        </AccessProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );
