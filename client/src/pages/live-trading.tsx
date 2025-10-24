@@ -17,6 +17,7 @@ import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { LockedTradesSection } from '@/components/locked-trade-card';
 import { FreeZoneBanner } from '@/components/free-zone-banner';
+import { TrialTimerBanner, TrialExpiredBanner } from '@/components/trial-timer-banner';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import type { InsiderTrade } from '@shared/schema';
@@ -38,6 +39,8 @@ export default function LiveTrading() {
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null);
+  const [isTrialing, setIsTrialing] = useState(false);
 
   const handleTradeClick = (trade: InsiderTrade) => {
     setSelectedTrade(trade);
@@ -49,10 +52,38 @@ export default function LiveTrading() {
     setSelectedTrade(null);
   };
 
-  const handleUnlock = () => {
-    // TODO: Phase 3 - Implement trial activation
-    console.log('🎯 Unlock trial activated!');
-    alert('24-hour trial activation coming in Phase 3!');
+  const handleUnlock = async () => {
+    try {
+      console.log('🎯 Activating 24-hour trial...');
+      const result = await apiClient.activateTrial();
+
+      if (result.success) {
+        console.log('✅ Trial activated successfully:', result);
+        alert(`🎉 ${result.message}\n\nYour 24-hour free trial is now active! Enjoy real-time insider trading data.`);
+
+        // Update trial state
+        setIsTrialing(true);
+        if (result.expiresAt) {
+          setTrialExpiresAt(result.expiresAt);
+        }
+
+        // Refresh the page to show unlocked data
+        refetch();
+
+        // Update access level in global state
+        setAccessLevel({
+          hasRealtimeAccess: true,
+          isDelayed: false,
+          delayHours: 0,
+        });
+      } else {
+        console.warn('⚠️ Trial activation failed:', result.message);
+        alert(`❌ ${result.message || result.error}`);
+      }
+    } catch (error: any) {
+      console.error('❌ Trial activation error:', error);
+      alert(`Error: ${error.message || 'Failed to activate trial'}`);
+    }
   };
 
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 업데이트순 정렬 (createdAt)
@@ -285,8 +316,13 @@ export default function LiveTrading() {
         </AlertDescription>
       </Alert>
 
+      {/* Trial Timer Banner - Active trial countdown */}
+      {isTrialing && trialExpiresAt && (
+        <TrialTimerBanner trialExpiresAt={trialExpiresAt} />
+      )}
+
       {/* Free Zone Banner - 48h delay notice */}
-      {accessLevel && !accessLevel.hasRealtimeAccess && accessLevel.delayHours > 0 && (
+      {accessLevel && !accessLevel.hasRealtimeAccess && !isTrialing && accessLevel.delayHours > 0 && (
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
       )}
 

@@ -235,6 +235,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🎯 TRIAL ACTIVATION ENDPOINT
+  app.post('/api/trial/activate', async (req, res) => {
+    try {
+      // TODO: Get userId from authenticated session
+      const userId = req.headers['x-user-id'] as string;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication required'
+        });
+      }
+
+      const result = await subscriptionService.activateTrial(userId);
+
+      if (result.success) {
+        console.log(`🎯 Trial activated for user ${userId} - expires at ${result.expiresAt}`);
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error('❌ Trial activation error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to activate trial'
+      });
+    }
+  });
+
+  // Get trial status
+  app.get('/api/trial/status', async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const accessLevel = await subscriptionService.getUserAccessLevel(userId);
+      res.json({
+        isTrialing: accessLevel.isTrialing,
+        canAccessRealtime: accessLevel.canAccessRealtime,
+        trialExpiresAt: accessLevel.trialExpiresAt,
+        daysUntilExpiry: accessLevel.daysUntilExpiry,
+        tier: accessLevel.tier,
+        status: accessLevel.status,
+      });
+    } catch (error) {
+      console.error('❌ Trial status error:', error);
+      res.status(500).json({ error: 'Failed to fetch trial status' });
+    }
+  });
+
   // Create new insider trade (for data ingestion)
   app.post('/api/trades', async (req, res) => {
     try {

@@ -13,6 +13,22 @@ export interface TradesResponse {
   accessLevel: AccessLevel;
 }
 
+export interface TrialActivationResponse {
+  success: boolean;
+  message: string;
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface TrialStatusResponse {
+  isTrialing: boolean;
+  canAccessRealtime: boolean;
+  trialExpiresAt?: string;
+  daysUntilExpiry?: number;
+  tier: string;
+  status: string;
+}
+
 class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -91,6 +107,25 @@ class ApiClient {
     return this.request<InsiderTrade>(`/trades/${id}`);
   }
 
+  // Trial system
+  activateTrial = async (): Promise<TrialActivationResponse> => {
+    console.log('🎯 [API] Activating trial...');
+    return this.request<TrialActivationResponse>('/trial/activate', {
+      method: 'POST',
+      headers: {
+        'x-user-id': 'demo-user', // TODO: Get from auth context
+      },
+    });
+  }
+
+  getTrialStatus = async (): Promise<TrialStatusResponse> => {
+    return this.request<TrialStatusResponse>('/trial/status', {
+      headers: {
+        'x-user-id': 'demo-user', // TODO: Get from auth context
+      },
+    });
+  }
+
   // Health check
   getHealth = async () => {
     return this.request('/health');
@@ -113,6 +148,9 @@ export const queryKeys = {
     list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
+  },
+  trial: {
+    status: ['trial', 'status'] as const,
   },
   health: ['health'] as const,
 };

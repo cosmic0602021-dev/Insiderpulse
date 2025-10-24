@@ -91,7 +91,16 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.lockedTrades': 'locked trades',
     'lockedTrade.unlockPrompt': 'Unlock {count} real-time insider trades and see what the insiders are doing right now!',
     'lockedTrade.startTrial': '🎯 Start 24-Hour Free Trial',
-    
+
+    // Trial Timer
+    'trial.activeNotice': '✨ Free Trial Active:',
+    'trial.remaining': 'remaining',
+    'trial.expired': 'Expired',
+    'trial.upgradeButton': '🚀 Upgrade to Pro',
+    'trial.expiredNotice': '⏰ Your free trial has ended.',
+    'trial.upgradePrompt': 'Upgrade to Insider Pro to continue accessing real-time data.',
+    'trial.subscribeNow': 'Subscribe Now',
+
     // Page specific
     'page.dashboard.subtitle': 'Real-time insider trading monitoring and market intelligence',
     'page.livetrading.title': 'Live Trading',
@@ -818,7 +827,16 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.lockedTrades': '개 잠금 거래',
     'lockedTrade.unlockPrompt': '{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!',
     'lockedTrade.startTrial': '🎯 24시간 무료 체험 시작',
-    
+
+    // Trial Timer
+    'trial.activeNotice': '✨ 무료 체험 활성화:',
+    'trial.remaining': '남음',
+    'trial.expired': '만료됨',
+    'trial.upgradeButton': '🚀 Pro로 업그레이드',
+    'trial.expiredNotice': '⏰ 무료 체험이 종료되었습니다.',
+    'trial.upgradePrompt': 'Insider Pro로 업그레이드하여 실시간 데이터 접근을 계속하세요.',
+    'trial.subscribeNow': '지금 구독',
+
     // Page specific
     'page.dashboard.subtitle': '실시간 내부자 거래 모니터링 및 시장 인텔리전스',
     'page.livetrading.title': '실시간 거래',
@@ -1259,7 +1277,17 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.lockedTrades': '件のロック取引',
     'lockedTrade.unlockPrompt': '{count}件のリアルタイムインサイダー取引をアンロックして、インサイダーが今何をしているか確認！',
     'lockedTrade.startTrial': '🎯 24時間無料トライアル開始',
-    
+
+    // Trial Timer
+    'trial.activeNotice': '✨ 無料トライアル有効:',
+    'trial.remaining': '残り',
+    'trial.expired': '期限切れ',
+    'trial.upgradeButton': '🚀 Proにアップグレード',
+    'trial.expiredNotice': '⏰ 無料トライアルが終了しました。',
+    'trial.upgradePrompt': 'Insider Proにアップグレードしてリアルタイムデータへのアクセスを継続。',
+    'trial.subscribeNow': '今すぐ購読',
+
+
     // Page specific
     'page.dashboard.subtitle': 'リアルタイムインサイダー取引監視と市場インテリジェンス',
     'page.livetrading.title': 'ライブトレーディング',
@@ -1684,7 +1712,16 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.lockedTrades': '笔锁定交易',
     'lockedTrade.unlockPrompt': '解锁{count}笔实时内幕交易，看看内幕人士现在在做什么！',
     'lockedTrade.startTrial': '🎯 开始24小时免费试用',
-    
+
+    // Trial Timer
+    'trial.activeNotice': '✨ 免费试用激活:',
+    'trial.remaining': '剩余',
+    'trial.expired': '已过期',
+    'trial.upgradeButton': '🚀 升级到Pro',
+    'trial.expiredNotice': '⏰ 您的免费试用已结束。',
+    'trial.upgradePrompt': '升级到Insider Pro以继续访问实时数据。',
+    'trial.subscribeNow': '立即订阅',
+
     // Page specific
     'page.dashboard.subtitle': '实时内幕交易监控和市场情报',
     'page.livetrading.title': '实时交易',
