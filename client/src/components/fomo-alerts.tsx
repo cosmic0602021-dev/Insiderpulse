@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, TrendingUp, Clock, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 interface TrialExpiringAlertProps {
   hoursLeft: number;
@@ -168,7 +168,7 @@ export function FOMOAlertManager({
   onUnlock,
 }: FOMOAlertManagerProps) {
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Calculate hours left in trial
   const hoursLeft = trialExpiresAt
@@ -180,7 +180,7 @@ export function FOMOAlertManager({
   };
 
   const handleUpgradeClick = () => {
-    navigate('/premium-checkout');
+    setLocation('/premium-checkout');
     if (onUpgrade) onUpgrade();
   };
 

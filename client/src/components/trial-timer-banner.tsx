@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 interface TrialTimerBannerProps {
   trialExpiresAt: string | Date;
@@ -11,7 +11,7 @@ interface TrialTimerBannerProps {
 
 export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBannerProps) {
   const { t } = useLanguage();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBanner
     if (onUpgrade) {
       onUpgrade();
     } else {
-      navigate('/premium-checkout');
+      setLocation('/premium-checkout');
     }
   };
 
@@ -80,13 +80,13 @@ interface TrialExpiredBannerProps {
 
 export function TrialExpiredBanner({ onUpgrade }: TrialExpiredBannerProps) {
   const { t } = useLanguage();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleUpgrade = () => {
     if (onUpgrade) {
       onUpgrade();
     } else {
-      navigate('/premium-checkout');
+      setLocation('/premium-checkout');
     }
   };
 
