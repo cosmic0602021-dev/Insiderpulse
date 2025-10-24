@@ -114,6 +114,25 @@ const translations: Record<Language, Record<string, string>> = {
     'fomo.unlockToSee': '- Unlock to see details!',
     'fomo.unlockNow': 'Unlock Now',
 
+    // Social Share
+    'social.share': 'Share',
+    'social.copyLink': 'Copy Link',
+    'social.linkCopied': 'Link Copied!',
+    'social.linkCopiedDesc': 'Share link copied to clipboard',
+    'social.copyFailed': 'Copy Failed',
+    'social.copyFailedDesc': 'Please try again',
+
+    // AI Signal Feed
+    'aiSignal.title': '🤖 AI Trading Signals',
+    'aiSignal.strongBuy': 'STRONG BUY',
+    'aiSignal.buy': 'Buy',
+    'aiSignal.caution': 'Caution',
+    'aiSignal.watch': 'Watch',
+    'aiSignal.confidence': 'confidence',
+    'aiSignal.insiders': 'insiders',
+    'aiSignal.volume': 'net volume',
+    'aiSignal.disclaimer': 'AI-generated signals based on insider activity patterns. Not financial advice.',
+
     // Page specific
     'page.dashboard.subtitle': 'Real-time insider trading monitoring and market intelligence',
     'page.livetrading.title': 'Live Trading',
@@ -862,6 +881,25 @@ const translations: Record<Language, Record<string, string>> = {
     'fomo.of': '',
     'fomo.unlockToSee': '- 자세히 보려면 해제하세요!',
     'fomo.unlockNow': '지금 해제',
+
+    // Social Share
+    'social.share': '공유',
+    'social.copyLink': '링크 복사',
+    'social.linkCopied': '링크 복사됨!',
+    'social.linkCopiedDesc': '공유 링크가 클립보드에 복사되었습니다',
+    'social.copyFailed': '복사 실패',
+    'social.copyFailedDesc': '다시 시도해주세요',
+
+    // AI Signal Feed
+    'aiSignal.title': '🤖 AI 거래 시그널',
+    'aiSignal.strongBuy': '강력 매수',
+    'aiSignal.buy': '매수',
+    'aiSignal.caution': '주의',
+    'aiSignal.watch': '관찰',
+    'aiSignal.confidence': '신뢰도',
+    'aiSignal.insiders': '내부자',
+    'aiSignal.volume': '순 거래량',
+    'aiSignal.disclaimer': '내부자 활동 패턴 기반 AI 생성 시그널. 투자 조언 아님.',
 
     // Page specific
     'page.dashboard.subtitle': '실시간 내부자 거래 모니터링 및 시장 인텔리전스',

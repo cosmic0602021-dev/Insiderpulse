@@ -19,6 +19,8 @@ import { LockedTradesSection } from '@/components/locked-trade-card';
 import { FreeZoneBanner } from '@/components/free-zone-banner';
 import { TrialTimerBanner, TrialExpiredBanner } from '@/components/trial-timer-banner';
 import { FOMOAlertManager } from '@/components/fomo-alerts';
+import { AISignalFeed } from '@/components/ai-signal-feed';
+import { ShareButton } from '@/components/social-share';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import type { InsiderTrade } from '@shared/schema';
@@ -358,6 +360,7 @@ export default function LiveTrading() {
           )}
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          <ShareButton variant="outline" size="sm" />
           <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
             <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
             <span className="hidden sm:inline">{t('general.refresh')}</span>
@@ -414,6 +417,11 @@ export default function LiveTrading() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* AI Signal Feed - Top 3 Recommendations */}
+      {accessLevel && accessLevel.hasRealtimeAccess && validatedData.trades.length > 0 && (
+        <AISignalFeed trades={validatedData.trades} limit={3} />
       )}
 
       {/* Locked Real-Time Trades Section - FOMO Zone */}
