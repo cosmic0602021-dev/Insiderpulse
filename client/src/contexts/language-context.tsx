@@ -101,6 +101,19 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.upgradePrompt': 'Upgrade to Insider Pro to continue accessing real-time data.',
     'trial.subscribeNow': 'Subscribe Now',
 
+    // FOMO Alerts
+    'fomo.trialExpiringSoon': '⚠️ Trial expires in {hours} hours!',
+    'fomo.upgradeToKeepAccess': 'Upgrade now to keep real-time access.',
+    'fomo.upgradeNow': 'Upgrade Now',
+    'fomo.missedGains': '😱 You missed {count} insider trades worth {value}!',
+    'fomo.dontMissNext': "Don't miss the next big trade.",
+    'fomo.subscribeNow': 'Subscribe Now',
+    'fomo.bigTradeAlert': 'BREAKING:',
+    'fomo.bought': 'just bought',
+    'fomo.of': 'of',
+    'fomo.unlockToSee': '- Unlock to see details!',
+    'fomo.unlockNow': 'Unlock Now',
+
     // Page specific
     'page.dashboard.subtitle': 'Real-time insider trading monitoring and market intelligence',
     'page.livetrading.title': 'Live Trading',
@@ -837,6 +850,19 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.upgradePrompt': 'Insider Pro로 업그레이드하여 실시간 데이터 접근을 계속하세요.',
     'trial.subscribeNow': '지금 구독',
 
+    // FOMO Alerts
+    'fomo.trialExpiringSoon': '⚠️ 체험이 {hours}시간 후 만료됩니다!',
+    'fomo.upgradeToKeepAccess': '지금 업그레이드하여 실시간 접근을 유지하세요.',
+    'fomo.upgradeNow': '지금 업그레이드',
+    'fomo.missedGains': '😱 {value} 상당의 내부자 거래 {count}건을 놓쳤습니다!',
+    'fomo.dontMissNext': '다음 큰 거래를 놓치지 마세요.',
+    'fomo.subscribeNow': '지금 구독',
+    'fomo.bigTradeAlert': '속보:',
+    'fomo.bought': '방금 매수했습니다',
+    'fomo.of': '',
+    'fomo.unlockToSee': '- 자세히 보려면 해제하세요!',
+    'fomo.unlockNow': '지금 해제',
+
     // Page specific
     'page.dashboard.subtitle': '실시간 내부자 거래 모니터링 및 시장 인텔리전스',
     'page.livetrading.title': '실시간 거래',
@@ -1287,6 +1313,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.upgradePrompt': 'Insider Proにアップグレードしてリアルタイムデータへのアクセスを継続。',
     'trial.subscribeNow': '今すぐ購読',
 
+    // FOMO Alerts
+    'fomo.trialExpiringSoon': '⚠️ トライアルは{hours}時間後に期限切れ！',
+    'fomo.upgradeToKeepAccess': '今すぐアップグレードしてリアルタイムアクセスを維持。',
+    'fomo.upgradeNow': '今すぐアップグレード',
+    'fomo.missedGains': '😱 {value}相当のインサイダー取引{count}件を逃しました！',
+    'fomo.dontMissNext': '次の大きな取引を逃さないで。',
+    'fomo.subscribeNow': '今すぐ購読',
+    'fomo.bigTradeAlert': '速報:',
+    'fomo.bought': 'が購入',
+    'fomo.of': '',
+    'fomo.unlockToSee': '- 詳細を見るにはアンロック！',
+    'fomo.unlockNow': '今すぐアンロック',
 
     // Page specific
     'page.dashboard.subtitle': 'リアルタイムインサイダー取引監視と市場インテリジェンス',
@@ -1721,6 +1759,19 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.expiredNotice': '⏰ 您的免费试用已结束。',
     'trial.upgradePrompt': '升级到Insider Pro以继续访问实时数据。',
     'trial.subscribeNow': '立即订阅',
+
+    // FOMO Alerts
+    'fomo.trialExpiringSoon': '⚠️ 试用将在{hours}小时后过期！',
+    'fomo.upgradeToKeepAccess': '立即升级以保持实时访问。',
+    'fomo.upgradeNow': '立即升级',
+    'fomo.missedGains': '😱 您错过了价值{value}的{count}笔内幕交易！',
+    'fomo.dontMissNext': '不要错过下一笔大交易。',
+    'fomo.subscribeNow': '立即订阅',
+    'fomo.bigTradeAlert': '突发:',
+    'fomo.bought': '刚刚买入',
+    'fomo.of': '',
+    'fomo.unlockToSee': '- 解锁查看详情！',
+    'fomo.unlockNow': '立即解锁',
 
     // Page specific
     'page.dashboard.subtitle': '实时内幕交易监控和市场情报',

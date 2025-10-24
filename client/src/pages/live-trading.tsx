@@ -18,6 +18,7 @@ import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { LockedTradesSection } from '@/components/locked-trade-card';
 import { FreeZoneBanner } from '@/components/free-zone-banner';
 import { TrialTimerBanner, TrialExpiredBanner } from '@/components/trial-timer-banner';
+import { FOMOAlertManager } from '@/components/fomo-alerts';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import type { InsiderTrade } from '@shared/schema';
@@ -315,6 +316,21 @@ export default function LiveTrading() {
           </div>
         </AlertDescription>
       </Alert>
+
+      {/* FOMO Alert Manager - All FOMO alerts */}
+      <FOMOAlertManager
+        trialExpiresAt={trialExpiresAt}
+        isTrialing={isTrialing}
+        hasTrial={false} // TODO: Track if user has used trial
+        recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
+          companyName: t.companyName,
+          ticker: t.ticker,
+          totalValue: t.totalValue,
+          traderTitle: t.traderTitle || 'Insider',
+        }))}
+        onUpgrade={() => {}}
+        onUnlock={handleUnlock}
+      />
 
       {/* Trial Timer Banner - Active trial countdown */}
       {isTrialing && trialExpiresAt && (
