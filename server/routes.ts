@@ -12,10 +12,12 @@ import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 import dataCollectionRouter from "./data-collection-api";
 import Stripe from "stripe";
-// Disable heavy data imports in development
+// Import scraping manager (always needed for auto-collection)
+var { newScrapingManager } = require('./temp-scraper');
+
+// Disable heavy data imports in development (massive importer only)
 if (process.env.NODE_ENV === 'production') {
   var { massiveDataImporter } = require('./massive-data-import');
-  var { newScrapingManager } = require('./temp-scraper');
 }
 import enhancedApiRouter from "./routes/enhanced-api";
 // import newApiRouter from "./routes/new-api-routes";
