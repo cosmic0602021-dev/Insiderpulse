@@ -158,7 +158,7 @@ export default function LiveTradingReal() {
   return (
     <div className="space-y-6 p-6">
       {/* 데이터 품질 상태 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* 연결 상태 */}
         <Alert className={isConnected ? 'border-green-500/50 bg-green-50' : 'border-red-500/50 bg-red-50'}>
           <div className="flex items-center gap-2">
@@ -169,20 +169,6 @@ export default function LiveTradingReal() {
             )}
             <AlertDescription className={isConnected ? 'text-green-700' : 'text-red-700'}>
               {isConnected ? '실시간 연결 활성' : '연결 끊김'}
-            </AlertDescription>
-          </div>
-        </Alert>
-
-        {/* 데이터 품질 */}
-        <Alert className={dataQuality?.isValid ? 'border-blue-500/50 bg-blue-50' : 'border-yellow-500/50 bg-yellow-50'}>
-          <div className="flex items-center gap-2">
-            {dataQuality?.isValid ? (
-              <CheckCircle className="h-4 w-4 text-blue-600" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-            )}
-            <AlertDescription className={dataQuality?.isValid ? 'text-blue-700' : 'text-yellow-700'}>
-              검증된 거래: {dataQuality?.validTradeCount || 0}개
             </AlertDescription>
           </div>
         </Alert>
@@ -233,52 +219,7 @@ export default function LiveTradingReal() {
         </div>
       </div>
 
-      {/* 통계 카드 */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">오늘 거래</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.todayTrades}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 거래량</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">검증된 거래</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dataQuality?.validTradeCount || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">활성 내부자</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Set(validatedData.trades.map(t => t.traderName)).size}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* 통계 카드 삭제됨 */}
 
       {/* 거래 목록 */}
       <Card>
