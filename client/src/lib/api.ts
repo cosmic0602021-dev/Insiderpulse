@@ -27,6 +27,7 @@ export interface TrialStatusResponse {
   daysUntilExpiry?: number;
   tier: string;
   status: string;
+  hasUsedTrial: boolean;
 }
 
 class ApiClient {
@@ -98,7 +99,11 @@ class ApiClient {
 
     const url = `/trades?${params.toString()}`;
     console.log(`🌐 [API] Requesting: ${url}`);
-    const result = await this.request<TradesResponse>(url);
+    const result = await this.request<TradesResponse>(url, {
+      headers: {
+        'x-user-id': 'demo-user', // TODO: Get from auth context
+      },
+    });
     console.log(`[API] Received ${result.trades.length} trades, access level:`, result.accessLevel);
     return result;
   }

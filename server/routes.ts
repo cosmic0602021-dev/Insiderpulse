@@ -2,7 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertInsiderTradeSchema } from "@shared/schema";
+import { insertInsiderTradeSchema, users } from "@shared/schema";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
+import * as schema from "@shared/schema";
 import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
 import { protectAdminEndpoint } from "./security-middleware";
@@ -25,6 +28,9 @@ import { newsCorrelationService } from "./news-correlation-service";
 import { insiderCredibilityService } from "./insider-credibility-service";
 import { dataIntegrityService } from "./data-integrity-service";
 import { subscriptionService } from "./subscription-service";
+
+// Initialize database
+const db = drizzle(process.env.DATABASE_URL!, { schema });
 
 // Initialize Stripe with secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -275,6 +281,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const accessLevel = await subscriptionService.getUserAccessLevel(userId);
+
+      // Get user for hasUsedTrial info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
       res.json({
         isTrialing: accessLevel.isTrialing,
         canAccessRealtime: accessLevel.canAccessRealtime,
@@ -282,6 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         daysUntilExpiry: accessLevel.daysUntilExpiry,
         tier: accessLevel.tier,
         status: accessLevel.status,
+        hasUsedTrial: user?.hasUsedTrial || false,
       });
     } catch (error) {
       console.error('❌ Trial status error:', error);
@@ -624,6 +637,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 점수 순으로 정렬하고 상위 항목 반환
       const sortedRankings = rankings
+        .filter(r => r.netBuying > 0) // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
+        .filter(r => r.buyTrades > 0) // Must have at least 1 buy trade
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
@@ -1317,6 +1332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort by score and return top results
       const topRankings = rankings
         .filter(r => r.totalTrades >= 2) // Only include stocks with at least 2 trades
+        .filter(r => r.netBuying > 0) // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
+        .filter(r => r.buyTrades > 0) // Must have at least 1 buy trade
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
       

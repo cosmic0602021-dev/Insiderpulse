@@ -23,6 +23,7 @@ import { AISignalFeed } from '@/components/ai-signal-feed';
 import { ShareButton } from '@/components/social-share';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
+import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
 
 interface DataQualityStatus {
@@ -38,12 +39,31 @@ export default function LiveTrading() {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const { accessLevel, setAccessLevel } = useAccess();
+  const [, navigate] = useLocation();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null);
   const [isTrialing, setIsTrialing] = useState(false);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
+
+  // Load trial status on mount
+  useEffect(() => {
+    const loadTrialStatus = async () => {
+      try {
+        const status = await apiClient.getTrialStatus();
+        setIsTrialing(status.isTrialing);
+        setHasUsedTrial(status.hasUsedTrial);
+        if (status.trialExpiresAt) {
+          setTrialExpiresAt(status.trialExpiresAt);
+        }
+      } catch (error) {
+        console.error('Failed to load trial status:', error);
+      }
+    };
+    loadTrialStatus();
+  }, []);
 
   const handleTradeClick = (trade: InsiderTrade) => {
     setSelectedTrade(trade);
@@ -53,6 +73,10 @@ export default function LiveTrading() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedTrade(null);
+  };
+
+  const handleUpgrade = () => {
+    navigate('/premium-checkout');
   };
 
   const handleUnlock = async () => {
@@ -255,87 +279,18 @@ export default function LiveTrading() {
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
-      {/* 데이터 품질 상태 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
-        {/* 연결 상태 */}
-        <Alert className={isConnected ? 'border-green-500/50 bg-green-50' : 'border-red-500/50 bg-red-50'}>
-          <div className="flex items-center gap-2 min-w-0">
-            {isConnected ? (
-              <Wifi className="h-4 w-4 text-green-600 flex-shrink-0" />
-            ) : (
-              <WifiOff className="h-4 w-4 text-red-600 flex-shrink-0" />
-            )}
-            <AlertDescription className={`${isConnected ? 'text-green-700' : 'text-red-700'} text-xs sm:text-sm truncate`}>
-              {isConnected ? t('liveTrading.connectionActive') : t('connection.connectionLost')}
-            </AlertDescription>
-          </div>
-        </Alert>
-
-        {/* 데이터 품질 */}
-        <Alert className={dataQuality?.isValid ? 'border-blue-500/50 bg-blue-50' : 'border-yellow-500/50 bg-yellow-50'}>
-          <div className="flex items-center gap-2 min-w-0">
-            {dataQuality?.isValid ? (
-              <CheckCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-            )}
-            <AlertDescription className={`${dataQuality?.isValid ? 'text-blue-700' : 'text-yellow-700'} text-xs sm:text-sm truncate`}>
-              {t('liveTrading.verifiedTrades')}: {dataQuality?.validTradeCount || 0}{t('liveTrading.count')}
-            </AlertDescription>
-          </div>
-        </Alert>
-
-        {/* 데이터 신선도 */}
-        <Alert className={dataQuality?.isFresh ? 'border-green-500/50 bg-green-50' : 'border-orange-500/50 bg-orange-50'}>
-          <div className="flex items-center gap-2 min-w-0">
-            <Clock className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <AlertDescription className={`${dataQuality?.isFresh ? 'text-green-700' : 'text-orange-700'} text-xs sm:text-sm truncate`}>
-              {dataQuality?.isFresh ? t('liveTrading.freshData') : t('liveTrading.dataUpdateNeeded')}
-            </AlertDescription>
-          </div>
-        </Alert>
-      </div>
-
-      {/* 데이터 품질 경고 */}
-      {dataQuality?.issues && dataQuality.issues.length > 0 && (
-        <Alert className="border-yellow-500/50 bg-yellow-50">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-700">
-            <div className="font-semibold mb-1">{t('liveTrading.qualityWarnings')}</div>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {dataQuality.issues.map((issue, index) => (
-                <li key={index}>{issue}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* SEC 공시일 안내 */}
-      <Alert className="border-slate-300 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
-        <Info className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-        <AlertDescription className="text-slate-700 dark:text-slate-300">
-          <div className="space-y-1">
-            <div className="font-semibold text-sm">{t('liveTrading.filingDateNotice.title')}</div>
-            <div className="text-xs leading-relaxed">
-              {t('liveTrading.filingDateNotice.description')}
-            </div>
-          </div>
-        </AlertDescription>
-      </Alert>
-
       {/* FOMO Alert Manager - All FOMO alerts */}
       <FOMOAlertManager
         trialExpiresAt={trialExpiresAt}
         isTrialing={isTrialing}
-        hasTrial={false} // TODO: Track if user has used trial
+        hasTrial={hasUsedTrial}
         recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
           companyName: t.companyName,
           ticker: t.ticker,
           totalValue: t.totalValue,
           traderTitle: t.traderTitle || 'Insider',
         }))}
-        onUpgrade={() => {}}
+        onUpgrade={handleUpgrade}
         onUnlock={handleUnlock}
       />
 
@@ -376,53 +331,6 @@ export default function LiveTrading() {
           </Badge>
         </div>
       </div>
-
-      {/* 통계 카드 - 모바일 최적화 */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.todayTrades')}</CardTitle>
-              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              <div className="text-xl sm:text-2xl font-bold">{stats.todayTrades}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.totalVolume')}</CardTitle>
-              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              <div className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.totalVolume)}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.verifiedTrades')}</CardTitle>
-              <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              <div className="text-xl sm:text-2xl font-bold">{dataQuality?.validTradeCount || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">{t('liveTrading.activeInsiders')}</CardTitle>
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0">
-              <div className="text-xl sm:text-2xl font-bold">
-                {new Set(validatedData.trades.map(t => t.traderName)).size}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* AI Signal Feed - Top 3 Recommendations */}
       {accessLevel && accessLevel.hasRealtimeAccess && validatedData.trades.length > 0 && (

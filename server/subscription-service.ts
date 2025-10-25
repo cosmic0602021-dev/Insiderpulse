@@ -6,8 +6,9 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
-const db = drizzle(process.env.DATABASE_URL!);
+const db = drizzle(process.env.DATABASE_URL!, { schema });
 
 export type SubscriptionTier = "free" | "insider_pro";
 export type SubscriptionStatus = "active" | "inactive" | "trialing" | "canceled";
@@ -86,8 +87,8 @@ export async function activateTrial(userId: string): Promise<{ success: boolean;
     console.log('📝 Creating demo-user for trial...');
     await db.insert(users).values({
       id: 'demo-user',
-      username: 'demo-user',
       email: 'demo@example.com',
+      password: 'demo-password-placeholder', // Placeholder password for demo user
       subscriptionTier: 'free',
       subscriptionStatus: 'inactive',
       hasUsedTrial: false,
