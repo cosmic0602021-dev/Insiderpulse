@@ -145,14 +145,19 @@ export default function LiveTrading() {
       console.warn(`🚨 Filtered out ${validation.invalidTrades.length} invalid/fake trades`);
     }
 
-    setDataQuality(quality);
-    setLastValidationTime(new Date());
-
     return {
       trades: validation.validTrades,
       quality
     };
   }, [allTrades]);
+
+  // Update state based on validated data (moved out of useMemo to prevent infinite loop)
+  useEffect(() => {
+    if (validatedData.quality) {
+      setDataQuality(validatedData.quality);
+      setLastValidationTime(new Date());
+    }
+  }, [validatedData.quality]);
 
   // WebSocket 메시지 처리
   useEffect(() => {
