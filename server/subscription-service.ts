@@ -77,9 +77,26 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
  * Activate 24-hour trial for user
  */
 export async function activateTrial(userId: string): Promise<{ success: boolean; message: string; expiresAt?: Date }> {
-  const user = await db.query.users.findFirst({
+  let user = await db.query.users.findFirst({
     where: eq(users.id, userId),
   });
+
+  // Auto-create demo user if doesn't exist
+  if (!user && userId === 'demo-user') {
+    console.log('📝 Creating demo-user for trial...');
+    await db.insert(users).values({
+      id: 'demo-user',
+      username: 'demo-user',
+      email: 'demo@example.com',
+      subscriptionTier: 'free',
+      subscriptionStatus: 'inactive',
+      hasUsedTrial: false,
+    });
+
+    user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+  }
 
   if (!user) {
     return { success: false, message: "User not found" };

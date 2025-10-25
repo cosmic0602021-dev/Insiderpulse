@@ -14,8 +14,6 @@ export function FreeZoneBanner({ delayHours }: FreeZoneBannerProps) {
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-amber-600 dark:text-amber-500 flex-shrink-0" />
         <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
-          <span className="font-semibold">{t('freeZone.delayedData')}</span>
-          {' '}
           {t('freeZone.description', { hours: delayHours })}
         </AlertDescription>
       </div>
