@@ -58,7 +58,9 @@
       "Bash(for file in client/src/pages/*.tsx)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(git tag:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "WebFetch(domain:insiderpulse.replit.app)",
+      "Bash(NODE_ENV=production PORT=5002 node:*)"
     ],
     "deny": [],
     "ask": []
