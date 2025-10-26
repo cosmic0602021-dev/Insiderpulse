@@ -60,9 +60,19 @@
       "Bash(git tag:*)",
       "Bash(git branch:*)",
       "WebFetch(domain:insiderpulse.replit.app)",
-      "Bash(NODE_ENV=production PORT=5002 node:*)"
+      "Bash(NODE_ENV=production PORT=5002 node:*)",
+      "Read(//proc/113/**)",
+      "Bash(PGPASSWORD=npg_pO2GuI4kVjUy psql:*)",
+      "Bash(do kill -9 $pid)",
+      "Bash(gh run list:*)",
+      "Bash(env)",
+      "Bash(NODE_ENV=production node:*)",
+      "Bash(PORT=5001 NODE_ENV=development npm run dev:backend:*)",
+      "Bash(PORT=5001 NODE_ENV=development vite:*)",
+      "Bash(PORT=5001 NODE_ENV=development tsx:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "model": "claude-3-sonnet-20240229"
 }

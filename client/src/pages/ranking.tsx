@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
-import { RefreshCw, Star, TrendingUp, DollarSign, Activity, X, Mail, Bookmark, Bell, Check, Building2 } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Mail, Bookmark, Bell, Check, Building2, Share2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { apiClient } from '@/lib/api';
+import html2canvas from 'html2canvas';
+
+interface Insider {
+  name: string;
+  title: string;
+  totalTradeValue: number;
+  tradeType: 'BUY' | 'SELL';
+  lastTradeDate: string;
+}
 
 interface RankingItem {
   ticker: string;
@@ -18,6 +27,7 @@ interface RankingItem {
   buyTrades: number;
   sellTrades: number;
   uniqueInsiders: number;
+  insiders: Insider[];  // 새로 추가된 속성
   avgTradeValue: number;
   netBuying: number;
   lastTradeDate: string;
@@ -49,6 +59,8 @@ export default function Ranking() {
   const [showWatchlistModal, setShowWatchlistModal] = useState(false);
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState<any | null>(null);
   const [selectedCompanyForAlert, setSelectedCompanyForAlert] = useState('');
+  const [sharedCardIndex, setSharedCardIndex] = useState<number | null>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({
     queryKey: ['/api/rankings'],
@@ -148,6 +160,51 @@ export default function Ranking() {
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
+  };
+
+  const shareRankingCard = async (index: number) => {
+    const cardElement = cardRefs.current[index];
+    if (!cardElement) return;
+
+    try {
+      setSharedCardIndex(index);
+
+      // 약간의 딜레이를 주어 렌더링 완료 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(cardElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // 모바일 브라우저에서 공유 API 사용
+      if (navigator.share) {
+        const blob = await (await fetch(dataUrl)).blob();
+        await navigator.share({
+          title: `InsiderPulse Ranking: ${data?.rankings[index]?.ticker || 'Stock'}`,
+          text: `Check out the insider trading insights for ${data?.rankings[index]?.companyName}!`,
+          files: [
+            new File([blob], `insider_ranking_${data?.rankings[index]?.ticker}.png`, {
+              type: 'image/png'
+            })
+          ]
+        });
+      } else {
+        // 웹 브라우저의 경우 클립보드로 복사
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `insider_ranking_${data?.rankings[index]?.ticker}.png`;
+        link.click();
+      }
+    } catch (error) {
+      console.error('공유 중 오류 발생:', error);
+    } finally {
+      setSharedCardIndex(null);
+    }
   };
 
   if (isLoading) {
@@ -254,12 +311,30 @@ export default function Ranking() {
       {/* Rankings List */}
       <div className="space-y-4">
         {data?.rankings.map((item, index) => (
-          <Card 
-            key={item.ticker} 
-            className="hover-elevate cursor-pointer" 
+          <Card
+            key={item.ticker}
+            ref={el => cardRefs.current[index] = el}
+            className="hover-elevate cursor-pointer relative"
             data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
             onClick={() => handleStockClick(item.ticker, item.companyName)}
           >
+            {/* 공유 버튼 */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 z-10 hover:bg-muted/50"
+              onClick={(e) => {
+                e.stopPropagation(); // 카드 클릭 이벤트 방지
+                shareRankingCard(index);
+              }}
+            >
+              {sharedCardIndex === index ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+            </Button>
+
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 {/* Left side - Company info */}
@@ -329,7 +404,7 @@ export default function Ranking() {
                       {item.uniqueInsiders}명 내부자
                     </div>
                   </div>
-                  <Badge 
+                  <Badge
                     className={`${getRecommendationColor(item.recommendation)} text-white px-3 py-1`}
                     data-testid={`badge-recommendation-${item.ticker.toLowerCase()}`}
                   >
@@ -349,9 +424,19 @@ export default function Ranking() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  {item.buyTrades > item.sellTrades ? (
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  ) : item.buyTrades < item.sellTrades ? (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Activity className="h-4 w-4 text-gray-500" />
+                  )}
                   <div>
-                    <p className="text-sm font-medium text-green-600">
+                    <p className={`text-sm font-medium ${
+                      item.buyTrades > item.sellTrades ? 'text-green-600' :
+                      item.buyTrades < item.sellTrades ? 'text-red-600' :
+                      'text-gray-600'
+                    }`}>
                       {item.buyTrades} / {item.sellTrades}
                     </p>
                     <p className="text-xs text-muted-foreground">Buy / Sell</p>
@@ -380,6 +465,41 @@ export default function Ranking() {
                 <span>{item.uniqueInsiders} unique insiders • </span>
                 <span>Last trade: {new Date(item.lastTradeDate).toLocaleDateString()}</span>
               </div>
+
+              {/* 내부자 상세 정보 섹션 */}
+              {item.insiders && item.insiders.length > 0 && (
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-2">Top Insiders</h4>
+                  <div className="space-y-2">
+                    {item.insiders.slice(0, 4).map((insider, index) => (
+                      <div
+                        key={`${insider.name}-${index}`}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{insider.name}</span>
+                          <Badge
+                            variant="secondary"
+                            className={`text-[0.6rem] ${
+                              insider.tradeType === 'BUY'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}
+                          >
+                            {insider.tradeType}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <span>{insider.title}</span>
+                          <span className="ml-2 font-semibold">
+                            ${(insider.totalTradeValue / 1000).toFixed(1)}K
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

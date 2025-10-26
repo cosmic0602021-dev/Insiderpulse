@@ -62,19 +62,17 @@ export function AISignalFeed({ trades, limit = 3 }: AISignalFeedProps) {
         let confidence = 50;
         let reason = '';
 
-        if (buyTrades.length >= 3 && netValue > 1000000) {
+        // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
+        if (netValue > 1000000 && buyTrades.length >= 3) {
           signal = 'strong_buy';
           confidence = 85 + Math.min(executiveTrades.length * 5, 15);
           reason = `${buyTrades.length} insiders buying, ${executiveTrades.length} executives`;
-        } else if (buyTrades.length >= 2 && netValue > 500000) {
+        } else if (netValue > 500000 && buyTrades.length >= 2) {
           signal = 'buy';
           confidence = 70 + Math.min(executiveTrades.length * 5, 15);
           reason = `${buyTrades.length} insiders accumulating`;
-        } else if (sellTrades.length >= 3 && netValue < -500000) {
-          signal = 'caution';
-          confidence = 65;
-          reason = `${sellTrades.length} insiders selling`;
         }
+        // Remove 'caution' signal - we don't recommend stocks with insider selling
 
         return {
           id: ticker,

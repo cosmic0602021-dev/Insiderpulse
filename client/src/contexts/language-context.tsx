@@ -2158,31 +2158,33 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    // 초기값을 결정하는 함수
+    try {
+      // localStorage에서 언어 가져오기
+      const savedLanguage = localStorage.getItem('language') as Language;
 
-  useEffect(() => {
-    // Check localStorage for saved language first (user preference takes priority)
-    const savedLanguage = localStorage.getItem('language') as Language;
-    if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
-      console.log('🌍 Using saved language preference:', savedLanguage);
-      setLanguage(savedLanguage);
-      return; // Exit early - user preference overrides browser detection
+      // 유효한 언어인지 확인
+      if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
+        console.log('🌍 Using saved language preference:', savedLanguage);
+        return savedLanguage;
+      }
+
+      // 브라우저 언어 감지
+      const browserLang = navigator.language.toLowerCase();
+      console.log('🌍 Detecting browser language:', browserLang);
+
+      if (browserLang.startsWith('ko')) return 'ko';
+      if (browserLang.startsWith('ja')) return 'ja';
+      if (browserLang.startsWith('zh')) return 'zh';
+
+      // 기본값은 영어
+      return 'en';
+    } catch (error) {
+      console.error('Language initialization error:', error);
+      return 'en'; // 에러 발생 시 영어로 기본 설정
     }
-    
-    // Only detect browser language if no saved preference exists
-    const browserLang = navigator.language.toLowerCase();
-    console.log('🌍 No saved language, detecting browser language:', browserLang);
-    
-    if (browserLang.startsWith('ko')) {
-      setLanguage('ko');
-    } else if (browserLang.startsWith('ja')) {
-      setLanguage('ja');
-    } else if (browserLang.startsWith('zh')) {
-      setLanguage('zh');
-    } else {
-      setLanguage('en');
-    }
-  }, []);
+  });
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);

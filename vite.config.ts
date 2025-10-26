@@ -29,16 +29,17 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: true, // Expose to external network (Replit)
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+    // Note: In development, Express (port 5000) integrates Vite as middleware
+    // So we don't need proxy config here - API and frontend are on the same port
+    allowedHosts: [
+      '0669bfcf-0b3b-4417-b2c9-15d7f4f47e57-00-39if825fwf2o8.worf.replit.dev',
+      'localhost',
+      '127.0.0.1'
+    ],
   },
 });
