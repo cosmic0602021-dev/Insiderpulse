@@ -1299,6 +1299,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pattern.ticker.toUpperCase() === metrics.ticker.toUpperCase()
         );
 
+        // Insider 상세 정보 (매수자만)
+        const insiderDetails = metrics.trades
+          .filter(t => {
+            const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.tradeType === 'GRANT' ||
+                         t.transactionCode === 'P' || t.transactionCode === 'A';
+            return isBuy;
+          })
+          .map(t => ({
+            name: t.traderName,
+            title: t.traderTitle || 'Insider',
+            shares: t.shares,
+            pricePerShare: t.pricePerShare,
+            totalValue: t.totalValue,
+            date: t.filedDate,
+            tradeType: t.tradeType
+          }))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
+
         return {
           ticker: metrics.ticker,
           companyName: metrics.companyName,
@@ -1312,6 +1330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
+          insiderDetails, // 📋 Insider 상세 정보 추가!
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map(p => ({
             type: p.type,
