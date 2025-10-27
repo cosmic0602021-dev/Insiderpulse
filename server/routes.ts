@@ -272,8 +272,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log('📝 Signup attempt:', { email, passwordLength: password?.length });
 
       if (!email || !password) {
+        console.log('❌ Missing email or password');
         return res.status(400).json({
           success: false,
           message: '이메일과 비밀번호를 입력해주세요',
@@ -281,6 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (password.length < 8) {
+        console.log('❌ Password too short');
         return res.status(400).json({
           success: false,
           message: '비밀번호는 최소 8자 이상이어야 합니다',
@@ -293,6 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (existingUser) {
+        console.log('❌ User already exists:', email);
         return res.status(400).json({
           success: false,
           message: '이미 등록된 이메일입니다',
@@ -301,6 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      console.log('🔐 Password hashed');
 
       // Create user
       const newUser = await db.insert(users).values({
@@ -311,6 +316,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus: 'inactive',
         hasUsedTrial: false,
       }).returning();
+
+      console.log('✅ User created successfully:', { id: newUser[0].id, email: newUser[0].email });
 
       res.json({
         success: true,
@@ -334,8 +341,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log('🔐 Login attempt:', { email, passwordLength: password?.length });
 
       if (!email || !password) {
+        console.log('❌ Missing email or password');
         return res.status(400).json({
           success: false,
           message: '이메일과 비밀번호를 입력해주세요',
@@ -347,6 +356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         where: eq(users.email, email),
       });
 
+      console.log('👤 User found:', user ? `Yes (${user.email})` : 'No');
+
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -356,6 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('🔑 Password valid:', isValidPassword);
 
       if (!isValidPassword) {
         return res.status(401).json({
