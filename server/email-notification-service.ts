@@ -27,6 +27,9 @@ interface NotificationPreferences {
 class EmailNotificationService {
   private transporter: nodemailer.Transporter | null = null;
   private userPreferences: Map<string, NotificationPreferences> = new Map();
+  private baseUrl: string = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+    : 'http://localhost:5000';
 
   // 다국어 번역 데이터
   private translations = {
@@ -625,6 +628,49 @@ ${t.footer}
     if (pref) {
       pref.watchlistTickers = pref.watchlistTickers.filter(t => t !== ticker.toUpperCase());
     }
+  }
+
+  // 이메일 인증 발송
+  async sendVerificationEmail(email: string, token: string) {
+    if (!this.transporter) {
+      throw new Error('이메일 서비스가 설정되지 않았습니다');
+    }
+
+    const verificationUrl = `${this.baseUrl}/verify-email?token=${token}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: '✉️ InsiderPulse 이메일 인증',
+      html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <h2 style="color: #333; margin-bottom: 20px;">🎉 InsiderPulse 가입을 환영합니다!</h2>
+          <p style="color: #666; font-size: 16px; line-height: 1.6;">
+            계정을 활성화하려면 아래 버튼을 클릭하여 이메일을 인증해주세요.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              이메일 인증하기
+            </a>
+          </div>
+          <p style="color: #999; font-size: 14px;">
+            또는 아래 링크를 복사하여 브라우저에 붙여넣으세요:<br>
+            <span style="color: #4F46E5; word-break: break-all;">${verificationUrl}</span>
+          </p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="color: #999; font-size: 12px;">
+            이 인증 링크는 24시간 동안 유효합니다.<br>
+            본인이 요청하지 않은 경우 이 이메일을 무시하세요.
+          </p>
+        </div>
+      </div>
+      `,
+      text: `InsiderPulse 가입을 환영합니다! 다음 링크를 클릭하여 이메일을 인증해주세요: ${verificationUrl}`
+    };
+
+    await this.transporter.sendMail(mailOptions);
+    console.log(`📧 인증 이메일 발송 완료: ${email}`);
   }
 
   // 테스트 이메일 발송

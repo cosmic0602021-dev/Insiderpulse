@@ -307,6 +307,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       console.log('🔐 Password hashed');
 
+      // Generate verification token
+      const verificationToken = jwt.sign(
+        { email, timestamp: Date.now() },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후
+
       // Create user
       const newUser = await db.insert(users).values({
         id: `user_${Date.now()}_${Math.random().toString(36).substring(7)}`,
@@ -315,17 +323,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionTier: 'free',
         subscriptionStatus: 'inactive',
         hasUsedTrial: false,
+        emailVerified: false,
+        verificationToken,
+        verificationTokenExpires,
       }).returning();
 
       console.log('✅ User created successfully:', { id: newUser[0].id, email: newUser[0].email });
 
+      // Send verification email
+      try {
+        await emailNotificationService.sendVerificationEmail(email, verificationToken);
+        console.log('📧 Verification email sent to:', email);
+      } catch (emailError) {
+        console.error('❌ Failed to send verification email:', emailError);
+        // Continue even if email fails - user can request resend
+      }
+
       res.json({
         success: true,
-        message: '회원가입이 완료되었습니다',
+        message: '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 인증해주세요.',
         user: {
           id: newUser[0].id,
           email: newUser[0].email,
           subscriptionTier: newUser[0].subscriptionTier,
+          emailVerified: false,
         },
       });
     } catch (error) {
@@ -365,6 +386,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check if email is verified
+      if (!user.emailVerified) {
+        return res.status(403).json({
+          success: false,
+          message: '이메일 인증이 필요합니다. 가입 시 받은 인증 이메일을 확인해주세요.',
+          emailVerified: false,
+        });
+      }
+
       // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
       console.log('🔑 Password valid:', isValidPassword);
@@ -394,6 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionStatus: user.subscriptionStatus,
           hasUsedTrial: user.hasUsedTrial,
           trialExpiresAt: user.trialExpiresAt,
+          emailVerified: user.emailVerified,
         },
       });
     } catch (error) {
@@ -401,6 +432,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: '로그인에 실패했습니다',
+      });
+    }
+  });
+
+  // Email verification endpoint
+  app.get('/api/auth/verify-email/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      console.log('📧 Email verification attempt with token');
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: '인증 토큰이 없습니다',
+        });
+      }
+
+      // Verify JWT token
+      let decoded: { email: string; timestamp: number };
+      try {
+        decoded = jwt.verify(token, JWT_SECRET) as { email: string; timestamp: number };
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않거나 만료된 인증 링크입니다',
+        });
+      }
+
+      // Find user by email and token
+      const user = await db.query.users.findFirst({
+        where: and(
+          eq(users.email, decoded.email),
+          eq(users.verificationToken, token)
+        ),
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없거나 이미 인증되었습니다',
+        });
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        return res.json({
+          success: true,
+          message: '이미 인증된 계정입니다',
+          alreadyVerified: true,
+        });
+      }
+
+      // Check token expiration
+      if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+        return res.status(400).json({
+          success: false,
+          message: '인증 링크가 만료되었습니다. 새로운 인증 링크를 요청해주세요',
+        });
+      }
+
+      // Update user as verified
+      await db.update(users)
+        .set({
+          emailVerified: true,
+          verificationToken: null,
+          verificationTokenExpires: null,
+        })
+        .where(eq(users.id, user.id));
+
+      console.log('✅ Email verified successfully for:', user.email);
+
+      res.json({
+        success: true,
+        message: '이메일 인증이 완료되었습니다! 이제 로그인할 수 있습니다.',
+      });
+    } catch (error) {
+      console.error('Email verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: '이메일 인증에 실패했습니다',
       });
     }
   });
@@ -433,6 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionStatus: user.subscriptionStatus,
           hasUsedTrial: user.hasUsedTrial,
           trialExpiresAt: user.trialExpiresAt,
+          emailVerified: user.emailVerified,
         },
       });
     } catch (error) {

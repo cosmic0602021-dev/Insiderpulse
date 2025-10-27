@@ -27,6 +27,7 @@ import PremiumCheckout from "@/pages/premium-checkout";
 import PaymentSuccess from "@/pages/payment-success";
 import SignupPage from "@/pages/signup";
 import LoginPage from "@/pages/login";
+import VerifyEmail from "@/pages/verify-email";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/verify-email" component={VerifyEmail} />
 
       {/* Protected routes */}
       <Route path="/">

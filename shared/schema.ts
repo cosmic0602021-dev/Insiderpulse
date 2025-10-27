@@ -9,6 +9,11 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 
+  // Email verification
+  emailVerified: boolean("email_verified").notNull().default(false),
+  verificationToken: text("verification_token"),
+  verificationTokenExpires: timestamp("verification_token_expires"),
+
   // Subscription & Trial Management
   subscriptionTier: text("subscription_tier").notNull().default("free"), // "free" | "insider_pro"
   subscriptionStatus: text("subscription_status").notNull().default("inactive"), // "active" | "inactive" | "trialing" | "canceled"
