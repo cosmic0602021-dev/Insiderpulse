@@ -390,15 +390,6 @@ export function TradeDetailModal({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handlePushNotification}
-                className={`btn-professional ${isSubscribed ? 'text-green-500' : ''}`}
-                title={isSubscribed ? '알림 구독 중' : '알림 설정'}
-              >
-                {isSubscribed ? <Check className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
                 onClick={onClose}
                 className="btn-professional"
               >

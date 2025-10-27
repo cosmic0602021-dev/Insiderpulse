@@ -103,6 +103,7 @@ export default function LiveTrading() {
         ticker: trade.ticker,
         companyName: trade.companyName,
         addedAt: new Date().toISOString(),
+        notificationsEnabled: true, // 기본적으로 알림 켜진 상태
       };
 
       const updated = [...existing, newItem];
