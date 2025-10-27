@@ -1,0 +1,189 @@
+index-CokPLZBk.js:508 🚀 main.tsx loading...
+index-CokPLZBk.js:518 🔍 Attempting to mount React app...
+index-CokPLZBk.js:518 ✅ Root element found, rendering app...
+index-CokPLZBk.js:518 ✅ App rendered successfully
+index-CokPLZBk.js:412 🌍 Using saved language preference: ko
+FloatingAssistant.d52f9211.js:1 insiderpulse.replit.app
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+smartLinkDocumentEndAllIframes.571865e7.js:1 Cannot access parent location (cross-origin), using current location
+u @ smartLinkDocumentEndAllIframes.571865e7.js:1
+fLHoZ.@swc/helpers/_/_instanceof @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+6pz4k.@swc/helpers/_/_async_to_generator @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+iSjuX.@swc/helpers/_/_assert_this_initialized @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+brAyZ../stream @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+f7BCC.@ali/mui-data-loader @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+3LhjC.~common/const @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+d @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+c @ smartLinkDocumentEndAllIframes.571865e7.js:1
+cxqZU.~libs/smartLink/contentScriptCommon @ smartLinkDocumentEndAllIframes.571865e7.js:1
+(anonymous) @ smartLinkDocumentEndAllIframes.571865e7.js:1
+login:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+login:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+requests.js:1  POST https://insiderpulse.replit.app/api/auth/login 401 (Unauthorized)
+s.fetch @ requests.js:1
+(anonymous) @ traffic.js:1
+fetch @ traffic.js:1
+request @ index-CokPLZBk.js:412
+login @ index-CokPLZBk.js:412
+u @ index-CokPLZBk.js:508
+aH @ index-CokPLZBk.js:37
+sH @ index-CokPLZBk.js:37
+oH @ index-CokPLZBk.js:37
+CS @ index-CokPLZBk.js:37
+Uk @ index-CokPLZBk.js:37
+(anonymous) @ index-CokPLZBk.js:37
+OB @ index-CokPLZBk.js:40
+sk @ index-CokPLZBk.js:37
+zv @ index-CokPLZBk.js:37
+sB @ index-CokPLZBk.js:37
+BH @ index-CokPLZBk.js:37
+index-CokPLZBk.js:412 API request to /auth/login failed: Error: API request failed: 401 - 이메일 또는 비밀번호가 올바르지 않습니다
+    at mG.request (index-CokPLZBk.js:412:92786)
+    at async mG.login (index-CokPLZBk.js:412:92131)
+    at async u (index-CokPLZBk.js:508:25714)
+request @ index-CokPLZBk.js:412
+await in request
+login @ index-CokPLZBk.js:412
+u @ index-CokPLZBk.js:508
+aH @ index-CokPLZBk.js:37
+sH @ index-CokPLZBk.js:37
+oH @ index-CokPLZBk.js:37
+CS @ index-CokPLZBk.js:37
+Uk @ index-CokPLZBk.js:37
+(anonymous) @ index-CokPLZBk.js:37
+OB @ index-CokPLZBk.js:40
+sk @ index-CokPLZBk.js:37
+zv @ index-CokPLZBk.js:37
+sB @ index-CokPLZBk.js:37
+BH @ index-CokPLZBk.js:37

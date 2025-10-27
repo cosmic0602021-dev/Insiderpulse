@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { insertInsiderTradeSchema, users } from "@shared/schema";
+import { insertInsiderTradeSchema, users, insiderTrades } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
