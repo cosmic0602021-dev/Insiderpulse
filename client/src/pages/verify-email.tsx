@@ -3,10 +3,12 @@ import { useLocation, useRoute } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 export default function VerifyEmail() {
   const [, navigate] = useLocation();
   const [, params] = useRoute('/verify-email');
+  const { t } = useLanguage();
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'already-verified'>('loading');
   const [message, setMessage] = useState('');
 
@@ -16,7 +18,7 @@ export default function VerifyEmail() {
 
     if (!token) {
       setStatus('error');
-      setMessage('인증 토큰이 없습니다');
+      setMessage(t('auth.verify.noToken'));
       return;
     }
 
@@ -35,17 +37,17 @@ export default function VerifyEmail() {
           }
         } else {
           setStatus('error');
-          setMessage(data.message || '이메일 인증에 실패했습니다');
+          setMessage(data.message || t('auth.verify.error'));
         }
       } catch (error) {
         console.error('Email verification error:', error);
         setStatus('error');
-        setMessage('이메일 인증 중 오류가 발생했습니다');
+        setMessage(t('auth.verify.error'));
       }
     };
 
     verifyEmail();
-  }, []);
+  }, [t]);
 
   const handleGoToLogin = () => {
     navigate('/');
@@ -78,13 +80,13 @@ export default function VerifyEmail() {
             )}
           </div>
           <CardTitle className="text-2xl" data-testid="text-title">
-            {status === 'loading' && '이메일 인증 중...'}
-            {status === 'success' && '인증 완료!'}
-            {status === 'already-verified' && '이미 인증됨'}
-            {status === 'error' && '인증 실패'}
+            {status === 'loading' && t('auth.verify.verifying')}
+            {status === 'success' && t('auth.verify.success')}
+            {status === 'already-verified' && t('auth.verify.alreadyVerified')}
+            {status === 'error' && t('auth.verify.error')}
           </CardTitle>
           <CardDescription data-testid="text-message">
-            {status === 'loading' && '잠시만 기다려주세요...'}
+            {status === 'loading' && t('auth.verify.loading')}
             {(status === 'success' || status === 'already-verified' || status === 'error') && message}
           </CardDescription>
         </CardHeader>
@@ -93,7 +95,7 @@ export default function VerifyEmail() {
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                 <p className="text-sm text-muted-foreground text-center">
-                  이제 InsiderPulse의 모든 기능을 사용할 수 있습니다
+                  {t('auth.verify.successDesc')}
                 </p>
               </div>
               <Button 
@@ -101,7 +103,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-go-login"
               >
-                로그인 페이지로 이동
+                {t('auth.verify.goToLogin')}
               </Button>
             </div>
           )}
@@ -109,7 +111,7 @@ export default function VerifyEmail() {
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <p className="text-sm text-muted-foreground text-center">
-                  인증 링크가 만료되었거나 유효하지 않습니다
+                  {t('auth.verify.errorDesc')}
                 </p>
               </div>
               <Button 
@@ -118,7 +120,7 @@ export default function VerifyEmail() {
                 className="w-full"
                 data-testid="button-back-login"
               >
-                로그인 페이지로 돌아가기
+                {t('auth.verify.backToLogin')}
               </Button>
             </div>
           )}

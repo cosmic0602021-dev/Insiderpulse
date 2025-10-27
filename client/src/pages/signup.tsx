@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle, TrendingUp, Sparkles, Shield, Zap } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, TrendingUp, Shield, Zap } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { useLanguage } from '@/contexts/language-context';
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
 const logoDark = '/insiderpulse_logo1.png';
 
 export default function SignupPage() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,25 +24,24 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!email || !password || !confirmPassword) {
-      setError('모든 필드를 입력해주세요');
+      setError(t('auth.signup.errorAllFields'));
       return;
     }
 
     if (password.length < 8) {
-      setError('비밀번호는 최소 8자 이상이어야 합니다');
+      setError(t('auth.signup.errorPasswordLength'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다');
+      setError(t('auth.signup.errorPasswordMatch'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('유효한 이메일 주소를 입력해주세요');
+      setError(t('auth.signup.errorInvalidEmail'));
       return;
     }
 
@@ -51,12 +51,11 @@ export default function SignupPage() {
       await apiClient.signup(email, password);
       setSuccess(true);
 
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || '회원가입에 실패했습니다');
+      setError(err.message || t('auth.signup.errorFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +70,10 @@ export default function SignupPage() {
 
           <div className="space-y-6 max-w-md">
             <h1 className="text-4xl font-bold text-white leading-tight">
-              내부자들의 투자,
-              <br />
-              데이터로 따라가세요
+              {t('auth.signup.heroTitle')}
             </h1>
             <p className="text-lg text-slate-400">
-              SEC 공식 파일링 기반 실시간 내부자 거래 추적
+              {t('auth.signup.heroDesc')}
             </p>
           </div>
 
@@ -86,8 +83,8 @@ export default function SignupPage() {
                 <TrendingUp className="h-6 w-6 text-emerald-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">실시간 데이터</h3>
-                <p className="text-sm text-slate-400">지연 없는 즉시 업데이트</p>
+                <h3 className="font-semibold text-white">{t('auth.login.realtimeData')}</h3>
+                <p className="text-sm text-slate-400">{t('auth.login.realtimeDesc')}</p>
               </div>
             </div>
 
@@ -96,8 +93,8 @@ export default function SignupPage() {
                 <Shield className="h-6 w-6 text-blue-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">검증된 정보</h3>
-                <p className="text-sm text-slate-400">SEC 공식 문서 기반</p>
+                <h3 className="font-semibold text-white">{t('auth.login.verifiedInfo')}</h3>
+                <p className="text-sm text-slate-400">{t('auth.login.verifiedDesc')}</p>
               </div>
             </div>
 
@@ -106,8 +103,8 @@ export default function SignupPage() {
                 <Zap className="h-6 w-6 text-amber-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">스마트 알림</h3>
-                <p className="text-sm text-slate-400">맞춤형 거래 알림</p>
+                <h3 className="font-semibold text-white">{t('auth.login.smartAlerts')}</h3>
+                <p className="text-sm text-slate-400">{t('auth.login.smartAlertsDesc')}</p>
               </div>
             </div>
           </div>
@@ -127,14 +124,14 @@ export default function SignupPage() {
               <img src={logoDark} alt="InsiderPulse" className="h-64 w-auto hidden dark:block" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-              계정 만들기
+              {t('auth.signup.title')}
             </h2>
             <p className="text-slate-600 dark:text-slate-400">
-              무료로 시작하세요. 카드 등록 불필요.
+              {t('auth.signup.subtitle')}
             </p>
           </div>
           {success ? (
-            <div className="space-y-6 py-12 text-center">
+            <div className="space-y-6 py-12 text-center" data-testid="success-message">
               <div className="flex justify-center">
                 <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
                   <CheckCircle className="h-8 w-8 text-white" />
@@ -142,17 +139,20 @@ export default function SignupPage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                  가입 완료
+                  {t('auth.signup.success')}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400">
-                  로그인 페이지로 이동합니다...
+                  {t('auth.signup.successDesc')}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                  {t('auth.signup.redirecting')}
                 </p>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" data-testid="alert-error">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -160,49 +160,52 @@ export default function SignupPage() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  이메일
+                  {t('auth.signup.email')}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   required
                   className="h-10"
+                  data-testid="input-email"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  비밀번호
+                  {t('auth.signup.password')}
                 </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="8자 이상"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   required
                   className="h-10"
+                  data-testid="input-password"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  비밀번호 확인
+                  {t('auth.signup.confirmPassword')}
                 </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="비밀번호 재입력"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
                   required
                   className="h-10"
+                  data-testid="input-confirm-password"
                 />
               </div>
 
@@ -210,35 +213,29 @@ export default function SignupPage() {
                 type="submit"
                 className="w-full h-10 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 font-medium"
                 disabled={isLoading}
+                data-testid="button-signup"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    가입 중...
+                    {t('auth.signup.creating')}
                   </>
                 ) : (
-                  '계정 만들기'
+                  t('auth.signup.button')
                 )}
               </Button>
 
               <div className="text-center text-sm">
-                <span className="text-slate-600 dark:text-slate-400">이미 계정이 있으신가요?</span>{' '}
+                <span className="text-slate-600 dark:text-slate-400">{t('auth.signup.haveAccount')}</span>{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
                   className="text-slate-900 dark:text-white font-medium hover:underline"
+                  data-testid="button-login"
                 >
-                  로그인
+                  {t('auth.signup.signIn')}
                 </button>
               </div>
-
-              <p className="text-xs text-center text-slate-500 dark:text-slate-400 pt-4 border-t">
-                가입하면{' '}
-                <a href="#" className="underline hover:text-slate-900 dark:hover:text-white">이용약관</a>
-                {' '}및{' '}
-                <a href="#" className="underline hover:text-slate-900 dark:hover:text-white">개인정보처리방침</a>
-                에 동의하게 됩니다
-              </p>
             </form>
           )}
         </div>
