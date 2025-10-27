@@ -93,27 +93,32 @@ export default function LiveTrading() {
       const saved = localStorage.getItem('watchlist');
       const existing = saved ? JSON.parse(saved) : [];
 
-      // Check if already in watchlist
+      // 토글 방식: 이미 있으면 제거, 없으면 추가
       const alreadyExists = existing.some((item: any) => item.ticker === trade.ticker);
+      
+      let updated;
       if (alreadyExists) {
-        return;
+        // 와치리스트에서 제거
+        updated = existing.filter((item: any) => item.ticker !== trade.ticker);
+        setWatchlist(updated.map((item: any) => item.ticker));
+      } else {
+        // 와치리스트에 추가
+        const newItem = {
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          addedAt: new Date().toISOString(),
+          notificationsEnabled: true, // 기본적으로 알림 켜진 상태
+        };
+        updated = [...existing, newItem];
+        setWatchlist(updated.map((item: any) => item.ticker));
       }
 
-      const newItem = {
-        ticker: trade.ticker,
-        companyName: trade.companyName,
-        addedAt: new Date().toISOString(),
-        notificationsEnabled: true, // 기본적으로 알림 켜진 상태
-      };
-
-      const updated = [...existing, newItem];
       localStorage.setItem('watchlist', JSON.stringify(updated));
-      setWatchlist(updated.map((item: any) => item.ticker));
 
       // Trigger update event for sidebar
       window.dispatchEvent(new Event('watchlistUpdate'));
     } catch (error) {
-      console.error('Failed to add to watchlist:', error);
+      console.error('Failed to toggle watchlist:', error);
     }
   };
 

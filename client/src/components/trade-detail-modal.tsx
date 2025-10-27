@@ -365,12 +365,12 @@ export function TradeDetailModal({
                   size="sm"
                   variant={isInWatchlist ? "default" : "outline"}
                   onClick={() => onAddToWatchlist(trade)}
-                  disabled={isInWatchlist}
                   className="btn-professional px-2 sm:px-3"
-                  title={isInWatchlist ? t('liveTrading.added') : t('liveTrading.watchlist')}
+                  title={isInWatchlist ? '와치리스트에서 제거' : t('liveTrading.watchlist')}
+                  data-testid={isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist"}
                 >
-                  <Bookmark className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1">{isInWatchlist ? t('liveTrading.added') : t('liveTrading.watchlist')}</span>
+                  <Bookmark className={`h-4 w-4 ${isInWatchlist ? 'fill-current' : ''}`} />
+                  <span className="hidden sm:inline ml-1">{isInWatchlist ? '제거' : t('liveTrading.watchlist')}</span>
                 </Button>
               )}
               <Button
