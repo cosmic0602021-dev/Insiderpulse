@@ -691,6 +691,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get comprehensive AI analysis for a specific trade
+  app.get('/api/trades/:id/comprehensive-analysis', async (req, res) => {
+    try {
+      const tradeId = req.params.id;
+      
+      // Fetch trade from database
+      const trade = await db.query.insiderTrades.findFirst({
+        where: eq(insiderTrades.id, tradeId),
+      });
+
+      if (!trade) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      // Generate AI analysis
+      const aiService = new AIAnalysisService();
+      const analysis = await aiService.analyzeInsiderTrade({
+        companyName: trade.companyName,
+        ticker: trade.ticker || 'N/A',
+        traderName: trade.traderName,
+        traderTitle: trade.traderTitle || 'Unknown',
+        tradeType: trade.tradeType as 'BUY' | 'SELL',
+        shares: trade.shares,
+        pricePerShare: trade.pricePerShare,
+        totalValue: trade.totalValue,
+        ownershipPercentage: trade.ownershipPercentage || 0
+      });
+
+      // Generate comprehensive analysis with mock data for now
+      const comprehensiveAnalysis = {
+        executiveSummary: analysis.recommendation,
+        actionableRecommendation: `${analysis.signalType} 신호 - ${analysis.recommendation}`,
+        priceTargets: {
+          conservative: trade.pricePerShare * 0.95,
+          realistic: trade.pricePerShare * 1.05,
+          optimistic: trade.pricePerShare * 1.15,
+          timeHorizon: '3-6개월'
+        },
+        riskAssessment: {
+          level: analysis.riskLevel,
+          factors: analysis.keyInsights,
+          mitigation: '분산 투자 및 손절매 설정 권장'
+        },
+        marketContext: {
+          sentiment: analysis.signalType === 'BUY' ? 'BULLISH' : analysis.signalType === 'SELL' ? 'BEARISH' : 'NEUTRAL',
+          reasoning: analysis.keyInsights[0] || '시장 상황 분석 중'
+        },
+        catalysts: analysis.keyInsights,
+        timeHorizon: '3-6개월',
+        confidence: analysis.significanceScore,
+        newsAnalysis: {
+          totalNews: 5,
+          positiveCount: 3,
+          negativeCount: 1,
+          majorNews: [
+            {
+              title: `${trade.companyName} 최신 소식`,
+              summary: '내부자 거래 활동 감지됨',
+              sentiment: analysis.signalType,
+              published: new Date(),
+              relevanceScore: 0.8,
+              source: 'InsiderPulse AI'
+            }
+          ]
+        }
+      };
+
+      res.json(comprehensiveAnalysis);
+    } catch (error) {
+      console.error('Error generating comprehensive analysis:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate comprehensive analysis',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // 🔍 패턴 감지 엔드포인트들
   // 모든 패턴 감지 실행 (수동 트리거)
   app.post('/api/patterns/detect', async (req, res) => {

@@ -78,6 +78,8 @@ export function TradeDetailModal({
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isPWAInstalled, setIsPWAInstalled] = useState(false);
+  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<EnhancedTrade['comprehensiveAnalysis'] | null>(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // PWA 설치 여부 확인
@@ -92,6 +94,33 @@ export function TradeDetailModal({
 
     checkPWAInstalled();
   }, []);
+
+  // Load AI analysis when modal opens
+  useEffect(() => {
+    if (isOpen && trade && !trade.comprehensiveAnalysis) {
+      loadComprehensiveAnalysis();
+    }
+  }, [isOpen, trade]);
+
+  const loadComprehensiveAnalysis = async () => {
+    if (!trade) return;
+
+    try {
+      setIsLoadingAnalysis(true);
+      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setComprehensiveAnalysis(data);
+      } else {
+        console.error('Failed to load AI analysis:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error loading AI analysis:', error);
+    } finally {
+      setIsLoadingAnalysis(false);
+    }
+  };
 
   // 푸시 알림 구독 처리
   const handlePushNotification = async () => {
@@ -623,12 +652,19 @@ export function TradeDetailModal({
                 <div className="flex-1">
                   <h4 className="font-semibold text-sm mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
                   <div className="space-y-3 text-sm leading-relaxed" data-testid="text-ai-analysis">
-                    {trade.comprehensiveAnalysis ? (
+                    {isLoadingAnalysis ? (
+                      <div className="flex items-center justify-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <span className="ml-3">AI 분석 생성 중...</span>
+                      </div>
+                    ) : (trade.comprehensiveAnalysis || comprehensiveAnalysis) ? (
                       // 실제 AI 분석 결과 표시
-                      <>
+                      (() => {
+                        const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
+                        return (<>
                         <div className="mb-4">
                           <h5 className="font-semibold mb-2">📊 AI 종합 분석</h5>
-                          <p className="text-sm text-muted-foreground">{trade.comprehensiveAnalysis.executiveSummary}</p>
+                          <p className="text-sm text-muted-foreground">{analysis.executiveSummary}</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -640,15 +676,15 @@ export function TradeDetailModal({
                             <div className="space-y-1 text-xs">
                               <div className="flex justify-between">
                                 <span>보수적:</span>
-                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.conservative.toFixed(2)}</span>
+                                <span className="font-medium">${analysis.priceTargets.conservative.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>현실적:</span>
-                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.realistic.toFixed(2)}</span>
+                                <span className="font-medium">${analysis.priceTargets.realistic.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>낙관적:</span>
-                                <span className="font-medium">${trade.comprehensiveAnalysis.priceTargets.optimistic.toFixed(2)}</span>
+                                <span className="font-medium">${analysis.priceTargets.optimistic.toFixed(2)}</span>
                               </div>
                             </div>
                           </div>
@@ -662,14 +698,14 @@ export function TradeDetailModal({
                               <div className="flex items-center gap-2">
                                 <span>위험도:</span>
                                 <Badge className={`text-xs px-2 py-0.5 ${
-                                  trade.comprehensiveAnalysis.riskAssessment.level === 'LOW' ? 'bg-green-100 text-green-800' :
-                                  trade.comprehensiveAnalysis.riskAssessment.level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                                  analysis.riskAssessment.level === 'LOW' ? 'bg-green-100 text-green-800' :
+                                  analysis.riskAssessment.level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
                                   'bg-red-100 text-red-800'
                                 }`}>
-                                  {trade.comprehensiveAnalysis.riskAssessment.level}
+                                  {analysis.riskAssessment.level}
                                 </Badge>
                               </div>
-                              <p className="text-xs">{trade.comprehensiveAnalysis.riskAssessment.mitigation}</p>
+                              <p className="text-xs">{analysis.riskAssessment.mitigation}</p>
                             </div>
                           </div>
                         </div>
@@ -679,35 +715,35 @@ export function TradeDetailModal({
                             <Lightbulb className="h-3 w-3 text-amber-600" />
                             투자 권고사항
                           </h6>
-                          <p className="text-sm">{trade.comprehensiveAnalysis.actionableRecommendation}</p>
+                          <p className="text-sm">{analysis.actionableRecommendation}</p>
                         </div>
 
                         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
                           <div className="text-center">
                             <p className="text-xs text-muted-foreground mb-1">AI 신뢰도</p>
-                            <p className="text-lg font-bold text-green-600 dark:text-green-500">{trade.comprehensiveAnalysis.confidence}%</p>
+                            <p className="text-lg font-bold text-green-600 dark:text-green-500">{analysis.confidence}%</p>
                           </div>
                           <div className="text-center">
                             <p className="text-xs text-muted-foreground mb-1">분석 기간</p>
-                            <p className="text-sm font-medium">{trade.comprehensiveAnalysis.timeHorizon}</p>
+                            <p className="text-sm font-medium">{analysis.timeHorizon}</p>
                           </div>
                           <div className="text-center">
                             <p className="text-xs text-blue-600/80 mb-1">시장 심리</p>
                             <Badge className={`text-xs px-2 py-1 ${
-                              trade.comprehensiveAnalysis.marketContext.sentiment === 'BULLISH' ? 'bg-green-100 text-green-800' :
-                              trade.comprehensiveAnalysis.marketContext.sentiment === 'BEARISH' ? 'bg-red-100 text-red-800' :
+                              analysis.marketContext.sentiment === 'BULLISH' ? 'bg-green-100 text-green-800' :
+                              analysis.marketContext.sentiment === 'BEARISH' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {trade.comprehensiveAnalysis.marketContext.sentiment}
+                              {analysis.marketContext.sentiment}
                             </Badge>
                           </div>
                         </div>
 
-                        {trade.comprehensiveAnalysis.catalysts?.length > 0 && (
+                        {analysis.catalysts?.length > 0 && (
                           <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50">
                             <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">주요 촉매 요인</p>
                             <ul className="text-xs list-disc list-inside space-y-1">
-                              {trade.comprehensiveAnalysis.catalysts.map((catalyst, index) => (
+                              {analysis.catalysts.map((catalyst, index) => (
                                 <li key={index}>{catalyst}</li>
                               ))}
                             </ul>
@@ -715,40 +751,40 @@ export function TradeDetailModal({
                         )}
 
                         {/* 뉴스 분석 섹션 */}
-                        {trade.comprehensiveAnalysis.newsAnalysis && (
+                        {analysis.newsAnalysis && (
                           <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/20 dark:to-red-950/20 rounded-lg border border-gray-200 dark:border-gray-700">
                             <h6 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
                               <Newspaper className="h-4 w-4 text-blue-600" />
-                              📰 최신 뉴스 분석 ({trade.comprehensiveAnalysis.newsAnalysis.totalNews}건)
+                              📰 최신 뉴스 분석 ({analysis.newsAnalysis.totalNews}건)
                             </h6>
 
                             {/* 뉴스 감정 요약 */}
                             <div className="grid grid-cols-3 gap-2 mb-4">
                               <div className="text-center p-2 bg-green-100 dark:bg-green-900/30 rounded">
                                 <div className="text-lg font-bold text-green-700 dark:text-green-300">
-                                  {trade.comprehensiveAnalysis.newsAnalysis.positiveCount}
+                                  {analysis.newsAnalysis.positiveCount}
                                 </div>
                                 <div className="text-xs text-green-600 dark:text-green-400">호재</div>
                               </div>
                               <div className="text-center p-2 bg-red-100 dark:bg-red-900/30 rounded">
                                 <div className="text-lg font-bold text-red-700 dark:text-red-300">
-                                  {trade.comprehensiveAnalysis.newsAnalysis.negativeCount}
+                                  {analysis.newsAnalysis.negativeCount}
                                 </div>
                                 <div className="text-xs text-red-600 dark:text-red-400">악재</div>
                               </div>
                               <div className="text-center p-2 bg-gray-100 dark:bg-gray-800 rounded">
                                 <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-                                  {trade.comprehensiveAnalysis.newsAnalysis.totalNews - trade.comprehensiveAnalysis.newsAnalysis.positiveCount - trade.comprehensiveAnalysis.newsAnalysis.negativeCount}
+                                  {analysis.newsAnalysis.totalNews - analysis.newsAnalysis.positiveCount - analysis.newsAnalysis.negativeCount}
                                 </div>
                                 <div className="text-xs text-gray-600 dark:text-gray-400">중립</div>
                               </div>
                             </div>
 
                             {/* 주요 뉴스 목록 */}
-                            {trade.comprehensiveAnalysis.newsAnalysis.majorNews.length > 0 && (
+                            {analysis.newsAnalysis.majorNews.length > 0 && (
                               <div className="space-y-3">
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔥 주요 뉴스</p>
-                                {trade.comprehensiveAnalysis.newsAnalysis.majorNews.map((news, index) => (
+                                {analysis.newsAnalysis.majorNews.map((news, index) => (
                                   <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
                                     <div className="flex items-start justify-between mb-2">
                                       <h7 className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
@@ -777,6 +813,8 @@ export function TradeDetailModal({
                           </div>
                         )}
                       </>
+                      );
+                      })()
                     ) : (
                       // AI 분석이 없을 때 기본 메시지
                       <div className="text-center py-4">
