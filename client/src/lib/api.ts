@@ -30,24 +30,64 @@ export interface TrialStatusResponse {
   hasUsedTrial: boolean;
 }
 
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: {
+    id: string;
+    email: string;
+    subscriptionTier: string;
+    subscriptionStatus?: string;
+    hasUsedTrial?: boolean;
+    trialExpiresAt?: Date | null;
+  };
+}
+
 class ApiClient {
+  private token: string | null = null;
+
+  setToken(token: string | null) {
+    this.token = token;
+  }
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    };
+
+    // Add auth token if available
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
     try {
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
+        headers,
         ...options,
       });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+
+      // Get response text first to handle empty responses
+      const text = await response.text();
+
+      // Try to parse as JSON
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', text);
+        throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
       }
-      
-      return await response.json();
+
+      if (!response.ok) {
+        // If server returned an error object with message, use it
+        const errorMessage = (data as any).message || (data as any).error || response.statusText;
+        throw new Error(`API request failed: ${response.status} - ${errorMessage}`);
+      }
+
+      return data;
     } catch (error) {
       console.error(`API request to ${endpoint} failed:`, error);
       throw error;
@@ -115,25 +155,67 @@ class ApiClient {
   // Trial system
   activateTrial = async (): Promise<TrialActivationResponse> => {
     console.log('🎯 [API] Activating trial...');
-    return this.request<TrialActivationResponse>('/trial/activate', {
-      method: 'POST',
-      headers: {
-        'x-user-id': 'demo-user', // TODO: Get from auth context
-      },
-    });
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this.token) {
+        headers['Authorization'] = `Bearer ${this.token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/trial/activate`, {
+        method: 'POST',
+        headers,
+      });
+
+      const data = await response.json();
+
+      // Return data regardless of status code (let caller handle success/failure)
+      return data;
+    } catch (error) {
+      console.error('Failed to activate trial:', error);
+      return {
+        success: false,
+        message: 'Network error. Please try again.',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
   }
 
   getTrialStatus = async (): Promise<TrialStatusResponse> => {
-    return this.request<TrialStatusResponse>('/trial/status', {
-      headers: {
-        'x-user-id': 'demo-user', // TODO: Get from auth context
-      },
-    });
+    return this.request<TrialStatusResponse>('/trial/status');
   }
 
   // Health check
   getHealth = async () => {
     return this.request('/health');
+  }
+
+  // Authentication
+  signup = async (email: string, password: string): Promise<AuthResponse> => {
+    return this.request<AuthResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  login = async (email: string, password: string): Promise<AuthResponse> => {
+    const response = await this.request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    // Save token if login successful
+    if (response.success && response.token) {
+      this.setToken(response.token);
+    }
+
+    return response;
+  }
+
+  verifyToken = async (): Promise<AuthResponse> => {
+    return this.request<AuthResponse>('/auth/verify');
   }
 }
 

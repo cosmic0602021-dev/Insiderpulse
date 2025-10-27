@@ -78,42 +78,36 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
  * Activate 24-hour trial for user
  */
 export async function activateTrial(userId: string): Promise<{ success: boolean; message: string; expiresAt?: Date }> {
-  let user = await db.query.users.findFirst({
+  const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
   });
 
-  // Auto-create demo user if doesn't exist
-  if (!user && userId === 'demo-user') {
-    console.log('📝 Creating demo-user for trial...');
-    await db.insert(users).values({
-      id: 'demo-user',
-      email: 'demo@example.com',
-      password: 'demo-password-placeholder', // Placeholder password for demo user
-      subscriptionTier: 'free',
-      subscriptionStatus: 'inactive',
-      hasUsedTrial: false,
-    });
-
-    user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
-  }
-
   if (!user) {
-    return { success: false, message: "User not found" };
+    return { success: false, message: "사용자를 찾을 수 없습니다" };
   }
 
-  // Check if user has already used trial
-  if (user.hasUsedTrial) {
-    return { success: false, message: "Trial already used. Please upgrade to Insider Pro." };
+  // Check if user already has active trial
+  const now = new Date();
+  const isTrialActive = user.trialActivatedAt && user.trialExpiresAt && now < user.trialExpiresAt;
+
+  if (isTrialActive) {
+    return {
+      success: false,
+      message: "Trial is already active",
+      expiresAt: user.trialExpiresAt
+    };
   }
 
   // Check if user already has active subscription
   if (user.subscriptionStatus === "active" && user.subscriptionTier === "insider_pro") {
-    return { success: false, message: "You already have an active Insider Pro subscription" };
+    return { success: false, message: "이미 Insider Pro 구독이 활성화되어 있습니다" };
   }
 
-  const now = new Date();
+  // Check if they've already used trial
+  if (user.hasUsedTrial) {
+    return { success: false, message: "무료 체험은 한 번만 사용할 수 있습니다. Insider Pro로 업그레이드하세요." };
+  }
+
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
 
   await db.update(users)

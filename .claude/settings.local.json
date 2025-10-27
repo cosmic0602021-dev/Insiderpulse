@@ -69,10 +69,11 @@
       "Bash(NODE_ENV=production node:*)",
       "Bash(PORT=5001 NODE_ENV=development npm run dev:backend:*)",
       "Bash(PORT=5001 NODE_ENV=development vite:*)",
-      "Bash(PORT=5001 NODE_ENV=development tsx:*)"
+      "Bash(PORT=5001 NODE_ENV=development tsx:*)",
+      "WebFetch(domain:www.sec.gov)"
     ],
     "deny": [],
     "ask": []
   },
-  "model": "claude-3-sonnet-20240229"
+  "model": "claude-sonnet-4-5"
 }

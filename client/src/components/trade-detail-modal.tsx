@@ -1,10 +1,13 @@
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import html2canvas from 'html2canvas';
 import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
-  X, Mail, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2
+  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
 import logoDark from '@assets/inverted_with_green_1757888880166.png';
 import type { InsiderTrade } from '@shared/schema';
@@ -59,7 +62,6 @@ interface TradeDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   trade: EnhancedTrade | null;
-  onAlert?: (trade: EnhancedTrade) => void;
   onAddToWatchlist?: (trade: EnhancedTrade) => void;
   isInWatchlist?: boolean;
 }
@@ -68,11 +70,160 @@ export function TradeDetailModal({
   isOpen,
   onClose,
   trade,
-  onAlert,
   onAddToWatchlist,
   isInWatchlist = false
 }: TradeDetailModalProps) {
   const { t } = useLanguage();
+  const [showPWAGuide, setShowPWAGuide] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isPWAInstalled, setIsPWAInstalled] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // PWA 설치 여부 확인
+  useEffect(() => {
+    const checkPWAInstalled = () => {
+      // Standalone 모드인지 확인 (홈화면에서 실행 중)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          (window.navigator as any).standalone ||
+                          document.referrer.includes('android-app://');
+      setIsPWAInstalled(isStandalone);
+    };
+
+    checkPWAInstalled();
+  }, []);
+
+  // 푸시 알림 구독 처리
+  const handlePushNotification = async () => {
+    // PWA 미설치 시 안내 모달 표시
+    if (!isPWAInstalled) {
+      setShowPWAGuide(true);
+      return;
+    }
+
+    try {
+      // Service Worker 등록 확인
+      const registration = await navigator.serviceWorker.ready;
+
+      // 알림 권한 요청
+      const permission = await Notification.requestPermission();
+
+      if (permission !== 'granted') {
+        alert('알림 권한이 필요합니다.');
+        return;
+      }
+
+      // 푸시 구독
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          'BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8-fTn' +
+          'G3SNvlUAF' +
+          '-86p4OXyaF_a0vWvvCXd8FJvYjQdPi2ZhNY4' // 임시 VAPID 공개키 (나중에 실제 키로 교체)
+        )
+      });
+
+      // 백엔드에 구독 정보 저장
+      await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscription,
+          ticker: trade.ticker,
+          companyName: trade.companyName
+        }),
+      });
+
+      // localStorage에 알림 정보 저장 (Alert 페이지에서 사용)
+      const existingAlerts = JSON.parse(localStorage.getItem('insiderAlerts') || '[]');
+      const newAlert = {
+        id: Date.now().toString(),
+        type: 'COMPANY',
+        condition: 'equals',
+        value: trade.companyName,
+        ticker: trade.ticker,
+        isActive: true,
+        name: `${trade.companyName} (${trade.ticker}) 거래 알림`,
+        createdAt: new Date().toISOString()
+      };
+
+      // 중복 체크 (같은 ticker가 이미 있는지)
+      const isDuplicate = existingAlerts.some((alert: any) => alert.ticker === trade.ticker);
+      if (!isDuplicate) {
+        existingAlerts.push(newAlert);
+        localStorage.setItem('insiderAlerts', JSON.stringify(existingAlerts));
+      }
+
+      setIsSubscribed(true);
+      alert(`${trade.ticker}의 거래 알림이 활성화되었습니다!`);
+      setShowPWAGuide(false);
+    } catch (error) {
+      console.error('푸시 알림 구독 실패:', error);
+      alert('알림 설정에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  // VAPID 키 변환 함수
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const handleScreenshot = async () => {
+    if (!modalRef.current) return;
+
+    try {
+      setIsCapturing(true);
+
+      // 약간의 딜레이를 주어 렌더링 완료 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(modalRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // 모바일 브라우저에서 공유 API 사용
+      if (navigator.share) {
+        const blob = await (await fetch(dataUrl)).blob();
+        await navigator.share({
+          title: `InsiderPulse: ${trade.ticker}`,
+          text: `${trade.companyName} 내부자 거래 정보`,
+          files: [
+            new File([blob], `insider_trade_${trade.ticker}.png`, {
+              type: 'image/png'
+            })
+          ]
+        });
+      } else {
+        // 웹 브라우저의 경우 다운로드
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `insider_trade_${trade.ticker}_${new Date().getTime()}.png`;
+        link.click();
+      }
+    } catch (error) {
+      console.error('스크린샷 공유 중 오류 발생:', error);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   if (!isOpen || !trade) return null;
 
@@ -173,10 +324,10 @@ export function TradeDetailModal({
           className="w-80 h-auto opacity-10 select-none hidden dark:block"
         />
       </div>
-      <Card className="modal-content card-professional max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
-        <CardHeader className="relative z-10">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
+      <Card ref={modalRef} className="modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+        <CardHeader className="relative z-10 px-3 sm:px-6">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 min-w-0">
               {trade.ticker ? (
                 <div className="relative w-10 h-10 flex-shrink-0">
                   <img
@@ -203,36 +354,74 @@ export function TradeDetailModal({
                   {getCompanyInitials(trade.companyName)}
                 </div>
               )}
-              <div>
-                <h3 className="text-lg font-bold">{trade.companyName}</h3>
-                <p className="text-sm text-muted-foreground">{trade.ticker}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm sm:text-lg font-bold truncate">{trade.companyName}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{trade.ticker}</p>
               </div>
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="btn-professional"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {onAddToWatchlist && (
+                <Button
+                  size="sm"
+                  variant={isInWatchlist ? "default" : "outline"}
+                  onClick={() => onAddToWatchlist(trade)}
+                  disabled={isInWatchlist}
+                  className="btn-professional px-2 sm:px-3"
+                  title={isInWatchlist ? t('liveTrading.added') : t('liveTrading.watchlist')}
+                >
+                  <Bookmark className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">{isInWatchlist ? t('liveTrading.added') : t('liveTrading.watchlist')}</span>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleScreenshot}
+                disabled={isCapturing}
+                className="btn-professional"
+                title="스크린샷 공유"
+              >
+                {isCapturing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handlePushNotification}
+                className={`btn-professional ${isSubscribed ? 'text-green-500' : ''}`}
+                title={isSubscribed ? '알림 구독 중' : '알림 설정'}
+              >
+                {isSubscribed ? <Check className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="btn-professional"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 relative z-10">
+        <CardContent className="space-y-4 relative z-10 px-3 sm:px-6">
           {/* 핵심 거래 정보 - 한눈에 보기 */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg space-y-4">
+          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-6 rounded-lg space-y-4">
             {/* 거래 타입 & 총 금액 */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">거래 유형</p>
-                <Badge className={`btn-professional font-bold text-lg px-4 py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">거래 유형</p>
+                <Badge className={`btn-professional font-bold text-sm sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
                   {getTradeTypeIcon(trade.tradeType)}
                   {trade.tradeType}
                 </Badge>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-1">총 거래 금액</p>
-                <p className={`text-3xl font-black ${trade.tradeType?.toUpperCase() === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="sm:text-right">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">총 거래 금액</p>
+                <p className={`text-2xl sm:text-3xl font-black ${trade.tradeType?.toUpperCase() === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(trade.totalValue)}
                 </p>
               </div>
@@ -304,23 +493,89 @@ export function TradeDetailModal({
               {t('tradeDetail.priceAnalysis')}
             </h4>
 
+            {/* 가격 추이 그래프 */}
+            <div className="mb-6 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <h5 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">가격 비교 차트</h5>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={[
+                    {
+                      name: '거래 시점',
+                      '내부자 거래가': trade.pricePerShare,
+                      '평균 거래가': trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
+                      '참고가': trade.currentPrice || trade.pricePerShare,
+                    },
+                    {
+                      name: '현재',
+                      '내부자 거래가': trade.pricePerShare,
+                      '평균 거래가': trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
+                      '참고가': trade.currentPrice || trade.pricePerShare,
+                    },
+                  ]}
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `$${value.toFixed(0)}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
+                    formatter={(value: any) => `$${value.toFixed(2)}`}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="내부자 거래가"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="평균 거래가"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="참고가"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
             {/* {t('tradeDetail.keyMetrics')} */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {/* {t('tradeDetail.insiderTradePrice')} */}
+              {/* 내부자 거래 가격 */}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
                     <DollarSign className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('tradeDetail.insiderTradePrice')}</p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">내부자 거래 가격</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{formatDate(trade.filedDate)}</p>
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-200 value-change-up">
                   ${trade.pricePerShare.toFixed(2)}
                 </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('tradeDetail.actualTradePrice')}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">SEC 파일링 기준</p>
               </div>
 
               {/* {t('tradeDetail.insiderAvgTradePrice')} */}
@@ -340,24 +595,27 @@ export function TradeDetailModal({
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('tradeDetail.sameTicker')}</p>
               </div>
 
-              {/* {t('tradeDetail.currentMarketPrice')} */}
+              {/* 현재 시장가 */}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('tradeDetail.currentMarketPrice')}</p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">참고 가격</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {isMarketOpen() ? t('tradeDetail.realtimeEstimate') : t('tradeDetail.marketClosed')}
+                      {trade.currentPrice ? (isMarketOpen() ? '실시간 추정' : '최근 종가') : '거래 시점 기준'}
                     </p>
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                  ${trade.currentPrice?.toFixed(2) || 'N/A'}
+                  ${(trade.currentPrice || trade.pricePerShare).toFixed(2)}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  {isMarketOpen() ? t('tradeDetail.realtimePrice') : t('tradeDetail.lastClosePrice')}
+                  {trade.currentPrice
+                    ? (isMarketOpen() ? '실시간 시장가' : '마지막 종가')
+                    : '내부자 거래가 기준'
+                  }
                 </p>
               </div>
             </div>
@@ -542,33 +800,74 @@ export function TradeDetailModal({
             </div>
           </div>
 
-          {/* 액션 버튼들 */}
-          <div className="flex gap-2 pt-4 border-t">
-            {onAlert && (
-              <Button
-                size="sm"
-                onClick={() => onAlert(trade)}
-                className="btn-professional"
-              >
-                <Mail className="h-4 w-4 mr-1" />
-                {t('liveTrading.alert')}
-              </Button>
-            )}
-            {onAddToWatchlist && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onAddToWatchlist(trade)}
-                disabled={isInWatchlist}
-                className="btn-professional"
-              >
-                <Bookmark className="h-4 w-4 mr-1" />
-                {isInWatchlist ? t('liveTrading.added') : t('liveTrading.watchlist')}
-              </Button>
-            )}
-          </div>
         </CardContent>
       </Card>
+
+      {/* PWA 설치 안내 모달 */}
+      {showPWAGuide && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <Card className="max-w-md w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-blue-500" />
+                푸시 알림 설정
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+                  📱 홈 화면에 추가하세요
+                </h4>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                  {trade.companyName}의 새로운 거래 알림을 받으려면 먼저 InsiderPulse를 홈 화면에 추가해야 합니다.
+                </p>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium mb-1">iOS (Safari):</p>
+                    <ol className="list-decimal list-inside text-xs space-y-1 text-muted-foreground">
+                      <li>하단 공유 버튼 탭</li>
+                      <li>"홈 화면에 추가" 선택</li>
+                      <li>"추가" 탭</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <p className="font-medium mb-1">Android (Chrome):</p>
+                    <ol className="list-decimal list-inside text-xs space-y-1 text-muted-foreground">
+                      <li>우측 상단 메뉴(⋮) 탭</li>
+                      <li>"앱 설치" 또는 "홈 화면에 추가" 선택</li>
+                      <li>"설치" 탭</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>✓ 설치 후에는</strong> 이 버튼을 다시 눌러 <strong>{trade.ticker}</strong>의 거래 알림을 구독할 수 있습니다.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPWAGuide(false)}
+                  className="flex-1"
+                >
+                  닫기
+                </Button>
+                <Button
+                  onClick={() => setShowPWAGuide(false)}
+                  className="flex-1"
+                >
+                  이해했어요
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

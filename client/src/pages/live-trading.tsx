@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 import {
   TrendingUp, TrendingDown, DollarSign, Users,
   Wifi, WifiOff, AlertTriangle, CheckCircle, Clock,
-  RefreshCw, Database, Shield, Info
+  RefreshCw, Database, Shield, Info, Search, X
 } from 'lucide-react';
 import { apiClient, queryKeys, type TradesResponse } from '@/lib/api';
 import { useAccess } from '@/contexts/access-context';
@@ -38,7 +39,7 @@ interface DataQualityStatus {
 export default function LiveTrading() {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
-  const { accessLevel, setAccessLevel } = useAccess();
+  const { accessLevel, setAccessLevel, refreshAccessLevel } = useAccess();
   const [, navigate] = useLocation();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
@@ -47,6 +48,23 @@ export default function LiveTrading() {
   const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null);
   const [isTrialing, setIsTrialing] = useState(false);
   const [hasUsedTrial, setHasUsedTrial] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadedCount, setLoadedCount] = useState(100);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+
+  // Load watchlist from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('watchlist');
+      if (saved) {
+        const items = JSON.parse(saved);
+        setWatchlist(items.map((item: any) => item.ticker));
+      }
+    } catch (error) {
+      console.error('Failed to load watchlist:', error);
+    }
+  }, []);
 
   // Load trial status on mount
   useEffect(() => {
@@ -70,6 +88,34 @@ export default function LiveTrading() {
     setIsModalOpen(true);
   };
 
+  const handleAddToWatchlist = (trade: any) => {
+    try {
+      const saved = localStorage.getItem('watchlist');
+      const existing = saved ? JSON.parse(saved) : [];
+
+      // Check if already in watchlist
+      const alreadyExists = existing.some((item: any) => item.ticker === trade.ticker);
+      if (alreadyExists) {
+        return;
+      }
+
+      const newItem = {
+        ticker: trade.ticker,
+        companyName: trade.companyName,
+        addedAt: new Date().toISOString(),
+      };
+
+      const updated = [...existing, newItem];
+      localStorage.setItem('watchlist', JSON.stringify(updated));
+      setWatchlist(updated.map((item: any) => item.ticker));
+
+      // Trigger update event for sidebar
+      window.dispatchEvent(new Event('watchlistUpdate'));
+    } catch (error) {
+      console.error('Failed to add to watchlist:', error);
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedTrade(null);
@@ -90,19 +136,16 @@ export default function LiveTrading() {
 
         // Update trial state
         setIsTrialing(true);
+        setHasUsedTrial(true);
         if (result.expiresAt) {
           setTrialExpiresAt(result.expiresAt);
         }
 
+        // Refresh access level from server
+        await refreshAccessLevel();
+
         // Refresh the page to show unlocked data
         refetch();
-
-        // Update access level in global state
-        setAccessLevel({
-          hasRealtimeAccess: true,
-          isDelayed: false,
-          delayHours: 0,
-        });
       } else {
         console.warn('⚠️ Trial activation failed:', result.message);
         alert(`❌ ${result.message || result.error}`);
@@ -116,12 +159,12 @@ export default function LiveTrading() {
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 업데이트순 정렬 (createdAt)
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: 100,
+      limit: loadedCount,
       offset: 0,
       sortBy: 'createdAt'
     }),
     queryFn: async () => {
-      const response = await apiClient.getInsiderTradesWithAccess(100, 0, undefined, undefined, 'createdAt');
+      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt');
       // Update global access level
       if (response.accessLevel) {
         setAccessLevel(response.accessLevel);
@@ -155,22 +198,35 @@ export default function LiveTrading() {
     const validation = dataValidator.validateTrades(allTrades);
     const freshness = dataFreshnessMonitor.checkDataFreshness(validation.validTrades);
 
+    // 매수/매도만 필터링 (GRANT, OPTION_EXERCISE 등 제외)
+    const buySellTrades = validation.validTrades.filter(trade => {
+      const tradeType = trade.tradeType?.toUpperCase() || '';
+      return tradeType.includes('BUY') ||
+             tradeType.includes('PURCHASE') ||
+             tradeType.includes('SELL') ||
+             tradeType.includes('SALE');
+    });
+
     const quality: DataQualityStatus = {
-      isValid: validation.summary.valid > 0,
+      isValid: buySellTrades.length > 0,
       isFresh: freshness.isFresh,
-      validTradeCount: validation.summary.valid,
+      validTradeCount: buySellTrades.length,
       totalTradeCount: validation.summary.total,
       lastUpdateAge: freshness.lastTradeAge,
       issues: [...validation.summary.issues, ...freshness.warnings]
     };
 
-    console.log(`✅ Data validation complete: ${validation.summary.valid}/${validation.summary.total} valid trades`);
+    console.log(`✅ Data validation complete: ${buySellTrades.length}/${validation.summary.total} buy/sell trades`);
     if (validation.invalidTrades.length > 0) {
       console.warn(`🚨 Filtered out ${validation.invalidTrades.length} invalid/fake trades`);
     }
+    const filteredOutCount = validation.validTrades.length - buySellTrades.length;
+    if (filteredOutCount > 0) {
+      console.log(`🔧 Filtered out ${filteredOutCount} non-buy/sell trades (GRANT, OPTION_EXERCISE, etc.)`);
+    }
 
     return {
-      trades: validation.validTrades,
+      trades: buySellTrades,
       quality
     };
   }, [allTrades]);
@@ -182,6 +238,23 @@ export default function LiveTrading() {
       setLastValidationTime(new Date());
     }
   }, [validatedData.quality]);
+
+  // 검색 필터링
+  const filteredTrades = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return validatedData.trades;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return validatedData.trades.filter(trade => {
+      return (
+        trade.companyName?.toLowerCase().includes(query) ||
+        trade.ticker?.toLowerCase().includes(query) ||
+        trade.traderName?.toLowerCase().includes(query) ||
+        trade.traderTitle?.toLowerCase().includes(query)
+      );
+    });
+  }, [validatedData.trades, searchQuery]);
 
   // WebSocket 메시지 처리
   useEffect(() => {
@@ -305,31 +378,65 @@ export default function LiveTrading() {
       )}
 
       {/* 헤더 */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold">{t('page.livetrading.title')}</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            {t('page.livetrading.subtitle')}
-          </p>
-          {/* 마지막 업데이트 시간 표시 */}
-          {lastValidationTime && (
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {t('liveTrading.lastUpdated')}: {formatTimeAgo(lastValidationTime)}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">{t('page.livetrading.title')}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              {t('page.livetrading.subtitle')}
             </p>
+            {/* 마지막 업데이트 시간 표시 */}
+            {lastValidationTime && (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {t('liveTrading.lastUpdated')}: {formatTimeAgo(lastValidationTime)}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <ShareButton variant="outline" size="sm" />
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{t('general.refresh')}</span>
+            </Button>
+            <Badge variant="outline" className="flex items-center gap-1 text-xs">
+              <Database className="h-3 w-3" />
+              <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
+            </Badge>
+          </div>
+        </div>
+
+        {/* 검색 바 */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="회사명, 티커, 트레이더 이름으로 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
           )}
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <ShareButton variant="outline" size="sm" />
-          <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{t('general.refresh')}</span>
-          </Button>
-          <Badge variant="outline" className="flex items-center gap-1 text-xs">
-            <Database className="h-3 w-3" />
-            <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
-          </Badge>
-        </div>
+
+        {/* 검색 결과 카운트 */}
+        {searchQuery && (
+          <div className="text-sm text-muted-foreground">
+            {filteredTrades.length}개의 거래 검색됨
+            {filteredTrades.length !== validatedData.trades.length && (
+              <span className="ml-1">
+                (전체 {validatedData.trades.length}개 중)
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* AI Signal Feed - Top 3 Recommendations */}
@@ -359,17 +466,19 @@ export default function LiveTrading() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {validatedData.trades.length === 0 ? (
+          {filteredTrades.length === 0 ? (
             <div className="text-center py-8">
               <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">{t('liveTrading.noValidatedTrades')}</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? '검색 결과가 없습니다' : t('liveTrading.noValidatedTrades')}
+              </p>
               <p className="text-sm text-muted-foreground mt-2">
-                {t('liveTrading.collectorRunning')}
+                {searchQuery ? '다른 키워드로 검색해보세요' : t('liveTrading.collectorRunning')}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {validatedData.trades.slice(0, 50).map((trade) => {
+              {filteredTrades.map((trade) => {
                 const pricePerShare = trade.pricePerShare || (trade.totalValue / (trade.shares || 1));
                 const isRecent = trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - (24 * 60 * 60 * 1000); // 24시간 이내
 
@@ -441,6 +550,34 @@ export default function LiveTrading() {
               })}
             </div>
           )}
+
+          {/* 더 보기 버튼 */}
+          {filteredTrades.length > 0 && filteredTrades.length >= loadedCount && !searchQuery && (
+            <div className="flex justify-center pt-6 border-t mt-6">
+              <Button
+                onClick={() => {
+                  setLoadedCount(prev => prev + 100);
+                }}
+                variant="outline"
+                className="w-full sm:w-auto"
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                더 많은 거래 내역 보기 (+100개)
+              </Button>
+            </div>
+          )}
+
+          {/* 현재 표시 중인 개수 */}
+          {filteredTrades.length > 0 && (
+            <div className="text-center text-sm text-muted-foreground pt-4">
+              {searchQuery ? (
+                <>검색된 {filteredTrades.length}개의 거래 표시 중</>
+              ) : (
+                <>최근 {filteredTrades.length}개의 거래 표시 중</>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -449,6 +586,8 @@ export default function LiveTrading() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         trade={selectedTrade}
+        onAddToWatchlist={handleAddToWatchlist}
+        isInWatchlist={selectedTrade ? watchlist.includes(selectedTrade.ticker) : false}
         data-testid="trade-detail-modal"
       />
       </div>

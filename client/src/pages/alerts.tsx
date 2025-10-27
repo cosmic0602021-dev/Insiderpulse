@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/language-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,36 +20,22 @@ interface Alert {
   value: number | string;
   isActive: boolean;
   name: string;
+  ticker?: string;
+  createdAt?: string;
 }
 
 export default function Alerts() {
   const { t } = useLanguage();
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: '1',
-      type: 'VOLUME',
-      condition: 'greater_than',
-      value: 1000000,
-      isActive: true,
-      name: 'Large Trades Alert'
-    },
-    {
-      id: '2', 
-      type: 'COMPANY',
-      condition: 'equals',
-      value: 'Apple Inc',
-      isActive: true,
-      name: 'Apple Insider Activity'
-    },
-    {
-      id: '3',
-      type: 'TRADER',
-      condition: 'contains',
-      value: 'CEO',
-      isActive: false,
-      name: 'CEO Trades'
+  // localStorage에서 알림 로드
+  const [alerts, setAlerts] = useState<Alert[]>(() => {
+    try {
+      const savedAlerts = localStorage.getItem('insiderAlerts');
+      return savedAlerts ? JSON.parse(savedAlerts) : [];
+    } catch (error) {
+      console.error('Failed to load alerts from localStorage:', error);
+      return [];
     }
-  ]);
+  });
 
   const [newAlert, setNewAlert] = useState({
     type: 'VOLUME' as Alert['type'],
@@ -58,11 +44,22 @@ export default function Alerts() {
     name: ''
   });
 
+  // alerts가 변경될 때마다 localStorage에 저장
+  useEffect(() => {
+    try {
+      localStorage.setItem('insiderAlerts', JSON.stringify(alerts));
+    } catch (error) {
+      console.error('Failed to save alerts to localStorage:', error);
+    }
+  }, [alerts]);
+
   // Fetch recent trades to show alert matches
-  const { data: trades = [], isLoading } = useQuery<InsiderTrade[]>({
+  const { data: tradesResponse, isLoading } = useQuery<{ trades: InsiderTrade[], accessLevel: any }>({
     queryKey: ['/api/trades'],
     staleTime: 5 * 60 * 1000,
   });
+
+  const trades = tradesResponse?.trades || [];
 
   // Check which recent trades match alerts
   const getAlertMatches = () => {
@@ -219,91 +216,37 @@ export default function Alerts() {
             </CardContent>
           </Card>
 
-          {/* Create New Alert */}
+          {/* 알림 생성은 실시간 트레이드 페이지에서만 가능 */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                {t('alerts.createNew')}
+                알림 추가하기
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="alert-name">{t('alerts.alertName')}</Label>
-                  <Input
-                    id="alert-name"
-                    placeholder={t('alerts.placeholder.name')}
-                    value={newAlert.name}
-                    onChange={(e) => setNewAlert({ ...newAlert, name: e.target.value })}
-                    data-testid="input-alert-name"
-                  />
+            <CardContent>
+              <div className="text-center py-6 space-y-3">
+                <div className="flex justify-center">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                    <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="alert-type">{t('alerts.alertType')}</Label>
-                  <Select
-                    value={newAlert.type}
-                    onValueChange={(value: Alert['type']) => setNewAlert({ ...newAlert, type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VOLUME">{t('alerts.type.volume')}</SelectItem>
-                      <SelectItem value="COMPANY">{t('alerts.type.company')}</SelectItem>
-                      <SelectItem value="TRADER">{t('alerts.type.trader')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    실시간 트레이드에서 알림 설정
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    관심있는 종목의 거래 상세 정보에서 알림 아이콘을 눌러 설정하세요
+                  </p>
                 </div>
+                <Button
+                  onClick={() => window.location.href = '/live-trading'}
+                  className="mt-2"
+                  variant="outline"
+                >
+                  실시간 트레이드로 이동
+                </Button>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="alert-condition">{t('alerts.condition')}</Label>
-                  <Select
-                    value={newAlert.condition}
-                    onValueChange={(value) => setNewAlert({ ...newAlert, condition: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {newAlert.type === 'VOLUME' ? (
-                        <>
-                          <SelectItem value="greater_than">{t('alerts.condition.greaterThan')}</SelectItem>
-                          <SelectItem value="less_than">{t('alerts.condition.lessThan')}</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="equals">{t('alerts.condition.equals')}</SelectItem>
-                          <SelectItem value="contains">{t('alerts.condition.contains')}</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="alert-value">{t('alerts.value')}</Label>
-                  <Input
-                    id="alert-value"
-                    placeholder={
-                      newAlert.type === 'VOLUME' 
-                        ? "1000000" 
-                        : newAlert.type === 'COMPANY'
-                        ? "Apple Inc"
-                        : "CEO"
-                    }
-                    value={newAlert.value}
-                    onChange={(e) => setNewAlert({ ...newAlert, value: e.target.value })}
-                    data-testid="input-alert-value"
-                  />
-                </div>
-              </div>
-
-              <Button onClick={addAlert} className="w-full" data-testid="button-add-alert">
-                <Plus className="h-4 w-4 mr-2" />
-                {t('alerts.createNew')}
-              </Button>
             </CardContent>
           </Card>
         </div>

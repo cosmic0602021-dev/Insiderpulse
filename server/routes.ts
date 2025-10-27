@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
@@ -12,6 +13,8 @@ import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 import dataCollectionRouter from "./data-collection-api";
 import Stripe from "stripe";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 // Import scraping manager (always needed for auto-collection)
 import { newScrapingManager } from './temp-scraper';
 
@@ -75,10 +78,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-subscription", async (req, res) => {
     try {
       const { priceId, customerEmail, customerName } = req.body;
-      
+      const userId = getUserIdFromToken(req);
+
       if (!priceId || !customerEmail) {
-        return res.status(400).json({ 
-          error: 'Missing required fields: priceId and customerEmail' 
+        return res.status(400).json({
+          error: 'Missing required fields: priceId and customerEmail'
         });
       }
 
@@ -87,9 +91,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: customerEmail,
         name: customerName || 'InsiderTrack Pro User',
         metadata: {
-          service: 'InsiderTrack Pro Subscription'
+          service: 'InsiderTrack Pro Subscription',
+          userId: userId || 'unknown'
         }
       });
+
+      // 💾 Save Stripe customer ID to database
+      if (userId) {
+        await db.update(users)
+          .set({ stripeCustomerId: customer.id })
+          .where(eq(users.id, userId));
+        console.log(`💾 Saved Stripe customer ID for user ${userId}`);
+      }
 
       // Create subscription
       const subscription = await stripe.subscriptions.create({
@@ -98,12 +111,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment_behavior: 'default_incomplete',
         expand: ['latest_invoice.payment_intent'],
         metadata: {
-          service: 'InsiderTrack Pro Premium Subscription'
+          service: 'InsiderTrack Pro Premium Subscription',
+          userId: userId || 'unknown'
         }
       });
 
       console.log(`💳 Created subscription for ${customerEmail}: ${subscription.id}`);
-      
+
       res.json({
         subscriptionId: subscription.id,
         clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
@@ -167,6 +181,267 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔐 AUTHENTICATION ENDPOINTS
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  const SALT_ROUNDS = 10;
+
+  // 🔔 Stripe Webhook - 결제 완료 시 자동으로 사용자 등급 업그레이드
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('⚠️ STRIPE_WEBHOOK_SECRET is not set');
+      return res.status(400).send('Webhook secret not configured');
+    }
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig!, webhookSecret);
+    } catch (err: any) {
+      console.error('⚠️ Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    console.log('🔔 Stripe webhook received:', event.type);
+
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed':
+      case 'payment_intent.succeeded': {
+        const session = event.data.object as any;
+        console.log('💳 Payment succeeded:', session.id);
+
+        // Get customer and subscription info
+        const customerId = session.customer;
+        const subscriptionId = session.subscription;
+
+        if (customerId && subscriptionId) {
+          try {
+            // Find user by stripe customer ID
+            const user = await db.query.users.findFirst({
+              where: eq(users.stripeCustomerId, customerId),
+            });
+
+            if (user) {
+              // Upgrade user to Insider Pro
+              await subscriptionService.upgradeToInsiderPro(
+                user.id,
+                customerId,
+                subscriptionId
+              );
+              console.log(`✅ User ${user.email} upgraded to Insider Pro`);
+            } else {
+              console.warn(`⚠️ User not found for Stripe customer ${customerId}`);
+            }
+          } catch (error) {
+            console.error('❌ Error upgrading user:', error);
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as any;
+        console.log('❌ Subscription cancelled:', subscription.id);
+
+        try {
+          const user = await db.query.users.findFirst({
+            where: eq(users.stripeSubscriptionId, subscription.id),
+          });
+
+          if (user) {
+            await subscriptionService.cancelSubscription(user.id);
+            console.log(`✅ Subscription cancelled for user ${user.email}`);
+          }
+        } catch (error) {
+          console.error('❌ Error cancelling subscription:', error);
+        }
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.json({ received: true });
+  });
+
+  // Sign up
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일과 비밀번호를 입력해주세요',
+        });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: '비밀번호는 최소 8자 이상이어야 합니다',
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: '이미 등록된 이메일입니다',
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+      // Create user
+      const newUser = await db.insert(users).values({
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        email,
+        password: hashedPassword,
+        subscriptionTier: 'free',
+        subscriptionStatus: 'inactive',
+        hasUsedTrial: false,
+      }).returning();
+
+      res.json({
+        success: true,
+        message: '회원가입이 완료되었습니다',
+        user: {
+          id: newUser[0].id,
+          email: newUser[0].email,
+          subscriptionTier: newUser[0].subscriptionTier,
+        },
+      });
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.status(500).json({
+        success: false,
+        message: '회원가입에 실패했습니다',
+      });
+    }
+  });
+
+  // Login
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일과 비밀번호를 입력해주세요',
+        });
+      }
+
+      // Find user
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: '이메일 또는 비밀번호가 올바르지 않습니다',
+        });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          message: '이메일 또는 비밀번호가 올바르지 않습니다',
+        });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        success: true,
+        message: '로그인 성공',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus,
+          hasUsedTrial: user.hasUsedTrial,
+          trialExpiresAt: user.trialExpiresAt,
+        },
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({
+        success: false,
+        message: '로그인에 실패했습니다',
+      });
+    }
+  });
+
+  // Verify token (for client to check if token is still valid)
+  app.get('/api/auth/verify', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+
+      if (!token) {
+        return res.status(401).json({ success: false, message: '토큰이 없습니다' });
+      }
+
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, decoded.userId),
+      });
+
+      if (!user) {
+        return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다' });
+      }
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus,
+          hasUsedTrial: user.hasUsedTrial,
+          trialExpiresAt: user.trialExpiresAt,
+        },
+      });
+    } catch (error) {
+      console.error('Token verification error:', error);
+      res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다' });
+    }
+  });
+
+  // Middleware to extract userId from JWT token
+  const getUserIdFromToken = (req: any): string | null => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return null;
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+      return decoded.userId;
+    } catch (error) {
+      return null;
+    }
+  };
+
   // 📊 EXISTING INSIDER TRADING DATA ENDPOINTS
   // Get trading statistics (verified trades only by default)
   app.get('/api/stats', async (req, res) => {
@@ -191,8 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sortBy = (req.query.sortBy as 'createdAt' | 'filedDate') || 'filedDate';
 
       // Access control: check if user has real-time access
-      // TODO: Implement proper authentication and get userId from session/token
-      const userId = req.headers['x-user-id'] as string; // Placeholder for now
+      const userId = getUserIdFromToken(req);
 
       let hasRealtimeAccess = false;
       if (userId) {
@@ -242,15 +516,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 🎯 TRIAL ACTIVATION ENDPOINT
   app.post('/api/trial/activate', async (req, res) => {
     try {
-      // TODO: Get userId from authenticated session
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getUserIdFromToken(req);
 
       if (!userId) {
         return res.status(401).json({
           success: false,
-          error: 'Authentication required'
+          message: '로그인이 필요합니다',
         });
       }
+
+      console.log(`🎯 Activating trial for user: ${userId}`);
 
       const result = await subscriptionService.activateTrial(userId);
 
@@ -272,10 +547,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get trial status
   app.get('/api/trial/status', async (req, res) => {
     try {
-      const userId = req.headers['x-user-id'] as string;
+      const userId = getUserIdFromToken(req);
 
       if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
+        return res.status(401).json({
+          success: false,
+          message: '로그인이 필요합니다',
+        });
       }
 
       const accessLevel = await subscriptionService.getUserAccessLevel(userId);
@@ -516,10 +794,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 랭킹 계산 - 내부자 동시 진입 기반
       const rankings = [];
 
-      for (const [ticker, tickerTrades] of tradesByTicker) {
-        // 7일 윈도우 내 동시 진입 감지
+      for (const [ticker, allTickerTrades] of tradesByTicker) {
+        // GRANT, OPTION_EXERCISE 등을 제외하고 실제 매수/매도만 필터링
+        const tickerTrades = allTickerTrades.filter(t =>
+          t.tradeType === 'BUY' || t.tradeType === 'SELL' ||
+          t.tradeType === 'PURCHASE' || t.tradeType === 'SALE' ||
+          (t.transactionCode === 'P' || t.transactionCode === 'S')
+        );
+
+        // 거래가 없으면 스킵
+        if (tickerTrades.length === 0) continue;
+
+        // 7일 윈도우 내 동시 진입 감지 (매수만)
         const simultaneousEntries = [];
-        const sortedTrades = tickerTrades.sort((a, b) => new Date(a.filedDate).getTime() - new Date(b.filedDate).getTime());
+        const buyOnlyTrades = tickerTrades.filter(t => t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.transactionCode === 'P');
+        const sortedTrades = buyOnlyTrades.sort((a, b) => new Date(a.filedDate).getTime() - new Date(b.filedDate).getTime());
 
         for (let i = 0; i < sortedTrades.length; i++) {
           const baseTrade = sortedTrades[i];
@@ -614,6 +903,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const lastTrade = tickerTrades.sort((a, b) => new Date(b.filedDate).getTime() - new Date(a.filedDate).getTime())[0];
 
+        // 매수 거래만 필터링하여 insiders 배열 생성 (이상한 이름 제외)
+        const buyTradesOnly = tickerTrades.filter(t => {
+          const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.transactionCode === 'P';
+
+          // 이상한 이름 패턴 필터링 (산업 분류, 회사 타입 등)
+          const suspiciousPatterns = [
+            /instruments?/i,
+            /apparatus/i,
+            /closed-end/i,
+            /funds?/i,
+            /pharmaceutical/i,
+            /preparations?/i,
+            /commercial\s+banks?/i,
+            /national\s+/i,
+            /^[A-Z\s&-]+$/,  // 모두 대문자 + 공백/&/- 로만 구성
+          ];
+
+          const name = t.traderName || '';
+          const hasValidName = !suspiciousPatterns.some(pattern => pattern.test(name)) && name.length > 0;
+
+          return isBuy && hasValidName;
+        });
+        const insiders = buyTradesOnly.map(t => ({
+          name: t.traderName,
+          title: t.traderTitle || 'Insider',
+          shares: t.shares,
+          pricePerShare: t.pricePerShare,
+          totalValue: t.totalValue,
+          date: t.filedDate,
+          tradeType: t.tradeType,
+          secFilingUrl: t.secFilingUrl
+        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
+
         rankings.push({
           ticker,
           companyName: lastTrade.companyName || ticker,
@@ -628,6 +950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastTradeDate: lastTrade.filedDate,
           insiderActivity: `${uniqueInsiders}명 내부자, ${totalTrades}건 거래`,
           simultaneousEntries: maxSimultaneous, // 동시 진입 최대 인원
+          insiders, // 🔥 동시 매수자 상세 정보 추가!
           detectedPatterns: tickerPatterns,
           patternSignals
         });
@@ -800,6 +1123,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('관심 종목 업데이트 실패:', error);
       res.status(500).json({ error: '관심 종목 업데이트에 실패했습니다' });
+    }
+  });
+
+  // 📱 PWA 푸시 알림 구독
+  app.post('/api/notifications/subscribe', async (req, res) => {
+    try {
+      const { subscription, ticker, companyName } = req.body;
+
+      if (!subscription || !ticker) {
+        return res.status(400).json({ error: '필수 파라미터가 누락되었습니다' });
+      }
+
+      console.log('🔔 푸시 알림 구독:', { ticker, companyName });
+      console.log('📱 구독 정보:', subscription);
+
+      // TODO: 데이터베이스에 구독 정보 저장
+      // await storage.savePushSubscription({
+      //   endpoint: subscription.endpoint,
+      //   keys: subscription.keys,
+      //   ticker,
+      //   companyName,
+      //   subscribedAt: new Date()
+      // });
+
+      res.json({
+        success: true,
+        message: `${ticker}의 거래 알림이 활성화되었습니다`
+      });
+    } catch (error) {
+      console.error('푸시 알림 구독 실패:', error);
+      res.status(500).json({ error: '푸시 알림 구독에 실패했습니다' });
     }
   });
 
@@ -1295,12 +1649,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pattern.ticker.toUpperCase() === metrics.ticker.toUpperCase()
         );
 
-        // Insider 상세 정보 (매수자만)
+        // Insider 상세 정보 (매수자만, 이상한 이름 제외)
         const insiderDetails = metrics.trades
           .filter(t => {
             const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.tradeType === 'GRANT' ||
                          t.transactionCode === 'P' || t.transactionCode === 'A';
-            return isBuy;
+
+            // 이상한 이름 패턴 필터링
+            const suspiciousPatterns = [
+              /instruments?/i,
+              /apparatus/i,
+              /closed-end/i,
+              /funds?/i,
+              /pharmaceutical/i,
+              /preparations?/i,
+              /commercial\s+banks?/i,
+              /national\s+/i,
+              /^[A-Z\s&-]+$/,  // 모두 대문자 + 공백/&/- 로만 구성
+            ];
+
+            const name = t.traderName || '';
+            const hasValidName = !suspiciousPatterns.some(pattern => pattern.test(name)) && name.length > 0;
+
+            return isBuy && hasValidName;
           })
           .map(t => ({
             name: t.traderName,
@@ -1326,7 +1697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
-          insiderDetails, // 📋 Insider 상세 정보 추가!
+          insiders: insiderDetails, // 📋 Insider 상세 정보 추가!
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map(p => ({
             type: p.type,

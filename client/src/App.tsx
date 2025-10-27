@@ -10,13 +10,14 @@ import LanguageSelector from "@/components/language-selector";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import { AccessProvider } from "@/contexts/access-context";
+import { AuthProvider } from "@/contexts/auth-context";
+import { ProtectedRoute } from "@/components/protected-route";
 import { useState, useEffect } from "react";
 import LanguageSelection from "@/pages/language-selection";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
 import TradeDetail from "@/pages/trade-detail";
 import Analytics from "@/pages/analytics";
-import Alerts from "@/pages/alerts";
 import Search from "@/pages/search";
 import LiveTrading from "@/pages/live-trading";
 import Ranking from "@/pages/ranking";
@@ -24,26 +25,81 @@ import PasswordDemo from "@/pages/password-demo";
 import EnhancedInsiderTradingDashboard from "@/components/EnhancedInsiderTradingDashboard";
 import PremiumCheckout from "@/pages/premium-checkout";
 import PaymentSuccess from "@/pages/payment-success";
+import SignupPage from "@/pages/signup";
+import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   const { t } = useLanguage();
-  
+
   return (
     <Switch>
-      <Route path="/" component={LiveTrading} />
-      <Route path="/trade/:tradeId" component={TradeDetail} />
-      <Route path="/trades" component={LiveTrading} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/alerts" component={Alerts} />
-      <Route path="/search" component={Search} />
-      <Route path="/ranking" component={Ranking} />
-      <Route path="/password-demo" component={PasswordDemo} />
-      <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
-      <Route path="/premium-checkout" component={PremiumCheckout} />
-      <Route path="/payment-success" component={PaymentSuccess} />
-      <Route path="/settings" component={Settings} />
+      {/* Public routes */}
+      <Route path="/signup" component={SignupPage} />
+      <Route path="/login" component={LoginPage} />
+
+      {/* Protected routes */}
+      <Route path="/">
+        <ProtectedRoute>
+          <LiveTrading />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/trade/:tradeId">
+        <ProtectedRoute>
+          <TradeDetail />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/trades">
+        <ProtectedRoute>
+          <LiveTrading />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/analytics">
+        <ProtectedRoute>
+          <Analytics />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/search">
+        <ProtectedRoute>
+          <Search />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ranking">
+        <ProtectedRoute>
+          <Ranking />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/password-demo">
+        <ProtectedRoute>
+          <PasswordDemo />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/enhanced-dashboard">
+        <ProtectedRoute>
+          <EnhancedInsiderTradingDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/premium-checkout">
+        <ProtectedRoute>
+          <PremiumCheckout />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/payment-success">
+        <ProtectedRoute>
+          <PaymentSuccess />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -104,15 +160,17 @@ function AppContent() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AccessProvider>
-          <TooltipProvider>
-            <AppContent />
-            <PWAInstallPrompt />
-            <Toaster />
-          </TooltipProvider>
-        </AccessProvider>
-      </LanguageProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <AccessProvider>
+            <TooltipProvider>
+              <AppContent />
+              <PWAInstallPrompt />
+              <Toaster />
+            </TooltipProvider>
+          </AccessProvider>
+        </LanguageProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
