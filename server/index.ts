@@ -5,13 +5,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { stockPriceService } from "./stock-price-service";
-// Initialize data collectors only in production (DISABLED for Autoscale)
-// Autoscale requires fast startup and no background jobs
-// Data collection is now triggered by API requests instead
-// if (process.env.NODE_ENV === 'production') {
-//   import('./sec-collector'); // Initialize SEC data collector
-//   import('./auto-scheduler'); // Initialize auto scheduler
-// }
+// Initialize data collectors
+import('./auto-scheduler'); // Initialize auto scheduler for automated SEC data collection
 
 const execAsync = promisify(exec);
 
@@ -64,9 +59,9 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 AUTOSCALE MODE: Fast startup, data collection via API
-  console.log('🚀 Autoscale mode: Fast startup enabled');
-  console.log('📊 Data collection available via GitHub Actions cron job');
+  // 🚀 Automated data collection enabled
+  console.log('🚀 Server started with automated data collection enabled');
+  console.log('📊 SEC data will be automatically collected every 30 minutes');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -99,11 +94,10 @@ app.use((req, res, next) => {
     }, () => {
       log(`serving on port ${port}`);
 
-      // AUTOSCALE: Stock price updates disabled (background job)
-      // Stock prices will be fetched on-demand via API requests
-      // setTimeout(() => {
-      //   stockPriceService.startPeriodicUpdates();
-      // }, 5000);
+      // Start stock price updates after server is ready
+      setTimeout(() => {
+        stockPriceService.startPeriodicUpdates();
+      }, 5000);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
