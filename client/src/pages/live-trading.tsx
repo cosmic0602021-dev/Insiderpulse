@@ -359,7 +359,7 @@ export default function LiveTrading() {
         hasTrial={hasUsedTrial}
         recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
           companyName: t.companyName,
-          ticker: t.ticker,
+          ticker: t.ticker || '',
           totalValue: t.totalValue,
           traderTitle: t.traderTitle || 'Insider',
         }))}
@@ -587,7 +587,7 @@ export default function LiveTrading() {
         onClose={handleCloseModal}
         trade={selectedTrade}
         onAddToWatchlist={handleAddToWatchlist}
-        isInWatchlist={selectedTrade ? watchlist.includes(selectedTrade.ticker) : false}
+        isInWatchlist={selectedTrade?.ticker ? watchlist.includes(selectedTrade.ticker) : false}
         data-testid="trade-detail-modal"
       />
       </div>

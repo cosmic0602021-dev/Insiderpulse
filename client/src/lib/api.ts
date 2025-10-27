@@ -53,20 +53,29 @@ class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options?.headers,
     };
 
-    // Add auth token if available
+    // Add auth token if available FIRST
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    // Merge existing headers from options (won't override Authorization)
+    if (options?.headers) {
+      const headerObj = options.headers as Record<string, string>;
+      Object.entries(headerObj).forEach(([key, value]) => {
+        if (key.toLowerCase() !== 'authorization') {
+          headers[key] = String(value);
+        }
+      });
+    }
+
     try {
       const response = await fetch(url, {
-        headers,
         ...options,
+        headers,
       });
 
       // Get response text first to handle empty responses
