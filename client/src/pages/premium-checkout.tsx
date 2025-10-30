@@ -1,154 +1,100 @@
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, TrendingUp, Shield, Zap, CheckCircle } from "lucide-react";
+import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useLocation } from 'wouter';
 
-// Load Stripe with public key from environment
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
-const CheckoutForm = ({ amount, description }: { amount: number; description: string }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
+export default function PremiumCheckout() {
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const plans = {
+    monthly: {
+      name: "Insider Pro",
+      price: 14,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_monthly',
+      interval: "/month",
+      billingInterval: "월간 자동결제",
+      description: "Real-time insider trading data & AI analysis",
+      features: [
+        "Real-time insider trade alerts (no 48h delay)",
+        "AI-powered trade analysis & predictions",
+        "Advanced pattern detection & signals",
+        "Executive trade tracking (CEO, CFO, etc.)",
+        "Live data updates & push notifications",
+        "Historical insider performance analytics",
+        "Exclusive market intelligence reports"
+      ],
+      savings: null
+    },
+    yearly: {
+      name: "Insider Pro",
+      price: 112,
+      originalPrice: 168,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_yearly',
+      interval: "/year",
+      billingInterval: "연간 자동결제",
+      pricePerMonth: 9.33,
+      description: "Real-time insider trading data & AI analysis",
+      features: [
+        "Real-time insider trade alerts (no 48h delay)",
+        "AI-powered trade analysis & predictions",
+        "Advanced pattern detection & signals",
+        "Executive trade tracking (CEO, CFO, etc.)",
+        "Live data updates & push notifications",
+        "Historical insider performance analytics",
+        "Exclusive market intelligence reports"
+      ],
+      savings: "Save 33% with annual billing",
+      discount: "33% OFF"
+    }
+  };
 
-    if (!stripe || !elements) {
+  const currentPlan = plans[selectedPlan];
+
+  const handleCheckout = async () => {
+    if (!user) {
+      toast({
+        title: "로그인 필요",
+        description: "구독하려면 먼저 로그인해주세요.",
+        variant: "destructive",
+      });
+      setLocation('/');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
-        },
+      const response = await apiRequest("POST", "/api/create-subscription", {
+        priceId: currentPlan.priceId,
       });
 
-      if (error) {
-        toast({
-          title: "Payment Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+      const data = await response.json();
+
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
       } else {
-        toast({
-          title: "Payment Successful",
-          description: "Welcome to InsiderTrack Pro Premium!",
-        });
+        throw new Error('No checkout URL received');
       }
-    } catch (err: any) {
+    } catch (error: any) {
+      console.error('Error creating checkout session:', error);
       toast({
-        title: "Payment Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "결제 오류",
+        description: error.message || "결제 세션을 생성할 수 없습니다. 다시 시도해주세요.",
         variant: "destructive",
       });
-    } finally {
       setIsProcessing(false);
     }
   };
-
-  return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-primary" />
-          Complete Your Purchase
-        </CardTitle>
-        <CardDescription>
-          {description} - ${amount}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <PaymentElement />
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={!stripe || !elements || isProcessing}
-            data-testid="button-complete-payment"
-          >
-            {isProcessing ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Shield className="w-4 h-4 mr-2" />
-                Pay ${amount} Securely
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default function PremiumCheckout() {
-  const [clientSecret, setClientSecret] = useState("");
-  const [selectedPlan] = useState<'monthly'>('monthly');
-
-  const plans = {
-    monthly: {
-      name: "Insider Pro",
-      price: 29,
-      interval: "/month",
-      description: "Real-time insider trading data & AI analysis",
-      features: [
-        "✨ Real-time insider trade alerts (no 48h delay)",
-        "🚀 AI-powered trade analysis & predictions",
-        "📊 Advanced pattern detection & signals",
-        "🎯 Executive trade tracking (CEO, CFO, etc.)",
-        "⚡ Live data updates & push notifications",
-        "📈 Historical insider performance analytics",
-        "💎 Exclusive market intelligence reports"
-      ],
-      savings: "Save $120/year vs. competitors"
-    }
-  };
-
-  const currentPlan = plans[selectedPlan];
-
-  useEffect(() => {
-    // Create PaymentIntent when plan changes
-    if (selectedPlan) {
-      apiRequest("POST", "/api/create-payment-intent", { 
-        amount: currentPlan.price 
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setClientSecret(data.clientSecret);
-        })
-        .catch((error) => {
-          console.error('Error creating payment intent:', error);
-        });
-    }
-  }, [selectedPlan, currentPlan.price]);
-
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-muted-foreground">Setting up secure payment...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
@@ -156,7 +102,7 @@ export default function PremiumCheckout() {
         <div className="text-center mb-8">
           <Badge className="mb-4 bg-amber-500 text-slate-900 font-bold">
             <Zap className="w-3 h-3 mr-1" />
-            LIMITED TIME OFFER
+            7일 무료체험
           </Badge>
           <h1 className="text-4xl font-bold mb-4 text-white" data-testid="text-checkout-title">
             Upgrade to Insider Pro
@@ -169,28 +115,89 @@ export default function PremiumCheckout() {
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Plan Card */}
           <div className="space-y-4">
+            {/* Plan Toggle */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex rounded-lg bg-slate-800 p-1 border border-slate-700">
+                <button
+                  onClick={() => setSelectedPlan('monthly')}
+                  className={`px-6 py-3 rounded-md font-semibold transition-all ${
+                    selectedPlan === 'monthly'
+                      ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setSelectedPlan('yearly')}
+                  className={`relative px-6 py-3 rounded-md font-semibold transition-all ${
+                    selectedPlan === 'yearly'
+                      ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Yearly
+                  {selectedPlan !== 'yearly' && (
+                    <span className="absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">
+                      -33%
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
             <Card className="border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-white text-2xl">
-                      {currentPlan.name}
-                      <Badge variant="default" className="bg-amber-500 text-slate-900">
-                        <Zap className="w-3 h-3 mr-1" />
-                        Most Popular
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-slate-300 text-base mt-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CardTitle className="text-white text-2xl">
+                        {currentPlan.name}
+                      </CardTitle>
+                      {selectedPlan === 'yearly' && (
+                        <Badge variant="default" className="bg-amber-500 text-slate-900 font-bold">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {plans.yearly.discount}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-slate-300 text-base">
                       {currentPlan.description}
                     </CardDescription>
                   </div>
                 </div>
                 <div className="mt-4">
+                  {selectedPlan === 'yearly' && (
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-2xl font-bold text-slate-500 line-through">${plans.yearly.originalPrice}</span>
+                      <span className="text-sm text-slate-400">/year</span>
+                    </div>
+                  )}
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-bold text-amber-500">${currentPlan.price}</span>
                     <span className="text-xl text-slate-400">{currentPlan.interval}</span>
                   </div>
-                  <p className="text-sm text-green-400 mt-2 font-semibold">{currentPlan.savings}</p>
+                  {selectedPlan === 'yearly' && (
+                    <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                      <p className="text-emerald-400 font-bold text-lg">
+                        ≈ $9/month
+                      </p>
+                      <p className="text-xs text-emerald-300 mt-1">
+                        Save $56 compared to monthly billing
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
+                    <RefreshCw className="w-4 h-4" />
+                    <span>{currentPlan.billingInterval}</span>
+                  </div>
+                  {currentPlan.savings && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                        {currentPlan.savings}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -205,14 +212,28 @@ export default function PremiumCheckout() {
               </CardContent>
             </Card>
 
-            <div className="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700">
+            {/* Free Trial Info */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-sm text-white">7일 무료체험</h3>
+                  <p className="text-sm text-slate-300 mt-1">
+                    오늘부터 7일간 무료로 모든 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 {currentPlan.billingInterval}가 시작됩니다. 언제든지 해지 가능합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Secure Payment</h3>
+                  <h3 className="font-semibold text-sm text-white">Secure Payment & Auto-Renewal</h3>
                   <p className="text-sm text-slate-300 mt-1">
                     All transactions are encrypted and processed securely through Stripe.
-                    Cancel anytime with one click.
+                    Your subscription will automatically renew {selectedPlan === 'monthly' ? 'every month' : 'every year'} until you cancel.
+                    Cancel anytime with one click - you'll keep access until the end of your billing period.
                   </p>
                 </div>
               </div>
@@ -231,25 +252,62 @@ export default function PremiumCheckout() {
             </div>
           </div>
 
-          {/* Payment Form */}
-          <div className="flex justify-center">
-            <Elements 
-              stripe={stripePromise} 
-              options={{ 
-                clientSecret,
-                appearance: {
-                  theme: 'stripe',
-                  variables: {
-                    colorPrimary: 'hsl(var(--primary))',
-                  }
-                }
-              }}
-            >
-              <CheckoutForm 
-                amount={currentPlan.price} 
-                description={currentPlan.name}
-              />
-            </Elements>
+          {/* Checkout Button */}
+          <div className="flex flex-col items-center justify-start lg:pt-16">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Start Your Free Trial
+                </CardTitle>
+                <CardDescription>
+                  7일 무료체험 후 ${currentPlan.price}{currentPlan.interval}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center justify-between">
+                    <span>Plan:</span>
+                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Free Trial:</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">7 days</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>After Trial:</span>
+                    <span className="font-semibold">${currentPlan.price}{currentPlan.interval}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Billing:</span>
+                    <span>{currentPlan.billingInterval}</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleCheckout}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-6 text-lg"
+                  disabled={isProcessing}
+                  data-testid="button-complete-payment"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-5 h-5 mr-2" />
+                      Start 7-Day Free Trial
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-xs text-center text-slate-500">
+                  You won't be charged for 7 days. Cancel anytime during the trial.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

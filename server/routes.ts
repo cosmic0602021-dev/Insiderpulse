@@ -74,59 +74,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create subscription for premium insider trading access
+  // Create Checkout Session for subscription with 7-day free trial
   app.post("/api/create-subscription", async (req, res) => {
     try {
-      const { priceId, customerEmail, customerName } = req.body;
+      const { priceId } = req.body;
       const userId = getUserIdFromToken(req);
 
-      if (!priceId || !customerEmail) {
+      if (!priceId) {
         return res.status(400).json({
-          error: 'Missing required fields: priceId and customerEmail'
+          error: 'Missing required field: priceId'
+        });
+      }
+
+      if (!userId) {
+        return res.status(401).json({
+          error: 'User not authenticated'
+        });
+      }
+
+      // Get user info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user || !user.email) {
+        return res.status(404).json({
+          error: 'User not found or email missing'
         });
       }
 
       // Create or find customer
-      const customer = await stripe.customers.create({
-        email: customerEmail,
-        name: customerName || 'InsiderTrack Pro User',
-        metadata: {
-          service: 'InsiderTrack Pro Subscription',
-          userId: userId || 'unknown'
-        }
-      });
+      let customerId = user.stripeCustomerId;
 
-      // 💾 Save Stripe customer ID to database
-      if (userId) {
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            userId: userId
+          }
+        });
+        customerId = customer.id;
+
+        // Save Stripe customer ID to database
         await db.update(users)
-          .set({ stripeCustomerId: customer.id })
+          .set({ stripeCustomerId: customerId })
           .where(eq(users.id, userId));
-        console.log(`💾 Saved Stripe customer ID for user ${userId}`);
+        console.log(`💾 Created Stripe customer for user ${userId}`);
       }
 
-      // Create subscription
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{ price: priceId }],
-        payment_behavior: 'default_incomplete',
-        expand: ['latest_invoice.payment_intent'],
+      // Create Checkout Session with 7-day free trial
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        subscription_data: {
+          trial_period_days: 7, // 7-day free trial
+          metadata: {
+            userId: userId
+          }
+        },
+        success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
         metadata: {
-          service: 'InsiderTrack Pro Premium Subscription',
-          userId: userId || 'unknown'
+          userId: userId
         }
       });
 
-      console.log(`💳 Created subscription for ${customerEmail}: ${subscription.id}`);
+      console.log(`💳 Created Checkout Session for ${user.email}: ${session.id}`);
 
       res.json({
-        subscriptionId: subscription.id,
-        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
-        customerId: customer.id
+        sessionId: session.id,
+        url: session.url
       });
     } catch (error: any) {
-      console.error('❌ Stripe subscription error:', error);
-      res.status(500).json({ 
-        error: "Error creating subscription: " + error.message 
+      console.error('❌ Stripe Checkout Session error:', error);
+      res.status(500).json({
+        error: "Error creating checkout session: " + error.message
       });
     }
   });
@@ -157,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cancel-subscription", async (req, res) => {
     try {
       const { subscriptionId } = req.body;
-      
+
       if (!subscriptionId) {
         return res.status(400).json({ error: 'Missing subscriptionId' });
       }
@@ -167,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`💳 Cancelled subscription: ${subscriptionId}`);
-      
+
       res.json({
         id: subscription.id,
         status: subscription.status,
@@ -175,8 +204,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('❌ Stripe subscription cancellation error:', error);
-      res.status(500).json({ 
-        error: "Error cancelling subscription: " + error.message 
+      res.status(500).json({
+        error: "Error cancelling subscription: " + error.message
+      });
+    }
+  });
+
+  // Create Customer Portal Session for subscription management
+  app.post("/api/create-portal-session", async (req, res) => {
+    try {
+      const userId = getUserIdFromToken(req);
+
+      if (!userId) {
+        return res.status(401).json({
+          error: 'User not authenticated'
+        });
+      }
+
+      // Get user info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user || !user.stripeCustomerId) {
+        return res.status(404).json({
+          error: 'User not found or no active subscription'
+        });
+      }
+
+      // Create Customer Portal Session
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/settings`,
+      });
+
+      console.log(`🔐 Created Customer Portal session for user ${userId}`);
+
+      res.json({
+        url: session.url
+      });
+    } catch (error: any) {
+      console.error('❌ Stripe Customer Portal error:', error);
+      res.status(500).json({
+        error: "Error creating portal session: " + error.message
       });
     }
   });
@@ -208,10 +278,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Handle the event
     switch (event.type) {
-      case 'checkout.session.completed':
-      case 'payment_intent.succeeded': {
+      case 'checkout.session.completed': {
         const session = event.data.object as any;
-        console.log('💳 Payment succeeded:', session.id);
+        console.log('💳 Checkout session completed:', session.id);
 
         // Get customer and subscription info
         const customerId = session.customer;
@@ -225,13 +294,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             if (user) {
-              // Upgrade user to Insider Pro
+              // Get subscription details to extract period end
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+              const periodEnd = new Date(subscription.current_period_end * 1000);
+
+              // Upgrade user to Insider Pro with correct end date
               await subscriptionService.upgradeToInsiderPro(
                 user.id,
                 customerId,
-                subscriptionId
+                subscriptionId,
+                periodEnd
               );
-              console.log(`✅ User ${user.email} upgraded to Insider Pro`);
+              console.log(`✅ User ${user.email} upgraded to Insider Pro until ${periodEnd}`);
             } else {
               console.warn(`⚠️ User not found for Stripe customer ${customerId}`);
             }
@@ -242,9 +316,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         break;
       }
 
-      case 'customer.subscription.deleted': {
+      case 'customer.subscription.updated': {
         const subscription = event.data.object as any;
-        console.log('❌ Subscription cancelled:', subscription.id);
+        console.log('🔄 Subscription updated:', subscription.id);
 
         try {
           const user = await db.query.users.findFirst({
@@ -252,11 +326,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           if (user) {
-            await subscriptionService.cancelSubscription(user.id);
-            console.log(`✅ Subscription cancelled for user ${user.email}`);
+            // Check if subscription is set to cancel at period end
+            if (subscription.cancel_at_period_end) {
+              const periodEnd = new Date(subscription.current_period_end * 1000);
+              await subscriptionService.cancelSubscription(user.id, periodEnd);
+              console.log(`⚠️ Subscription will cancel for user ${user.email} at ${periodEnd}`);
+            } else if (subscription.status === 'active') {
+              // Subscription was reactivated - update end date
+              const periodEnd = new Date(subscription.current_period_end * 1000);
+              await db.update(users)
+                .set({
+                  subscriptionStatus: "active",
+                  subscriptionEndDate: periodEnd,
+                })
+                .where(eq(users.id, user.id));
+              console.log(`✅ Subscription reactivated for user ${user.email}`);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error updating subscription:', error);
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as any;
+        console.log('❌ Subscription deleted:', subscription.id);
+
+        try {
+          const user = await db.query.users.findFirst({
+            where: eq(users.stripeSubscriptionId, subscription.id),
+          });
+
+          if (user) {
+            // Use current_period_end as the final access date
+            const periodEnd = new Date(subscription.current_period_end * 1000);
+            await subscriptionService.cancelSubscription(user.id, periodEnd);
+            console.log(`✅ Subscription ended for user ${user.email}, access until ${periodEnd}`);
           }
         } catch (error) {
           console.error('❌ Error cancelling subscription:', error);
+        }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as any;
+        console.log('💰 Payment succeeded for invoice:', invoice.id);
+
+        // Update subscription end date on successful recurring payment
+        if (invoice.subscription) {
+          try {
+            const user = await db.query.users.findFirst({
+              where: eq(users.stripeSubscriptionId, invoice.subscription),
+            });
+
+            if (user) {
+              const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+              const periodEnd = new Date(subscription.current_period_end * 1000);
+
+              await db.update(users)
+                .set({
+                  subscriptionEndDate: periodEnd,
+                })
+                .where(eq(users.id, user.id));
+
+              console.log(`💳 Renewed subscription for user ${user.email} until ${periodEnd}`);
+            }
+          } catch (error) {
+            console.error('❌ Error updating subscription end date:', error);
+          }
         }
         break;
       }

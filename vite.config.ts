@@ -37,9 +37,16 @@ export default defineConfig({
     // Note: In development, Express (port 5000) integrates Vite as middleware
     // So we don't need proxy config here - API and frontend are on the same port
     allowedHosts: [
-      '0669bfcf-0b3b-4417-b2c9-15d7f4f47e57-00-39if825fwf2o8.worf.replit.dev',
+      // Extract hostname from FRONTEND_URL or APP_URL (for custom domains)
+      ...(process.env.FRONTEND_URL || process.env.APP_URL
+        ? [new URL(process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5000').hostname]
+        : []
+      ),
+      // Replit dev domain (if exists)
+      ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
+      // Always allow localhost
       'localhost',
       '127.0.0.1'
-    ],
+    ].filter((host, index, self) => self.indexOf(host) === index), // Remove duplicates
   },
 });

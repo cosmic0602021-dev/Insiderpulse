@@ -14,6 +14,7 @@ import { apiClient, queryKeys, type TradesResponse } from '@/lib/api';
 import { useAccess } from '@/contexts/access-context';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLanguage } from '@/contexts/language-context';
+import { useAuth } from '@/contexts/auth-context';
 import { dataValidator, dataFreshnessMonitor } from '@/lib/data-validation';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { LockedTradesSection } from '@/components/locked-trade-card';
@@ -40,6 +41,7 @@ export default function LiveTrading() {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const { accessLevel, setAccessLevel, refreshAccessLevel } = useAccess();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [, navigate] = useLocation();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
@@ -132,6 +134,13 @@ export default function LiveTrading() {
   };
 
   const handleUnlock = async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Show auth modal with signup mode
+      openAuthModal('signup');
+      return;
+    }
+
     try {
       console.log('🎯 Activating 24-hour trial...');
       const result = await apiClient.activateTrial();
@@ -417,7 +426,7 @@ export default function LiveTrading() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="회사명, 티커, 트레이더 이름으로 검색..."
+            placeholder={t('page.search.placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-10"
@@ -435,10 +444,10 @@ export default function LiveTrading() {
         {/* 검색 결과 카운트 */}
         {searchQuery && (
           <div className="text-sm text-muted-foreground">
-            {filteredTrades.length}개의 거래 검색됨
+            {filteredTrades.length}{t('search.tradesFound')}
             {filteredTrades.length !== validatedData.trades.length && (
               <span className="ml-1">
-                (전체 {validatedData.trades.length}개 중)
+                {t('search.outOfTotal').replace('{total}', validatedData.trades.length.toString())}
               </span>
             )}
           </div>

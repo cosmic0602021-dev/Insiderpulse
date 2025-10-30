@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Star, Users, Zap, Brain, Target, Bell, DollarSign, BarChart3, Shield, Copy, ExternalLink, Calculator, Timer, Eye, Bookmark, Mail, Check, X, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, Treemap, Sankey } from 'recharts';
+import { useLanguage } from '@/contexts/language-context';
 
 const EnhancedInsiderTradingDashboard = () => {
+  const { t } = useLanguage();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -861,7 +863,7 @@ const EnhancedInsiderTradingDashboard = () => {
 
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-3">
                         <div>
-                          <p className="text-xs text-slate-400">주식수</p>
+                          <p className="text-xs text-slate-400">{t('trades.shares')}</p>
                           <p className="font-semibold">{trade.shares.toLocaleString()}</p>
                         </div>
                         <div>

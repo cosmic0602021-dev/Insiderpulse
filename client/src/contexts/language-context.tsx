@@ -83,14 +83,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.unlockButton': 'Unlock Now ($0)',
 
     // Locked Trade Card
-    'lockedTrade.realtimeInsider': '🚨 Real-Time Insider Trade Detected',
+    'lockedTrade.realtimeInsider': 'Real-Time Insider Trade Detected',
     'lockedTrade.executive': 'Executive',
     'lockedTrade.insiders': 'Insiders',
     'lockedTrade.detected': 'detected',
-    'lockedTrade.realtimeZone': '🔥 Real-Time Zone',
+    'lockedTrade.realtimeZone': 'Real-Time Zone',
     'lockedTrade.lockedTrades': 'locked trades',
     'lockedTrade.unlockPrompt': 'Unlock {count} real-time insider trades and see what the insiders are doing right now!',
-    'lockedTrade.startTrial': '🎯 Start 24-Hour Free Trial',
+    'lockedTrade.startTrial': 'Start 24-Hour Free Trial',
+    'lockedTrade.unlockDescription': 'Instantly unlock all trades below and see real-time insider activities',
+    'lockedTrade.unlockBelow': 'Unlock below',
 
     // Trial Timer
     'trial.activeNotice': '✨ Free Trial Active:',
@@ -908,14 +910,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.unlockButton': '지금 해제 ($0)',
 
     // Locked Trade Card
-    'lockedTrade.realtimeInsider': '🚨 실시간 내부자 거래 감지',
+    'lockedTrade.realtimeInsider': '실시간 내부자 거래 감지',
     'lockedTrade.executive': '임원',
     'lockedTrade.insiders': '내부자',
     'lockedTrade.detected': '감지됨',
-    'lockedTrade.realtimeZone': '🔥 실시간 구역',
+    'lockedTrade.realtimeZone': '실시간 구역',
     'lockedTrade.lockedTrades': '개 잠금 거래',
     'lockedTrade.unlockPrompt': '{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!',
-    'lockedTrade.startTrial': '🎯 24시간 무료 체험 시작',
+    'lockedTrade.startTrial': '24시간 무료 체험 시작',
+    'lockedTrade.unlockDescription': '아래 모든 거래를 즉시 잠금 해제하고 실시간 내부자 활동 확인',
+    'lockedTrade.unlockBelow': '아래 거래 잠금 해제',
 
     // Trial Timer
     'trial.activeNotice': '✨ 무료 체험 활성화:',
@@ -1372,6 +1376,84 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.verify.successDesc': '이제 InsiderPulse의 모든 기능을 사용할 수 있습니다',
     'auth.verify.errorDesc': '인증 링크가 만료되었거나 유효하지 않습니다',
     'auth.verify.noToken': '인증 토큰이 없습니다',
+
+    // Missing General keys
+    'general.close': '닫기',
+
+    // Missing liveTrading keys
+    'liveTrading.buy': '매수',
+    'liveTrading.sell': '매도',
+    'liveTrading.stockGrant': '주식 부여',
+    'liveTrading.optionExercise': '옵션 행사',
+    'liveTrading.giftDonation': '선물/기부',
+    'liveTrading.other': '기타',
+    'liveTrading.close': '닫기',
+    'liveTrading.summary': '요약',
+
+    // Missing Trade Detail keys
+    'tradeDetail.shareCount': '주식 수',
+    'tradeDetail.insiderInfo': '내부자 정보',
+    'tradeDetail.position': '직책',
+    'tradeDetail.reportDate': '보고일',
+    'tradeDetail.priceAnalysis': '가격 분석 및 투자 인사이트',
+    'tradeDetail.keyMetrics': '주요 지표',
+    'tradeDetail.insiderTradePrice': '내부자 거래 가격',
+    'tradeDetail.insiderAvgTradePrice': '내부자 평균 거래 가격',
+    'tradeDetail.integratedAiAnalysis': '통합 AI 분석 결과',
+    'tradeDetail.basicInfo': '기본 정보',
+    'tradeDetail.priceAnalysisDashboard': '가격 분석 대시보드',
+    'tradeDetail.marketOpeningHours': '시장 개장 시간 확인 (미국 동부 시간)',
+    'tradeDetail.weekendExcluded': '주말 제외 (월~금)',
+    'tradeDetail.marketHours': '시장 시간: 오전 9:30 - 오후 4:00 ET',
+    'tradeDetail.insiderPulseWatermark': 'InsiderPulse 워터마크 - 모달 중앙에 고정',
+    'tradeDetail.name': '이름',
+    'tradeDetail.titlePosition': '직책',
+    'tradeDetail.filingDate': 'SEC 제출일',
+    'tradeDetail.viewSecFiling': 'SEC 공식 파일링 보기 (sec.gov)',
+    'tradeDetail.verifiedBySec': 'SEC 파일링 데이터로 검증됨',
+    'tradeDetail.targetPriceAnalysis': '목표 가격 분석',
+    'tradeDetail.realtimeEstimate': '실시간 추정',
+    'tradeDetail.lastClosePrice': '최근 종가',
+
+    // Missing Dashboard keys
+    'dashboard.loadMoreTradesError': '더 많은 거래를 불러오지 못했습니다. 다시 시도해주세요.',
+
+    // Missing Search keys
+    'search.tradesFound': '개의 거래 검색됨',
+    'search.outOfTotal': '(전체 {total}개 중)',
+
+    // Missing Notification keys
+    'notification.permission.required': '알림 권한이 필요합니다',
+    'notification.tradeAlert': '{company} ({ticker}) 거래 알림',
+    'notification.activated': '{ticker}의 거래 알림이 활성화되었습니다!',
+    'notification.failed': '알림 설정에 실패했습니다. 다시 시도해주세요.',
+
+    // Missing Watchlist keys
+    'watchlist.remove': '와치리스트에서 제거',
+
+    // Missing Price Chart keys
+    'priceChart.tradeTime': '거래 시점',
+    'priceChart.insiderTradePrice': '내부자 거래가',
+    'priceChart.avgTradePrice': '평균 거래가',
+    'priceChart.referencePrice': '참고가',
+    'priceChart.current': '현재',
+    'priceChart.tradeTimeBase': '거래 시점 기준',
+    'priceChart.referencePriceLabel': '참고 가격',
+    'priceChart.realtimeMarketPrice': '실시간 시장가',
+    'priceChart.lastClosingPrice': '마지막 종가',
+    'priceChart.basedOnInsiderTradePrice': '내부자 거래가 기준',
+
+    // Missing PWA keys
+    'pwa.prompt.addToHomeScreen': '홈 화면에 추가하세요',
+    'pwa.notification.requirement': '{company}의 새로운 거래 알림을 받으려면 먼저 InsiderPulse를 홈 화면에 추가해야 합니다.',
+    'pwa.ios.step1': '하단 공유 버튼 탭',
+    'pwa.ios.step2': '"홈 화면에 추가" 선택',
+    'pwa.ios.step3': '"추가" 탭',
+    'pwa.android.step1': '우측 상단 메뉴(⋮) 탭',
+    'pwa.android.step2': '"앱 설치" 또는 "홈 화면에 추가" 선택',
+    'pwa.android.step3': '"설치" 탭',
+    'pwa.afterInstall': '설치 후에는 이 버튼을 다시 눌러 <strong>{ticker}</strong>의 거래 알림을 구독할 수 있습니다.',
+    'pwa.button.understood': '이해했어요',
   },
   ja: {
     // Navigation
@@ -1447,14 +1529,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.unlockButton': '今すぐ解除 ($0)',
 
     // Locked Trade Card
-    'lockedTrade.realtimeInsider': '🚨 リアルタイムインサイダー取引検出',
+    'lockedTrade.realtimeInsider': 'リアルタイムインサイダー取引検出',
     'lockedTrade.executive': '役員',
     'lockedTrade.insiders': 'インサイダー',
     'lockedTrade.detected': '検出',
-    'lockedTrade.realtimeZone': '🔥 リアルタイムゾーン',
+    'lockedTrade.realtimeZone': 'リアルタイムゾーン',
     'lockedTrade.lockedTrades': '件のロック取引',
     'lockedTrade.unlockPrompt': '{count}件のリアルタイムインサイダー取引をアンロックして、インサイダーが今何をしているか確認！',
-    'lockedTrade.startTrial': '🎯 24時間無料トライアル開始',
+    'lockedTrade.startTrial': '24時間無料トライアル開始',
+    'lockedTrade.unlockDescription': '以下の全取引を即座にアンロックし、リアルタイムのインサイダー活動を確認',
+    'lockedTrade.unlockBelow': '以下をアンロック',
 
     // Trial Timer
     'trial.activeNotice': '✨ 無料トライアル有効:',
@@ -1951,14 +2035,16 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.unlockButton': '立即解锁 ($0)',
 
     // Locked Trade Card
-    'lockedTrade.realtimeInsider': '🚨 检测到实时内幕交易',
+    'lockedTrade.realtimeInsider': '检测到实时内幕交易',
     'lockedTrade.executive': '高管',
     'lockedTrade.insiders': '内幕人士',
     'lockedTrade.detected': '检测到',
-    'lockedTrade.realtimeZone': '🔥 实时区域',
+    'lockedTrade.realtimeZone': '实时区域',
     'lockedTrade.lockedTrades': '笔锁定交易',
     'lockedTrade.unlockPrompt': '解锁{count}笔实时内幕交易，看看内幕人士现在在做什么！',
-    'lockedTrade.startTrial': '🎯 开始24小时免费试用',
+    'lockedTrade.startTrial': '开始24小时免费试用',
+    'lockedTrade.unlockDescription': '立即解锁下方所有交易并查看实时内幕活动',
+    'lockedTrade.unlockBelow': '解锁下方',
 
     // Trial Timer
     'trial.activeNotice': '✨ 免费试用激活:',

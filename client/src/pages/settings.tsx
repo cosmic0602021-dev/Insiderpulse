@@ -4,16 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Languages, Palette, Bell, Monitor, Sun, Moon, BellOff } from 'lucide-react';
+import { Languages, Palette, Bell, Monitor, Sun, Moon, BellOff, CreditCard, ExternalLink } from 'lucide-react';
 import { useLanguage, type Language } from '@/contexts/language-context';
 import { useState, useEffect } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState<string>('system');
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const {
     isSupported,
     isSubscribed,
@@ -78,6 +82,29 @@ export default function Settings() {
           description: t('notification.settings.disabled'),
         });
       }
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setIsLoadingPortal(true);
+    try {
+      const response = await apiRequest('POST', '/api/create-portal-session', {});
+      const data = await response.json();
+
+      if (data.url) {
+        // Redirect to Stripe Customer Portal
+        window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL received');
+      }
+    } catch (error: any) {
+      console.error('Error creating portal session:', error);
+      toast({
+        title: '오류',
+        description: error.message || '구독 관리 페이지를 열 수 없습니다.',
+        variant: 'destructive',
+      });
+      setIsLoadingPortal(false);
     }
   };
 
@@ -156,6 +183,80 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Subscription Management */}
+      {user && user.stripeCustomerId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Subscription Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Current Plan</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {user.subscriptionTier === 'insider_pro' ? 'Insider Pro' : 'Free Plan'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-sm font-medium ${
+                    user.subscriptionStatus === 'active' ? 'text-green-600 dark:text-green-400' :
+                    user.subscriptionStatus === 'canceled' ? 'text-orange-600 dark:text-orange-400' :
+                    'text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {user.subscriptionStatus === 'active' ? '✓ Active' :
+                     user.subscriptionStatus === 'canceled' ? '⚠ Cancelled' :
+                     user.subscriptionStatus === 'trialing' ? '🎁 Trial' :
+                     'Inactive'}
+                  </p>
+                  {user.subscriptionEndDate && (
+                    <p className="text-xs text-muted-foreground">
+                      {user.subscriptionStatus === 'canceled' ? 'Access until: ' : 'Renews: '}
+                      {new Date(user.subscriptionEndDate).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Manage your subscription, update payment methods, view invoices, or cancel your subscription through our secure payment portal.
+              </p>
+              <Button
+                onClick={handleManageSubscription}
+                disabled={isLoadingPortal}
+                className="w-full"
+                variant="outline"
+              >
+                {isLoadingPortal ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Manage Subscription
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm">
+              <p className="text-blue-900 dark:text-blue-100 text-xs">
+                💡 Tip: If you cancel your subscription, you'll keep access until the end of your billing period.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Notifications Settings */}
       <Card>

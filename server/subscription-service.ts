@@ -75,7 +75,7 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
 }
 
 /**
- * Activate 24-hour trial for user
+ * Activate 7-day trial for user
  */
 export async function activateTrial(userId: string): Promise<{ success: boolean; message: string; expiresAt?: Date }> {
   const user = await db.query.users.findFirst({
@@ -108,7 +108,7 @@ export async function activateTrial(userId: string): Promise<{ success: boolean;
     return { success: false, message: "무료 체험은 한 번만 사용할 수 있습니다. Insider Pro로 업그레이드하세요." };
   }
 
-  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
   await db.update(users)
     .set({
@@ -123,7 +123,7 @@ export async function activateTrial(userId: string): Promise<{ success: boolean;
 
   return {
     success: true,
-    message: "24-hour Insider trial activated! You now have full access to real-time data.",
+    message: "7-day Insider trial activated! You now have full access to real-time data.",
     expiresAt,
   };
 }
@@ -166,10 +166,11 @@ export async function markTrialNotificationSent(userId: string): Promise<void> {
 export async function upgradeToInsiderPro(
   userId: string,
   stripeCustomerId: string,
-  stripeSubscriptionId: string
+  stripeSubscriptionId: string,
+  subscriptionEndDate?: Date
 ): Promise<void> {
   const now = new Date();
-  const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  const endDate = subscriptionEndDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // Use provided or default 30 days
 
   await db.update(users)
     .set({
@@ -182,21 +183,25 @@ export async function upgradeToInsiderPro(
     })
     .where(eq(users.id, userId));
 
-  console.log(`✅ User ${userId} upgraded to Insider Pro`);
+  console.log(`✅ User ${userId} upgraded to Insider Pro until ${endDate}`);
 }
 
 /**
- * Cancel subscription
+ * Cancel subscription - keeps access until period end
  */
-export async function cancelSubscription(userId: string): Promise<void> {
+export async function cancelSubscription(userId: string, periodEndDate?: Date): Promise<void> {
   await db.update(users)
     .set({
       subscriptionStatus: "canceled",
-      subscriptionEndDate: new Date(), // End immediately
+      subscriptionEndDate: periodEndDate || new Date(), // Use provided end date or now
     })
     .where(eq(users.id, userId));
 
-  console.log(`❌ Subscription canceled for user ${userId}`);
+  if (periodEndDate) {
+    console.log(`❌ Subscription canceled for user ${userId}, access until ${periodEndDate}`);
+  } else {
+    console.log(`❌ Subscription canceled for user ${userId}, access ended immediately`);
+  }
 }
 
 export const subscriptionService = {

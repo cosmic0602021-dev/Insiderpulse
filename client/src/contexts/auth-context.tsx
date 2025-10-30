@@ -7,8 +7,12 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  showAuthModal: boolean;
+  authModalMode: 'login' | 'signup';
   login: (user: User, token: string) => void;
   logout: () => void;
+  openAuthModal: (mode: 'login' | 'signup') => void;
+  closeAuthModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
   // Load auth from localStorage on mount
   useEffect(() => {
@@ -58,6 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiClient.setToken(null);
   };
 
+  const openAuthModal = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const closeAuthModal = () => {
+    setShowAuthModal(false);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -65,8 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         isAuthenticated: !!user && !!token,
         isLoading,
+        showAuthModal,
+        authModalMode,
         login,
         logout,
+        openAuthModal,
+        closeAuthModal,
       }}
     >
       {children}

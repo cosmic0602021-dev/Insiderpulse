@@ -138,7 +138,7 @@ export function TradeDetailModal({
       const permission = await Notification.requestPermission();
 
       if (permission !== 'granted') {
-        alert('알림 권한이 필요합니다.');
+        alert(t('notification.permission.required'));
         return;
       }
 
@@ -174,7 +174,7 @@ export function TradeDetailModal({
         value: trade.companyName,
         ticker: trade.ticker,
         isActive: true,
-        name: `${trade.companyName} (${trade.ticker}) 거래 알림`,
+        name: t('notification.tradeAlert').replace('{company}', trade.companyName).replace('{ticker}', trade.ticker),
         createdAt: new Date().toISOString()
       };
 
@@ -186,11 +186,11 @@ export function TradeDetailModal({
       }
 
       setIsSubscribed(true);
-      alert(`${trade.ticker}의 거래 알림이 활성화되었습니다!`);
+      alert(t('notification.activated').replace('{ticker}', trade.ticker));
       setShowPWAGuide(false);
     } catch (error) {
       console.error('푸시 알림 구독 실패:', error);
-      alert('알림 설정에 실패했습니다. 다시 시도해주세요.');
+      alert(t('notification.failed'));
     }
   };
 
@@ -395,7 +395,7 @@ export function TradeDetailModal({
                   variant={isInWatchlist ? "default" : "outline"}
                   onClick={() => onAddToWatchlist(trade)}
                   className="btn-professional px-2 sm:px-3"
-                  title={isInWatchlist ? '와치리스트에서 제거' : t('liveTrading.watchlist')}
+                  title={isInWatchlist ? t('watchlist.remove') : t('liveTrading.watchlist')}
                   data-testid={isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist"}
                 >
                   <Bookmark className={`h-4 w-4 ${isInWatchlist ? 'fill-current' : ''}`} />
@@ -466,20 +466,20 @@ export function TradeDetailModal({
           <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
             <h4 className="font-bold mb-3 flex items-center gap-2 text-base">
               <User className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-              내부자 정보
+              {t('tradeDetail.insiderInfo')}
             </h4>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-white dark:bg-gray-800">이름</Badge>
+                <Badge variant="outline" className="bg-white dark:bg-gray-800">{t('tradeDetail.name')}</Badge>
                 <p className="font-bold text-lg">{trade.traderName}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-white dark:bg-gray-800">직책</Badge>
+                <Badge variant="outline" className="bg-white dark:bg-gray-800">{t('tradeDetail.titlePosition')}</Badge>
                 <p className="font-semibold text-slate-700 dark:text-slate-300">{trade.traderTitle}</p>
               </div>
               <div className="flex items-center gap-2 mt-3 pt-2 border-t">
                 <Calendar className="h-4 w-4 text-amber-600" />
-                <p className="text-sm text-muted-foreground">SEC 제출일:</p>
+                <p className="text-sm text-muted-foreground">{t('tradeDetail.filingDate')}:</p>
                 <p className="font-bold">{formatDate(trade.filedDate)}</p>
                 <Badge variant="outline" className="text-xs">UTC</Badge>
               </div>
@@ -498,10 +498,10 @@ export function TradeDetailModal({
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                SEC 공식 파일링 보기 (sec.gov)
+                {t('tradeDetail.viewSecFiling')}
               </a>
               <p className="text-xs text-muted-foreground mt-1">
-                ✓ 실제 SEC 파일링 데이터로 검증됨
+                ✓ {t('tradeDetail.verifiedBySec')}
               </p>
             </div>
           )}
@@ -515,7 +515,7 @@ export function TradeDetailModal({
 
             {/* 가격 추이 그래프 */}
             <div className="mb-6 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-              <h5 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">가격 비교 차트</h5>
+              <h5 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">{t('priceChart.title')}</h5>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
                   data={[
@@ -622,9 +622,9 @@ export function TradeDetailModal({
                     <TrendingUp className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">참고 가격</p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('priceChart.referencePriceLabel')}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {trade.currentPrice ? (isMarketOpen() ? '실시간 추정' : '최근 종가') : '거래 시점 기준'}
+                      {trade.currentPrice ? (isMarketOpen() ? t('tradeDetail.realtimeEstimate') : t('tradeDetail.lastClosePrice')) : t('priceChart.tradeTimeBase')}
                     </p>
                   </div>
                 </div>
@@ -633,8 +633,8 @@ export function TradeDetailModal({
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   {trade.currentPrice
-                    ? (isMarketOpen() ? '실시간 시장가' : '마지막 종가')
-                    : '내부자 거래가 기준'
+                    ? (isMarketOpen() ? t('priceChart.realtimeMarketPrice') : t('priceChart.lastClosingPrice'))
+                    : t('priceChart.basedOnInsiderTradePrice')
                   }
                 </p>
               </div>
@@ -839,43 +839,43 @@ export function TradeDetailModal({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-blue-500" />
-                푸시 알림 설정
+                {t('notification.settings.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
-                  📱 홈 화면에 추가하세요
+                  📱 {t('pwa.prompt.addToHomeScreen')}
                 </h4>
                 <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                  {trade.companyName}의 새로운 거래 알림을 받으려면 먼저 InsiderPulse를 홈 화면에 추가해야 합니다.
+                  {t('pwa.notification.requirement').replace('{company}', trade.companyName)}
                 </p>
 
                 <div className="space-y-3 text-sm">
                   <div>
                     <p className="font-medium mb-1">iOS (Safari):</p>
                     <ol className="list-decimal list-inside text-xs space-y-1 text-muted-foreground">
-                      <li>하단 공유 버튼 탭</li>
-                      <li>"홈 화면에 추가" 선택</li>
-                      <li>"추가" 탭</li>
+                      <li>{t('pwa.ios.step1')}</li>
+                      <li>{t('pwa.ios.step2')}</li>
+                      <li>{t('pwa.ios.step3')}</li>
                     </ol>
                   </div>
 
                   <div>
                     <p className="font-medium mb-1">Android (Chrome):</p>
                     <ol className="list-decimal list-inside text-xs space-y-1 text-muted-foreground">
-                      <li>우측 상단 메뉴(⋮) 탭</li>
-                      <li>"앱 설치" 또는 "홈 화면에 추가" 선택</li>
-                      <li>"설치" 탭</li>
+                      <li>{t('pwa.android.step1')}</li>
+                      <li>{t('pwa.android.step2')}</li>
+                      <li>{t('pwa.android.step3')}</li>
                     </ol>
                   </div>
                 </div>
               </div>
 
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  <strong>✓ 설치 후에는</strong> 이 버튼을 다시 눌러 <strong>{trade.ticker}</strong>의 거래 알림을 구독할 수 있습니다.
-                </p>
+                <p className="text-sm text-green-800 dark:text-green-200" dangerouslySetInnerHTML={{
+                  __html: '✓ ' + t('pwa.afterInstall').replace('{ticker}', trade.ticker)
+                }} />
               </div>
 
               <div className="flex gap-2">
@@ -884,13 +884,13 @@ export function TradeDetailModal({
                   onClick={() => setShowPWAGuide(false)}
                   className="flex-1"
                 >
-                  닫기
+                  {t('general.close')}
                 </Button>
                 <Button
                   onClick={() => setShowPWAGuide(false)}
                   className="flex-1"
                 >
-                  이해했어요
+                  {t('pwa.button.understood')}
                 </Button>
               </div>
             </CardContent>

@@ -11,7 +11,7 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { LanguageProvider, useLanguage } from "@/contexts/language-context";
 import { AccessProvider } from "@/contexts/access-context";
 import { AuthProvider } from "@/contexts/auth-context";
-import { ProtectedRoute } from "@/components/protected-route";
+import { AuthModal } from "@/components/auth-modal";
 import { useState, useEffect } from "react";
 import LanguageSelection from "@/pages/language-selection";
 import Dashboard from "@/pages/dashboard";
@@ -40,67 +40,19 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/verify-email" component={VerifyEmail} />
 
-      {/* Protected routes */}
-      <Route path="/">
-        <ProtectedRoute>
-          <LiveTrading />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/trade/:tradeId">
-        <ProtectedRoute>
-          <TradeDetail />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/trades">
-        <ProtectedRoute>
-          <LiveTrading />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/dashboard">
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/analytics">
-        <ProtectedRoute>
-          <Analytics />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/search">
-        <ProtectedRoute>
-          <Search />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/ranking">
-        <ProtectedRoute>
-          <Ranking />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/password-demo">
-        <ProtectedRoute>
-          <PasswordDemo />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/enhanced-dashboard">
-        <ProtectedRoute>
-          <EnhancedInsiderTradingDashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/premium-checkout">
-        <ProtectedRoute>
-          <PremiumCheckout />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/payment-success">
-        <ProtectedRoute>
-          <PaymentSuccess />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/settings">
-        <ProtectedRoute>
-          <Settings />
-        </ProtectedRoute>
-      </Route>
+      {/* All routes are now public */}
+      <Route path="/" component={LiveTrading} />
+      <Route path="/trade/:tradeId" component={TradeDetail} />
+      <Route path="/trades" component={LiveTrading} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/search" component={Search} />
+      <Route path="/ranking" component={Ranking} />
+      <Route path="/password-demo" component={PasswordDemo} />
+      <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
+      <Route path="/premium-checkout" component={PremiumCheckout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
+      <Route path="/settings" component={Settings} />
 
       <Route component={NotFound} />
     </Switch>
@@ -167,6 +119,7 @@ export default function App() {
           <AccessProvider>
             <TooltipProvider>
               <AppContent />
+              <AuthModal />
               <PWAInstallPrompt />
               <Toaster />
             </TooltipProvider>

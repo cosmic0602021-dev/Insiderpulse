@@ -705,7 +705,7 @@ export default function Ranking() {
                     className="btn-professional flex-1 bg-white/5 hover:bg-white/10 border-white/20 text-white/80 hover:text-white rounded-xl h-12"
                   >
                     <X className="h-4 w-4 mr-2" />
-                    닫기
+                    {t('general.close')}
                   </Button>
                   <Button
                     onClick={() => {

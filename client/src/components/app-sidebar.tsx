@@ -158,16 +158,16 @@ export function AppSidebar() {
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-0">
         <div className="flex items-center justify-center -my-2">
-          <img 
-            src={logoLight} 
+          <img
+            src={logoLight}
             alt="InsiderPulse"
-            className="block dark:hidden h-48 md:h-60 w-auto object-contain"
+            className="block dark:hidden h-[163px] md:h-[204px] w-auto object-contain"
             data-testid="app-logo-light"
           />
-          <img 
-            src={logoDark} 
+          <img
+            src={logoDark}
             alt="InsiderPulse"
-            className="hidden dark:block h-48 md:h-60 w-auto object-contain"
+            className="hidden dark:block h-[163px] md:h-[204px] w-auto object-contain"
             data-testid="app-logo-dark"
           />
         </div>

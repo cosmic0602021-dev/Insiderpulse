@@ -27,9 +27,9 @@ interface NotificationPreferences {
 class EmailNotificationService {
   private transporter: nodemailer.Transporter | null = null;
   private userPreferences: Map<string, NotificationPreferences> = new Map();
-  private baseUrl: string = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-    : 'http://localhost:5000';
+  private baseUrl: string = process.env.APP_URL
+    || process.env.FRONTEND_URL
+    || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000');
 
   // 다국어 번역 데이터
   private translations = {
