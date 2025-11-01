@@ -96,14 +96,72 @@ export default function PremiumCheckout() {
     }
   };
 
+  // Check if user should see trial page instead
+  const shouldStartTrial = user && !user.hasUsedTrial && user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing';
+
+  if (shouldStartTrial) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+        <div className="max-w-2xl mx-auto mt-20">
+          <Card className="border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900">
+            <CardHeader className="text-center pb-4">
+              <Badge className="mb-4 bg-amber-500 text-slate-900 font-bold mx-auto w-fit">
+                <Zap className="w-4 h-4 mr-1" />
+                7일 무료 체험
+              </Badge>
+              <CardTitle className="text-3xl text-white mb-2">
+                먼저 무료 체험을 시작하세요!
+              </CardTitle>
+              <CardDescription className="text-slate-300 text-lg">
+                Pro 기능을 7일간 무료로 체험하실 수 있습니다
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 p-6 bg-slate-900/50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-medium">Pro 즉시 이용 가능</p>
+                    <p className="text-sm text-slate-400">가입 즉시 모든 Pro 기능을 사용할 수 있습니다</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-medium">오늘 청구 없음</p>
+                    <p className="text-sm text-slate-400">지금은 카드 등록만, 결제는 7일 후</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-medium">언제든지 취소 가능</p>
+                    <p className="text-sm text-slate-400">취소 시 즉시 구독이 종료됩니다</p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setLocation('/start-trial')}
+                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600"
+              >
+                7일 무료 체험 시작하기
+              </Button>
+
+              <p className="text-center text-sm text-slate-400">
+                무료 체험 후 월 $14 또는 연 $112 (33% 할인)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <Badge className="mb-4 bg-amber-500 text-slate-900 font-bold">
-            <Zap className="w-3 h-3 mr-1" />
-            7일 무료체험
-          </Badge>
           <h1 className="text-4xl font-bold mb-4 text-white" data-testid="text-checkout-title">
             Upgrade to Insider Pro
           </h1>

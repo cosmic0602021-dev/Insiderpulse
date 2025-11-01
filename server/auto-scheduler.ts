@@ -1,10 +1,16 @@
 import { advancedOpenInsiderCollector, setBroadcaster } from './openinsider-collector-advanced';
 import { marketBeatCollector, setBroadcaster as setMarketBeatBroadcaster } from './marketbeat-collector';
+import { secRssScraper } from './scrapers/sec-rss-scraper';
+import { storage } from './storage';
 import { broadcastUpdate } from './routes';
+import type { InsertInsiderTrade } from '@shared/schema';
+import { db } from './db';
+import { collectionRuns } from '@shared/schema';
 
 class AutoScheduler {
   private openInsiderInterval: NodeJS.Timeout | null = null;
   private marketBeatInterval: NodeJS.Timeout | null = null;
+  private secRssInterval: NodeJS.Timeout | null = null;
   private isRunning = false;
 
   constructor() {
@@ -22,11 +28,14 @@ class AutoScheduler {
     this.isRunning = true;
     console.log('🚀 Starting InsiderTrack Pro Auto Scheduler...');
 
-    // PRIMARY COLLECTOR: OpenInsider (every 10 minutes for complete coverage)
+    // PRIMARY COLLECTOR: OpenInsider (every 5 minutes for complete coverage)
     this.startOpenInsiderSchedule();
 
     // SECONDARY COLLECTOR: MarketBeat (every 30 minutes for comprehensive data)
     this.startMarketBeatSchedule();
+
+    // TERTIARY COLLECTOR: SEC RSS Feed (every 15 minutes for direct SEC data)
+    this.startSecRssSchedule();
 
     // Run initial collection after 30 seconds
     setTimeout(() => {
@@ -35,7 +44,8 @@ class AutoScheduler {
 
     console.log('✅ Auto scheduler started successfully - MAXIMUM SPEED OPTIMIZED:');
     console.log('   🔄 OpenInsider: Every 5 minutes (MAXIMUM FREQUENCY)');
-    console.log('   🔄 MarketBeat: Every 15 minutes (MAXIMUM COMPREHENSIVE)');
+    console.log('   🔄 MarketBeat: Every 30 minutes (COMPREHENSIVE)');
+    console.log('   🔄 SEC RSS: Every 15 minutes (DIRECT SEC DATA)');
   }
 
   stop() {
@@ -56,76 +66,281 @@ class AutoScheduler {
       this.marketBeatInterval = null;
     }
 
+    if (this.secRssInterval) {
+      clearInterval(this.secRssInterval);
+      this.secRssInterval = null;
+    }
+
     this.isRunning = false;
     console.log('✅ Auto scheduler stopped');
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 30 minutes for stability
+    // Run OpenInsider collection every 5 minutes for real-time updates
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 30 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
-    console.log('📅 OpenInsider scheduled: Every 30 minutes (OPTIMIZED MODE)');
+    console.log('📅 OpenInsider scheduled: Every 5 minutes (REAL-TIME MODE)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 2 hours for stability
+    // Run MarketBeat collection every 30 minutes for real-time updates
     // Offset by 5 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 2 * 60 * 60 * 1000);
+      }, 30 * 60 * 1000);
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
     }, 5 * 60 * 1000); // Start after 5 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 2 hours (OPTIMIZED MODE)');
+    console.log('📅 MarketBeat scheduled: Every 30 minutes (REAL-TIME MODE)');
+  }
+
+  private startSecRssSchedule() {
+    // Run SEC RSS collection every 15 minutes for direct SEC data
+    // Offset by 7 minutes to avoid conflicts with other collectors
+    setTimeout(() => {
+      this.secRssInterval = setInterval(() => {
+        this.runSecRssCollection();
+      }, 15 * 60 * 1000);
+
+      // Run first SEC RSS collection after the initial delay
+      this.runSecRssCollection();
+    }, 7 * 60 * 1000); // Start after 7 minutes
+
+    console.log('📅 SEC RSS scheduled: Every 15 minutes (DIRECT SEC DATA)');
   }
 
   private async runOpenInsiderCollection() {
+    const startedAt = new Date();
+    let runId: string | null = null;
+
     try {
       console.log('🔄 [AUTO] Starting OpenInsider collection...');
+
+      // Create collection run record
+      const [run] = await db.insert(collectionRuns).values({
+        collectorName: 'openinsider',
+        status: 'running',
+        startedAt,
+      }).returning();
+      runId = run.id;
+
       const startTime = Date.now();
-      
-      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 5, perPage: 100 }); // OPTIMIZED: Collect fewer pages for stability
-      
+      const processedCount = await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: 50, perPage: 100 });
       const duration = Date.now() - startTime;
+
+      // Update run as successful
+      await db.update(collectionRuns)
+        .set({
+          status: 'success',
+          tradesCollected: processedCount,
+          completedAt: new Date(),
+        })
+        .where({ id: runId });
+
       console.log(`✅ [AUTO] OpenInsider collection completed in ${duration}ms`);
       console.log(`   📊 Processed: ${processedCount} new trades`);
-      
-      // Log collection stats
+
       this.logCollectionStats('OpenInsider', processedCount, duration);
-      
+
     } catch (error) {
       console.error('❌ [AUTO] OpenInsider collection failed:', error);
-      
-      // Don't stop the scheduler on failure, just log and continue
+
+      // Update run as failed
+      if (runId) {
+        await db.update(collectionRuns)
+          .set({
+            status: 'failure',
+            completedAt: new Date(),
+            errorMessage: error instanceof Error ? error.message : String(error),
+          })
+          .where({ id: runId });
+      }
+
       console.log('🔄 Will retry on next scheduled run...');
     }
   }
 
   private async runMarketBeatCollection() {
+    const startedAt = new Date();
+    let runId: string | null = null;
+
     try {
       console.log('🔄 [AUTO] Starting MarketBeat supplemental collection...');
+
+      // Create collection run record
+      const [run] = await db.insert(collectionRuns).values({
+        collectorName: 'marketbeat',
+        status: 'running',
+        startedAt,
+      }).returning();
+      runId = run.id;
+
       const startTime = Date.now();
-      
-      const processedCount = await marketBeatCollector.collectLatestTrades(100); // OPTIMIZED: Smaller batch for stability
-      
+      const processedCount = await marketBeatCollector.collectLatestTrades(100);
       const duration = Date.now() - startTime;
+
+      // Update run as successful
+      await db.update(collectionRuns)
+        .set({
+          status: 'success',
+          tradesCollected: processedCount,
+          completedAt: new Date(),
+        })
+        .where({ id: runId });
+
       console.log(`✅ [AUTO] MarketBeat collection completed in ${duration}ms`);
       console.log(`   📊 Processed: ${processedCount} new trades`);
-      
-      // Log collection stats
+
       this.logCollectionStats('MarketBeat', processedCount, duration);
-      
+
     } catch (error) {
       console.error('❌ [AUTO] MarketBeat collection failed:', error);
-      
-      // Don't stop the scheduler on failure, just log and continue
+
+      // Update run as failed
+      if (runId) {
+        await db.update(collectionRuns)
+          .set({
+            status: 'failure',
+            completedAt: new Date(),
+            errorMessage: error instanceof Error ? error.message : String(error),
+          })
+          .where({ id: runId });
+      }
+
       console.log('🔄 Will retry on next scheduled run...');
     }
+  }
+
+  private async runSecRssCollection() {
+    const startedAt = new Date();
+    let runId: string | null = null;
+
+    try {
+      console.log('🔄 [AUTO] Starting SEC RSS direct collection...');
+
+      // Create collection run record
+      const [run] = await db.insert(collectionRuns).values({
+        collectorName: 'sec-rss',
+        status: 'running',
+        startedAt,
+      }).returning();
+      runId = run.id;
+
+      const startTime = Date.now();
+
+      // Get latest Form 4 filings from SEC RSS feed
+      const trades = await secRssScraper.getLatestForm4Filings();
+
+      let processedCount = 0;
+
+      // Convert and save each trade
+      for (const trade of trades) {
+        try {
+          // Convert ParsedInsiderTrade to InsertInsiderTrade
+          const convertedTrade: InsertInsiderTrade = {
+            accessionNumber: trade.accessionNumber,
+            companyName: trade.companyName,
+            ticker: trade.ticker,
+            traderName: trade.insiderName,
+            traderTitle: trade.title,
+            tradeType: trade.transactionType as any,
+            transactionCode: this.mapTransactionTypeToCode(trade.transactionType),
+            shares: trade.shares,
+            pricePerShare: trade.pricePerShare,
+            totalValue: trade.totalValue,
+            ownershipPercentage: null,
+            filedDate: new Date(trade.filingDate),
+            significanceScore: this.calculateSignificanceScore(trade.totalValue, trade.transactionType),
+            signalType: this.determineSignalType(trade.transactionType),
+            isVerified: false,
+            verificationStatus: 'UNVERIFIED',
+            verificationNotes: `Data sourced from SEC RSS Feed - direct from SEC`,
+            secFilingUrl: trade.secLink,
+          };
+
+          await storage.createInsiderTrade(convertedTrade);
+          processedCount++;
+
+        } catch (error: any) {
+          // Skip duplicates silently
+          if (!error.message?.includes('duplicate') && !error.message?.includes('unique constraint')) {
+            console.error(`❌ Error processing SEC RSS trade for ${trade.ticker}:`, error.message);
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Update run as successful
+      await db.update(collectionRuns)
+        .set({
+          status: 'success',
+          tradesCollected: processedCount,
+          completedAt: new Date(),
+          metadata: { totalTrades: trades.length },
+        })
+        .where({ id: runId });
+
+      console.log(`✅ [AUTO] SEC RSS collection completed in ${duration}ms`);
+      console.log(`   📊 Processed: ${processedCount} new trades from ${trades.length} total`);
+
+      this.logCollectionStats('SEC RSS', processedCount, duration);
+
+    } catch (error) {
+      console.error('❌ [AUTO] SEC RSS collection failed:', error);
+
+      // Update run as failed
+      if (runId) {
+        await db.update(collectionRuns)
+          .set({
+            status: 'failure',
+            completedAt: new Date(),
+            errorMessage: error instanceof Error ? error.message : String(error),
+          })
+          .where({ id: runId });
+      }
+
+      console.log('🔄 Will retry on next scheduled run...');
+    }
+  }
+
+  // Helper methods for SEC RSS data conversion
+  private mapTransactionTypeToCode(transactionType: string): string {
+    const mapping: Record<string, string> = {
+      'BUY': 'P',
+      'SELL': 'S',
+      'OPTION_EXERCISE': 'M',
+      'GIFT': 'G',
+      'OTHER': 'A'
+    };
+    return mapping[transactionType] || 'A';
+  }
+
+  private calculateSignificanceScore(totalValue: number, transactionType: string): number {
+    let score = 0;
+
+    // Base score on trade value
+    if (totalValue >= 10000000) score += 50; // $10M+
+    else if (totalValue >= 5000000) score += 40; // $5M+
+    else if (totalValue >= 1000000) score += 30; // $1M+
+    else if (totalValue >= 500000) score += 20; // $500K+
+    else if (totalValue >= 100000) score += 10; // $100K+
+
+    // Buy signals are more significant
+    if (transactionType === 'BUY') score += 20;
+
+    return Math.min(score, 100);
+  }
+
+  private determineSignalType(transactionType: string): 'BUY' | 'SELL' | 'NEUTRAL' {
+    if (transactionType === 'BUY') return 'BUY';
+    if (transactionType === 'SELL') return 'SELL';
+    return 'NEUTRAL';
   }
 
   private logCollectionStats(source: string, processed: number, duration: number) {
@@ -138,30 +353,20 @@ class AutoScheduler {
       isRunning: this.isRunning,
       openInsiderScheduled: !!this.openInsiderInterval,
       marketBeatScheduled: !!this.marketBeatInterval,
-      nextOpenInsiderRun: this.openInsiderInterval ? 'Every 30 minutes' : 'Not scheduled',
-      nextMarketBeatRun: this.marketBeatInterval ? 'Every 2 hours' : 'Not scheduled',
+      secRssScheduled: !!this.secRssInterval,
+      nextOpenInsiderRun: this.openInsiderInterval ? 'Every 5 minutes' : 'Not scheduled',
+      nextMarketBeatRun: this.marketBeatInterval ? 'Every 30 minutes' : 'Not scheduled',
+      nextSecRssRun: this.secRssInterval ? 'Every 15 minutes' : 'Not scheduled',
     };
   }
 
   // Manual trigger methods for testing/admin use
   async manualOpenInsiderRun(limit: number = 100): Promise<number> {
-    // Block all data collection in development to prevent crashes
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Data collection disabled for stability');
-      return 0;
-    }
-
     console.log(`🔧 [MANUAL] Running OpenInsider collection (limit: ${limit})...`);
     return await advancedOpenInsiderCollector.collectLatestTrades({ maxPages: Math.ceil(limit/100), perPage: 100 });
   }
 
   async manualMarketBeatRun(limit: number = 50): Promise<number> {
-    // Block all data collection in development to prevent crashes
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Data collection disabled for stability');
-      return 0;
-    }
-
     console.log(`🔧 [MANUAL] Running MarketBeat collection (limit: ${limit})...`);
     return await marketBeatCollector.collectLatestTrades(limit);
   }
@@ -170,11 +375,18 @@ class AutoScheduler {
 // Singleton instance
 export const autoScheduler = new AutoScheduler();
 
-// Auto-start the scheduler when the module is loaded ONLY in production
+// Auto-start the scheduler when the module is loaded
 // This ensures continuous data collection as soon as the server starts
-if (process.env.NODE_ENV === 'production') {
-  // Start scheduler after a short delay to allow other services to initialize
-  setTimeout(() => {
-    autoScheduler.start();
-  }, 5000); // 5 second delay
-}
+// Start scheduler immediately with minimal delay for service initialization
+setTimeout(() => {
+  console.log('🚀 Starting auto-scheduler for immediate data collection...');
+  autoScheduler.start();
+
+  // Trigger immediate first collection
+  console.log('🔄 Triggering immediate first data collection...');
+  autoScheduler.manualOpenInsiderRun(100).then(count => {
+    console.log(`✅ Initial data collection complete: ${count} trades collected`);
+  }).catch(error => {
+    console.error('❌ Initial data collection failed:', error);
+  });
+}, 1000); // 1 second delay - just enough for initialization

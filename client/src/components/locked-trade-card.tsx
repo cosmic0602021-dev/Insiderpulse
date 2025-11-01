@@ -95,31 +95,28 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
         </span>
       </div>
 
-      {/* Start Trial Button - Premium Design */}
-      <div className="relative bg-gradient-to-br from-slate-900/50 to-slate-800/50 rounded-xl p-8 border border-slate-700/50">
+      {/* Start Trial Button - Professional Design */}
+      <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
         {/* Description */}
-        <p className="text-center text-base text-slate-300 mb-6 font-medium">
+        <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
           {t('lockedTrade.unlockDescription')}
         </p>
 
-        {/* Main Button - Enhanced */}
+        {/* Main Button - Professional */}
         <button
           onClick={onUnlock}
-          className="group w-full relative overflow-hidden px-10 py-5 bg-gradient-to-r from-emerald-500 via-blue-500 to-indigo-600 hover:from-emerald-400 hover:via-blue-400 hover:to-indigo-500 text-white font-bold text-lg rounded-xl transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_40px_rgba(59,130,246,0.8)] hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
         >
-          {/* Animated shine effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
-
-          <div className="relative flex items-center justify-center gap-3">
-            <Unlock className="h-6 w-6 group-hover:rotate-12 transition-transform duration-300" />
+          <div className="flex items-center justify-center gap-2.5">
+            <Unlock className="h-5 w-5" />
             <span>{t('lockedTrade.startTrial')}</span>
           </div>
         </button>
 
         {/* Arrow pointing down */}
-        <div className="flex justify-center mt-5">
-          <div className="flex items-center gap-2 text-slate-400 text-sm animate-pulse">
-            <ArrowDown className="h-4 w-4" />
+        <div className="flex justify-center mt-4">
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
+            <ArrowDown className="h-3.5 w-3.5" />
             <span>{t('lockedTrade.unlockBelow')}</span>
           </div>
         </div>

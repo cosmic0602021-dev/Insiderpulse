@@ -21,6 +21,8 @@ app.use((req, res, next) => {
     process.env.FRONTEND_URL,
     process.env.APP_URL,
     process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null,
+    'https://insiderpulse.pro',
+    'https://www.insiderpulse.pro',
     'http://localhost:5000',
     'http://127.0.0.1:5000'
   ].filter(Boolean);
@@ -124,6 +126,23 @@ app.use((req, res, next) => {
       setTimeout(() => {
         stockPriceService.startPeriodicUpdates();
       }, 5000);
+
+      // 🔄 Auto-detect and fill data gaps on startup
+      setTimeout(async () => {
+        try {
+          log('🔍 Checking for data collection gaps...');
+          const { backfillManager } = await import('./backfill-missing-trades');
+          const result = await backfillManager.autoBackfill();
+
+          if (result.gapDetected) {
+            log(`✅ Gap recovery complete: ${result.tradesCollected} trades collected`);
+          } else {
+            log('✅ No gaps detected - data is up to date');
+          }
+        } catch (error) {
+          log('⚠️ Gap detection failed (will retry on next startup):', error);
+        }
+      }, 10000); // Run 10 seconds after startup to avoid race conditions
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

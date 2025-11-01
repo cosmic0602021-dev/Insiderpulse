@@ -28,6 +28,7 @@ import PaymentSuccess from "@/pages/payment-success";
 import SignupPage from "@/pages/signup";
 import LoginPage from "@/pages/login";
 import VerifyEmail from "@/pages/verify-email";
+import StartTrialPage from "@/pages/start-trial";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/start-trial" component={StartTrialPage} />
 
       {/* All routes are now public */}
       <Route path="/" component={LiveTrading} />

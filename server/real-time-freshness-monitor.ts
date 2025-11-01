@@ -66,11 +66,6 @@ export class RealTimeFreshnessMonitor {
    * 실시간 모니터링 시작
    */
   start(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Skipping freshness monitoring');
-      return;
-    }
-
     if (this.isMonitoring) {
       console.log('🔍 Freshness monitor is already running');
       return;
@@ -107,11 +102,6 @@ export class RealTimeFreshnessMonitor {
    */
   private async checkDataFreshness(): Promise<void> {
     try {
-      // Skip all freshness checking in development mode
-      if (process.env.NODE_ENV === 'development') {
-        return;
-      }
-
       console.log('🔍 Checking data freshness...');
 
       const freshness = await this.analyzeFreshness();
@@ -209,11 +199,6 @@ export class RealTimeFreshnessMonitor {
    * 신선도 상태 처리
    */
   private async processFreshnessStatus(freshness: FreshnessStatus): Promise<void> {
-    // Skip all processing in development mode
-    if (process.env.NODE_ENV === 'development') {
-      return;
-    }
-
     // 심각한 상황 알림
     if (freshness.severity === 'CRITICAL') {
       console.error('🚨 CRITICAL: Data is severely stale!');
@@ -278,12 +263,6 @@ Timestamp: ${new Date().toISOString()}
    */
   private async attemptAutoRecovery(): Promise<void> {
     try {
-      // Skip auto recovery in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 Development mode: Skipping auto recovery');
-        return;
-      }
-
       console.log('🔄 Attempting automatic data recovery...');
 
       // 1. 수집기 강제 실행
@@ -374,19 +353,6 @@ Timestamp: ${new Date().toISOString()}
    * 강제 신선도 체크 (수동)
    */
   async forceCheck(): Promise<FreshnessStatus> {
-    // Block manual freshness checks in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Manual freshness check disabled for stability');
-      return {
-        isDataFresh: true,
-        lastTradeAge: 0,
-        lastCollectionTime: new Date(),
-        staleDataCount: 0,
-        recommendations: ['Development mode: All checks disabled'],
-        severity: 'OK'
-      };
-    }
-
     console.log('🔄 Manual freshness check requested...');
     const freshness = await this.analyzeFreshness();
     await this.processFreshnessStatus(freshness);

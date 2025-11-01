@@ -18,33 +18,63 @@ export function useWebSocket(url: string): WebSocketHook {
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 3;
+  const maxReconnectAttempts = Infinity; // Never give up on reconnection
+
+  const startHeartbeat = () => {
+    // Clear any existing heartbeat
+    if (heartbeatInterval.current) {
+      clearInterval(heartbeatInterval.current);
+    }
+
+    // Send PING every 30 seconds to keep connection alive
+    heartbeatInterval.current = setInterval(() => {
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({ type: 'PING' }));
+        console.log('💓 Heartbeat PING sent');
+      }
+    }, 30000);
+  };
 
   const connect = () => {
     try {
       ws.current = new WebSocket(url);
-      
+
       ws.current.onopen = () => {
         console.log('WebSocket connected');
         setIsConnected(true);
         reconnectAttempts.current = 0;
+        startHeartbeat(); // Start sending heartbeat pings
       };
       
       ws.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+
+          // Handle PONG response from heartbeat
+          if (message.type === 'PONG') {
+            console.log('💓 Heartbeat PONG received');
+            return;
+          }
+
           setLastMessage(message);
           console.log('WebSocket message received:', message.type);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
       };
-      
+
       ws.current.onclose = () => {
         console.log('WebSocket disconnected');
         setIsConnected(false);
-        
+
+        // Stop heartbeat when disconnected
+        if (heartbeatInterval.current) {
+          clearInterval(heartbeatInterval.current);
+          heartbeatInterval.current = null;
+        }
+
         // Attempt to reconnect with much longer delays
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
@@ -76,10 +106,14 @@ export function useWebSocket(url: string): WebSocketHook {
 
   useEffect(() => {
     connect();
-    
+
     return () => {
+      // Cleanup on unmount
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
+      }
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
       }
       if (ws.current) {
         ws.current.close();

@@ -31,11 +31,6 @@ export class DataQualityMonitor {
    * 모니터링 시작 (1시간마다 실행)
    */
   start(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Skipping data quality monitor');
-      return;
-    }
-
     if (this.isRunning) {
       console.log('🔍 Data quality monitor is already running');
       return;

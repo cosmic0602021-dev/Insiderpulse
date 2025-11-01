@@ -57,11 +57,6 @@ export class CrashPreventionSystem {
    * 크래시 방지 시스템 시작
    */
   start(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Skipping crash prevention system');
-      return;
-    }
-
     if (this.isActive) {
       console.log('🛡️ Crash prevention system is already running');
       return;

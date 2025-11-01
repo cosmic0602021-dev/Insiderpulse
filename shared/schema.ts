@@ -174,3 +174,22 @@ export type Alert = typeof alerts.$inferSelect;
 // ✅ Performance optimization using logical filtering on main table
 // HOT/WARM/COLD data layers are implemented in db-storage.ts using date-based filtering
 // This approach provides better performance than separate tables for 500,000+ trades
+
+// Collection runs tracking for monitoring and gap detection
+export const collectionRuns = pgTable("collection_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  collectorName: text("collector_name").notNull(), // "openinsider" | "marketbeat" | "sec-rss"
+  status: text("status").notNull().default("running"), // "running" | "success" | "failure"
+  tradesCollected: integer("trades_collected").default(0), // Number of new trades added
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"), // Error details if status is "failure"
+  metadata: json("metadata"), // Additional info: pages scraped, API calls made, etc.
+});
+
+export const insertCollectionRunSchema = createInsertSchema(collectionRuns).omit({
+  id: true,
+});
+
+export type InsertCollectionRun = z.infer<typeof insertCollectionRunSchema>;
+export type CollectionRun = typeof collectionRuns.$inferSelect;

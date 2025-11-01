@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import html2canvas from 'html2canvas';
 import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
-  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera
+  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
@@ -233,7 +233,7 @@ export function TradeDetailModal({
         const blob = await (await fetch(dataUrl)).blob();
         await navigator.share({
           title: `InsiderPulse: ${trade.ticker}`,
-          text: `${trade.companyName} 내부자 거래 정보`,
+          text: t('tradeDetail.shareText').replace('{company}', trade.companyName),
           files: [
             new File([blob], `insider_trade_${trade.ticker}.png`, {
               type: 'image/png'
@@ -399,7 +399,7 @@ export function TradeDetailModal({
                   data-testid={isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist"}
                 >
                   <Bookmark className={`h-4 w-4 ${isInWatchlist ? 'fill-current' : ''}`} />
-                  <span className="hidden sm:inline ml-1">{isInWatchlist ? '제거' : t('liveTrading.watchlist')}</span>
+                  <span className="hidden sm:inline ml-1">{isInWatchlist ? t('watchlist.remove') : t('liveTrading.watchlist')}</span>
                 </Button>
               )}
               <Button
@@ -408,7 +408,7 @@ export function TradeDetailModal({
                 onClick={handleScreenshot}
                 disabled={isCapturing}
                 className="btn-professional"
-                title="스크린샷 공유"
+                title={t('tradeDetail.shareScreenshot')}
               >
                 {isCapturing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -433,14 +433,14 @@ export function TradeDetailModal({
             {/* 거래 타입 & 총 금액 */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">거래 유형</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">{t('tradeDetail.tradeType')}</p>
                 <Badge className={`btn-professional font-bold text-sm sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`}>
                   {getTradeTypeIcon(trade.tradeType)}
                   {trade.tradeType}
                 </Badge>
               </div>
               <div className="sm:text-right">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">총 거래 금액</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">{t('tradeDetail.totalTransactionAmount')}</p>
                 <p className={`text-2xl sm:text-3xl font-black ${trade.tradeType?.toUpperCase() === 'BUY' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(trade.totalValue)}
                 </p>
@@ -450,12 +450,12 @@ export function TradeDetailModal({
             {/* 주식 수 & 주당 가격 */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/50 dark:border-gray-700">
               <div className="bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">거래 주식 수</p>
+                <p className="text-xs text-muted-foreground mb-1">{t('tradeDetail.sharesCount')}</p>
                 <p className="text-2xl font-bold">{trade.shares.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">주</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('tradeDetail.shares')}</p>
               </div>
               <div className="bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">주당 가격</p>
+                <p className="text-xs text-muted-foreground mb-1">{t('tradeDetail.pricePerShare')}</p>
                 <p className="text-2xl font-bold">${trade.pricePerShare.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground mt-1">per share</p>
               </div>
@@ -520,16 +520,16 @@ export function TradeDetailModal({
                 <LineChart
                   data={[
                     {
-                      name: '거래 시점',
-                      '내부자 거래가': trade.pricePerShare,
-                      '평균 거래가': trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
-                      '참고가': trade.currentPrice || trade.pricePerShare,
+                      name: t('tradeDetail.tradeTime'),
+                      [t('tradeDetail.insiderTradePrice')]: trade.pricePerShare,
+                      [t('tradeDetail.averageTradePrice')]: trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
+                      [t('tradeDetail.referencePrice')]: trade.currentPrice || trade.pricePerShare,
                     },
                     {
-                      name: '현재',
-                      '내부자 거래가': trade.pricePerShare,
-                      '평균 거래가': trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
-                      '참고가': trade.currentPrice || trade.pricePerShare,
+                      name: t('tradeDetail.current'),
+                      [t('tradeDetail.insiderTradePrice')]: trade.pricePerShare,
+                      [t('tradeDetail.averageTradePrice')]: trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
+                      [t('tradeDetail.referencePrice')]: trade.currentPrice || trade.pricePerShare,
                     },
                   ]}
                   margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
@@ -553,7 +553,7 @@ export function TradeDetailModal({
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Line
                     type="monotone"
-                    dataKey="내부자 거래가"
+                    dataKey={t('tradeDetail.insiderTradePrice')}
                     stroke="#3b82f6"
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -561,7 +561,7 @@ export function TradeDetailModal({
                   />
                   <Line
                     type="monotone"
-                    dataKey="평균 거래가"
+                    dataKey={t('tradeDetail.averageTradePrice')}
                     stroke="#8b5cf6"
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -569,7 +569,7 @@ export function TradeDetailModal({
                   />
                   <Line
                     type="monotone"
-                    dataKey="참고가"
+                    dataKey={t('tradeDetail.referencePrice')}
                     stroke="#10b981"
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -588,14 +588,14 @@ export function TradeDetailModal({
                     <DollarSign className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">내부자 거래 가격</p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('tradeDetail.insiderTradePrice')}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{formatDate(trade.filedDate)}</p>
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-200 value-change-up">
                   ${trade.pricePerShare.toFixed(2)}
                 </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">SEC 파일링 기준</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('tradeDetail.basedOnSecFiling')}</p>
               </div>
 
               {/* {t('tradeDetail.insiderAvgTradePrice')} */}
@@ -655,7 +655,7 @@ export function TradeDetailModal({
                     {isLoadingAnalysis ? (
                       <div className="flex items-center justify-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="ml-3">AI 분석 생성 중...</span>
+                        <span className="ml-3">{t('tradeDetail.aiAnalysisGenerating')}</span>
                       </div>
                     ) : (trade.comprehensiveAnalysis || comprehensiveAnalysis) ? (
                       // 실제 AI 분석 결과 표시
@@ -663,7 +663,7 @@ export function TradeDetailModal({
                         const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
                         return (<>
                         <div className="mb-4">
-                          <h5 className="font-semibold mb-2">📊 AI 종합 분석</h5>
+                          <h5 className="font-semibold mb-2">{t('tradeDetail.aiComprehensiveAnalysis')}</h5>
                           <p className="text-sm text-muted-foreground">{analysis.executiveSummary}</p>
                         </div>
 
@@ -671,19 +671,19 @@ export function TradeDetailModal({
                           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                             <h6 className="font-medium mb-2 flex items-center gap-1">
                               <Target className="h-3 w-3" />
-                              목표가격 분석
+                              {t('tradeDetail.targetPriceAnalysis')}
                             </h6>
                             <div className="space-y-1 text-xs">
                               <div className="flex justify-between">
-                                <span>보수적:</span>
+                                <span>{t('tradeDetail.conservative')}:</span>
                                 <span className="font-medium">${analysis.priceTargets.conservative.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span>현실적:</span>
+                                <span>{t('tradeDetail.realistic')}:</span>
                                 <span className="font-medium">${analysis.priceTargets.realistic.toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span>낙관적:</span>
+                                <span>{t('tradeDetail.optimistic')}:</span>
                                 <span className="font-medium">${analysis.priceTargets.optimistic.toFixed(2)}</span>
                               </div>
                             </div>
@@ -692,11 +692,11 @@ export function TradeDetailModal({
                           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
                             <h6 className="font-medium mb-2 flex items-center gap-1">
                               <Calculator className="h-3 w-3" />
-                              리스크 평가
+                              {t('tradeDetail.riskAssessment')}
                             </h6>
                             <div className="space-y-1 text-xs">
                               <div className="flex items-center gap-2">
-                                <span>위험도:</span>
+                                <span>{t('tradeDetail.riskLevel')}:</span>
                                 <Badge className={`text-xs px-2 py-0.5 ${
                                   analysis.riskAssessment.level === 'LOW' ? 'bg-green-100 text-green-800' :
                                   analysis.riskAssessment.level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
@@ -713,22 +713,22 @@ export function TradeDetailModal({
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
                           <h6 className="font-medium mb-2 flex items-center gap-1">
                             <Lightbulb className="h-3 w-3 text-amber-600" />
-                            투자 권고사항
+                            {t('tradeDetail.investmentRecommendation')}
                           </h6>
                           <p className="text-sm">{analysis.actionableRecommendation}</p>
                         </div>
 
                         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
                           <div className="text-center">
-                            <p className="text-xs text-muted-foreground mb-1">AI 신뢰도</p>
+                            <p className="text-xs text-muted-foreground mb-1">{t('tradeDetail.aiConfidence')}</p>
                             <p className="text-lg font-bold text-green-600 dark:text-green-500">{analysis.confidence}%</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-xs text-muted-foreground mb-1">분석 기간</p>
+                            <p className="text-xs text-muted-foreground mb-1">{t('tradeDetail.analysisTimeHorizon')}</p>
                             <p className="text-sm font-medium">{analysis.timeHorizon}</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-xs text-blue-600/80 mb-1">시장 심리</p>
+                            <p className="text-xs text-blue-600/80 mb-1">{t('tradeDetail.marketSentiment')}</p>
                             <Badge className={`text-xs px-2 py-1 ${
                               analysis.marketContext.sentiment === 'BULLISH' ? 'bg-green-100 text-green-800' :
                               analysis.marketContext.sentiment === 'BEARISH' ? 'bg-red-100 text-red-800' :
@@ -741,7 +741,7 @@ export function TradeDetailModal({
 
                         {analysis.catalysts?.length > 0 && (
                           <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50">
-                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">주요 촉매 요인</p>
+                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">{t('tradeDetail.keyCatalysts')}</p>
                             <ul className="text-xs list-disc list-inside space-y-1">
                               {analysis.catalysts.map((catalyst, index) => (
                                 <li key={index}>{catalyst}</li>
@@ -755,7 +755,7 @@ export function TradeDetailModal({
                           <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/20 dark:to-red-950/20 rounded-lg border border-gray-200 dark:border-gray-700">
                             <h6 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
                               <Newspaper className="h-4 w-4 text-blue-600" />
-                              📰 최신 뉴스 분석 ({analysis.newsAnalysis.totalNews}건)
+                              {t('tradeDetail.latestNewsAnalysis')} ({analysis.newsAnalysis.totalNews})
                             </h6>
 
                             {/* 뉴스 감정 요약 */}
@@ -764,26 +764,26 @@ export function TradeDetailModal({
                                 <div className="text-lg font-bold text-green-700 dark:text-green-300">
                                   {analysis.newsAnalysis.positiveCount}
                                 </div>
-                                <div className="text-xs text-green-600 dark:text-green-400">호재</div>
+                                <div className="text-xs text-green-600 dark:text-green-400">{t('tradeDetail.positive')}</div>
                               </div>
                               <div className="text-center p-2 bg-red-100 dark:bg-red-900/30 rounded">
                                 <div className="text-lg font-bold text-red-700 dark:text-red-300">
                                   {analysis.newsAnalysis.negativeCount}
                                 </div>
-                                <div className="text-xs text-red-600 dark:text-red-400">악재</div>
+                                <div className="text-xs text-red-600 dark:text-red-400">{t('tradeDetail.negative')}</div>
                               </div>
                               <div className="text-center p-2 bg-gray-100 dark:bg-gray-800 rounded">
                                 <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
                                   {analysis.newsAnalysis.totalNews - analysis.newsAnalysis.positiveCount - analysis.newsAnalysis.negativeCount}
                                 </div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400">중립</div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400">{t('tradeDetail.neutral')}</div>
                               </div>
                             </div>
 
                             {/* 주요 뉴스 목록 */}
                             {analysis.newsAnalysis.majorNews.length > 0 && (
                               <div className="space-y-3">
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">🔥 주요 뉴스</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('tradeDetail.majorNews')}</p>
                                 {analysis.newsAnalysis.majorNews.map((news, index) => (
                                   <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
                                     <div className="flex items-start justify-between mb-2">
@@ -795,15 +795,15 @@ export function TradeDetailModal({
                                         news.sentiment === 'negative' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                                         'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                       }`}>
-                                        {news.sentiment === 'positive' ? '📈 호재' :
-                                         news.sentiment === 'negative' ? '📉 악재' : '⚖️ 중립'}
+                                        {news.sentiment === 'positive' ? `📈 ${t('tradeDetail.positive')}` :
+                                         news.sentiment === 'negative' ? `📉 ${t('tradeDetail.negative')}` : `⚖️ ${t('tradeDetail.neutral')}`}
                                       </Badge>
                                     </div>
                                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                                       {news.summary.slice(0, 120)}...
                                     </p>
                                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                      <span>관련도: {Math.round(news.relevanceScore * 100)}%</span>
+                                      <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
                                       <span>{news.source || 'Market Analysis'}</span>
                                     </div>
                                   </div>
@@ -819,8 +819,8 @@ export function TradeDetailModal({
                       // AI 분석이 없을 때 기본 메시지
                       <div className="text-center py-4">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
-                        <p className="text-sm text-blue-600">AI 분석이 진행 중입니다...</p>
-                        <p className="text-xs text-blue-500 mt-1">고급 AI 분석 결과를 준비하고 있습니다</p>
+                        <p className="text-sm text-blue-600">{t('tradeDetail.aiAnalysisInProgress')}</p>
+                        <p className="text-xs text-blue-500 mt-1">{t('tradeDetail.preparingAdvancedAnalysis')}</p>
                       </div>
                     )}
                   </div>

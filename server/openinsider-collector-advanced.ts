@@ -198,8 +198,8 @@ class AdvancedOpenInsiderCollector {
         if (newTrades.length === 0) {
           duplicateCount++;
           console.log(`⏭️ Page ${page}: All trades already processed (${duplicateCount} consecutive duplicate pages)`);
-          
-          // If we get 5 consecutive pages of all duplicates, stop (increased threshold)
+
+          // If we get 5 consecutive pages of all duplicates, stop - more aggressive collection
           if (duplicateCount >= 5) {
             console.log(`✋ Stopping after ${duplicateCount} pages of duplicates`);
             break;

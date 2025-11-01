@@ -73,7 +73,11 @@
       "WebFetch(domain:www.sec.gov)",
       "Bash(comm:*)",
       "Bash(sed:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(journalctl:*)",
+      "Bash(timeout 5 head:*)",
+      "Read(//proc/7690/fd/**)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

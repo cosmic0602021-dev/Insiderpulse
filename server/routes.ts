@@ -385,10 +385,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
               const periodEnd = new Date(subscription.current_period_end * 1000);
 
+              // If this is first payment after trial, update status to 'active'
+              const updates: any = {
+                subscriptionEndDate: periodEnd,
+              };
+
+              if (user.subscriptionStatus === 'trialing') {
+                updates.subscriptionStatus = 'active';
+                console.log(`✅ Trial ended, subscription now active for user ${user.email}`);
+              }
+
               await db.update(users)
-                .set({
-                  subscriptionEndDate: periodEnd,
-                })
+                .set(updates)
                 .where(eq(users.id, user.id));
 
               console.log(`💳 Renewed subscription for user ${user.email} until ${periodEnd}`);
@@ -396,6 +404,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (error) {
             console.error('❌ Error updating subscription end date:', error);
           }
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as any;
+        console.log('❌ Payment failed for invoice:', invoice.id);
+
+        if (invoice.subscription) {
+          try {
+            const user = await db.query.users.findFirst({
+              where: eq(users.stripeSubscriptionId, invoice.subscription),
+            });
+
+            if (user) {
+              // Downgrade user to free tier on payment failure
+              await db.update(users)
+                .set({
+                  subscriptionTier: 'free',
+                  subscriptionStatus: 'inactive',
+                })
+                .where(eq(users.id, user.id));
+
+              console.log(`⚠️ Payment failed, downgraded user ${user.email} to free tier`);
+            }
+          } catch (error) {
+            console.error('❌ Error handling payment failure:', error);
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object as any;
+        console.log('⏰ Trial ending soon for subscription:', subscription.id);
+
+        try {
+          const user = await db.query.users.findFirst({
+            where: eq(users.stripeSubscriptionId, subscription.id),
+          });
+
+          if (user) {
+            const trialEnd = new Date(subscription.trial_end * 1000);
+            console.log(`📧 Trial will end for user ${user.email} on ${trialEnd}`);
+            // TODO: Send email notification (optional)
+            // await emailNotificationService.sendTrialEndingNotification(user.email, trialEnd);
+          }
+        } catch (error) {
+          console.error('❌ Error handling trial ending notification:', error);
         }
         break;
       }
@@ -742,10 +799,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
         adjustedToDate = fortyEightHoursAgo.toISOString().split('T')[0];
-        console.log(`🔒 Free user - limiting to trades before ${adjustedToDate}`);
+        console.log(`🔒 Free user access - applying 48-hour delay filter`);
+        console.log(`   Cutoff date: ${adjustedToDate}`);
+        console.log(`   Filter: trades with ${sortBy} <= ${adjustedToDate}`);
+        console.log(`   Request: limit=${limit}, offset=${offset}, sortBy=${sortBy}`);
       }
 
       const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy);
+
+      if (!hasRealtimeAccess) {
+        console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
+        if (rawTrades.length > 0) {
+          const newest = rawTrades[0];
+          console.log(`   Newest visible trade: ${newest.ticker} filed on ${newest.filedDate}`);
+        } else {
+          console.log(`   ⚠️ No trades available for free users - may need data collection`);
+        }
+      }
+
+      // Add cache control headers to prevent browser caching of stale data
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
 
       // Add access level info to response
       res.json({
@@ -759,6 +834,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching trades:', error);
       res.status(500).json({ error: 'Failed to fetch insider trades' });
+    }
+  });
+
+  // DEBUG: Get storage statistics
+  app.get('/api/debug/storage-stats', async (req, res) => {
+    try {
+      const allTrades = await storage.getInsiderTrades(10000, 0, false); // Get all trades
+      const now = new Date();
+      const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      // Find most recent trade by filedDate and createdAt
+      const mostRecentByFiledDate = allTrades.length > 0 ? allTrades[0] : null;
+      const sortedByCreatedAt = [...allTrades].sort((a, b) =>
+        new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+      );
+      const mostRecentByCreatedAt = sortedByCreatedAt.length > 0 ? sortedByCreatedAt[0] : null;
+
+      // Count trades in different time ranges
+      const tradesLast48Hours = allTrades.filter(t =>
+        new Date(t.filedDate) >= fortyEightHoursAgo
+      ).length;
+      const tradesLast7Days = allTrades.filter(t =>
+        new Date(t.filedDate) >= sevenDaysAgo
+      ).length;
+      const freeUserVisibleTrades = allTrades.filter(t =>
+        new Date(t.filedDate) <= fortyEightHoursAgo
+      ).length;
+
+      res.json({
+        totalTrades: allTrades.length,
+        mostRecentTrade: {
+          byFiledDate: mostRecentByFiledDate ? {
+            ticker: mostRecentByFiledDate.ticker,
+            company: mostRecentByFiledDate.companyName,
+            filedDate: mostRecentByFiledDate.filedDate,
+            createdAt: mostRecentByFiledDate.createdAt
+          } : null,
+          byCreatedAt: mostRecentByCreatedAt ? {
+            ticker: mostRecentByCreatedAt.ticker,
+            company: mostRecentByCreatedAt.companyName,
+            filedDate: mostRecentByCreatedAt.filedDate,
+            createdAt: mostRecentByCreatedAt.createdAt
+          } : null
+        },
+        timeRangeStats: {
+          last48Hours: tradesLast48Hours,
+          last7Days: tradesLast7Days,
+          freeUserVisible: freeUserVisibleTrades,
+          cutoffDate: fortyEightHoursAgo.toISOString()
+        },
+        currentTime: now.toISOString()
+      });
+    } catch (error) {
+      console.error('Error getting storage stats:', error);
+      res.status(500).json({ error: 'Failed to get storage stats' });
     }
   });
 
@@ -776,8 +907,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 🎯 TRIAL ACTIVATION ENDPOINT
-  app.post('/api/trial/activate', async (req, res) => {
+  // 🎯 CREATE SETUP INTENT FOR TRIAL CARD COLLECTION
+  app.post('/api/trial/setup-intent', async (req, res) => {
     try {
       const userId = getUserIdFromToken(req);
 
@@ -788,21 +919,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log(`🎯 Activating trial for user: ${userId}`);
+      console.log(`💳 Creating SetupIntent for trial user: ${userId}`);
 
-      const result = await subscriptionService.activateTrial(userId);
+      // Get user info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
 
-      if (result.success) {
-        console.log(`🎯 Trial activated for user ${userId} - expires at ${result.expiresAt}`);
-        res.json(result);
-      } else {
-        res.status(400).json(result);
+      if (!user || !user.email) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다',
+        });
       }
-    } catch (error) {
+
+      // Check if user already used trial
+      if (user.hasUsedTrial) {
+        return res.status(400).json({
+          success: false,
+          message: '이미 무료 체험을 사용하셨습니다',
+        });
+      }
+
+      // Check if user already has active subscription or trial
+      if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+        return res.status(400).json({
+          success: false,
+          message: '이미 활성 구독이 있습니다',
+        });
+      }
+
+      // Create or retrieve Stripe customer
+      let customerId = user.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+
+        // Save Stripe customer ID
+        await db.update(users)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(users.id, userId));
+
+        console.log(`✅ Created Stripe customer for user ${userId}: ${customerId}`);
+      }
+
+      // Create SetupIntent
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        metadata: {
+          userId: user.id,
+          purpose: 'trial_signup',
+        },
+      });
+
+      console.log(`✅ Created SetupIntent: ${setupIntent.id}`);
+
+      res.json({
+        success: true,
+        clientSecret: setupIntent.client_secret,
+        customerId: customerId,
+      });
+
+    } catch (error: any) {
+      console.error('❌ SetupIntent creation error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'SetupIntent 생성 실패: ' + error.message
+      });
+    }
+  });
+
+  // 🎯 TRIAL ACTIVATION ENDPOINT (WITH CARD)
+  app.post('/api/trial/activate', async (req, res) => {
+    try {
+      const userId = getUserIdFromToken(req);
+      const { paymentMethodId, planType } = req.body; // planType: 'monthly' or 'yearly'
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: '로그인이 필요합니다',
+        });
+      }
+
+      if (!paymentMethodId) {
+        return res.status(400).json({
+          success: false,
+          message: '결제 정보가 필요합니다',
+        });
+      }
+
+      if (!planType || !['monthly', 'yearly'].includes(planType)) {
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않은 구독 플랜입니다',
+        });
+      }
+
+      console.log(`🎯 Activating trial with card for user: ${userId}, plan: ${planType}`);
+
+      // Get user info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user || !user.email) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다',
+        });
+      }
+
+      // Check if user already used trial
+      if (user.hasUsedTrial) {
+        return res.status(400).json({
+          success: false,
+          message: '이미 무료 체험을 사용하셨습니다',
+        });
+      }
+
+      // Check if user already has active subscription or trial
+      if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+        return res.status(400).json({
+          success: false,
+          message: '이미 활성 구독이 있습니다',
+        });
+      }
+
+      // Get Price ID based on plan type
+      const priceId = planType === 'monthly'
+        ? process.env.STRIPE_PRICE_ID_MONTHLY
+        : process.env.STRIPE_PRICE_ID_YEARLY;
+
+      if (!priceId) {
+        console.error(`❌ Missing price ID for plan: ${planType}`);
+        return res.status(500).json({
+          success: false,
+          message: '구독 플랜 설정 오류',
+        });
+      }
+
+      // Ensure customer exists
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+        console.log(`✅ Created Stripe customer: ${customerId}`);
+      }
+
+      // Attach payment method to customer
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+
+      // Set as default payment method
+      await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+
+      console.log(`✅ Attached payment method to customer: ${customerId}`);
+
+      // Create subscription with 7-day trial
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        trial_period_days: 7,
+        payment_behavior: 'default_incomplete',
+        payment_settings: {
+          payment_method_types: ['card'],
+          save_default_payment_method: 'on_subscription',
+        },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          userId: user.id,
+        },
+      });
+
+      console.log(`✅ Created Stripe subscription with trial: ${subscription.id}`);
+
+      // Calculate trial dates
+      const trialStart = new Date();
+      const trialEnd = new Date(subscription.trial_end! * 1000); // Convert Unix timestamp
+
+      // Update user in database
+      await db.update(users)
+        .set({
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscription.id,
+          subscriptionTier: 'insider_pro',
+          subscriptionStatus: 'trialing',
+          subscriptionStartDate: trialStart,
+          subscriptionEndDate: trialEnd,
+          trialActivatedAt: trialStart,
+          trialExpiresAt: trialEnd,
+          hasUsedTrial: true,
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ Trial activated for user ${userId} - expires at ${trialEnd.toISOString()}`);
+
+      res.json({
+        success: true,
+        message: '7일 무료 체험이 시작되었습니다',
+        trialActivatedAt: trialStart.toISOString(),
+        trialExpiresAt: trialEnd.toISOString(),
+        subscriptionId: subscription.id,
+      });
+
+    } catch (error: any) {
       console.error('❌ Trial activation error:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to activate trial'
+        error: '무료 체험 활성화 실패: ' + error.message
       });
     }
   });

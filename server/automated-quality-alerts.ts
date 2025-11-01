@@ -53,11 +53,6 @@ export class AutomatedQualityAlerts {
    * 알림 시스템 시작
    */
   start(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: Skipping quality alerts system');
-      return;
-    }
-
     if (this.isActive) {
       console.log('🚨 Quality alerts system is already running');
       return;

@@ -52,7 +52,7 @@ export default function SignupPage() {
       setSuccess(true);
 
       setTimeout(() => {
-        navigate('/login');
+        navigate('/start-trial');
       }, 2000);
     } catch (err: any) {
       setError(err.message || t('auth.signup.errorFailed'));
@@ -139,13 +139,13 @@ export default function SignupPage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                  {t('auth.signup.success')}
+                  가입 완료!
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400">
-                  {t('auth.signup.successDesc')}
+                  이제 7일 무료 체험을 시작하세요
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                  {t('auth.signup.redirecting')}
+                <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2 font-medium">
+                  카드 등록 페이지로 이동 중...
                 </p>
               </div>
             </div>

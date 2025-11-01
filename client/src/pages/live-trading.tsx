@@ -142,12 +142,12 @@ export default function LiveTrading() {
     }
 
     try {
-      console.log('🎯 Activating 24-hour trial...');
+      console.log('🎯 Activating 7-day trial...');
       const result = await apiClient.activateTrial();
 
       if (result.success) {
         console.log('✅ Trial activated successfully:', result);
-        alert(`🎉 ${result.message}\n\nYour 24-hour free trial is now active! Enjoy real-time insider trading data.`);
+        alert(`🎉 ${result.message}\n\nYour 7-day free trial is now active! Enjoy real-time insider trading data.`);
 
         // Update trial state
         setIsTrialing(true);
@@ -171,23 +171,23 @@ export default function LiveTrading() {
     }
   };
 
-  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 최신 업데이트순 정렬 (createdAt)
+  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - SEC 파일링 날짜순 정렬 (filedDate)
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: 'createdAt'
+      sortBy: 'filedDate'
     }),
     queryFn: async () => {
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt');
+      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'filedDate');
       // Update global access level
       if (response.accessLevel) {
         setAccessLevel(response.accessLevel);
       }
       return response;
     },
-    staleTime: 60000, // 1분 캐시
-    refetchInterval: 300000, // 5분마다 자동 갱신
+    staleTime: 30000, // 30초 캐시
+    refetchInterval: 30000, // 30초마다 자동 갱신 (실시간 업데이트)
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -197,8 +197,8 @@ export default function LiveTrading() {
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
-    staleTime: 60000,
-    refetchInterval: 300000,
+    staleTime: 30000,
+    refetchInterval: 30000, // 30초마다 자동 갱신 (실시간 업데이트)
   });
 
   // WebSocket for real-time updates

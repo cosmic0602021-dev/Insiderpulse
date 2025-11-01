@@ -162,6 +162,9 @@ class ApiClient {
   }
 
   // Trial system
+  /**
+   * @deprecated Use activateTrialWithCard instead
+   */
   activateTrial = async (): Promise<TrialActivationResponse> => {
     console.log('🎯 [API] Activating trial...');
     try {
@@ -190,6 +193,43 @@ class ApiClient {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  /**
+   * Create a SetupIntent for collecting card information without charging
+   */
+  createTrialSetupIntent = async (): Promise<{
+    success: boolean;
+    clientSecret?: string;
+    customerId?: string;
+    message?: string;
+    error?: string;
+  }> => {
+    console.log('💳 [API] Creating SetupIntent for trial...');
+    return this.request('/trial/setup-intent', {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Activate trial with collected payment method
+   */
+  activateTrialWithCard = async (
+    paymentMethodId: string,
+    planType: 'monthly' | 'yearly'
+  ): Promise<{
+    success: boolean;
+    message: string;
+    trialActivatedAt?: string;
+    trialExpiresAt?: string;
+    subscriptionId?: string;
+    error?: string;
+  }> => {
+    console.log('🎯 [API] Activating trial with card...', { planType });
+    return this.request('/trial/activate', {
+      method: 'POST',
+      body: JSON.stringify({ paymentMethodId, planType }),
+    });
   }
 
   getTrialStatus = async (): Promise<TrialStatusResponse> => {
