@@ -4,7 +4,7 @@ import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@s
 import { eq, desc, count, sum, avg, sql, inArray, gte, lte, and } from "drizzle-orm";
 import type { IStorage } from "./storage";
 
-const db = drizzle(process.env.DATABASE_URL!);
+export const db = drizzle(process.env.DATABASE_URL!);
 
 export class DatabaseStorage implements IStorage {
   // User methods

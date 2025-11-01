@@ -4,7 +4,7 @@ import { secRssScraper } from './scrapers/sec-rss-scraper';
 import { storage } from './storage';
 import { broadcastUpdate } from './routes';
 import type { InsertInsiderTrade } from '@shared/schema';
-import { db } from './db';
+import { db } from './db-storage';
 import { collectionRuns } from '@shared/schema';
 
 class AutoScheduler {
