@@ -1501,14 +1501,8 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.weekendExcluded': '주말 제외 (월~금)',
     'tradeDetail.marketHours': '시장 시간: 오전 9:30 - 오후 4:00 ET',
     'tradeDetail.insiderPulseWatermark': 'InsiderPulse 워터마크 - 모달 중앙에 고정',
-    'tradeDetail.name': '이름',
-    'tradeDetail.titlePosition': '직책',
-    'tradeDetail.filingDate': 'SEC 제출일',
     'tradeDetail.viewSecFiling': 'SEC 공식 파일링 보기 (sec.gov)',
     'tradeDetail.verifiedBySec': 'SEC 파일링 데이터로 검증됨',
-    'tradeDetail.targetPriceAnalysis': '목표 가격 분석',
-    'tradeDetail.realtimeEstimate': '실시간 추정',
-    'tradeDetail.lastClosePrice': '최근 종가',
     'tradeDetail.shareScreenshot': '스크린샷 공유',
     'tradeDetail.totalTransactionAmount': '총 거래 금액',
     'tradeDetail.sharesCount': '거래 주식 수',
@@ -1579,7 +1573,6 @@ const translations: Record<Language, Record<string, string>> = {
     'pwa.android.step2': '"앱 설치" 또는 "홈 화면에 추가" 선택',
     'pwa.android.step3': '"설치" 탭',
     'pwa.afterInstall': '설치 후에는 이 버튼을 다시 눌러 <strong>{ticker}</strong>의 거래 알림을 구독할 수 있습니다.',
-    'pwa.button.understood': '이해했어요',
   },
   ja: {
     // Navigation
