@@ -66,7 +66,8 @@ class MarketBeatCollector {
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-          }
+          },
+          signal: AbortSignal.timeout(30000), // 30 second timeout to prevent hanging
         });
 
         if (!response.ok) {

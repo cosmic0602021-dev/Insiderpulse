@@ -166,12 +166,13 @@ export default function Ranking() {
           pricePerShare: 50,
           totalValue: 50000,
           filedDate: new Date().toISOString(),
+          secFilingUrl: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${ticker}&type=4&dateb=&owner=include&count=100`,
           currentPrice: 52.5,
           predictionAccuracy: 85,
           impactPrediction: '+3.2%',
           aiInsight: `${companyName}에 대한 상세한 거래 정보가 곧 업데이트될 예정입니다.`
         };
-        
+
         setSelectedTradeData(placeholderTrade);
         setShowTradeModal(true);
       }

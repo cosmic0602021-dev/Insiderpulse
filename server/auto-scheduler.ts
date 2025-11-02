@@ -6,6 +6,7 @@ import { broadcastUpdate } from './routes';
 import type { InsertInsiderTrade } from '@shared/schema';
 import { db } from './db-storage';
 import { collectionRuns } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 class AutoScheduler {
   private openInsiderInterval: NodeJS.Timeout | null = null;
@@ -140,7 +141,7 @@ class AutoScheduler {
           tradesCollected: processedCount,
           completedAt: new Date(),
         })
-        .where({ id: runId });
+        .where(eq(collectionRuns.id, runId));
 
       console.log(`✅ [AUTO] OpenInsider collection completed in ${duration}ms`);
       console.log(`   📊 Processed: ${processedCount} new trades`);
@@ -158,7 +159,7 @@ class AutoScheduler {
             completedAt: new Date(),
             errorMessage: error instanceof Error ? error.message : String(error),
           })
-          .where({ id: runId });
+          .where(eq(collectionRuns.id, runId));
       }
 
       console.log('🔄 Will retry on next scheduled run...');
@@ -191,7 +192,7 @@ class AutoScheduler {
           tradesCollected: processedCount,
           completedAt: new Date(),
         })
-        .where({ id: runId });
+        .where(eq(collectionRuns.id, runId));
 
       console.log(`✅ [AUTO] MarketBeat collection completed in ${duration}ms`);
       console.log(`   📊 Processed: ${processedCount} new trades`);
@@ -209,7 +210,7 @@ class AutoScheduler {
             completedAt: new Date(),
             errorMessage: error instanceof Error ? error.message : String(error),
           })
-          .where({ id: runId });
+          .where(eq(collectionRuns.id, runId));
       }
 
       console.log('🔄 Will retry on next scheduled run...');
@@ -284,7 +285,7 @@ class AutoScheduler {
           completedAt: new Date(),
           metadata: { totalTrades: trades.length },
         })
-        .where({ id: runId });
+        .where(eq(collectionRuns.id, runId));
 
       console.log(`✅ [AUTO] SEC RSS collection completed in ${duration}ms`);
       console.log(`   📊 Processed: ${processedCount} new trades from ${trades.length} total`);
@@ -302,7 +303,7 @@ class AutoScheduler {
             completedAt: new Date(),
             errorMessage: error instanceof Error ? error.message : String(error),
           })
-          .where({ id: runId });
+          .where(eq(collectionRuns.id, runId));
       }
 
       console.log('🔄 Will retry on next scheduled run...');
@@ -375,18 +376,6 @@ class AutoScheduler {
 // Singleton instance
 export const autoScheduler = new AutoScheduler();
 
-// Auto-start the scheduler when the module is loaded
-// This ensures continuous data collection as soon as the server starts
-// Start scheduler immediately with minimal delay for service initialization
-setTimeout(() => {
-  console.log('🚀 Starting auto-scheduler for immediate data collection...');
-  autoScheduler.start();
-
-  // Trigger immediate first collection
-  console.log('🔄 Triggering immediate first data collection...');
-  autoScheduler.manualOpenInsiderRun(100).then(count => {
-    console.log(`✅ Initial data collection complete: ${count} trades collected`);
-  }).catch(error => {
-    console.error('❌ Initial data collection failed:', error);
-  });
-}, 1000); // 1 second delay - just enough for initialization
+// NOTE: Auto-scheduler is now initialized from server/index.ts after server is ready
+// This prevents blocking the server startup process
+// The scheduler will start 30 seconds after the server begins listening

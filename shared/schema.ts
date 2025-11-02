@@ -9,6 +9,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 
+  // User role for admin access
+  role: text("role").notNull().default("user"), // "user" | "admin"
+
   // Email verification
   emailVerified: boolean("email_verified").notNull().default(false),
   verificationToken: text("verification_token"),

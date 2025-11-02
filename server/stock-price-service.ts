@@ -266,15 +266,39 @@ export class StockPriceService {
         ticker: upperTicker
       })).filter((data: any) => data.close > 0); // Filter out invalid data
 
-      // Cache the result
-      this.cache.set(`${upperTicker}_history`, {
-        data: historyData,
-        timestamp: Date.now()
-      });
+      // Only cache successful results with data
+      if (historyData.length > 0) {
+        this.cache.set(`${upperTicker}_history`, {
+          data: historyData,
+          timestamp: Date.now()
+        });
+        console.log(`✅ Fetched ${historyData.length} historical data points for ${upperTicker}`);
+      } else {
+        console.warn(`⚠️ Yahoo Finance returned empty data for ${upperTicker}`);
+      }
 
       return historyData;
     } catch (error) {
-      console.error(`❌ Failed to fetch historical data for ${upperTicker}:`, error);
+      // Enhanced error logging for debugging
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`;
+
+        if (status === 404) {
+          console.error(`❌ Ticker ${upperTicker} not found (404) - may be delisted or invalid`);
+        } else if (status === 429) {
+          console.error(`❌ Rate limited by Yahoo Finance for ${upperTicker}`);
+        } else if (error.code === 'ECONNABORTED') {
+          console.error(`❌ Request timeout for ${upperTicker} (>10s)`);
+        } else {
+          console.error(`❌ Failed to fetch ${upperTicker}: HTTP ${status || 'error'} - ${error.message}`);
+        }
+        console.error(`   URL: ${url}`);
+      } else {
+        console.error(`❌ Failed to fetch historical data for ${upperTicker}:`, error instanceof Error ? error.message : error);
+      }
+
+      // Don't cache errors - return empty array
       return [];
     }
   }

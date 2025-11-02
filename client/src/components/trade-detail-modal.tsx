@@ -7,7 +7,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
   X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ReferenceArea, Dot } from 'recharts';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
 import logoDark from '@assets/inverted_with_green_1757888880166.png';
 import type { InsiderTrade } from '@shared/schema';
@@ -73,13 +73,16 @@ export function TradeDetailModal({
   onAddToWatchlist,
   isInWatchlist = false
 }: TradeDetailModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [showPWAGuide, setShowPWAGuide] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isPWAInstalled, setIsPWAInstalled] = useState(false);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<EnhancedTrade['comprehensiveAnalysis'] | null>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<Array<{ date: string; close: number; }>>([]);
+  const [isLoadingPriceHistory, setIsLoadingPriceHistory] = useState(false);
+  const [priceHistoryError, setPriceHistoryError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // PWA 설치 여부 확인
@@ -102,13 +105,20 @@ export function TradeDetailModal({
     }
   }, [isOpen, trade]);
 
+  // Load historical price data when modal opens
+  useEffect(() => {
+    if (isOpen && trade && trade.ticker) {
+      loadPriceHistory();
+    }
+  }, [isOpen, trade?.id]);
+
   const loadComprehensiveAnalysis = async () => {
     if (!trade) return;
 
     try {
       setIsLoadingAnalysis(true);
-      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis`);
-      
+      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis?language=${language}`);
+
       if (response.ok) {
         const data = await response.json();
         setComprehensiveAnalysis(data);
@@ -119,6 +129,86 @@ export function TradeDetailModal({
       console.error('Error loading AI analysis:', error);
     } finally {
       setIsLoadingAnalysis(false);
+    }
+  };
+
+  const loadPriceHistory = async () => {
+    if (!trade || !trade.ticker) {
+      console.warn('Cannot load price history: missing trade or ticker');
+      return;
+    }
+
+    // Validate ticker
+    const ticker = trade.ticker.trim();
+    if (!ticker || ticker.length === 0) {
+      console.error('Invalid ticker:', trade.ticker);
+      setPriceHistoryError('INVALID_TICKER');
+      setIsLoadingPriceHistory(false);
+      return;
+    }
+
+    try {
+      setIsLoadingPriceHistory(true);
+      setPriceHistoryError(null);
+
+      // Calculate date range: 7 days before trade, up to today
+      const tradeDate = new Date(trade.filedDate);
+
+      // Validate trade date
+      if (isNaN(tradeDate.getTime())) {
+        console.error('Invalid trade date:', trade.filedDate);
+        setPriceHistoryError('INVALID_DATE');
+        setPriceHistory([]);
+        return;
+      }
+
+      const startDate = new Date(tradeDate);
+      startDate.setDate(startDate.getDate() - 7);
+
+      // End date: trade date + 7 days, but not beyond today
+      const potentialEndDate = new Date(tradeDate);
+      potentialEndDate.setDate(potentialEndDate.getDate() + 7);
+      const today = new Date();
+      const endDate = potentialEndDate > today ? today : potentialEndDate;
+
+      // Format dates as YYYY-MM-DD
+      const fromDate = startDate.toISOString().split('T')[0];
+      const toDate = endDate.toISOString().split('T')[0];
+
+      console.log(`📊 Loading price history for ${ticker}: ${fromDate} to ${toDate}`);
+
+      const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+          console.warn(`⚠️ No price data returned for ${ticker} in range ${fromDate} to ${toDate}`);
+          setPriceHistoryError('NO_DATA');
+          setPriceHistory([]);
+          return;
+        }
+
+        // Transform data to include only date and close price
+        const transformedData = data.map((item: any) => ({
+          date: item.date,
+          close: parseFloat(item.close)
+        }));
+
+        console.log(`✅ Loaded ${transformedData.length} price data points for ${ticker}`);
+        setPriceHistory(transformedData);
+        setPriceHistoryError(null);
+      } else {
+        console.error(`Failed to load price history for ${ticker}: HTTP ${response.status}`);
+        setPriceHistoryError('API_ERROR');
+        setPriceHistory([]);
+      }
+    } catch (error) {
+      console.error('Error loading price history:', error);
+      setPriceHistoryError('FETCH_ERROR');
+      setPriceHistory([]);
+    } finally {
+      setIsLoadingPriceHistory(false);
     }
   };
 
@@ -477,11 +567,12 @@ export function TradeDetailModal({
                 <Badge variant="outline" className="bg-white dark:bg-gray-800">{t('tradeDetail.titlePosition')}</Badge>
                 <p className="font-semibold text-slate-700 dark:text-slate-300">{trade.traderTitle}</p>
               </div>
-              <div className="flex items-center gap-2 mt-3 pt-2 border-t">
-                <Calendar className="h-4 w-4 text-amber-600" />
-                <p className="text-sm text-muted-foreground">{t('tradeDetail.filingDate')}:</p>
-                <p className="font-bold">{formatDate(trade.filedDate)}</p>
-                <Badge variant="outline" className="text-xs">UTC</Badge>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                <Calendar className="h-5 w-5 text-amber-600" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <p className="text-xs text-muted-foreground font-medium">{t('tradeDetail.transactionDate') || 'Transaction Date'}:</p>
+                  <p className="font-bold text-base text-slate-900 dark:text-white">{formatDate(trade.filedDate)}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -516,67 +607,186 @@ export function TradeDetailModal({
             {/* 가격 추이 그래프 */}
             <div className="mb-6 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
               <h5 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">{t('priceChart.title')}</h5>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart
-                  data={[
-                    {
-                      name: t('tradeDetail.tradeTime'),
-                      [t('tradeDetail.insiderTradePrice')]: trade.pricePerShare,
-                      [t('tradeDetail.averageTradePrice')]: trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
-                      [t('tradeDetail.referencePrice')]: trade.currentPrice || trade.pricePerShare,
-                    },
-                    {
-                      name: t('tradeDetail.current'),
-                      [t('tradeDetail.insiderTradePrice')]: trade.pricePerShare,
-                      [t('tradeDetail.averageTradePrice')]: trade.recommendedBuyPrice || trade.pricePerShare * 0.98,
-                      [t('tradeDetail.referencePrice')]: trade.currentPrice || trade.pricePerShare,
-                    },
-                  ]}
-                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `$${value.toFixed(0)}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any) => `$${value.toFixed(2)}`}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Line
-                    type="monotone"
-                    dataKey={t('tradeDetail.insiderTradePrice')}
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey={t('tradeDetail.averageTradePrice')}
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey={t('tradeDetail.referencePrice')}
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+
+              {isLoadingPriceHistory ? (
+                <div className="flex items-center justify-center h-[200px]">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-3 text-sm">{t('priceChart.loadingHistory') || 'Loading price history...'}</span>
+                </div>
+              ) : priceHistory.length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart
+                    data={priceHistory}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                      }}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `$${value.toFixed(2)}`}
+                      domain={['auto', 'auto']}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '12px'
+                      }}
+                      formatter={(value: any) => [`$${value.toFixed(2)}`, t('priceChart.price') || 'Price']}
+                      labelFormatter={(label) => {
+                        const date = new Date(label);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                      }}
+                    />
+
+                    {/* Highlight area around trade date */}
+                    <ReferenceArea
+                      x1={(() => {
+                        const tradeDate = new Date(trade.filedDate);
+                        const dayBefore = new Date(tradeDate);
+                        dayBefore.setDate(dayBefore.getDate() - 1);
+                        return dayBefore.toISOString().split('T')[0];
+                      })()}
+                      x2={(() => {
+                        const tradeDate = new Date(trade.filedDate);
+                        const dayAfter = new Date(tradeDate);
+                        dayAfter.setDate(dayAfter.getDate() + 1);
+                        return dayAfter.toISOString().split('T')[0];
+                      })()}
+                      fill="#f59e0b"
+                      fillOpacity={0.1}
+                    />
+
+                    {/* Vertical reference line for trade date - ENHANCED */}
+                    <ReferenceLine
+                      x={new Date(trade.filedDate).toISOString().split('T')[0]}
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                      label={{
+                        value: `📊 ${t('tradeDetail.tradeDate') || 'Trade Date'}`,
+                        position: 'top',
+                        fill: '#f59e0b',
+                        fontSize: 13,
+                        fontWeight: 'bold',
+                        style: {
+                          textShadow: '0 0 3px white, 0 0 5px white'
+                        }
+                      }}
+                    />
+
+                    {/* Horizontal reference line for trade price - ENHANCED */}
+                    <ReferenceLine
+                      y={trade.pricePerShare}
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      label={{
+                        value: `Trade Price: $${trade.pricePerShare.toFixed(2)}`,
+                        position: 'insideTopRight',
+                        fill: '#f59e0b',
+                        fontSize: 13,
+                        fontWeight: 'bold',
+                        style: {
+                          backgroundColor: 'rgba(251, 146, 60, 0.9)',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          color: 'white'
+                        }
+                      }}
+                    />
+
+                    <Line
+                      type="monotone"
+                      dataKey="close"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={(props: any) => {
+                        const { cx, cy, payload } = props;
+                        const tradeDateStr = new Date(trade.filedDate).toISOString().split('T')[0];
+                        const pointDateStr = payload.date;
+
+                        // Show a large dot on the trade date
+                        if (pointDateStr === tradeDateStr) {
+                          return (
+                            <g>
+                              {/* Pulsing outer circle */}
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={12}
+                                fill="#f59e0b"
+                                fillOpacity={0.25}
+                              />
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={8}
+                                fill="#f59e0b"
+                                fillOpacity={0.5}
+                              />
+                              {/* Inner solid circle */}
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={5}
+                                fill="#f59e0b"
+                                stroke="#fff"
+                                strokeWidth={2}
+                              />
+                            </g>
+                          );
+                        }
+                        return null;
+                      }}
+                      name={t('priceChart.price') || 'Price'}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  {priceHistoryError === 'INVALID_TICKER' && (
+                    <>
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">⚠️ {t('priceChart.invalidTicker') || 'Invalid ticker symbol'}</p>
+                      <p className="text-xs mt-2">{t('priceChart.checkTickerFormat') || 'Please check the ticker format'}</p>
+                    </>
+                  )}
+                  {priceHistoryError === 'INVALID_DATE' && (
+                    <>
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">⚠️ {t('priceChart.invalidDate') || 'Invalid trade date'}</p>
+                      <p className="text-xs mt-2">{t('priceChart.cannotLoadData') || 'Cannot load price data for this date'}</p>
+                    </>
+                  )}
+                  {priceHistoryError === 'NO_DATA' && (
+                    <>
+                      <p className="text-slate-600 dark:text-slate-400">📊 {t('priceChart.noHistoricalData') || 'No historical data available'}</p>
+                      <p className="text-xs mt-2">{t('priceChart.tickerMayBeDelisted') || 'This ticker may be delisted or not traded on major exchanges'}</p>
+                      <p className="text-xs mt-1">{t('priceChart.showingCurrentPrice') || 'Showing current price information below'}</p>
+                    </>
+                  )}
+                  {(priceHistoryError === 'API_ERROR' || priceHistoryError === 'FETCH_ERROR') && (
+                    <>
+                      <p className="text-red-600 dark:text-red-400 font-medium">❌ {t('priceChart.apiError') || 'Failed to fetch price data'}</p>
+                      <p className="text-xs mt-2">{t('priceChart.tryAgainLater') || 'Please try again later or check server logs'}</p>
+                    </>
+                  )}
+                  {!priceHistoryError && (
+                    <>
+                      <p>{t('priceChart.noHistoricalData') || 'Historical price data not available'}</p>
+                      <p className="text-xs mt-2">{t('priceChart.showingCurrentPrice') || 'Showing current price information below'}</p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* {t('tradeDetail.keyMetrics')} */}
@@ -784,30 +994,36 @@ export function TradeDetailModal({
                             {analysis.newsAnalysis.majorNews.length > 0 && (
                               <div className="space-y-3">
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('tradeDetail.majorNews')}</p>
-                                {analysis.newsAnalysis.majorNews.map((news, index) => (
-                                  <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                                    <div className="flex items-start justify-between mb-2">
-                                      <h7 className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
-                                        {news.title}
-                                      </h7>
-                                      <Badge className={`ml-2 text-xs px-2 py-1 ${
-                                        news.sentiment === 'positive' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                                        news.sentiment === 'negative' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                                      }`}>
-                                        {news.sentiment === 'positive' ? `📈 ${t('tradeDetail.positive')}` :
-                                         news.sentiment === 'negative' ? `📉 ${t('tradeDetail.negative')}` : `⚖️ ${t('tradeDetail.neutral')}`}
-                                      </Badge>
+                                {analysis.newsAnalysis.majorNews.map((news, index) => {
+                                  const sentimentLower = news.sentiment.toLowerCase();
+                                  const isPositive = sentimentLower.includes('positive') || sentimentLower.includes('bullish');
+                                  const isNegative = sentimentLower.includes('negative') || sentimentLower.includes('bearish');
+
+                                  return (
+                                    <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <h7 className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1">
+                                          {news.title}
+                                        </h7>
+                                        <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap ${
+                                          isPositive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                          isNegative ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                        }`}>
+                                          {isPositive ? `📈 ${t('tradeDetail.positive')}` :
+                                           isNegative ? `📉 ${t('tradeDetail.negative')}` : `⚖️ ${t('tradeDetail.neutral')}`}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
+                                        {news.summary}
+                                      </p>
+                                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                        <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
+                                        <span>{news.source || 'Market Analysis'}</span>
+                                      </div>
                                     </div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                                      {news.summary.slice(0, 120)}...
-                                    </p>
-                                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                      <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
-                                      <span>{news.source || 'Market Analysis'}</span>
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>

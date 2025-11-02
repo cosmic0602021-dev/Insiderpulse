@@ -303,9 +303,10 @@ class AdvancedOpenInsiderCollector {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await fetch(url, { 
+        const response = await fetch(url, {
           headers,
           redirect: 'follow',
+          signal: AbortSignal.timeout(30000), // 30 second timeout to prevent hanging
         });
 
         if (response.ok) {

@@ -30,6 +30,7 @@ import LoginPage from "@/pages/login";
 import VerifyEmail from "@/pages/verify-email";
 import StartTrialPage from "@/pages/start-trial";
 import NotFound from "@/pages/not-found";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   const { t } = useLanguage();
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/premium-checkout" component={PremiumCheckout} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/settings" component={Settings} />
+      <Route path="/admin" component={AdminDashboard} />
 
       <Route component={NotFound} />
     </Switch>

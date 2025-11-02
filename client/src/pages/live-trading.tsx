@@ -192,7 +192,8 @@ export default function LiveTrading() {
     refetchOnMount: true,
   });
 
-  const allTrades = tradesResponse?.trades || [];
+  // Memoize allTrades to prevent unnecessary re-renders from empty array creation
+  const allTrades = useMemo(() => tradesResponse?.trades || [], [tradesResponse?.trades]);
 
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
@@ -209,7 +210,6 @@ export default function LiveTrading() {
   const validatedData = useMemo(() => {
     if (!allTrades) return { trades: [], quality: null };
 
-    console.log('🔍 Validating trades data...');
     const validation = dataValidator.validateTrades(allTrades);
     const freshness = dataFreshnessMonitor.checkDataFreshness(validation.validTrades);
 
@@ -231,28 +231,20 @@ export default function LiveTrading() {
       issues: [...validation.summary.issues, ...freshness.warnings]
     };
 
-    console.log(`✅ Data validation complete: ${buySellTrades.length}/${validation.summary.total} buy/sell trades`);
-    if (validation.invalidTrades.length > 0) {
-      console.warn(`🚨 Filtered out ${validation.invalidTrades.length} invalid/fake trades`);
-    }
-    const filteredOutCount = validation.validTrades.length - buySellTrades.length;
-    if (filteredOutCount > 0) {
-      console.log(`🔧 Filtered out ${filteredOutCount} non-buy/sell trades (GRANT, OPTION_EXERCISE, etc.)`);
-    }
-
     return {
       trades: buySellTrades,
       quality
     };
   }, [allTrades]);
 
-  // Update state based on validated data (moved out of useMemo to prevent infinite loop)
+  // Update state based on validated data - Fixed: Use allTrades as dependency to prevent infinite loop
+  // This ensures the effect only runs when the source data changes, not when the computed object reference changes
   useEffect(() => {
     if (validatedData.quality) {
       setDataQuality(validatedData.quality);
       setLastValidationTime(new Date());
     }
-  }, [validatedData.quality]);
+  }, [allTrades]);
 
   // 검색 필터링
   const filteredTrades = useMemo(() => {

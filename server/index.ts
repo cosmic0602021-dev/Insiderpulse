@@ -5,8 +5,6 @@ import { setupVite, serveStatic, log } from "./vite";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { stockPriceService } from "./stock-price-service";
-// Initialize data collectors
-import('./auto-scheduler'); // Initialize auto scheduler for automated SEC data collection
 
 const execAsync = promisify(exec);
 
@@ -122,27 +120,41 @@ app.use((req, res, next) => {
     }, () => {
       log(`serving on port ${port}`);
 
+      // 🚀 Initialize auto-scheduler for automated data collection
+      // Delayed start to ensure server is fully responsive first
+      setTimeout(async () => {
+        try {
+          log('🚀 Starting auto-scheduler for automated data collection...');
+          const { autoScheduler } = await import('./auto-scheduler');
+          autoScheduler.start();
+          log('✅ Auto-scheduler started successfully');
+        } catch (error) {
+          log('⚠️ Auto-scheduler initialization failed:', error);
+        }
+      }, 30000); // Wait 30 seconds after server is ready
+
       // Start stock price updates after server is ready
       setTimeout(() => {
         stockPriceService.startPeriodicUpdates();
-      }, 5000);
+      }, 35000); // After auto-scheduler initialization
 
-      // 🔄 Auto-detect and fill data gaps on startup
-      setTimeout(async () => {
-        try {
-          log('🔍 Checking for data collection gaps...');
-          const { backfillManager } = await import('./backfill-missing-trades');
-          const result = await backfillManager.autoBackfill();
+      // 🔄 Auto-detect and fill data gaps - disabled on startup to prevent blocking
+      // Run manually via API endpoint /api/admin/backfill-missing if needed
+      // setTimeout(async () => {
+      //   try {
+      //     log('🔍 Checking for data collection gaps...');
+      //     const { backfillManager } = await import('./backfill-missing-trades');
+      //     const result = await backfillManager.autoBackfill();
 
-          if (result.gapDetected) {
-            log(`✅ Gap recovery complete: ${result.tradesCollected} trades collected`);
-          } else {
-            log('✅ No gaps detected - data is up to date');
-          }
-        } catch (error) {
-          log('⚠️ Gap detection failed (will retry on next startup):', error);
-        }
-      }, 10000); // Run 10 seconds after startup to avoid race conditions
+      //     if (result.gapDetected) {
+      //       log(`✅ Gap recovery complete: ${result.tradesCollected} trades collected`);
+      //     } else {
+      //       log('✅ No gaps detected - data is up to date');
+      //     }
+      //   } catch (error) {
+      //     log('⚠️ Gap detection failed (will retry on next startup):', error);
+      //   }
+      // }, 10000); // Run 10 seconds after startup to avoid race conditions
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

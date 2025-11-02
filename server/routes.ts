@@ -15,6 +15,7 @@ import dataCollectionRouter from "./data-collection-api";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { adminMetricsService } from "./admin-metrics-service";
 // Import scraping manager (always needed for auto-collection)
 import { newScrapingManager } from './temp-scraper';
 
@@ -1284,7 +1285,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/trades/:id/comprehensive-analysis', async (req, res) => {
     try {
       const tradeId = req.params.id;
-      
+      const language = (req.query.language as string) || 'en';
+
       // Fetch trade from database
       const trade = await db.query.insiderTrades.findFirst({
         where: eq(insiderTrades.id, tradeId),
@@ -1308,43 +1310,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownershipPercentage: trade.ownershipPercentage || 0
       });
 
-      // Generate comprehensive analysis with mock data for now
+      // Translation helpers
+      const t = (key: string) => {
+        const translations: Record<string, Record<string, string>> = {
+          signal: { en: 'signal', ko: '신호', ja: 'シグナル', zh: '信号' },
+          timeHorizon: { en: '3-6 months', ko: '3-6개월', ja: '3-6ヶ月', zh: '3-6个月' },
+          mitigation: {
+            en: 'Diversified investment and stop-loss recommended',
+            ko: '분산 투자 및 손절매 설정 권장',
+            ja: '分散投資とストップロスの設定を推奨',
+            zh: '建议分散投资并设置止损'
+          },
+          analyzingMarket: {
+            en: 'Analyzing market conditions',
+            ko: '시장 상황 분석 중',
+            ja: '市場状況を分析中',
+            zh: '分析市场状况中'
+          },
+          latestNews: { en: 'Latest News', ko: '최신 소식', ja: '最新ニュース', zh: '最新消息' },
+          insiderActivity: {
+            en: 'Insider trading activity detected',
+            ko: '내부자 거래 활동 감지됨',
+            ja: 'インサイダー取引活動を検出',
+            zh: '检测到内部交易活动'
+          }
+        };
+        return translations[key]?.[language] || translations[key]?.['en'] || key;
+      };
+
+      // Generate comprehensive analysis with language support
       const comprehensiveAnalysis = {
         executiveSummary: analysis.recommendation,
-        actionableRecommendation: `${analysis.signalType} 신호 - ${analysis.recommendation}`,
+        actionableRecommendation: `${analysis.signalType} ${t('signal')} - ${analysis.recommendation}`,
         priceTargets: {
           conservative: trade.pricePerShare * 0.95,
           realistic: trade.pricePerShare * 1.05,
           optimistic: trade.pricePerShare * 1.15,
-          timeHorizon: '3-6개월'
+          timeHorizon: t('timeHorizon')
         },
         riskAssessment: {
           level: analysis.riskLevel,
           factors: analysis.keyInsights,
-          mitigation: '분산 투자 및 손절매 설정 권장'
+          mitigation: t('mitigation')
         },
         marketContext: {
           sentiment: analysis.signalType === 'BUY' ? 'BULLISH' : analysis.signalType === 'SELL' ? 'BEARISH' : 'NEUTRAL',
-          reasoning: analysis.keyInsights[0] || '시장 상황 분석 중'
+          reasoning: analysis.keyInsights[0] || t('analyzingMarket')
         },
         catalysts: analysis.keyInsights,
-        timeHorizon: '3-6개월',
+        timeHorizon: t('timeHorizon'),
         confidence: analysis.significanceScore,
-        newsAnalysis: {
-          totalNews: 5,
-          positiveCount: 3,
-          negativeCount: 1,
-          majorNews: [
-            {
-              title: `${trade.companyName} 최신 소식`,
-              summary: '내부자 거래 활동 감지됨',
-              sentiment: analysis.signalType,
-              published: new Date(),
-              relevanceScore: 0.8,
-              source: 'InsiderPulse AI'
-            }
-          ]
-        }
+        newsAnalysis: (() => {
+          const newsItems = [];
+          const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
+
+          // News 1: Main trade information
+          const tradeAction = isBuy ?
+            { en: 'purchased', ko: '매수했습니다', ja: '購入しました', zh: '购买了' } :
+            { en: 'sold', ko: '매도했습니다', ja: '売却しました', zh: '出售了' };
+
+          newsItems.push({
+            title: `${trade.traderTitle || 'Insider'} ${tradeAction[language] || tradeAction.en} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`,
+            summary: isBuy ?
+              (language === 'ko' ? `총 ${(trade.totalValue / 1000).toFixed(0)}K 규모의 매수 - 긍정적 신호` :
+               language === 'ja' ? `総額${(trade.totalValue / 1000).toFixed(0)}Kの買い付け - ポジティブなシグナル` :
+               language === 'zh' ? `总计${(trade.totalValue / 1000).toFixed(0)}K的购买 - 积极信号` :
+               `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected`) :
+              (language === 'ko' ? `${(trade.totalValue / 1000).toFixed(0)}K 규모 매도 - 주의 관찰 필요` :
+               language === 'ja' ? `${(trade.totalValue / 1000).toFixed(0)}K規模の売却 - 注意深く監視が必要` :
+               language === 'zh' ? `${(trade.totalValue / 1000).toFixed(0)}K规模出售 - 需要谨慎观察` :
+               `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`),
+            sentiment: isBuy ? 'BULLISH' : 'BEARISH',
+            published: new Date(trade.filedDate),
+            relevanceScore: 0.95,
+            source: 'SEC Form 4'
+          });
+
+          // News 2: Insider information
+          newsItems.push({
+            title: `${trade.traderName} - ${trade.traderTitle || 'Executive'}`,
+            summary: isBuy ?
+              (language === 'ko' ? `임원의 적극적 매수는 회사 전망에 대한 강한 신뢰를 나타냅니다` :
+               language === 'ja' ? `経営陣の積極的な購入は会社の見通しに対する強い信頼を示しています` :
+               language === 'zh' ? `高管积极购买表明对公司前景充满信心` :
+               `Executive buying signals strong confidence in company outlook`) :
+              (language === 'ko' ? `임원의 매도 - 포트폴리오 조정 또는 개인 사유일 수 있음` :
+               language === 'ja' ? `経営陣の売却 - ポートフォリオ調整または個人的理由の可能性` :
+               language === 'zh' ? `高管出售 - 可能是投资组合调整或个人原因` :
+               `Insider selling - May be portfolio rebalancing or personal reasons`),
+            sentiment: isBuy ? 'POSITIVE' : 'NEUTRAL',
+            published: new Date(trade.filedDate),
+            relevanceScore: 0.85,
+            source: 'InsiderPulse Analysis'
+          });
+
+          // News 3: Price analysis
+          const priceLevel = trade.pricePerShare > 100 ? 'premium' : trade.pricePerShare > 50 ? 'moderate' : 'value';
+          newsItems.push({
+            title: language === 'ko' ? `주가 $${trade.pricePerShare.toFixed(2)}에 거래 체결` :
+                   language === 'ja' ? `株価$${trade.pricePerShare.toFixed(2)}で取引成立` :
+                   language === 'zh' ? `以股价$${trade.pricePerShare.toFixed(2)}成交` :
+                   `Transaction executed at $${trade.pricePerShare.toFixed(2)} share price`,
+            summary: isBuy ?
+              (language === 'ko' ? `현재 가격 수준에서의 매수는 ${priceLevel === 'premium' ? '프리미엄 가격에도 불구하고' : ''} 강한 확신을 시사` :
+               language === 'ja' ? `現在の価格レベルでの購入は${priceLevel === 'premium' ? 'プレミアム価格にもかかわらず' : ''}強い確信を示唆` :
+               language === 'zh' ? `当前价格水平的购买${priceLevel === 'premium' ? '尽管价格溢价' : ''}表明强烈信心` :
+               `Buying at current levels ${priceLevel === 'premium' ? 'despite premium pricing ' : ''}indicates strong conviction`) :
+              (language === 'ko' ? `기술적 분석 필요 - 지지선 확인 중요` :
+               language === 'ja' ? `テクニカル分析が必要 - サポートラインの確認が重要` :
+               language === 'zh' ? `需要技术分析 - 确认支撑位很重要` :
+               `Technical analysis needed - Support levels critical`),
+            sentiment: isBuy ? 'POSITIVE' : 'NEUTRAL',
+            published: new Date(trade.filedDate),
+            relevanceScore: 0.75,
+            source: 'Market Analysis'
+          });
+
+          const positiveCount = newsItems.filter(n => n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH').length;
+          const negativeCount = newsItems.filter(n => n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH').length;
+
+          return {
+            totalNews: newsItems.length,
+            positiveCount,
+            negativeCount,
+            majorNews: newsItems
+          };
+        })()
       };
 
       res.json(comprehensiveAnalysis);
@@ -2261,17 +2352,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metrics.avgTradeValue = totalTrades > 0 ? (metrics.totalBuyValue + metrics.totalSellValue) / totalTrades : 0;
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         
-        // Calculate ranking score based on:
-        // - Net buying amount (40%)
-        // - Number of buying transactions (20%)
+        // Calculate ranking score based on (TIMING-FOCUSED WEIGHTS):
+        // - Net buying amount (30%)
+        // - Recency of trades (20% - TIMING IS CRITICAL!)
         // - Number of unique insiders (20%)
-        // - Average trade value (10%)
-        // - Recency of trades (10%)
+        // - Number of buying transactions (15%)
+        // - Pattern bonus (10% - cluster buying, consecutive trades, etc.)
+        // - Average trade value (5% - log scale to prevent extreme values from dominating)
         
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1000000; // Normalize to millions
         const buyCountScore = metrics.buyCount * 5; // 5 points per buy trade
         const insiderScore = metrics.uniqueInsiders.size * 10; // 10 points per unique insider
-        const avgValueScore = metrics.avgTradeValue / 100000; // Normalize to 100k
+        // Use log scale to prevent extremely large trades from dominating the score
+        const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2; // Log scale normalization
         
         const daysSinceLastTrade = metrics.lastTradeDate ? 
           (Date.now() - metrics.lastTradeDate.getTime()) / (1000 * 60 * 60 * 24) : 30;
@@ -2305,12 +2398,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         metrics.score = Math.round(
-          netBuyingScore * 0.35 +  // 기존 가중치 조정
-          buyCountScore * 0.2 +
-          insiderScore * 0.2 +
-          avgValueScore * 0.1 +
-          recencyScore * 0.1 +
-          patternBonus * 0.05      // 패턴 보너스 5%
+          netBuyingScore * 0.30 +  // Net buying amount (30%, reduced from 35%)
+          buyCountScore * 0.15 +   // Buy trade count (15%, reduced from 20%)
+          insiderScore * 0.20 +    // Unique insiders (20%, unchanged)
+          avgValueScore * 0.05 +   // Average trade value (5%, reduced from 10%)
+          recencyScore * 0.20 +    // Recency (20%, INCREASED from 10% - timing is critical!)
+          patternBonus * 0.10      // Pattern bonus (10%, INCREASED from 5%)
         );
         
         // Determine recommendation
@@ -2541,31 +2634,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const period = (req.query.period as string) || '1y';
       const fromDate = req.query.from as string;
       const toDate = req.query.to as string;
-      
+
+      // Validate ticker
+      if (!ticker || ticker.trim().length === 0) {
+        console.error('❌ Invalid ticker provided');
+        return res.status(400).json({ error: 'Invalid ticker symbol' });
+      }
+
       // First try to get from database
       let historyData = [];
       if (fromDate && toDate) {
+        console.log(`📊 Checking database for ${ticker} history: ${fromDate} to ${toDate}`);
         historyData = await storage.getStockPriceHistoryRange(ticker, fromDate, toDate);
       } else {
+        console.log(`📊 Checking database for ${ticker} history (all)`);
         historyData = await storage.getStockPriceHistory(ticker);
       }
-      
+
       // If no data in database, fetch from service and save
       if (historyData.length === 0) {
-        console.log(`📈 Fetching historical data for ${ticker} (${period})`);
+        console.log(`📈 No data in DB, fetching from Yahoo Finance for ${ticker} (${fromDate && toDate ? `${fromDate} to ${toDate}` : period})`);
         const serviceData = await stockPriceService.getStockPriceHistory(ticker, period);
-        
-        // Save to database for future use
-        if (serviceData.length > 0) {
-          await stockPriceService.updateHistoricalPricesForTicker(ticker, period);
-          // Fetch again from database to get consistent format
-          historyData = await storage.getStockPriceHistory(ticker);
+
+        // If no service data, try with a wider period
+        if (serviceData.length === 0 && fromDate && toDate) {
+          console.log(`⚠️ No data for ${ticker} in period ${period}, trying 2y range...`);
+          const widerData = await stockPriceService.getStockPriceHistory(ticker, '2y');
+
+          if (widerData.length > 0) {
+            const filteredWider = widerData.filter(item =>
+              item.date >= fromDate && item.date <= toDate
+            );
+
+            if (filteredWider.length > 0) {
+              console.log(`✅ Found ${filteredWider.length} data points in wider range for ${ticker}`);
+              historyData = filteredWider.map(item => ({
+                ticker: item.ticker,
+                date: item.date,
+                open: item.open.toString(),
+                high: item.high.toString(),
+                low: item.low.toString(),
+                close: item.close.toString(),
+                volume: item.volume
+              }));
+
+              // Save wider data to database
+              await stockPriceService.updateHistoricalPricesForTicker(ticker, '2y');
+              return res.json(historyData);
+            }
+          }
+
+          // No data found even in wider range
+          console.warn(`⚠️ No historical data available for ${ticker} - ticker may be invalid or delisted`);
+          return res.json([]);
         }
+
+        // Filter to requested date range if specified
+        let filteredData = serviceData;
+        if (fromDate && toDate && serviceData.length > 0) {
+          filteredData = serviceData.filter(item =>
+            item.date >= fromDate && item.date <= toDate
+          );
+          console.log(`✅ Filtered to ${filteredData.length} data points in range ${fromDate} to ${toDate}`);
+        }
+
+        // Save to database for future use (save full data, return filtered)
+        if (serviceData.length > 0) {
+          console.log(`💾 Saving ${serviceData.length} data points to database for ${ticker}`);
+          await stockPriceService.updateHistoricalPricesForTicker(ticker, period);
+        }
+
+        // Return filtered data directly (no need to fetch from DB again)
+        historyData = filteredData.map(item => ({
+          ticker: item.ticker,
+          date: item.date,
+          open: item.open.toString(),
+          high: item.high.toString(),
+          low: item.low.toString(),
+          close: item.close.toString(),
+          volume: item.volume
+        }));
+      } else {
+        console.log(`✅ Found ${historyData.length} data points in database for ${ticker}`);
       }
-      
+
       res.json(historyData);
     } catch (error) {
-      console.error(`Failed to fetch history for ${req.params.ticker}:`, error);
+      console.error(`❌ Failed to fetch history for ${req.params.ticker}:`, error);
       res.status(500).json({ error: 'Failed to fetch stock price history' });
     }
   });
@@ -2984,17 +3139,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { autoScheduler } = await import('./auto-scheduler');
       const status = autoScheduler.getStatus();
-      
+
       res.json({
         success: true,
         status,
         timestamp: new Date().toISOString()
       });
-      
+
     } catch (error) {
       console.error('Failed to get scheduler status:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Failed to get scheduler status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Admin dashboard metrics endpoints
+  app.get('/api/admin/metrics/overview', protectAdminEndpoint, async (req, res) => {
+    try {
+      const metrics = await adminMetricsService.getOverviewMetrics();
+      res.json({
+        success: true,
+        metrics,
+      });
+    } catch (error) {
+      console.error('Failed to get admin metrics:', error);
+      res.status(500).json({
+        error: 'Failed to fetch admin metrics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/metrics/users', protectAdminEndpoint, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const usersList = await adminMetricsService.getUsersList(limit);
+      res.json({
+        success: true,
+        users: usersList,
+      });
+    } catch (error) {
+      console.error('Failed to get users list:', error);
+      res.status(500).json({
+        error: 'Failed to fetch users list',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/metrics/growth', protectAdminEndpoint, async (req, res) => {
+    try {
+      const growth = await adminMetricsService.getUserGrowth();
+      res.json({
+        success: true,
+        growth,
+      });
+    } catch (error) {
+      console.error('Failed to get user growth data:', error);
+      res.status(500).json({
+        error: 'Failed to fetch user growth data',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
