@@ -16,6 +16,7 @@ import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { adminMetricsService } from "./admin-metrics-service";
+import { ipGeolocationService } from "./ip-geolocation-service";
 // Import scraping manager (always needed for auto-collection)
 import { newScrapingManager } from './temp-scraper';
 
@@ -609,6 +610,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JWT_SECRET,
         { expiresIn: '7d' }
       );
+
+      // Track login session for geographic analytics
+      try {
+        const clientIP = ipGeolocationService.getClientIP(req);
+        const locationData = await ipGeolocationService.getLocation(clientIP);
+
+        if (locationData) {
+          await db.insert(schema.userSessions).values({
+            userId: user.id,
+            ipAddress: clientIP,
+            country: locationData.country,
+            countryName: locationData.countryName,
+            region: locationData.region,
+            city: locationData.city,
+            userAgent: req.headers['user-agent'] || null,
+          });
+          console.log(`📍 Session tracked: ${locationData.countryName} (${locationData.country})`);
+        }
+      } catch (sessionError) {
+        // Don't fail login if session tracking fails
+        console.error('Failed to track session:', sessionError);
+      }
 
       res.json({
         success: true,
@@ -3200,6 +3223,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Failed to get user growth data:', error);
       res.status(500).json({
         error: 'Failed to fetch user growth data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/metrics/conversion', protectAdminEndpoint, async (req, res) => {
+    try {
+      const conversionData = await adminMetricsService.getConversionFunnel();
+      res.json({
+        success: true,
+        ...conversionData,
+      });
+    } catch (error) {
+      console.error('Failed to get conversion funnel data:', error);
+      res.status(500).json({
+        error: 'Failed to fetch conversion funnel data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/metrics/revenue', protectAdminEndpoint, async (req, res) => {
+    try {
+      const revenueData = await adminMetricsService.getRevenueMetrics();
+      res.json({
+        success: true,
+        ...revenueData,
+      });
+    } catch (error) {
+      console.error('Failed to get revenue metrics:', error);
+      res.status(500).json({
+        error: 'Failed to fetch revenue metrics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/admin/metrics/geography', protectAdminEndpoint, async (req, res) => {
+    try {
+      const geographyData = await adminMetricsService.getGeographicDistribution();
+      res.json({
+        success: true,
+        ...geographyData,
+      });
+    } catch (error) {
+      console.error('Failed to get geography metrics:', error);
+      res.status(500).json({
+        error: 'Failed to fetch geography metrics',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/language-context';
+import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface AdminMetrics {
   totalUsers: number;
@@ -26,10 +27,70 @@ interface UserListItem {
   status: 'free' | 'trial' | 'paid';
 }
 
+interface GrowthDataPoint {
+  date: string;
+  signups: number;
+}
+
+interface FunnelStage {
+  stage: string;
+  count: number;
+  percentage: number;
+}
+
+interface ConversionData {
+  funnel: FunnelStage[];
+  metrics: {
+    signupToTrialRate: number;
+    trialToPaidRate: number;
+    overallConversionRate: number;
+  };
+}
+
+interface RevenueTrendPoint {
+  date: string;
+  revenue: number;
+  newSubscribers: number;
+}
+
+interface RevenueData {
+  mrr: number;
+  arr: number;
+  totalPaidUsers: number;
+  arpu: number;
+  newSubscriptionsLast30Days: number;
+  revenueTrend: RevenueTrendPoint[];
+  calculatedAt: string;
+}
+
+interface CountryData {
+  country: string;
+  countryName: string;
+  sessions: number;
+}
+
+interface CityData {
+  city: string;
+  country: string;
+  sessions: number;
+}
+
+interface GeographyData {
+  totalSessions: number;
+  uniqueUsers: number;
+  countries: CountryData[];
+  topCities: CityData[];
+  calculatedAt: string;
+}
+
 export default function AdminDashboard() {
   const { t } = useLanguage();
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [users, setUsers] = useState<UserListItem[]>([]);
+  const [growthData, setGrowthData] = useState<GrowthDataPoint[]>([]);
+  const [conversionData, setConversionData] = useState<ConversionData | null>(null);
+  const [revenueData, setRevenueData] = useState<RevenueData | null>(null);
+  const [geographyData, setGeographyData] = useState<GeographyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminKey, setAdminKey] = useState('');
@@ -77,6 +138,55 @@ export default function AdminDashboard() {
       }
       const usersData = await usersRes.json();
       setUsers(usersData.users);
+
+      // Fetch growth data
+      const growthRes = await fetch('/api/admin/metrics/growth', { headers });
+      if (!growthRes.ok) {
+        throw new Error(`Failed to fetch growth: ${growthRes.statusText}`);
+      }
+      const growthDataRes = await growthRes.json();
+      setGrowthData(growthDataRes.growth || []);
+
+      // Fetch conversion data
+      const conversionRes = await fetch('/api/admin/metrics/conversion', { headers });
+      if (!conversionRes.ok) {
+        throw new Error(`Failed to fetch conversion: ${conversionRes.statusText}`);
+      }
+      const conversionDataRes = await conversionRes.json();
+      setConversionData({
+        funnel: conversionDataRes.funnel || [],
+        metrics: conversionDataRes.metrics || { signupToTrialRate: 0, trialToPaidRate: 0, overallConversionRate: 0 },
+      });
+
+      // Fetch revenue data
+      const revenueRes = await fetch('/api/admin/metrics/revenue', { headers });
+      if (!revenueRes.ok) {
+        throw new Error(`Failed to fetch revenue: ${revenueRes.statusText}`);
+      }
+      const revenueDataRes = await revenueRes.json();
+      setRevenueData({
+        mrr: revenueDataRes.mrr || 0,
+        arr: revenueDataRes.arr || 0,
+        totalPaidUsers: revenueDataRes.totalPaidUsers || 0,
+        arpu: revenueDataRes.arpu || 0,
+        newSubscriptionsLast30Days: revenueDataRes.newSubscriptionsLast30Days || 0,
+        revenueTrend: revenueDataRes.revenueTrend || [],
+        calculatedAt: revenueDataRes.calculatedAt || new Date().toISOString(),
+      });
+
+      // Fetch geography data
+      const geographyRes = await fetch('/api/admin/metrics/geography', { headers });
+      if (!geographyRes.ok) {
+        throw new Error(`Failed to fetch geography: ${geographyRes.statusText}`);
+      }
+      const geographyDataRes = await geographyRes.json();
+      setGeographyData({
+        totalSessions: geographyDataRes.totalSessions || 0,
+        uniqueUsers: geographyDataRes.uniqueUsers || 0,
+        countries: geographyDataRes.countries || [],
+        topCities: geographyDataRes.topCities || [],
+        calculatedAt: geographyDataRes.calculatedAt || new Date().toISOString(),
+      });
 
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -250,6 +360,294 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Signup Growth Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Signup Growth (Last 30 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {growthData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    labelFormatter={(value) => new Date(value).toLocaleDateString('ko-KR')}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="signups"
+                    stroke="#8884d8"
+                    strokeWidth={2}
+                    name="New Signups"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No signup data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* User Composition Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>User Composition</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics && (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Free Users', value: metrics.freeUsers, color: '#94a3b8' },
+                      { name: 'Trial Users', value: metrics.trialUsers, color: '#60a5fa' },
+                      { name: 'Paid Users', value: metrics.paidUsers, color: '#34d399' }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[
+                      { name: 'Free Users', value: metrics.freeUsers, color: '#94a3b8' },
+                      { name: 'Trial Users', value: metrics.trialUsers, color: '#60a5fa' },
+                      { name: 'Paid Users', value: metrics.paidUsers, color: '#34d399' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Conversion Funnel */}
+      {conversionData && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversion Funnel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-sm text-muted-foreground">Signup → Trial</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {conversionData.metrics.signupToTrialRate}%
+                  </div>
+                </div>
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-sm text-muted-foreground">Trial → Paid</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {conversionData.metrics.trialToPaidRate}%
+                  </div>
+                </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="text-sm text-muted-foreground">Overall Conversion</div>
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {conversionData.metrics.overallConversionRate}%
+                  </div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={conversionData.funnel} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="stage" type="category" width={150} />
+                  <Tooltip
+                    formatter={(value: number, name: string) => {
+                      if (name === 'count') return [value, 'Users'];
+                      if (name === 'percentage') return [`${value.toFixed(1)}%`, 'Percentage'];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="count" fill="#8884d8" name="Users" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Revenue Metrics */}
+      {revenueData && (
+        <div className="space-y-6">
+          {/* Revenue Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">MRR</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${revenueData.mrr.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground mt-1">Monthly Recurring Revenue</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">ARR</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${revenueData.arr.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground mt-1">Annual Recurring Revenue</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">ARPU</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${revenueData.arpu.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Average Revenue Per User</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">New Subs (30d)</CardTitle>
+                <UserCheck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{revenueData.newSubscriptionsLast30Days}</div>
+                <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Revenue Trend Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue Trend (Last 30 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {revenueData.revenueTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={revenueData.revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                      }}
+                    />
+                    <YAxis />
+                    <Tooltip
+                      labelFormatter={(value) => new Date(value).toLocaleDateString('ko-KR')}
+                      formatter={(value: number, name: string) => {
+                        if (name === 'revenue') return [`$${value}`, 'Revenue'];
+                        return [value, 'New Subscribers'];
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      name="Revenue"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="newSubscribers"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      name="New Subscribers"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No revenue data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Geographic Distribution */}
+      {geographyData && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Geographic Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Sessions by Country</h4>
+                  {geographyData.countries.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={geographyData.countries.slice(0, 10)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="countryName" type="category" width={100} tick={{ fontSize: 12 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="sessions" fill="#8b5cf6" name="Sessions" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                      No geographic data available yet
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-4">Top Cities</h4>
+                  <div className="space-y-2">
+                    {geographyData.topCities.length > 0 ? (
+                      geographyData.topCities.map((city, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div>
+                            <div className="font-medium text-sm">{city.city}</div>
+                            <div className="text-xs text-muted-foreground">{city.country}</div>
+                          </div>
+                          <Badge>{city.sessions} sessions</Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                        No city data available yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Users Table */}
       <Card>

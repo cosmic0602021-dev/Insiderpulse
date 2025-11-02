@@ -196,3 +196,41 @@ export const insertCollectionRunSchema = createInsertSchema(collectionRuns).omit
 
 export type InsertCollectionRun = z.infer<typeof insertCollectionRunSchema>;
 export type CollectionRun = typeof collectionRuns.$inferSelect;
+
+// User events for conversion tracking
+export const userEvents = pgTable("user_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  eventType: text("event_type").notNull(), // "SIGNUP" | "TRIAL_START" | "TRIAL_END" | "SUBSCRIPTION_START" | "SUBSCRIPTION_END" | "SUBSCRIPTION_CANCEL"
+  eventData: json("event_data"), // Additional event-specific data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserEventSchema = createInsertSchema(userEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
+export type UserEvent = typeof userEvents.$inferSelect;
+
+// User sessions for geographic tracking
+export const userSessions = pgTable("user_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  ipAddress: text("ip_address"),
+  country: text("country"), // ISO country code (e.g., "US", "KR")
+  countryName: text("country_name"), // Full country name
+  region: text("region"), // State/Province
+  city: text("city"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = typeof userSessions.$inferSelect;

@@ -87,7 +87,8 @@
       "Bash(then grep SESSION_SECRET .env)",
       "Bash(else echo \".env file not found\")",
       "Bash(fi)",
-      "Bash(timeout 3 curl:*)"
+      "Bash(timeout 3 curl:*)",
+      "Bash(then echo \"=== .env file exists ===\")"
     ],
     "deny": [],
     "ask": []
