@@ -630,13 +630,105 @@ ${t.footer}
     }
   }
 
-  // 이메일 인증 발송
+  // 이메일 인증 코드 발송 (새 방식)
+  async sendVerificationCode(email: string, code: string) {
+    if (!this.transporter) {
+      throw new Error('이메일 서비스가 설정되지 않았습니다');
+    }
+
+    console.log('📧 Sending verification code to:', email);
+    console.log('🔑 Code:', code);
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: '✉️ InsiderPulse 이메일 인증 코드',
+      html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+        <div style="background-color: white; padding: 40px; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.08);">
+          <!-- Logo & Header -->
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #1a1a1a; font-size: 28px; margin: 0 0 8px 0; font-weight: 700;">
+              InsiderPulse
+            </h1>
+            <p style="color: #666; font-size: 16px; margin: 0;">
+              이메일 인증이 필요합니다
+            </p>
+          </div>
+
+          <!-- Code Display -->
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px; border-radius: 12px; margin: 24px 0;">
+            <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0 0 12px 0; text-align: center; font-weight: 500;">
+              인증 코드
+            </p>
+            <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 16px; backdrop-filter: blur(10px);">
+              <p style="color: white; font-size: 40px; font-weight: 700; margin: 0; text-align: center; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                ${code}
+              </p>
+            </div>
+            <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 16px 0 0 0; text-align: center;">
+              ⏰ 이 코드는 10분 동안 유효합니다
+            </p>
+          </div>
+
+          <!-- Instructions -->
+          <div style="margin: 24px 0; padding: 20px; background-color: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
+            <p style="color: #333; font-size: 15px; margin: 0 0 12px 0; font-weight: 600;">
+              📋 인증 방법
+            </p>
+            <ol style="color: #666; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.6;">
+              <li>회원가입 페이지로 돌아가세요</li>
+              <li>위의 6자리 코드를 입력하세요</li>
+              <li>인증 완료 후 서비스를 이용하실 수 있습니다</li>
+            </ol>
+          </div>
+
+          <!-- Security Notice -->
+          <div style="margin-top: 24px; padding: 16px; background-color: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <p style="color: #856404; font-size: 13px; margin: 0; line-height: 1.5;">
+              🔒 <strong>보안 안내:</strong> 이 코드는 본인만 사용해야 합니다. 타인에게 공유하지 마세요.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e5e5; text-align: center;">
+            <p style="color: #999; font-size: 12px; margin: 0 0 8px 0;">
+              본인이 요청하지 않은 경우 이 이메일을 무시하세요.
+            </p>
+            <p style="color: #999; font-size: 11px; margin: 0;">
+              © ${new Date().getFullYear()} InsiderPulse. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+      `,
+      text: `
+InsiderPulse 이메일 인증
+
+인증 코드: ${code}
+
+이 코드를 회원가입 페이지에 입력하여 이메일 인증을 완료하세요.
+코드는 10분 동안 유효합니다.
+
+본인이 요청하지 않은 경우 이 이메일을 무시하세요.
+
+© ${new Date().getFullYear()} InsiderPulse
+      `.trim()
+    };
+
+    await this.transporter.sendMail(mailOptions);
+    console.log(`📧 인증 코드 발송 완료: ${email}`);
+  }
+
+  // 이메일 인증 발송 (레거시 - 링크 방식)
   async sendVerificationEmail(email: string, token: string) {
     if (!this.transporter) {
       throw new Error('이메일 서비스가 설정되지 않았습니다');
     }
 
     const verificationUrl = `${this.baseUrl}/verify-email?token=${token}`;
+    console.log('📧 Sending verification email to:', email);
+    console.log('🔗 Verification URL:', verificationUrl.substring(0, 100) + '...');
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,

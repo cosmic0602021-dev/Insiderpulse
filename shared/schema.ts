@@ -14,8 +14,10 @@ export const users = pgTable("users", {
 
   // Email verification
   emailVerified: boolean("email_verified").notNull().default(false),
-  verificationToken: text("verification_token"),
+  verificationToken: text("verification_token"), // Legacy - for link-based verification
   verificationTokenExpires: timestamp("verification_token_expires"),
+  verificationCode: text("verification_code"), // 6-digit code for email verification
+  verificationCodeExpires: timestamp("verification_code_expires"), // Code expires in 10 minutes
 
   // Subscription & Trial Management
   subscriptionTier: text("subscription_tier").notNull().default("free"), // "free" | "insider_pro"

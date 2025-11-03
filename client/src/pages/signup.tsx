@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle, TrendingUp, Shield, Zap } from 'lucide-react';
+import { Loader2, AlertCircle, Mail, UserPlus, Sparkles, Lock } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useLanguage } from '@/contexts/language-context';
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
@@ -51,9 +51,12 @@ export default function SignupPage() {
       await apiClient.signup(email, password);
       setSuccess(true);
 
+      // Store email for verification
+      localStorage.setItem('pendingVerificationEmail', email);
+
       setTimeout(() => {
-        navigate('/start-trial');
-      }, 2000);
+        navigate('/verify-code');
+      }, 1500);
     } catch (err: any) {
       setError(err.message || t('auth.signup.errorFailed'));
     } finally {

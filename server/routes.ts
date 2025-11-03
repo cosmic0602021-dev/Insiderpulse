@@ -505,13 +505,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       console.log('🔐 Password hashed');
 
-      // Generate verification token
-      const verificationToken = jwt.sign(
-        { email, timestamp: Date.now() },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+      const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      console.log('🔑 Verification code generated:', verificationCode);
 
       // Create user
       const newUser = await db.insert(users).values({
@@ -522,16 +520,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus: 'inactive',
         hasUsedTrial: false,
         emailVerified: false,
-        verificationToken,
-        verificationTokenExpires,
+        verificationCode,
+        verificationCodeExpires,
       }).returning();
 
-      console.log('✅ User created successfully:', { id: newUser[0].id, email: newUser[0].email });
+      console.log('✅ User created successfully:', {
+        id: newUser[0].id,
+        email: newUser[0].email,
+      });
 
-      // Send verification email
+      // Send verification code email
       try {
-        await emailNotificationService.sendVerificationEmail(email, verificationToken);
-        console.log('📧 Verification email sent to:', email);
+        await emailNotificationService.sendVerificationCode(email, verificationCode);
+        console.log('📧 Verification code sent to:', email);
       } catch (emailError) {
         console.error('❌ Failed to send verification email:', emailError);
         // Continue even if email fails - user can request resend
@@ -660,9 +661,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/verify-email/:token', async (req, res) => {
     try {
       const { token } = req.params;
-      console.log('📧 Email verification attempt with token');
+      console.log('📧 Email verification attempt');
+      console.log('Token (first 50 chars):', token.substring(0, 50) + '...');
 
       if (!token) {
+        console.log('❌ No token provided');
         return res.status(400).json({
           success: false,
           message: '인증 토큰이 없습니다',
@@ -673,7 +676,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let decoded: { email: string; timestamp: number };
       try {
         decoded = jwt.verify(token, JWT_SECRET) as { email: string; timestamp: number };
+        console.log('✅ JWT token decoded successfully:', { email: decoded.email });
       } catch (error) {
+        console.log('❌ JWT verification failed:', error);
         return res.status(400).json({
           success: false,
           message: '유효하지 않거나 만료된 인증 링크입니다',
@@ -681,6 +686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Find user by email and token
+      console.log('🔍 Looking for user with email:', decoded.email);
       const user = await db.query.users.findFirst({
         where: and(
           eq(users.email, decoded.email),
@@ -689,11 +695,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!user) {
+        console.log('❌ User not found with email and token combo');
+        // Try to find user by email only to see if they exist
+        const userByEmail = await db.query.users.findFirst({
+          where: eq(users.email, decoded.email),
+        });
+        if (userByEmail) {
+          console.log('⚠️ User exists but token mismatch');
+          console.log('Stored token (first 50):', userByEmail.verificationToken?.substring(0, 50) + '...');
+          console.log('Received token (first 50):', token.substring(0, 50) + '...');
+          console.log('User already verified:', userByEmail.emailVerified);
+        } else {
+          console.log('❌ User does not exist with this email');
+        }
         return res.status(404).json({
           success: false,
           message: '사용자를 찾을 수 없거나 이미 인증되었습니다',
         });
       }
+
+      console.log('✅ User found:', { email: user.email, verified: user.emailVerified });
 
       // Check if already verified
       if (user.emailVerified) {
@@ -732,6 +753,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: '이메일 인증에 실패했습니다',
+      });
+    }
+  });
+
+  // Verify email with 6-digit code
+  app.post('/api/auth/verify-code', async (req, res) => {
+    try {
+      const { email, code } = req.body;
+      console.log('🔐 Code verification attempt:', { email, code });
+
+      if (!email || !code) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일과 인증 코드를 입력해주세요',
+        });
+      }
+
+      // Find user by email
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      if (!user) {
+        console.log('❌ User not found:', email);
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다',
+        });
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        console.log('⚠️ User already verified:', email);
+        return res.json({
+          success: true,
+          message: '이미 인증된 계정입니다',
+          alreadyVerified: true,
+        });
+      }
+
+      // Check if code matches
+      if (user.verificationCode !== code) {
+        console.log('❌ Code mismatch:', { expected: user.verificationCode, received: code });
+        return res.status(400).json({
+          success: false,
+          message: '인증 코드가 올바르지 않습니다',
+        });
+      }
+
+      // Check if code expired
+      if (user.verificationCodeExpires && new Date() > user.verificationCodeExpires) {
+        console.log('❌ Code expired');
+        return res.status(400).json({
+          success: false,
+          message: '인증 코드가 만료되었습니다. 새로운 코드를 요청해주세요',
+        });
+      }
+
+      // Verify user
+      await db.update(users)
+        .set({
+          emailVerified: true,
+          verificationCode: null,
+          verificationCodeExpires: null,
+        })
+        .where(eq(users.id, user.id));
+
+      console.log('✅ Email verified successfully with code:', email);
+
+      res.json({
+        success: true,
+        message: '이메일 인증이 완료되었습니다! 이제 로그인할 수 있습니다.',
+      });
+    } catch (error) {
+      console.error('Code verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: '인증에 실패했습니다',
+      });
+    }
+  });
+
+  // Resend verification code
+  app.post('/api/auth/resend-code', async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('📧 Resend code request for:', email);
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일을 입력해주세요',
+        });
+      }
+
+      // Find user
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      if (!user) {
+        console.log('❌ User not found:', email);
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다',
+        });
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        console.log('⚠️ User already verified:', email);
+        return res.json({
+          success: true,
+          message: '이미 인증된 계정입니다',
+          alreadyVerified: true,
+        });
+      }
+
+      // Generate new code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Update user
+      await db.update(users)
+        .set({
+          verificationCode,
+          verificationCodeExpires,
+        })
+        .where(eq(users.id, user.id));
+
+      // Send new code
+      try {
+        await emailNotificationService.sendVerificationCode(email, verificationCode);
+        console.log('📧 New verification code sent to:', email);
+
+        res.json({
+          success: true,
+          message: '새로운 인증 코드를 발송했습니다',
+        });
+      } catch (emailError) {
+        console.error('❌ Failed to send email:', emailError);
+        res.status(500).json({
+          success: false,
+          message: '이메일 발송에 실패했습니다',
+        });
+      }
+    } catch (error) {
+      console.error('Resend code error:', error);
+      res.status(500).json({
+        success: false,
+        message: '코드 재발송에 실패했습니다',
       });
     }
   });
