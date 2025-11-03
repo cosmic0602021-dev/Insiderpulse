@@ -36,7 +36,7 @@ export function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }: TrialExp
           onClick={onUpgrade}
           className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 whitespace-nowrap text-sm shadow-lg"
         >
-          {t('fomo.upgradeNow')} $29/mo
+          {t('fomo.upgradeNow')} $14/mo
         </button>
       </div>
     </Alert>
@@ -83,7 +83,7 @@ export function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscr
           onClick={onSubscribe}
           className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 whitespace-nowrap shadow-lg"
         >
-          {t('fomo.subscribeNow')} - $29/mo
+          {t('fomo.subscribeNow')} - $14/mo
         </button>
       </div>
     </Alert>

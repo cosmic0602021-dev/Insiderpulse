@@ -219,8 +219,8 @@ export class AdminMetricsService {
     const totalPaidUsers = paidUsers.length;
 
     // Calculate MRR based on subscription tier
-    // Assuming insider_pro tier is $29/month (adjust as needed)
-    const INSIDER_PRO_MONTHLY_PRICE = 29;
+    // InsiderPulse Pro: $14/month, $112/year (33% discount)
+    const INSIDER_PRO_MONTHLY_PRICE = 14;
     const mrr = totalPaidUsers * INSIDER_PRO_MONTHLY_PRICE;
     const arr = mrr * 12;
 

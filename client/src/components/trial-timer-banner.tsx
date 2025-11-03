@@ -107,7 +107,7 @@ export function TrialExpiredBanner({ onUpgrade }: TrialExpiredBannerProps) {
           onClick={handleUpgrade}
           className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 whitespace-nowrap shadow-lg"
         >
-          {t('trial.subscribeNow')} - $29/mo
+          {t('trial.subscribeNow')} - $14/mo
         </button>
       </div>
     </Alert>

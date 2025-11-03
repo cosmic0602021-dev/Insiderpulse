@@ -88,7 +88,14 @@
       "Bash(else echo \".env file not found\")",
       "Bash(fi)",
       "Bash(timeout 3 curl:*)",
-      "Bash(then echo \"=== .env file exists ===\")"
+      "Bash(then echo \"=== .env file exists ===\")",
+      "Bash(if [ -n \"$ADMIN_API_KEY\" ])",
+      "Bash(then echo \"ADMIN_API_KEY is set (length: $#ADMIN_API_KEY)\")",
+      "Bash(else echo \"ADMIN_API_KEY is NOT set\")",
+      "Bash(if [ -n \"$SESSION_SECRET\" ])",
+      "Bash(then echo \"SESSION_SECRET is set (length: $#SESSION_SECRET)\")",
+      "Bash(else echo \"SESSION_SECRET is NOT set\")",
+      "Bash(timeout 5 curl:*)"
     ],
     "deny": [],
     "ask": []
