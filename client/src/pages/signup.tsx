@@ -142,13 +142,13 @@ export default function SignupPage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                  가입 완료!
+                  {t('auth.signup.success')}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400">
-                  이제 7일 무료 체험을 시작하세요
+                  {t('auth.signup.successDesc')}
                 </p>
                 <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2 font-medium">
-                  카드 등록 페이지로 이동 중...
+                  {t('auth.signup.redirectingToVerification')}
                 </p>
               </div>
             </div>

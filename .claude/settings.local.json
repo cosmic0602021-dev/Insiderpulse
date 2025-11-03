@@ -102,7 +102,8 @@
       "Bash(if [ -n \"$DATABASE_URL\" ])",
       "Bash(then echo \"DATABASE_URL is set (length: $#DATABASE_URL)\")",
       "Bash(else echo \"DATABASE_URL is NOT set\")",
-      "Bash(pm2 logs:*)"
+      "Bash(pm2 logs:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
