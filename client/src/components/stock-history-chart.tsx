@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ interface StockHistoryChartProps {
   tradePrice: number;
 }
 
-export default function StockHistoryChart({ 
+// ✅ Memoized to prevent unnecessary re-renders
+const StockHistoryChart = memo(function StockHistoryChart({ 
   ticker, 
   tradeDate, 
   tradePrice 
@@ -26,20 +27,16 @@ export default function StockHistoryChart({
   const fromDate = new Date(tradeDate).toISOString().split('T')[0];
   const toDate = new Date().toISOString().split('T')[0];
 
-  // Fetch stock price history - 🚨 임시 비활성화
+  // Fetch stock price history - ✅ Optimized with stable query key
   const { data: historyData = [], isLoading, error } = useQuery<StockPriceHistory[]>({
     queryKey: ['/api/stocks', ticker, 'history', fromDate, toDate],
-    enabled: false, // 🚨 완전히 비활성화해서 무한 루프 방지
-    staleTime: 15 * 60 * 1000, // 15분으로 증가
-    cacheTime: 30 * 60 * 1000, // 30분 캐시
+    enabled: !!ticker && !!fromDate && !!toDate, // Only fetch when all params are available
+    staleTime: 15 * 60 * 1000, // 15 minutes cache
+    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection (renamed from cacheTime)
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchInterval: false, // 자동 리페치 비활성화
-    refetchOnReconnect: false, // 재연결시 리페치 비활성화
+    refetchOnReconnect: false,
     queryFn: async () => {
-      console.log('🚨 stock-history-chart.tsx fetch called but temporarily disabled to prevent infinite loops');
-      return []; // 🚨 임시 비활성화
-      
       const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
       if (!response.ok) throw new Error('Failed to fetch stock price history');
       return response.json();
@@ -63,19 +60,22 @@ export default function StockHistoryChart({
     });
   };
 
-  // Process data for chart
-  const processedData = historyData.map((item) => ({
-    date: item.date,
-    close: parseFloat(item.close),
-    open: parseFloat(item.open),
-    high: parseFloat(item.high),
-    low: parseFloat(item.low),
-    volume: item.volume,
-    formattedDate: formatDate(item.date)
-  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Process data for chart - ✅ Memoized for performance
+  const processedData = useMemo(() =>
+    historyData.map((item) => ({
+      date: item.date,
+      close: parseFloat(item.close),
+      open: parseFloat(item.open),
+      high: parseFloat(item.high),
+      low: parseFloat(item.low),
+      volume: item.volume,
+      formattedDate: formatDate(item.date)
+    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [historyData]
+  );
 
-  // Add trade price point
-  const tradePoint = {
+  // Add trade price point - ✅ Memoized
+  const tradePoint = useMemo(() => ({
     date: fromDate,
     close: tradePrice,
     open: tradePrice,
@@ -84,9 +84,13 @@ export default function StockHistoryChart({
     volume: 0,
     formattedDate: formatDate(fromDate),
     isTrade: true
-  };
+  }), [fromDate, tradePrice]);
 
-  const chartData = [tradePoint, ...processedData];
+  // Final chart data - ✅ Memoized
+  const chartData = useMemo(() =>
+    [tradePoint, ...processedData],
+    [tradePoint, processedData]
+  );
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -250,4 +254,6 @@ export default function StockHistoryChart({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default StockHistoryChart;

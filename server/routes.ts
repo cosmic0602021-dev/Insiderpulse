@@ -809,6 +809,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const toDate = req.query.to as string;
       const sortBy = (req.query.sortBy as 'createdAt' | 'filedDate') || 'filedDate';
 
+      // Transaction type filtering - defaults to pure buy/sell only
+      // This filters out grants, option exercises, awards, etc.
+      const transactionFilter = req.query.transactionTypes as string;
+      const transactionTypes = transactionFilter
+        ? transactionFilter.split(',')
+        : ['BUY', 'SELL', 'PURCHASE', 'SALE']; // Default: pure buy/sell only
+
       // Access control: check if user has real-time access
       const userId = getUserIdFromToken(req);
 
@@ -829,7 +836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`   Request: limit=${limit}, offset=${offset}, sortBy=${sortBy}`);
       }
 
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes);
 
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);

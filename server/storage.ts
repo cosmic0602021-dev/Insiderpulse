@@ -100,17 +100,38 @@ export class MemStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
+  async getInsiderTrades(
+    limit = 20,
+    offset = 0,
+    verifiedOnly = false,
+    fromDate?: string,
+    toDate?: string,
+    sortBy: 'createdAt' | 'filedDate' = 'filedDate',
+    transactionTypes: string[] = ['BUY', 'SELL', 'PURCHASE', 'SALE'] // Default to pure buy/sell only
+  ): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
     console.log(`🔍 [DEBUG] MemStorage has ${trades.length} total trades in memory`);
-    
+
     // 🔧 TEMPORARILY DISABLED: Filter out HOLD trades to show all collected data
     // trades = trades.filter(trade => trade.signalType !== 'HOLD');
-    
+
     if (verifiedOnly) {
       trades = trades.filter(trade => trade.isVerified === true);
     }
-    
+
+    // Filter by transaction type (default: only BUY/SELL - filters out grants, options, etc.)
+    if (transactionTypes && transactionTypes.length > 0) {
+      trades = trades.filter(trade => {
+        const tradeType = trade.tradeType?.toUpperCase() || '';
+        const transactionCode = trade.transactionCode?.toUpperCase() || '';
+        return transactionTypes.some(type =>
+          tradeType.includes(type.toUpperCase()) ||
+          (type === 'BUY' && transactionCode === 'P') ||
+          (type === 'SELL' && transactionCode === 'S')
+        );
+      });
+    }
+
     // Apply date filtering
     if (fromDate || toDate) {
       trades = trades.filter(trade => {

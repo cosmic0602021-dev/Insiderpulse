@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/language-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +17,8 @@ export default function Analytics() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Process analytics data
-  const processAnalytics = () => {
+  // Process analytics data - ✅ Memoized for performance
+  const analytics = useMemo(() => {
     if (!trades.length) return null;
 
     // Trade type distribution
@@ -64,9 +65,7 @@ export default function Analytics() {
       totalTrades: trades.length,
       avgTradeSize: trades.reduce((sum, trade) => sum + trade.totalValue, 0) / trades.length
     };
-  };
-
-  const analytics = processAnalytics();
+  }, [trades]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -95,11 +94,15 @@ export default function Analytics() {
     );
   }
 
-  const pieData = Object.entries(analytics.tradeTypes).map(([type, count]) => ({
-    name: type,
-    value: count,
-    percentage: ((count / analytics.totalTrades) * 100).toFixed(1)
-  }));
+  // Memoized pie chart data - ✅ Only recomputes when analytics changes
+  const pieData = useMemo(() =>
+    Object.entries(analytics.tradeTypes).map(([type, count]) => ({
+      name: type,
+      value: count,
+      percentage: ((count / analytics.totalTrades) * 100).toFixed(1)
+    })),
+    [analytics]
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

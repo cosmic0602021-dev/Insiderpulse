@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -10,7 +11,8 @@ interface PriceComparisonChartProps {
   filedDate: Date;
 }
 
-export default function PriceComparisonChart({ 
+// ✅ Memoized to prevent unnecessary re-renders
+const PriceComparisonChart = memo(function PriceComparisonChart({ 
   tradePrice, 
   currentPrice, 
   filedDate 
@@ -161,4 +163,6 @@ export default function PriceComparisonChart({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default PriceComparisonChart;

@@ -25,6 +25,7 @@ export default function PremiumCheckout() {
       description: "Real-time insider trading data & AI analysis",
       features: [
         "Real-time insider trade alerts (no 48h delay)",
+        "Pure buy/sell signals only (no grants, options, awards)",
         "AI-powered trade analysis & predictions",
         "Advanced pattern detection & signals",
         "Executive trade tracking (CEO, CFO, etc.)",
@@ -45,6 +46,7 @@ export default function PremiumCheckout() {
       description: "Real-time insider trading data & AI analysis",
       features: [
         "Real-time insider trade alerts (no 48h delay)",
+        "Pure buy/sell signals only (no grants, options, awards)",
         "AI-powered trade analysis & predictions",
         "Advanced pattern detection & signals",
         "Executive trade tracking (CEO, CFO, etc.)",
