@@ -2,6 +2,7 @@ import axios from 'axios';
 import OpenAI from 'openai';
 import { storage } from './storage';
 import type { InsiderTrade } from '@shared/schema';
+import { getCompanyNews, type CompanyNews } from './finnhub-collector';
 
 interface NewsArticle {
   id: string;
@@ -158,6 +159,7 @@ class NewsCorrelationService {
     try {
       // 여러 뉴스 소스에서 데이터 수집
       const newsFromAPIs = await Promise.all([
+        this.fetchFromFinnhubNews(ticker, trade.companyName, startDate, endDate),
         this.fetchFromNewsAPI(ticker, trade.companyName, startDate, endDate),
         this.fetchFromAlphaVantageNews(ticker, startDate, endDate),
         this.fetchFromPolygonNews(ticker, startDate, endDate)
@@ -247,6 +249,50 @@ class NewsCorrelationService {
   private async fetchFromPolygonNews(ticker: string, startDate: Date, endDate: Date): Promise<NewsArticle[]> {
     // Polygon API는 유료 서비스이므로 여기서는 예시만 제공
     return [];
+  }
+
+  // Finnhub News에서 뉴스 수집
+  private async fetchFromFinnhubNews(ticker: string, companyName: string, startDate: Date, endDate: Date): Promise<NewsArticle[]> {
+    try {
+      // 거래 전후 30일간의 뉴스 가져오기
+      const daysBack = Math.ceil((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const finnhubNews = await getCompanyNews(ticker, Math.min(daysBack, 30));
+
+      // Finnhub CompanyNews를 NewsArticle 형식으로 변환
+      return finnhubNews
+        .filter(article => {
+          const publishDate = new Date(article.publishedDate);
+          return publishDate >= startDate && publishDate <= endDate;
+        })
+        .map(article => {
+          const relevanceScore = this.calculateRelevanceScore(
+            { title: article.headline, description: article.summary },
+            ticker,
+            companyName
+          );
+
+          const sentiment = this.analyzeSentiment(article.headline + ' ' + article.summary);
+          const categories = this.categorizeNews(article.headline + ' ' + article.summary);
+
+          return {
+            id: `finnhub_${article.symbol}_${article.publishedDate.getTime()}`,
+            title: article.headline,
+            summary: article.summary,
+            publishedDate: new Date(article.publishedDate).toISOString(),
+            source: article.source || 'Finnhub',
+            url: article.url,
+            ticker,
+            companyName,
+            sentiment,
+            categories,
+            relevanceScore
+          };
+        });
+
+    } catch (error) {
+      console.error('Finnhub News 요청 실패:', error);
+      return [];
+    }
   }
 
   // 뉴스 기사 정규화

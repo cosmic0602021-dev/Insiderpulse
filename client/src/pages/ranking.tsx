@@ -81,7 +81,7 @@ export default function Ranking() {
     try {
       setSelectedTicker(ticker);
       // Get recent trade data for this ticker
-      const allTrades = await apiClient.getInsiderTrades(100, 0); // Get recent trades
+      const allTrades = await apiClient.getInsiderTrades(100, 0);
       const tickerTrades = allTrades.filter(trade => trade.ticker === ticker);
 
       if (tickerTrades && tickerTrades.length > 0) {
@@ -92,92 +92,68 @@ export default function Ranking() {
         // Use the most recent trade
         const recentTrade = sortedTrades[0];
 
-        // AI 분석 데이터 생성
+        // Fetch real comprehensive analysis from API
+        let comprehensiveAnalysis = null;
+        try {
+          console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
+          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=ko`);
+
+          if (response.ok) {
+            comprehensiveAnalysis = await response.json();
+            console.log('Comprehensive analysis fetched successfully');
+          } else {
+            console.warn('Failed to fetch comprehensive analysis, using fallback');
+          }
+        } catch (analysisError) {
+          console.error('Error fetching comprehensive analysis:', analysisError);
+        }
+
+        // Calculate additional display metrics
         const buyTrades = tickerTrades.filter(t => t.tradeType === 'BUY' || t.tradeType === 'PURCHASE');
         const sellTrades = tickerTrades.filter(t => t.tradeType === 'SELL' || t.tradeType === 'SALE');
         const buyRatio = buyTrades.length / (buyTrades.length + sellTrades.length);
-        const avgPrice = tickerTrades.reduce((sum, t) => sum + (t.pricePerShare || 0), 0) / tickerTrades.length;
         const currentPrice = recentTrade.pricePerShare * (1 + Math.random() * 0.1 - 0.05);
 
-        // 목표 가격 계산
-        const priceTargets = {
-          conservative: avgPrice * (buyRatio > 0.7 ? 1.05 : 0.95),
-          realistic: avgPrice * (buyRatio > 0.7 ? 1.15 : 1.0),
-          optimistic: avgPrice * (buyRatio > 0.7 ? 1.25 : 1.05)
-        };
-
-        // 리스크 평가
-        const riskLevel = buyRatio > 0.7 ? 'LOW' : buyRatio > 0.5 ? 'MEDIUM' : 'HIGH';
-        const sentiment = buyRatio > 0.7 ? 'BULLISH' : buyRatio > 0.5 ? 'NEUTRAL' : 'BEARISH';
-
-        const comprehensiveAnalysis = {
-          executiveSummary: `${companyName}의 최근 ${tickerTrades.length}건의 내부자 거래를 분석한 결과, ${buyRatio > 0.7 ? '강한 매수세' : buyRatio > 0.5 ? '균형잡힌 거래' : '매도 우세'} 패턴이 관찰됩니다. 내부자들의 평균 진입 가격은 $${avgPrice.toFixed(2)}이며, ${buyRatio > 0.7 ? '긍정적인' : '신중한'} 투자 심리를 보이고 있습니다.`,
-          priceTargets,
-          riskAssessment: {
-            level: riskLevel,
-            mitigation: buyRatio > 0.7 ? '내부자 매수세가 강하나, 시장 변동성을 고려한 분산 투자를 권장합니다.' : '매도 비중이 높아 단기 조정 가능성에 유의하세요.'
-          },
-          actionableRecommendation: buyRatio > 0.7
-            ? `${companyName}의 내부자들이 적극적으로 매수하고 있어 긍정적 신호입니다. 평균 진입가 $${avgPrice.toFixed(2)} 근처에서 분할 매수를 고려하세요.`
-            : `내부자 거래 패턴이 혼재되어 있습니다. 추가 정보 확인 후 신중한 접근이 필요합니다.`,
-          confidence: Math.floor(70 + (buyRatio > 0.7 ? 25 : 10)),
-          timeHorizon: '3-6개월',
-          marketContext: {
-            sentiment,
-            keyFactors: [
-              `내부자 ${buyTrades.length}건 매수 vs ${sellTrades.length}건 매도`,
-              `평균 거래가: $${avgPrice.toFixed(2)}`,
-              `최근 30일 거래 활동: ${tickerTrades.length}건`
-            ]
-          },
-          catalysts: buyRatio > 0.7 ? [
-            '임원진의 지속적인 매수 활동',
-            '내부자 신뢰도 증가 추세',
-            `${buyTrades.length}명의 동시 진입 패턴`
-          ] : [
-            '내부자 거래 패턴 관찰 필요',
-            '시장 상황 변화 모니터링'
-          ]
-        };
-
-        // Enhance trade data with additional information
+        // Enhance trade data with real analysis
         const enhancedTrade = {
           ...recentTrade,
           companyName: companyName,
           ticker: ticker,
           currentPrice,
-          predictionAccuracy: Math.floor(Math.random() * 20 + 75), // 75-95%
+          predictionAccuracy: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
           impactPrediction: buyRatio > 0.7 ? `+${(Math.random() * 5 + 2).toFixed(1)}%` : `-${(Math.random() * 3 + 1).toFixed(1)}%`,
-          aiInsight: `${companyName}의 최근 내부자 거래 패턴을 분석한 결과, ${recentTrade.tradeType === 'BUY' ? '긍정적인' : '주의 깊게 관찰해야 할'} 신호를 보이고 있습니다.`,
-          comprehensiveAnalysis
+          aiInsight: comprehensiveAnalysis
+            ? comprehensiveAnalysis.executiveSummary
+            : `${companyName}의 최근 내부자 거래 패턴을 분석한 결과, ${recentTrade.tradeType === 'BUY' ? '긍정적인' : '주의 깊게 관찰해야 할'} 신호를 보이고 있습니다.`,
+          comprehensiveAnalysis: comprehensiveAnalysis || {
+            executiveSummary: `${companyName}에 대한 분석을 진행 중입니다.`,
+            actionableRecommendation: '추가 정보를 수집하고 있습니다.',
+            priceTargets: {
+              conservative: recentTrade.pricePerShare * 0.95,
+              realistic: recentTrade.pricePerShare * 1.05,
+              optimistic: recentTrade.pricePerShare * 1.15,
+              timeHorizon: '3-6개월'
+            },
+            riskAssessment: {
+              level: 'MEDIUM',
+              factors: ['데이터 수집 중'],
+              mitigation: '추가 정보 확인 필요'
+            },
+            confidence: 50,
+            timeHorizon: '3-6개월'
+          }
         };
 
         setSelectedTradeData(enhancedTrade);
         setShowTradeModal(true);
       } else {
-        // If no trades found for this ticker, show a placeholder modal
-        const placeholderTrade = {
-          ticker: ticker,
-          companyName: companyName,
-          traderName: '내부자',
-          traderTitle: '임원',
-          tradeType: 'BUY',
-          shares: 1000,
-          pricePerShare: 50,
-          totalValue: 50000,
-          filedDate: new Date().toISOString(),
-          secFilingUrl: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${ticker}&type=4&dateb=&owner=include&count=100`,
-          currentPrice: 52.5,
-          predictionAccuracy: 85,
-          impactPrediction: '+3.2%',
-          aiInsight: `${companyName}에 대한 상세한 거래 정보가 곧 업데이트될 예정입니다.`
-        };
-
-        setSelectedTradeData(placeholderTrade);
-        setShowTradeModal(true);
+        // If no trades found for this ticker, show info message
+        console.log(`No trades found for ${ticker}`);
+        alert(`${companyName}에 대한 최근 거래 정보가 없습니다.`);
       }
     } catch (error) {
       console.error('Failed to fetch trade data:', error);
+      alert('거래 데이터를 불러오는데 실패했습니다.');
     }
   };
 

@@ -95,7 +95,8 @@
       "Bash(if [ -n \"$SESSION_SECRET\" ])",
       "Bash(then echo \"SESSION_SECRET is set (length: $#SESSION_SECRET)\")",
       "Bash(else echo \"SESSION_SECRET is NOT set\")",
-      "Bash(timeout 5 curl:*)"
+      "Bash(timeout 5 curl:*)",
+      "Bash(PORT=5002 NODE_ENV=development npm run dev:*)"
     ],
     "deny": [],
     "ask": []

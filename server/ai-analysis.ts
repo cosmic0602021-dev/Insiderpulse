@@ -3,6 +3,14 @@ import OpenAI from "openai";
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+interface NewsContext {
+  headline: string;
+  summary: string;
+  sentiment: string;
+  publishedDate: Date;
+  source: string;
+}
+
 interface InsiderTradeData {
   companyName: string;
   ticker: string;
@@ -13,6 +21,7 @@ interface InsiderTradeData {
   pricePerShare: number;
   totalValue: number;
   ownershipPercentage: number;
+  recentNews?: NewsContext[]; // Optional recent news for context
 }
 
 interface AIAnalysisResult {
@@ -82,9 +91,32 @@ export class AIAnalysisService {
   private buildAnalysisPrompt(tradeData: InsiderTradeData): string {
     const tradeValue = (tradeData.totalValue / 1000000).toFixed(1); // Convert to millions
     const isLargePosition = tradeData.ownershipPercentage > 1.0;
-    const isExecutive = ['CEO', 'CFO', 'President', 'Chairman', 'Director'].some(title => 
+    const isExecutive = ['CEO', 'CFO', 'President', 'Chairman', 'Director'].some(title =>
       tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
     );
+
+    // Build news context if available
+    let newsSection = '';
+    if (tradeData.recentNews && tradeData.recentNews.length > 0) {
+      const newsItems = tradeData.recentNews.slice(0, 5).map((news, idx) => {
+        const date = new Date(news.publishedDate).toLocaleDateString();
+        return `${idx + 1}. [${date}] ${news.headline} (${news.sentiment}) - ${news.summary.substring(0, 150)}${news.summary.length > 150 ? '...' : ''}`;
+      }).join('\n');
+
+      const positiveCount = tradeData.recentNews.filter(n => n.sentiment === 'POSITIVE').length;
+      const negativeCount = tradeData.recentNews.filter(n => n.sentiment === 'NEGATIVE').length;
+      const neutralCount = tradeData.recentNews.filter(n => n.sentiment === 'NEUTRAL').length;
+
+      newsSection = `
+
+**Recent News Context** (Last 30 days - ${tradeData.recentNews.length} articles):
+- Sentiment Distribution: ${positiveCount} Positive, ${negativeCount} Negative, ${neutralCount} Neutral
+- Key Headlines:
+${newsItems}
+
+**IMPORTANT**: Consider how this news context relates to the insider's trading decision. Does the trade align with or contradict recent news sentiment? Are there specific catalysts or events that might explain the timing of this trade?
+`;
+    }
 
     return `
 Analyze this insider trading transaction and provide investment insights:
@@ -96,13 +128,15 @@ Analyze this insider trading transaction and provide investment insights:
 **Price per Share**: $${tradeData.pricePerShare}
 **Total Value**: $${tradeData.totalValue.toLocaleString()} (${tradeValue}M)
 **Ownership**: ${tradeData.ownershipPercentage}%
-
+${newsSection}
 Consider these factors:
 - Executive level insider (${isExecutive ? 'Yes' : 'No'})
 - Large position relative to ownership (${isLargePosition ? 'Yes' : 'No'})
 - Trade size and market impact
 - Typical insider trading patterns
 - Market timing considerations
+${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- Recent news sentiment and correlation with trade timing' : ''}
+${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- Potential catalysts or events driving the insider\'s decision' : ''}
 
 Provide analysis in this exact JSON format:
 {
@@ -110,15 +144,15 @@ Provide analysis in this exact JSON format:
   "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
   "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
   "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
-  "recommendation": "<concise investment recommendation based on this trade>"
+  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' and recent news' : ''}>"
 }
 
 Guidelines:
-- significanceScore: 80-100 for major executives, large trades, unusual patterns
-- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades  
-- keyInsights: 3 specific, actionable observations about this trade
+- significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ', or trades aligned with major news events' : ''}
+- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? '. Consider news sentiment alignment' : ''}
+- keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' incorporating recent news context' : ''}
 - riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
-- recommendation: One sentence summarizing investment action
+- recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' considering both trade data and news sentiment' : ''}
 `;
   }
 

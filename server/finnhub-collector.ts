@@ -28,6 +28,29 @@ interface FinnhubInsiderResponse {
   data: FinnhubInsiderTransaction[];
 }
 
+interface FinnhubNewsArticle {
+  category: string;
+  datetime: number; // Unix timestamp
+  headline: string;
+  id: number;
+  image: string;
+  related: string; // ticker symbol
+  source: string;
+  summary: string;
+  url: string;
+}
+
+export interface CompanyNews {
+  symbol: string;
+  headline: string;
+  summary: string;
+  source: string;
+  url: string;
+  publishedDate: Date;
+  category: string;
+  imageUrl?: string;
+}
+
 // 주요 기업 리스트 (무료 플랜 제한 고려)
 const MAJOR_TICKERS = [
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
@@ -59,6 +82,61 @@ async function getInsiderTransactions(symbol: string): Promise<FinnhubInsiderTra
       return [];
     }
     throw error;
+  }
+}
+
+/**
+ * Finnhub API를 사용하여 특정 기업의 최근 뉴스를 가져옵니다
+ * @param symbol 주식 티커
+ * @param daysBack 조회할 과거 일수 (기본: 30일)
+ * @returns 뉴스 기사 배열
+ */
+export async function getCompanyNews(symbol: string, daysBack: number = 30): Promise<CompanyNews[]> {
+  try {
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - daysBack);
+
+    const formatDate = (date: Date) => date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    const response = await axios.get<FinnhubNewsArticle[]>(
+      `https://finnhub.io/api/v1/company-news`,
+      {
+        params: {
+          symbol: symbol,
+          from: formatDate(fromDate),
+          to: formatDate(toDate),
+          token: FINNHUB_API_KEY
+        },
+        timeout: 15000
+      }
+    );
+
+    const articles = response.data || [];
+
+    return articles.map(article => ({
+      symbol: symbol,
+      headline: article.headline,
+      summary: article.summary,
+      source: article.source,
+      url: article.url,
+      publishedDate: new Date(article.datetime * 1000), // Unix timestamp to Date
+      category: article.category,
+      imageUrl: article.image
+    }));
+
+  } catch (error: any) {
+    if (error.response?.status === 429) {
+      console.log(`   ⏸️  Rate limit - 잠시 대기...`);
+      await delay(2000);
+      return [];
+    }
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      console.error(`   ❌ API 인증 실패 (뉴스 API는 유료 플랜이 필요할 수 있습니다)`);
+      return [];
+    }
+    console.error(`   ❌ 뉴스 가져오기 실패: ${error.message}`);
+    return [];
   }
 }
 

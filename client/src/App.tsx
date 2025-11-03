@@ -118,6 +118,25 @@ function AppContent() {
 }
 
 export default function App() {
+  // Keep-alive mechanism to prevent Replit autoscale spindown
+  useEffect(() => {
+    const keepAlive = async () => {
+      try {
+        await fetch('/api/health');
+      } catch (error) {
+        // Silently fail - health check is best effort
+      }
+    };
+
+    // Ping health endpoint every 5 minutes
+    const interval = setInterval(keepAlive, 5 * 60 * 1000);
+
+    // Initial ping
+    keepAlive();
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

@@ -83,7 +83,21 @@ export function TradeDetailModal({
   const [priceHistory, setPriceHistory] = useState<Array<{ date: string; close: number; }>>([]);
   const [isLoadingPriceHistory, setIsLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState<string | null>(null);
+  const [expandedNews, setExpandedNews] = useState<Set<number>>(new Set());
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Toggle news item expansion
+  const toggleNewsExpansion = (index: number) => {
+    setExpandedNews(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
 
   // PWA 설치 여부 확인
   useEffect(() => {
@@ -861,6 +875,47 @@ export function TradeDetailModal({
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-sm mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
+
+                  {/* 종합의견 - Overall Opinion at the top */}
+                  {(trade.comprehensiveAnalysis || comprehensiveAnalysis) && !isLoadingAnalysis && (() => {
+                    const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
+                    const sentiment = analysis.marketContext?.sentiment || 'NEUTRAL';
+                    const isBullish = sentiment === 'BULLISH';
+                    const isBearish = sentiment === 'BEARISH';
+
+                    return (
+                      <div className={`mb-4 p-4 rounded-lg border-2 ${
+                        isBullish ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
+                        isBearish ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+                        'bg-gray-50 dark:bg-gray-900/20 border-gray-500'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-bold text-base">📊 종합의견</h5>
+                          <Badge className={`text-sm px-3 py-1 font-bold ${
+                            isBullish ? 'bg-green-600 text-white' :
+                            isBearish ? 'bg-red-600 text-white' :
+                            'bg-gray-600 text-white'
+                          }`}>
+                            {isBullish ? '💹 매수 추천' : isBearish ? '📉 매도 추천' : '⏸️ 보류/관망'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">
+                              {isBullish ? '내부자 매수 활동이 긍정적입니다. 투자 검토를 권장합니다.' :
+                               isBearish ? '내부자 매도 활동이 감지되었습니다. 신중한 접근이 필요합니다.' :
+                               '내부자 거래 패턴이 혼재되어 있습니다. 추가 정보 확인이 필요합니다.'}
+                            </p>
+                          </div>
+                          <div className="text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border">
+                            <p className="text-xs text-muted-foreground">신뢰도</p>
+                            <p className="text-lg font-bold text-blue-600">{analysis.confidence}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="space-y-3 text-sm leading-relaxed" data-testid="text-ai-analysis">
                     {isLoadingAnalysis ? (
                       <div className="flex items-center justify-center p-8">
@@ -918,14 +973,6 @@ export function TradeDetailModal({
                               <p className="text-xs">{analysis.riskAssessment.mitigation}</p>
                             </div>
                           </div>
-                        </div>
-
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
-                          <h6 className="font-medium mb-2 flex items-center gap-1">
-                            <Lightbulb className="h-3 w-3 text-amber-600" />
-                            {t('tradeDetail.investmentRecommendation')}
-                          </h6>
-                          <p className="text-sm">{analysis.actionableRecommendation}</p>
                         </div>
 
                         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700">
@@ -998,14 +1045,19 @@ export function TradeDetailModal({
                                   const sentimentLower = news.sentiment.toLowerCase();
                                   const isPositive = sentimentLower.includes('positive') || sentimentLower.includes('bullish');
                                   const isNegative = sentimentLower.includes('negative') || sentimentLower.includes('bearish');
+                                  const isExpanded = expandedNews.has(index);
 
                                   return (
-                                    <div key={index} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                                      <div className="flex items-start justify-between mb-2">
-                                        <h7 className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1">
+                                    <div
+                                      key={index}
+                                      className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:shadow-md transition-all"
+                                      onClick={() => toggleNewsExpansion(index)}
+                                    >
+                                      <div className="flex items-start justify-between">
+                                        <h7 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
                                           {news.title}
                                         </h7>
-                                        <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap ${
+                                        <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 ${
                                           isPositive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                                           isNegative ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                                           'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -1014,12 +1066,23 @@ export function TradeDetailModal({
                                            isNegative ? `📉 ${t('tradeDetail.negative')}` : `⚖️ ${t('tradeDetail.neutral')}`}
                                         </Badge>
                                       </div>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
-                                        {news.summary}
-                                      </p>
-                                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                        <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
-                                        <span>{news.source || 'Market Analysis'}</span>
+
+                                      {/* Expandable details */}
+                                      {isExpanded && (
+                                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
+                                            {news.summary}
+                                          </p>
+                                          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                            <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
+                                            <span>{news.source || 'Market Analysis'}</span>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Click indicator */}
+                                      <div className="text-center mt-2 text-xs text-gray-400 dark:text-gray-500">
+                                        {isExpanded ? '▲ 클릭하여 접기' : '▼ 클릭하여 자세히 보기'}
                                       </div>
                                     </div>
                                   );

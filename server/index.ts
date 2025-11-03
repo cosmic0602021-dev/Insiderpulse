@@ -113,6 +113,18 @@ app.use((req, res, next) => {
   let port = parseInt(process.env.PORT || '5000', 10);
 
   // Start server with proper error handling
+  // Add error event listener BEFORE calling listen (catches async errors)
+  server.on('error', (error: any) => {
+    console.error('❌ Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use`);
+      console.error(`💡 Current PORT setting: ${process.env.PORT || '5000 (default)'}`);
+      console.error(`💡 To fix: Change PORT in .env file or kill the process using port ${port}`);
+      console.error(`💡 You can also try: pkill -f "node.*server" or fuser -k ${port}/tcp`);
+    }
+    process.exit(1);
+  });
+
   try {
     server.listen({
       port: port,

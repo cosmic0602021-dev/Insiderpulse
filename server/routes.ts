@@ -47,6 +47,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 let wss: WebSocketServer;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // 🏥 HEALTH CHECK ENDPOINT - Prevents Replit autoscale spindown
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
   // 💳 STRIPE PAYMENT ENDPOINTS FOR REAL CARD PROCESSING
   
   // Create payment intent for one-time premium features
@@ -1498,7 +1507,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Trade not found' });
       }
 
-      // Generate AI analysis
+      // Fetch recent news for context (once for both AI analysis and newsAnalysis section)
+      let recentNews: any[] = [];
+      let newsCorrelationResult: any = null;
+      try {
+        console.log(`Fetching news correlation for trade ${tradeId}...`);
+        const newsPromise = newsCorrelationService.analyzeNewsCorrelation(tradeId);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('News fetch timeout')), 10000)
+        );
+        newsCorrelationResult = await Promise.race([newsPromise, timeoutPromise]) as any;
+
+        if (newsCorrelationResult && newsCorrelationResult.relatedNews) {
+          recentNews = newsCorrelationResult.relatedNews.slice(0, 10).map((article: any) => ({
+            headline: article.title,
+            summary: article.summary,
+            sentiment: article.sentiment,
+            publishedDate: new Date(article.publishedDate),
+            source: article.source
+          }));
+        }
+      } catch (error) {
+        console.log('Could not fetch news (continuing without news):', error);
+      }
+
+      // Generate AI analysis with news context
       const aiService = new AIAnalysisService();
       const analysis = await aiService.analyzeInsiderTrade({
         companyName: trade.companyName,
@@ -1509,7 +1542,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shares: trade.shares,
         pricePerShare: trade.pricePerShare,
         totalValue: trade.totalValue,
-        ownershipPercentage: trade.ownershipPercentage || 0
+        ownershipPercentage: trade.ownershipPercentage || 0,
+        recentNews: recentNews.length > 0 ? recentNews : undefined
       });
 
       // Translation helpers
@@ -1562,80 +1596,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         catalysts: analysis.keyInsights,
         timeHorizon: t('timeHorizon'),
         confidence: analysis.significanceScore,
-        newsAnalysis: (() => {
-          const newsItems = [];
+newsAnalysis: (() => {
+          // Reuse the news correlation result already fetched above
+          if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
+            // Use real news data
+            const newsItems = newsCorrelationResult.relatedNews
+              .slice(0, 10) // Top 10 most relevant news
+              .map((article: any) => ({
+                title: article.title,
+                summary: article.summary,
+                sentiment: article.sentiment,
+                published: new Date(article.publishedDate),
+                relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
+                source: article.source
+              }));
+
+            const positiveCount = newsItems.filter((n: any) =>
+              n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
+            ).length;
+            const negativeCount = newsItems.filter((n: any) =>
+              n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
+            ).length;
+
+            return {
+              totalNews: newsCorrelationResult.relatedNews.length,
+              positiveCount,
+              negativeCount,
+              majorNews: newsItems,
+              // Additional insights from news correlation
+              correlationScore: newsCorrelationResult.correlationScore,
+              aiInsights: newsCorrelationResult.aiInsights
+            };
+          }
+
+          // Fallback to basic analysis if no news available
+          console.log('No news available, using fallback analysis');
           const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
-
-          // News 1: Main trade information
-          const tradeAction = isBuy ?
-            { en: 'purchased', ko: '매수했습니다', ja: '購入しました', zh: '购买了' } :
-            { en: 'sold', ko: '매도했습니다', ja: '売却しました', zh: '出售了' };
-
-          newsItems.push({
-            title: `${trade.traderTitle || 'Insider'} ${tradeAction[language] || tradeAction.en} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`,
+          const fallbackNews = [{
+            title: `${trade.traderTitle || 'Insider'} ${isBuy ? 'purchased' : 'sold'} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`,
             summary: isBuy ?
-              (language === 'ko' ? `총 ${(trade.totalValue / 1000).toFixed(0)}K 규모의 매수 - 긍정적 신호` :
-               language === 'ja' ? `総額${(trade.totalValue / 1000).toFixed(0)}Kの買い付け - ポジティブなシグナル` :
-               language === 'zh' ? `总计${(trade.totalValue / 1000).toFixed(0)}K的购买 - 积极信号` :
-               `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected`) :
-              (language === 'ko' ? `${(trade.totalValue / 1000).toFixed(0)}K 규모 매도 - 주의 관찰 필요` :
-               language === 'ja' ? `${(trade.totalValue / 1000).toFixed(0)}K規模の売却 - 注意深く監視が必要` :
-               language === 'zh' ? `${(trade.totalValue / 1000).toFixed(0)}K规模出售 - 需要谨慎观察` :
-               `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`),
+              `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected` :
+              `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`,
             sentiment: isBuy ? 'BULLISH' : 'BEARISH',
             published: new Date(trade.filedDate),
             relevanceScore: 0.95,
             source: 'SEC Form 4'
-          });
-
-          // News 2: Insider information
-          newsItems.push({
-            title: `${trade.traderName} - ${trade.traderTitle || 'Executive'}`,
-            summary: isBuy ?
-              (language === 'ko' ? `임원의 적극적 매수는 회사 전망에 대한 강한 신뢰를 나타냅니다` :
-               language === 'ja' ? `経営陣の積極的な購入は会社の見通しに対する強い信頼を示しています` :
-               language === 'zh' ? `高管积极购买表明对公司前景充满信心` :
-               `Executive buying signals strong confidence in company outlook`) :
-              (language === 'ko' ? `임원의 매도 - 포트폴리오 조정 또는 개인 사유일 수 있음` :
-               language === 'ja' ? `経営陣の売却 - ポートフォリオ調整または個人的理由の可能性` :
-               language === 'zh' ? `高管出售 - 可能是投资组合调整或个人原因` :
-               `Insider selling - May be portfolio rebalancing or personal reasons`),
-            sentiment: isBuy ? 'POSITIVE' : 'NEUTRAL',
-            published: new Date(trade.filedDate),
-            relevanceScore: 0.85,
-            source: 'InsiderPulse Analysis'
-          });
-
-          // News 3: Price analysis
-          const priceLevel = trade.pricePerShare > 100 ? 'premium' : trade.pricePerShare > 50 ? 'moderate' : 'value';
-          newsItems.push({
-            title: language === 'ko' ? `주가 $${trade.pricePerShare.toFixed(2)}에 거래 체결` :
-                   language === 'ja' ? `株価$${trade.pricePerShare.toFixed(2)}で取引成立` :
-                   language === 'zh' ? `以股价$${trade.pricePerShare.toFixed(2)}成交` :
-                   `Transaction executed at $${trade.pricePerShare.toFixed(2)} share price`,
-            summary: isBuy ?
-              (language === 'ko' ? `현재 가격 수준에서의 매수는 ${priceLevel === 'premium' ? '프리미엄 가격에도 불구하고' : ''} 강한 확신을 시사` :
-               language === 'ja' ? `現在の価格レベルでの購入は${priceLevel === 'premium' ? 'プレミアム価格にもかかわらず' : ''}強い確信を示唆` :
-               language === 'zh' ? `当前价格水平的购买${priceLevel === 'premium' ? '尽管价格溢价' : ''}表明强烈信心` :
-               `Buying at current levels ${priceLevel === 'premium' ? 'despite premium pricing ' : ''}indicates strong conviction`) :
-              (language === 'ko' ? `기술적 분석 필요 - 지지선 확인 중요` :
-               language === 'ja' ? `テクニカル分析が必要 - サポートラインの確認が重要` :
-               language === 'zh' ? `需要技术分析 - 确认支撑位很重要` :
-               `Technical analysis needed - Support levels critical`),
-            sentiment: isBuy ? 'POSITIVE' : 'NEUTRAL',
-            published: new Date(trade.filedDate),
-            relevanceScore: 0.75,
-            source: 'Market Analysis'
-          });
-
-          const positiveCount = newsItems.filter(n => n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH').length;
-          const negativeCount = newsItems.filter(n => n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH').length;
+          }];
 
           return {
-            totalNews: newsItems.length,
-            positiveCount,
-            negativeCount,
-            majorNews: newsItems
+            totalNews: 1,
+            positiveCount: isBuy ? 1 : 0,
+            negativeCount: isBuy ? 0 : 1,
+            majorNews: fallbackNews
           };
         })()
       };
@@ -3557,12 +3569,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
+  // Handle HTTP Server errors (prevents unhandled error crashes)
+  httpServer.on('error', (error: any) => {
+    console.error('❌ HTTP Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port is already in use`);
+      console.error(`💡 Current PORT setting: ${process.env.PORT || '5000 (default)'}`);
+      console.error('💡 Solution: Change PORT in .env file or kill the process using this port');
+      process.exit(1);
+    }
+  });
+
   // Set up WebSocket server for real-time updates on a different path
-  wss = new WebSocketServer({ 
+  wss = new WebSocketServer({
     server: httpServer,
     path: '/api/ws'
   });
-  
+
+  // Handle WebSocketServer errors (CRITICAL: prevents app crashes)
+  wss.on('error', (error: any) => {
+    console.error('❌ WebSocketServer error:', error);
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${error.port || 'unknown'} is already in use`);
+      console.error('💡 Solution: Change the PORT in your .env file or stop the process using this port');
+      console.error(`💡 Current PORT setting: ${process.env.PORT || '5000 (default)'}`);
+      process.exit(1);
+    }
+  });
+
   wss.on('connection', (ws, req) => {
     console.log('New WebSocket connection established');
     
