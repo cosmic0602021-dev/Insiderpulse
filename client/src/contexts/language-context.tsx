@@ -598,6 +598,23 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.verify.errorDesc': 'Verification link has expired or is invalid',
     'auth.verify.noToken': 'No verification token',
 
+    // Verify Code Page (6-digit code input)
+    'auth.verifyCode.title': 'Email Verification',
+    'auth.verifyCode.subtitle': 'Enter the 6-digit code sent to',
+    'auth.verifyCode.enterCode': 'Enter the 6-digit verification code',
+    'auth.verifyCode.errorEnterAll': 'Please enter all 6 digits',
+    'auth.verifyCode.errorFailed': 'Verification failed',
+    'auth.verifyCode.codeValid': 'Code is valid for 10 minutes',
+    'auth.verifyCode.verifying': 'Verifying...',
+    'auth.verifyCode.verify': 'Verify',
+    'auth.verifyCode.resendCode': 'Resend Code',
+    'auth.verifyCode.resending': 'Sending...',
+    'auth.verifyCode.resendIn': '{seconds}s until resend available',
+    'auth.verifyCode.backToSignup': 'Back to Sign Up',
+    'auth.verifyCode.successTitle': 'Verification Complete!',
+    'auth.verifyCode.successDesc': 'Email verification completed.\nRedirecting to login...',
+    'auth.verifyCode.errorResend': 'Failed to resend code',
+
     // Additional Live Trading translations
     'liveTrading.insiderBuyPriceLabel': 'Insider Buy Price',
     'liveTrading.insiderSellPriceLabel': 'Insider Sell Price',
@@ -1472,6 +1489,23 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.verify.errorDesc': '인증 링크가 만료되었거나 유효하지 않습니다',
     'auth.verify.noToken': '인증 토큰이 없습니다',
 
+    // Verify Code Page (6-digit code input)
+    'auth.verifyCode.title': '이메일 인증',
+    'auth.verifyCode.subtitle': '으로 발송된',
+    'auth.verifyCode.enterCode': '6자리 인증 코드를 입력하세요',
+    'auth.verifyCode.errorEnterAll': '6자리 코드를 모두 입력해주세요',
+    'auth.verifyCode.errorFailed': '인증에 실패했습니다',
+    'auth.verifyCode.codeValid': '코드가 10분 동안 유효합니다',
+    'auth.verifyCode.verifying': '인증 중...',
+    'auth.verifyCode.verify': '인증하기',
+    'auth.verifyCode.resendCode': '코드 재발송',
+    'auth.verifyCode.resending': '전송 중...',
+    'auth.verifyCode.resendIn': '{seconds}초 후 재발송 가능',
+    'auth.verifyCode.backToSignup': '회원가입으로 돌아가기',
+    'auth.verifyCode.successTitle': '인증 완료!',
+    'auth.verifyCode.successDesc': '이메일 인증이 완료되었습니다.\n로그인 페이지로 이동 중...',
+    'auth.verifyCode.errorResend': '코드 재발송에 실패했습니다',
+
     // Missing General keys
     'general.close': '닫기',
 
@@ -2142,6 +2176,23 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.verify.successDesc': 'InsiderPulseのすべての機能をご利用いただけます',
     'auth.verify.errorDesc': '認証リンクが期限切れまたは無効です',
     'auth.verify.noToken': '認証トークンがありません',
+
+    // Verify Code Page (6-digit code input)
+    'auth.verifyCode.title': 'メール認証',
+    'auth.verifyCode.subtitle': 'に送信された',
+    'auth.verifyCode.enterCode': '6桁の認証コードを入力してください',
+    'auth.verifyCode.errorEnterAll': '6桁のコードをすべて入力してください',
+    'auth.verifyCode.errorFailed': '認証に失敗しました',
+    'auth.verifyCode.codeValid': 'コードは10分間有効です',
+    'auth.verifyCode.verifying': '認証中...',
+    'auth.verifyCode.verify': '認証する',
+    'auth.verifyCode.resendCode': 'コード再送信',
+    'auth.verifyCode.resending': '送信中...',
+    'auth.verifyCode.resendIn': '{seconds}秒後に再送信可能',
+    'auth.verifyCode.backToSignup': '新規登録に戻る',
+    'auth.verifyCode.successTitle': '認証完了！',
+    'auth.verifyCode.successDesc': 'メール認証が完了しました。\nログインページへ移動中...',
+    'auth.verifyCode.errorResend': 'コードの再送信に失敗しました',
   },
   zh: {
     // Navigation
@@ -2711,6 +2762,23 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.verify.successDesc': '您现在可以使用所有InsiderPulse功能',
     'auth.verify.errorDesc': '验证链接已过期或无效',
     'auth.verify.noToken': '无验证令牌',
+
+    // Verify Code Page (6-digit code input)
+    'auth.verifyCode.title': '电子邮件验证',
+    'auth.verifyCode.subtitle': '已发送至',
+    'auth.verifyCode.enterCode': '请输入6位验证码',
+    'auth.verifyCode.errorEnterAll': '请输入全部6位数字',
+    'auth.verifyCode.errorFailed': '验证失败',
+    'auth.verifyCode.codeValid': '验证码10分钟内有效',
+    'auth.verifyCode.verifying': '验证中...',
+    'auth.verifyCode.verify': '验证',
+    'auth.verifyCode.resendCode': '重新发送验证码',
+    'auth.verifyCode.resending': '发送中...',
+    'auth.verifyCode.resendIn': '{seconds}秒后可重新发送',
+    'auth.verifyCode.backToSignup': '返回注册',
+    'auth.verifyCode.successTitle': '验证完成！',
+    'auth.verifyCode.successDesc': '电子邮件验证已完成。\n正在跳转到登录页面...',
+    'auth.verifyCode.errorResend': '重新发送验证码失败',
   },
 };
 

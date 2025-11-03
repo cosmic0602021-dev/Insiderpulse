@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, Mail, UserPlus, Sparkles, Lock } from 'lucide-react';
+import { Loader2, AlertCircle, Mail, UserPlus, Sparkles, Lock, TrendingUp, Shield, Zap, CheckCircle } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useLanguage } from '@/contexts/language-context';
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
@@ -67,7 +67,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       {/* Left side - Hero */}
-      <div className="hidden md:flex flex-col justify-between bg-slate-900 p-12">
+      <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 p-12">
         <div>
           <img src={logoDark} alt="InsiderPulse" className="h-10 w-auto mb-16" />
 
@@ -82,8 +82,8 @@ export default function SignupPage() {
 
           <div className="mt-16 space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-emerald-500/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-emerald-500" />
+              <div className="w-12 h-12 rounded bg-pink-500/10 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-pink-500" />
               </div>
               <div>
                 <h3 className="font-semibold text-white">{t('auth.login.realtimeData')}</h3>
@@ -92,8 +92,8 @@ export default function SignupPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-blue-500/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-blue-500" />
+              <div className="w-12 h-12 rounded bg-cyan-500/10 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-cyan-500" />
               </div>
               <div>
                 <h3 className="font-semibold text-white">{t('auth.login.verifiedInfo')}</h3>
@@ -102,8 +102,8 @@ export default function SignupPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-amber-500/10 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-amber-500" />
+              <div className="w-12 h-12 rounded bg-violet-500/10 flex items-center justify-center">
+                <Zap className="h-6 w-6 text-violet-500" />
               </div>
               <div>
                 <h3 className="font-semibold text-white">{t('auth.login.smartAlerts')}</h3>
@@ -136,7 +136,7 @@ export default function SignupPage() {
           {success ? (
             <div className="space-y-6 py-12 text-center" data-testid="success-message">
               <div className="flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
               </div>
@@ -214,7 +214,7 @@ export default function SignupPage() {
 
               <Button
                 type="submit"
-                className="w-full h-10 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 font-medium"
+                className="w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium"
                 disabled={isLoading}
                 data-testid="button-signup"
               >
@@ -233,7 +233,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => navigate('/login')}
-                  className="text-slate-900 dark:text-white font-medium hover:underline"
+                  className="text-purple-600 dark:text-purple-400 font-medium hover:underline"
                   data-testid="button-login"
                 >
                   {t('auth.signup.signIn')}

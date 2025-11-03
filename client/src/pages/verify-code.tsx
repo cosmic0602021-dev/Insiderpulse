@@ -77,7 +77,7 @@ export default function VerifyCode() {
 
     const codeString = code.join('');
     if (codeString.length !== 6) {
-      setError('6자리 코드를 모두 입력해주세요');
+      setError(t('auth.verifyCode.errorEnterAll'));
       return;
     }
 
@@ -100,10 +100,10 @@ export default function VerifyCode() {
           navigate('/login');
         }, 2000);
       } else {
-        setError(data.message || '인증에 실패했습니다');
+        setError(data.message || t('auth.verifyCode.errorFailed'));
       }
     } catch (err: any) {
-      setError(err.message || '인증에 실패했습니다');
+      setError(err.message || t('auth.verifyCode.errorFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -130,10 +130,10 @@ export default function VerifyCode() {
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
-        setError(data.message || '코드 재발송에 실패했습니다');
+        setError(data.message || t('auth.verifyCode.errorResend'));
       }
     } catch (err: any) {
-      setError(err.message || '코드 재발송에 실패했습니다');
+      setError(err.message || t('auth.verifyCode.errorResend'));
     } finally {
       setIsResending(false);
     }
@@ -165,11 +165,10 @@ export default function VerifyCode() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              인증 완료!
+              {t('auth.verifyCode.successTitle')}
             </h2>
             <p className="text-slate-600">
-              이메일 인증이 완료되었습니다.<br />
-              로그인 페이지로 이동 중...
+              {t('auth.verifyCode.successDesc')}
             </p>
           </div>
         </div>
@@ -187,11 +186,11 @@ export default function VerifyCode() {
               <Mail className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">
-              이메일 인증
+              {t('auth.verifyCode.title')}
             </h1>
             <p className="text-slate-600 text-sm">
-              <strong>{email}</strong>으로 발송된<br />
-              6자리 인증 코드를 입력하세요
+              <strong>{email}</strong>{t('auth.verifyCode.subtitle')}<br />
+              {t('auth.verifyCode.enterCode')}
             </p>
           </div>
 
@@ -227,7 +226,7 @@ export default function VerifyCode() {
 
             {/* Info */}
             <p className="text-center text-sm text-slate-500">
-              코드가 10분 동안 유효합니다
+              {t('auth.verifyCode.codeValid')}
             </p>
 
             {/* Submit Button */}
@@ -239,10 +238,10 @@ export default function VerifyCode() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  인증 중...
+                  {t('auth.verifyCode.verifying')}
                 </>
               ) : (
-                '인증하기'
+                t('auth.verifyCode.verify')
               )}
             </Button>
 
@@ -257,12 +256,12 @@ export default function VerifyCode() {
                 {isResending ? (
                   <>
                     <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
-                    전송 중...
+                    {t('auth.verifyCode.resending')}
                   </>
                 ) : resendCooldown > 0 ? (
-                  `${resendCooldown}초 후 재발송 가능`
+                  t('auth.verifyCode.resendIn', { seconds: resendCooldown })
                 ) : (
-                  '코드 재발송'
+                  t('auth.verifyCode.resendCode')
                 )}
               </button>
             </div>
@@ -275,7 +274,7 @@ export default function VerifyCode() {
                 className="text-sm text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
               >
                 <ArrowLeft className="h-4 w-4" />
-                회원가입으로 돌아가기
+                {t('auth.verifyCode.backToSignup')}
               </button>
             </div>
           </form>
