@@ -474,7 +474,19 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.tradingPatternAnalysis': 'Trading Pattern Analysis',
     'tradeDetail.investmentStrategy': 'Investment Strategy',
     'tradeDetail.additionalInsights': 'Additional Insights',
-    
+    'tradeDetail.overallOpinion': 'Overall Opinion',
+    'tradeDetail.buyRecommendation': '💹 Buy Recommendation',
+    'tradeDetail.sellRecommendation': '📉 Sell Recommendation',
+    'tradeDetail.holdRecommendation': '⏸️ Hold/Wait',
+    'tradeDetail.insiderBuyingActivity': 'Insider buying activity is positive. Investment review is recommended.',
+    'tradeDetail.insiderSellingActivity': 'Insider selling activity detected. Caution is advised.',
+    'tradeDetail.mixedInsiderActivity': 'Mixed insider trading patterns. Further information is needed.',
+    'tradeDetail.confidenceLevel': 'Confidence',
+    'tradeDetail.clickToExpand': '▼ Click to expand',
+    'tradeDetail.clickToCollapse': '▲ Click to collapse',
+    'tradeDetail.marketAnalysis': 'Market Analysis',
+    'tradeDetail.perShare': 'per share',
+
     // Price Comparison Chart
     'priceChart.title': 'Price Comparison Chart',
     'priceChart.tradePrice': 'Trade Price',
@@ -584,6 +596,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.signup.errorInvalidEmail': 'Please enter a valid email address',
     'auth.signup.errorFailed': 'Signup failed',
     'auth.signup.redirecting': 'Redirecting to login...',
+    'auth.signup.redirectingToVerification': 'Redirecting to verification page...',
 
     // Email verification
     'auth.verify.title': 'Email Verification',
@@ -1365,7 +1378,19 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.tradingPatternAnalysis': '거래 패턴 분석',
     'tradeDetail.investmentStrategy': '투자 전략',
     'tradeDetail.additionalInsights': '추가 인사이트',
-    
+    'tradeDetail.overallOpinion': '종합의견',
+    'tradeDetail.buyRecommendation': '💹 매수 추천',
+    'tradeDetail.sellRecommendation': '📉 매도 추천',
+    'tradeDetail.holdRecommendation': '⏸️ 보류/관망',
+    'tradeDetail.insiderBuyingActivity': '내부자 매수 활동이 긍정적입니다. 투자 검토를 권장합니다.',
+    'tradeDetail.insiderSellingActivity': '내부자 매도 활동이 감지되었습니다. 신중한 접근이 필요합니다.',
+    'tradeDetail.mixedInsiderActivity': '내부자 거래 패턴이 혼재되어 있습니다. 추가 정보 확인이 필요합니다.',
+    'tradeDetail.confidenceLevel': '신뢰도',
+    'tradeDetail.clickToExpand': '▼ 클릭하여 자세히 보기',
+    'tradeDetail.clickToCollapse': '▲ 클릭하여 접기',
+    'tradeDetail.marketAnalysis': '시장 분석',
+    'tradeDetail.perShare': '주당',
+
     // Price Comparison Chart
     'priceChart.title': '가격 비교 차트',
     'priceChart.tradePrice': '거래 가격',
@@ -1475,6 +1500,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.signup.errorInvalidEmail': '유효한 이메일 주소를 입력해주세요',
     'auth.signup.errorFailed': '회원가입에 실패했습니다',
     'auth.signup.redirecting': '로그인 페이지로 이동 중...',
+    'auth.signup.redirectingToVerification': '이메일 인증 페이지로 이동 중...',
 
     // Email verification
     'auth.verify.title': '이메일 인증',
@@ -2022,6 +2048,18 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.tradingPatternAnalysis': '取引パターン分析',
     'tradeDetail.investmentStrategy': '投資戦略',
     'tradeDetail.additionalInsights': '追加インサイト',
+    'tradeDetail.overallOpinion': '総合意見',
+    'tradeDetail.buyRecommendation': '💹 買い推奨',
+    'tradeDetail.sellRecommendation': '📉 売り推奨',
+    'tradeDetail.holdRecommendation': '⏸️ 保留/様子見',
+    'tradeDetail.insiderBuyingActivity': 'インサイダーの買い活動が前向きです。投資検討をお勧めします。',
+    'tradeDetail.insiderSellingActivity': 'インサイダーの売り活動が検出されました。慎重なアプローチが必要です。',
+    'tradeDetail.mixedInsiderActivity': 'インサイダー取引パターンが混在しています。追加情報の確認が必要です。',
+    'tradeDetail.confidenceLevel': '信頼度',
+    'tradeDetail.clickToExpand': '▼ クリックして展開',
+    'tradeDetail.clickToCollapse': '▲ クリックして折りたたむ',
+    'tradeDetail.marketAnalysis': '市場分析',
+    'tradeDetail.perShare': '1株当たり',
     'tradeDetail.shareScreenshot': 'スクリーンショットを共有',
     'tradeDetail.totalTransactionAmount': '総取引金額',
     'tradeDetail.sharesCount': '取引株数',
@@ -2163,6 +2201,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.signup.errorInvalidEmail': '有効なメールアドレスを入力してください',
     'auth.signup.errorFailed': '登録に失敗しました',
     'auth.signup.redirecting': 'ログインページへ移動中...',
+    'auth.signup.redirectingToVerification': 'メール認証ページへ移動中...',
 
     // Email verification
     'auth.verify.title': 'メール認証',
@@ -2608,6 +2647,18 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.tradingPatternAnalysis': '交易模式分析',
     'tradeDetail.investmentStrategy': '投资策略',
     'tradeDetail.additionalInsights': '额外洞察',
+    'tradeDetail.overallOpinion': '综合意见',
+    'tradeDetail.buyRecommendation': '💹 买入推荐',
+    'tradeDetail.sellRecommendation': '📉 卖出推荐',
+    'tradeDetail.holdRecommendation': '⏸️ 持有/观望',
+    'tradeDetail.insiderBuyingActivity': '内部人买入活动积极。建议考虑投资。',
+    'tradeDetail.insiderSellingActivity': '检测到内部人卖出活动。建议谨慎行事。',
+    'tradeDetail.mixedInsiderActivity': '内部人交易模式混合。需要进一步了解信息。',
+    'tradeDetail.confidenceLevel': '置信度',
+    'tradeDetail.clickToExpand': '▼ 点击展开',
+    'tradeDetail.clickToCollapse': '▲ 点击收起',
+    'tradeDetail.marketAnalysis': '市场分析',
+    'tradeDetail.perShare': '每股',
     'tradeDetail.shareScreenshot': '分享截图',
     'tradeDetail.totalTransactionAmount': '总交易金额',
     'tradeDetail.sharesCount': '交易股数',
@@ -2749,6 +2800,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.signup.errorInvalidEmail': '请输入有效的电子邮件地址',
     'auth.signup.errorFailed': '注册失败',
     'auth.signup.redirecting': '正在跳转到登录页面...',
+    'auth.signup.redirectingToVerification': '正在跳转到邮箱验证页面...',
 
     // Email verification
     'auth.verify.title': '电子邮件验证',

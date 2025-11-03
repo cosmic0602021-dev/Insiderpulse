@@ -561,7 +561,7 @@ export function TradeDetailModal({
               <div className="bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">{t('tradeDetail.pricePerShare')}</p>
                 <p className="text-2xl font-bold">${trade.pricePerShare.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground mt-1">per share</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('tradeDetail.perShare')}</p>
               </div>
             </div>
           </div>
@@ -890,25 +890,25 @@ export function TradeDetailModal({
                         'bg-gray-50 dark:bg-gray-900/20 border-gray-500'
                       }`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-bold text-base">📊 종합의견</h5>
+                          <h5 className="font-bold text-base">📊 {t('tradeDetail.overallOpinion')}</h5>
                           <Badge className={`text-sm px-3 py-1 font-bold ${
                             isBullish ? 'bg-green-600 text-white' :
                             isBearish ? 'bg-red-600 text-white' :
                             'bg-gray-600 text-white'
                           }`}>
-                            {isBullish ? '💹 매수 추천' : isBearish ? '📉 매도 추천' : '⏸️ 보류/관망'}
+                            {isBullish ? t('tradeDetail.buyRecommendation') : isBearish ? t('tradeDetail.sellRecommendation') : t('tradeDetail.holdRecommendation')}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex-1">
                             <p className="text-sm font-medium">
-                              {isBullish ? '내부자 매수 활동이 긍정적입니다. 투자 검토를 권장합니다.' :
-                               isBearish ? '내부자 매도 활동이 감지되었습니다. 신중한 접근이 필요합니다.' :
-                               '내부자 거래 패턴이 혼재되어 있습니다. 추가 정보 확인이 필요합니다.'}
+                              {isBullish ? t('tradeDetail.insiderBuyingActivity') :
+                               isBearish ? t('tradeDetail.insiderSellingActivity') :
+                               t('tradeDetail.mixedInsiderActivity')}
                             </p>
                           </div>
                           <div className="text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border">
-                            <p className="text-xs text-muted-foreground">신뢰도</p>
+                            <p className="text-xs text-muted-foreground">{t('tradeDetail.confidenceLevel')}</p>
                             <p className="text-lg font-bold text-blue-600">{analysis.confidence}%</p>
                           </div>
                         </div>
@@ -1075,14 +1075,14 @@ export function TradeDetailModal({
                                           </p>
                                           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                             <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
-                                            <span>{news.source || 'Market Analysis'}</span>
+                                            <span>{news.source || t('tradeDetail.marketAnalysis')}</span>
                                           </div>
                                         </div>
                                       )}
 
                                       {/* Click indicator */}
                                       <div className="text-center mt-2 text-xs text-gray-400 dark:text-gray-500">
-                                        {isExpanded ? '▲ 클릭하여 접기' : '▼ 클릭하여 자세히 보기'}
+                                        {isExpanded ? t('tradeDetail.clickToCollapse') : t('tradeDetail.clickToExpand')}
                                       </div>
                                     </div>
                                   );
