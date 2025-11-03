@@ -96,7 +96,13 @@
       "Bash(then echo \"SESSION_SECRET is set (length: $#SESSION_SECRET)\")",
       "Bash(else echo \"SESSION_SECRET is NOT set\")",
       "Bash(timeout 5 curl:*)",
-      "Bash(PORT=5002 NODE_ENV=development npm run dev:*)"
+      "Bash(PORT=5002 NODE_ENV=development npm run dev:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git rev-list:*)",
+      "Bash(if [ -n \"$DATABASE_URL\" ])",
+      "Bash(then echo \"DATABASE_URL is set (length: $#DATABASE_URL)\")",
+      "Bash(else echo \"DATABASE_URL is NOT set\")",
+      "Bash(pm2 logs:*)"
     ],
     "deny": [],
     "ask": []
