@@ -3670,19 +3670,8 @@ newsAnalysis: (() => {
     }
   });
 
-  // 🚀 Register new enhanced scraping API endpoints (production only)
-  if (process.env.NODE_ENV === 'production') {
-    app.use('/api/enhanced', enhancedApiRouter);
-  } else {
-    // Provide minimal enhanced API for development
-    app.get('/api/enhanced/*', (req, res) => {
-      res.json({
-        message: 'Enhanced API disabled in development mode',
-        trades: [],
-        statistics: { totalTrades: 0, recentTrades: 0 }
-      });
-    });
-  }
+  // 🚀 Register new enhanced scraping API endpoints (available in all environments)
+  app.use('/api/enhanced', enhancedApiRouter);
   // app.use('/api/v2', newApiRouter);
 
   // 🚀 Register Mega Data Collection API endpoints

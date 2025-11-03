@@ -3,11 +3,7 @@
  */
 
 import { Router } from 'express';
-// Conditional import for production only
-let newScrapingManager: any;
-if (process.env.NODE_ENV === 'production') {
-  newScrapingManager = require('../temp-scraper').newScrapingManager;
-}
+import { newScrapingManager } from '../temp-scraper';
 
 const router = Router();
 
@@ -69,6 +65,14 @@ router.get('/trades', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({
+        success: false,
+        message: 'Enhanced scraping system not available',
+        statistics: { totalTrades: 0, verifiedTrades: 0, averageConfidence: 0 }
+      });
+    }
+
     const statistics = newScrapingManager.getStatistics();
 
     res.json({
@@ -98,6 +102,15 @@ router.get('/stats', async (req, res) => {
 router.post('/collect', async (req, res) => {
   try {
     console.log('🔧 향상된 수동 데이터 수집 API 호출됨');
+
+    if (!newScrapingManager) {
+      console.error('❌ newScrapingManager is not available');
+      return res.status(503).json({
+        success: false,
+        error: 'Service Unavailable',
+        message: 'Enhanced scraping system is not initialized. Please check server configuration.'
+      });
+    }
 
     const startTime = Date.now();
     const trades = await newScrapingManager.executeFullCollection();
@@ -131,6 +144,13 @@ router.post('/collect', async (req, res) => {
  */
 router.get('/quality', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({
+        success: false,
+        message: 'Enhanced scraping system not available'
+      });
+    }
+
     const statistics = newScrapingManager.getStatistics();
     const trades = newScrapingManager.getAllTrades();
 
@@ -205,6 +225,13 @@ router.get('/quality', async (req, res) => {
  */
 router.get('/compare', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({
+        success: false,
+        message: 'Enhanced scraping system not available'
+      });
+    }
+
     const newStats = newScrapingManager.getStatistics();
     const newTrades = newScrapingManager.getAllTrades();
 
@@ -258,6 +285,14 @@ router.get('/compare', async (req, res) => {
  */
 router.get('/ticker/:ticker', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({
+        success: false,
+        message: 'Enhanced scraping system not available',
+        data: []
+      });
+    }
+
     const { ticker } = req.params;
     const { limit = 50 } = req.query;
 
@@ -310,6 +345,19 @@ router.get('/ticker/:ticker', async (req, res) => {
  */
 router.get('/health', async (req, res) => {
   try {
+    if (!newScrapingManager) {
+      return res.json({
+        success: false,
+        status: 'unhealthy',
+        message: 'Enhanced scraping system not available',
+        system: {
+          uptime: process.uptime(),
+          memory: process.memoryUsage(),
+          nodeVersion: process.version
+        }
+      });
+    }
+
     const stats = newScrapingManager.getStatistics();
 
     const health = {
