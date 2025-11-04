@@ -79,9 +79,13 @@ function AppContent() {
     }
   }, []);
 
+  // Authentication/verification pages that should skip language selection
+  const publicAuthPaths = ['/signup', '/login', '/verify-code', '/verify-email', '/start-trial'];
+  const currentPath = window.location.pathname;
 
   // Show language selection screen if user hasn't selected a language
-  if (!hasSelectedLanguage) {
+  // BUT skip for auth/verification pages to not interrupt the signup flow
+  if (!hasSelectedLanguage && !publicAuthPaths.includes(currentPath)) {
     return <LanguageSelection onLanguageSelected={() => setHasSelectedLanguage(true)} />;
   }
 
