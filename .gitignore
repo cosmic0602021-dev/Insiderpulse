@@ -9,3 +9,6 @@ vite.config.ts.*
 .env
 .env.local
 .env.*.local
+
+# Claude settings (may contain credentials)
+.claude/
