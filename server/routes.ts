@@ -503,10 +503,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (existingUser) {
-        console.log('❌ User already exists:', email);
-        return res.status(400).json({
-          success: false,
-          message: '이미 등록된 이메일입니다',
+        // If email is already verified, don't allow re-registration
+        if (existingUser.emailVerified) {
+          console.log('❌ User already exists and verified:', email);
+          return res.status(400).json({
+            success: false,
+            message: '이미 등록된 이메일입니다',
+          });
+        }
+
+        // If email is not verified, update the user with new password and verification code
+        console.log('🔄 User exists but not verified, updating verification code:', email);
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        console.log('🔑 New verification code generated:', verificationCode);
+
+        // Update existing user with new password and verification code
+        const updatedUser = await db.update(users)
+          .set({
+            password: hashedPassword,
+            verificationCode,
+            verificationCodeExpires,
+          })
+          .where(eq(users.email, email))
+          .returning();
+
+        console.log('✅ User updated with new verification code:', {
+          id: updatedUser[0].id,
+          email: updatedUser[0].email,
+        });
+
+        // Send new verification code email
+        try {
+          await emailNotificationService.sendVerificationCode(email, verificationCode);
+          console.log('📧 New verification code sent to:', email);
+        } catch (emailError) {
+          console.error('❌ Failed to send verification email:', emailError);
+        }
+
+        return res.json({
+          success: true,
+          message: '인증 코드가 재발송되었습니다. 이메일을 확인하여 계정을 인증해주세요.',
+          user: {
+            id: updatedUser[0].id,
+            email: updatedUser[0].email,
+            subscriptionTier: updatedUser[0].subscriptionTier,
+            emailVerified: false,
+          },
         });
       }
 
