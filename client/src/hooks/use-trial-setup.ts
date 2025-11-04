@@ -81,9 +81,17 @@ export function useTrialSetup(): UseTrialSetupReturn {
         throw new Error('Stripe를 로드할 수 없습니다');
       }
 
+      // Get card element from the page
+      const cardElement = document.querySelector('.StripeElement iframe');
+
       // Confirm card setup (collects card details from CardElement)
       const { setupIntent, error: stripeError } = await stripe.confirmCardSetup(
-        state.clientSecret
+        state.clientSecret,
+        {
+          payment_method: {
+            card: cardElement as any,
+          },
+        }
       );
 
       if (stripeError) {

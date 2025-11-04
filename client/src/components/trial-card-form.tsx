@@ -3,13 +3,15 @@ import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { apiClient } from '@/lib/api';
 
 interface TrialCardFormProps {
-  planType: 'monthly' | 'yearly';
+  planType: 'monthly' | 'yearly' | 'test';
   onSuccess: () => void;
   onError: (error: string) => void;
   isLoading: boolean;
   onSubmit: () => Promise<void>;
+  clientSecret: string;
 }
 
 /**
@@ -19,13 +21,17 @@ export function TrialCardForm({
   planType,
   onSuccess,
   onError,
-  isLoading,
+  isLoading: externalLoading,
   onSubmit,
+  clientSecret,
 }: TrialCardFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isLoading = externalLoading || isSubmitting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +46,59 @@ export function TrialCardForm({
       return;
     }
 
-    // Call parent onSubmit handler
-    await onSubmit();
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      onError('카드 정보를 찾을 수 없습니다');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Confirm card setup with Stripe
+      const { setupIntent, error: stripeError } = await stripe.confirmCardSetup(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+          },
+        }
+      );
+
+      if (stripeError) {
+        onError(stripeError.message || '카드 정보 확인 실패');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!setupIntent || !setupIntent.payment_method) {
+        onError('결제 정보 저장 실패');
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('✅ Card setup confirmed:', setupIntent.id);
+
+      // Activate trial with the saved payment method
+      const response = await apiClient.activateTrialWithCard(
+        setupIntent.payment_method as string,
+        planType
+      );
+
+      if (!response.success) {
+        onError(response.message || response.error || '트라이얼 활성화 실패');
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('✅ Trial activated:', response);
+      setIsSubmitting(false);
+      onSuccess();
+    } catch (error) {
+      console.error('Trial activation failed:', error);
+      onError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다');
+      setIsSubmitting(false);
+    }
   };
 
   const cardElementOptions = {

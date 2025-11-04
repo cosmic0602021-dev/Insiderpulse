@@ -18,7 +18,9 @@ export default function StartTrialPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [planType, setPlanType] = useState<'monthly' | 'yearly' | 'test'>('monthly');
-  const { createSetupIntent, confirmCardSetup, isLoading, error, isSuccess, clientSecret } = useTrialSetup();
+  const { createSetupIntent, isLoading, error, clientSecret } = useTrialSetup();
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     // Redirect if not logged in
@@ -47,8 +49,12 @@ export default function StartTrialPage() {
     }
   }, [isSuccess]);
 
-  const handleSubmit = async () => {
-    await confirmCardSetup(planType);
+  const handleSuccess = () => {
+    setIsSuccess(true);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setSubmitError(errorMessage);
   };
 
   if (isSuccess) {
@@ -250,17 +256,18 @@ export default function StartTrialPage() {
                   <Elements stripe={stripePromise}>
                     <TrialCardForm
                       planType={planType}
-                      onSuccess={() => {}}
-                      onError={() => {}}
+                      onSuccess={handleSuccess}
+                      onError={handleError}
                       isLoading={isLoading}
-                      onSubmit={handleSubmit}
+                      onSubmit={async () => {}}
+                      clientSecret={clientSecret}
                     />
                   </Elements>
                 )}
 
-                {error && (
+                {(error || submitError) && (
                   <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{error || submitError}</AlertDescription>
                   </Alert>
                 )}
 
