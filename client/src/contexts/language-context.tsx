@@ -2846,6 +2846,8 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       // 유효한 언어인지 확인
       if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
         console.log('🌍 Using saved language preference:', savedLanguage);
+        // Mark language as selected to skip language selection screen
+        localStorage.setItem('language-selected', 'true');
         return savedLanguage;
       }
 
@@ -2853,12 +2855,16 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
       const browserLang = navigator.language.toLowerCase();
       console.log('🌍 Detecting browser language:', browserLang);
 
-      if (browserLang.startsWith('ko')) return 'ko';
-      if (browserLang.startsWith('ja')) return 'ja';
-      if (browserLang.startsWith('zh')) return 'zh';
+      let detectedLang: Language = 'en';
+      if (browserLang.startsWith('ko')) detectedLang = 'ko';
+      else if (browserLang.startsWith('ja')) detectedLang = 'ja';
+      else if (browserLang.startsWith('zh')) detectedLang = 'zh';
 
-      // 기본값은 영어
-      return 'en';
+      // Save detected language and mark as selected
+      localStorage.setItem('language', detectedLang);
+      localStorage.setItem('language-selected', 'true');
+
+      return detectedLang;
     } catch (error) {
       console.error('Language initialization error:', error);
       return 'en'; // 에러 발생 시 영어로 기본 설정
