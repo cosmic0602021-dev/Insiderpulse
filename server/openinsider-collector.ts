@@ -26,7 +26,7 @@ interface OpenInsiderTrade {
 }
 
 class OpenInsiderCollector {
-  private baseUrl = 'http://www.openinsider.com/';
+  private baseUrl = 'https://www.openinsider.com/';
 
   async collectLatestTrades(limit: number = 200): Promise<number> {
     try {
