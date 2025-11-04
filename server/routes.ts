@@ -1272,7 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (!planType || !['monthly', 'yearly'].includes(planType)) {
+      if (!planType || !['monthly', 'yearly', 'test'].includes(planType)) {
         return res.status(400).json({
           success: false,
           message: '유효하지 않은 구독 플랜입니다',
@@ -1312,7 +1312,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Price ID based on plan type
       const priceId = planType === 'monthly'
         ? process.env.STRIPE_PRICE_ID_MONTHLY
-        : process.env.STRIPE_PRICE_ID_YEARLY;
+        : planType === 'yearly'
+        ? process.env.STRIPE_PRICE_ID_YEARLY
+        : process.env.STRIPE_PRICE_ID_TEST;
 
       if (!priceId) {
         console.error(`❌ Missing price ID for plan: ${planType}`);
@@ -1347,11 +1349,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Attached payment method to customer: ${customerId}`);
 
-      // Create subscription with 7-day trial
-      const subscription = await stripe.subscriptions.create({
+      // Create subscription with trial (7 days for production, 5 minutes for test)
+      const isTestPlan = planType === 'test';
+      const trialEndTimestamp = isTestPlan
+        ? Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes from now
+        : undefined; // Use trial_period_days for production plans
+
+      const subscriptionParams: any = {
         customer: customerId,
         items: [{ price: priceId }],
-        trial_period_days: 7,
         payment_behavior: 'default_incomplete',
         payment_settings: {
           payment_method_types: ['card'],
@@ -1361,7 +1367,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           userId: user.id,
         },
-      });
+      };
+
+      // For test plan: use trial_end (5 minutes). For production: use trial_period_days (7 days)
+      if (isTestPlan) {
+        subscriptionParams.trial_end = trialEndTimestamp;
+      } else {
+        subscriptionParams.trial_period_days = 7;
+      }
+
+      const subscription = await stripe.subscriptions.create(subscriptionParams);
 
       console.log(`✅ Created Stripe subscription with trial: ${subscription.id}`);
 

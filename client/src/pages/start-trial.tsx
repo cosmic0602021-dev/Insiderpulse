@@ -17,7 +17,7 @@ export default function StartTrialPage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const [planType, setPlanType] = useState<'monthly' | 'yearly'>('monthly');
+  const [planType, setPlanType] = useState<'monthly' | 'yearly' | 'test'>('monthly');
   const { createSetupIntent, confirmCardSetup, isLoading, error, isSuccess, clientSecret } = useTrialSetup();
 
   useEffect(() => {
@@ -196,19 +196,53 @@ export default function StartTrialPage() {
                     <button
                       type="button"
                       onClick={() => setPlanType('yearly')}
-                      className={`p-4 rounded-lg text-left transition-all duration-200 relative ${
+                      className={`p-4 rounded-lg text-left transition-all duration-200 relative overflow-hidden ${
                         planType === 'yearly'
                           ? 'bg-gradient-to-br from-emerald-500 to-blue-500 shadow-lg shadow-emerald-500/20 border border-emerald-400/50'
                           : 'bg-slate-800/50 border border-card-border hover:border-emerald-500/30 hover:bg-slate-800/70'
                       }`}
                     >
+                      {/* Discount Badge */}
+                      <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 rotate-45 flex items-end justify-center pb-6 shadow-lg">
+                        <span className="text-xs font-bold text-slate-900 -rotate-45 translate-y-3">33% OFF</span>
+                      </div>
+
                       <div className="font-semibold text-white">{t('trial.form.yearly')}</div>
-                      <div className="text-2xl font-bold mt-1 text-white">$112</div>
-                      <div className="text-sm text-white/80">
-                        {t('trial.form.perYear')} <span className="text-amber-300 font-semibold">{t('trial.form.discount')}</span>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <div className="text-2xl font-bold text-white">$112</div>
+                        <div className="text-sm text-white/60 line-through">$168</div>
+                      </div>
+                      <div className="text-xs text-white/80 mt-1">
+                        = 월 <span className="font-bold text-amber-300">$9.33</span>
+                      </div>
+                      <div className="text-xs text-emerald-300 font-medium mt-0.5">
+                        💰 매년 $56 절약
                       </div>
                     </button>
                   </div>
+                </div>
+
+                {/* Test Plan - Temporary (for testing only) */}
+                <div className="mt-4 p-4 border-2 border-amber-400 rounded-lg bg-amber-500/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-400 font-bold text-xs px-2 py-1 bg-amber-500/20 rounded">⚠️ TEST ONLY</span>
+                      <span className="text-sm font-semibold text-foreground">테스트 플랜</span>
+                    </div>
+                    <span className="text-2xl font-bold text-amber-400">$0.10</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">5분 무료체험 후 자동 청구 (테스트용)</p>
+                  <button
+                    type="button"
+                    onClick={() => setPlanType('test')}
+                    className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      planType === 'test'
+                        ? 'bg-amber-500 text-slate-900 shadow-lg'
+                        : 'bg-slate-800/50 text-foreground border border-amber-500/30 hover:bg-amber-500/10'
+                    }`}
+                  >
+                    {planType === 'test' ? '✓ 선택됨' : '테스트 플랜 선택'}
+                  </button>
                 </div>
 
                 {/* Stripe Elements Form */}

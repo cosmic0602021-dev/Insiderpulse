@@ -15,7 +15,7 @@ export interface TrialSetupState {
 
 export interface UseTrialSetupReturn extends TrialSetupState {
   createSetupIntent: () => Promise<void>;
-  confirmCardSetup: (planType: 'monthly' | 'yearly') => Promise<void>;
+  confirmCardSetup: (planType: 'monthly' | 'yearly' | 'test') => Promise<void>;
   reset: () => void;
 }
 
@@ -67,7 +67,7 @@ export function useTrialSetup(): UseTrialSetupReturn {
     }
   }, []);
 
-  const confirmCardSetup = useCallback(async (planType: 'monthly' | 'yearly') => {
+  const confirmCardSetup = useCallback(async (planType: 'monthly' | 'yearly' | 'test') => {
     if (!state.clientSecret) {
       setState(prev => ({ ...prev, error: 'SetupIntent가 생성되지 않았습니다' }));
       return;
