@@ -49,14 +49,15 @@ export default function SignupPage() {
 
     try {
       await apiClient.signup(email, password);
-      setSuccess(true);
 
       // Store email for verification
       localStorage.setItem('pendingVerificationEmail', email);
 
-      setTimeout(() => {
-        navigate('/verify-code');
-      }, 1500);
+      // Wait a bit to ensure localStorage is saved, especially on mobile
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Navigate to verification page
+      navigate('/verify-code');
     } catch (err: any) {
       setError(err.message || t('auth.signup.errorFailed'));
     } finally {

@@ -21,11 +21,24 @@ export default function VerifyCode() {
   // Get email from navigation state or localStorage
   useEffect(() => {
     const storedEmail = localStorage.getItem('pendingVerificationEmail');
+    console.log('🔍 Checking for stored email:', storedEmail);
+
     if (storedEmail) {
       setEmail(storedEmail);
+      console.log('✅ Email found, ready for verification');
     } else {
-      // If no email found, redirect to signup
-      navigate('/signup');
+      // Wait a bit before redirecting, in case localStorage is still loading
+      console.log('⚠️ No email found, waiting before redirect...');
+      setTimeout(() => {
+        const retryEmail = localStorage.getItem('pendingVerificationEmail');
+        if (retryEmail) {
+          setEmail(retryEmail);
+          console.log('✅ Email found on retry');
+        } else {
+          console.log('❌ Still no email, redirecting to signup');
+          navigate('/signup');
+        }
+      }, 200);
     }
   }, [navigate]);
 
