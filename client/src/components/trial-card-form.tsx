@@ -48,14 +48,27 @@ export function TrialCardForm({
     style: {
       base: {
         fontSize: '16px',
-        color: '#424770',
+        color: '#E4E5E8',
+        backgroundColor: 'transparent',
+        fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontSmoothing: 'antialiased',
+        fontWeight: '400',
+        letterSpacing: '-0.01em',
         '::placeholder': {
-          color: '#aab7c4',
+          color: '#6B7280',
         },
-        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        ':-webkit-autofill': {
+          color: '#E4E5E8',
+          backgroundColor: 'transparent',
+        },
       },
       invalid: {
-        color: '#9e2146',
+        color: '#EF5B6B',
+        iconColor: '#EF5B6B',
+      },
+      complete: {
+        color: '#1FB57A',
+        iconColor: '#1FB57A',
       },
     },
   };
@@ -64,10 +77,16 @@ export function TrialCardForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Card Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-foreground">
           카드 정보
         </label>
-        <div className="p-4 border border-gray-300 rounded-lg bg-white">
+        <div className="group p-4 border border-card-border rounded-lg bg-card/50 backdrop-blur-sm
+                      transition-all duration-200
+                      focus-within:border-emerald-500/50
+                      focus-within:ring-2
+                      focus-within:ring-emerald-500/20
+                      focus-within:shadow-lg
+                      focus-within:shadow-emerald-500/10">
           <CardElement
             options={cardElementOptions}
             onChange={(e) => {
@@ -77,14 +96,14 @@ export function TrialCardForm({
           />
         </div>
         {cardError && (
-          <p className="text-sm text-red-600">{cardError}</p>
+          <p className="text-sm text-red-400">{cardError}</p>
         )}
       </div>
 
       {/* Security Badge */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <svg
-          className="w-5 h-5 text-green-600"
+          className="w-5 h-5 text-emerald-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -102,7 +121,7 @@ export function TrialCardForm({
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full h-12 text-lg font-semibold"
+        className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 shadow-lg shadow-emerald-500/20 transition-all duration-200"
         disabled={!stripe || !cardComplete || isLoading}
       >
         {isLoading ? (
@@ -116,7 +135,7 @@ export function TrialCardForm({
       </Button>
 
       {/* Plan Info */}
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-muted-foreground/70">
         7일 후 자동 결제: {planType === 'monthly' ? '월 $14' : '연 $112'}
       </p>
     </form>

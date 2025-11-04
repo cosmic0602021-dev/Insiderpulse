@@ -53,15 +53,20 @@ export default function StartTrialPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+        <Card className="max-w-md w-full border-emerald-500/30 bg-gradient-to-br from-card to-slate-900/50 backdrop-blur-sm shadow-2xl shadow-emerald-500/10">
           <CardContent className="pt-6 text-center">
-            <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">{t('trial.success.title')}</h2>
-            <p className="text-gray-600 mb-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-20 h-20 bg-emerald-500/20 rounded-full blur-xl"></div>
+              </div>
+              <CheckCircle2 className="relative w-16 h-16 text-emerald-500 mx-auto mb-4" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-foreground">{t('trial.success.title')}</h2>
+            <p className="text-muted-foreground mb-4">
               {t('trial.success.message')}
             </p>
-            <p className="text-sm text-gray-500">{t('trial.success.redirecting')}</p>
+            <p className="text-sm text-muted-foreground/70">{t('trial.success.redirecting')}</p>
           </CardContent>
         </Card>
       </div>
@@ -69,14 +74,14 @@ export default function StartTrialPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-white via-emerald-100 to-blue-100 bg-clip-text text-transparent">
             {t('trial.heading')}
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted-foreground">
             {t('trial.description')}
           </p>
         </div>
@@ -84,66 +89,74 @@ export default function StartTrialPage() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Benefits */}
           <div className="space-y-6">
-            <Card>
+            <Card className="border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-yellow-500" />
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
                   {t('trial.benefits.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <TrendingUp className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold">{t('trial.benefits.realtime')}</h3>
-                    <p className="text-sm text-gray-600">{t('trial.benefits.realtimeDesc')}</p>
+                    <h3 className="font-semibold text-foreground">{t('trial.benefits.realtime')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('trial.benefits.realtimeDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Brain className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
+                  <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                    <Brain className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold">{t('trial.benefits.ai')}</h3>
-                    <p className="text-sm text-gray-600">{t('trial.benefits.aiDesc')}</p>
+                    <h3 className="font-semibold text-foreground">{t('trial.benefits.ai')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('trial.benefits.aiDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Bell className="w-5 h-5 text-red-600 mt-1 flex-shrink-0" />
+                  <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <Bell className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold">{t('trial.benefits.alerts')}</h3>
-                    <p className="text-sm text-gray-600">{t('trial.benefits.alertsDesc')}</p>
+                    <h3 className="font-semibold text-foreground">{t('trial.benefits.alerts')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('trial.benefits.alertsDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <Shield className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold">{t('trial.benefits.filter')}</h3>
-                    <p className="text-sm text-gray-600">{t('trial.benefits.filterDesc')}</p>
+                    <h3 className="font-semibold text-foreground">{t('trial.benefits.filter')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('trial.benefits.filterDesc')}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* User-requested messaging */}
-            <Card className="border-2 border-green-500 bg-green-50">
+            <Card className="border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm shadow-lg shadow-emerald-500/10">
               <CardHeader>
-                <CardTitle className="text-green-900">{t('trial.terms.title')}</CardTitle>
+                <CardTitle className="text-emerald-400">{t('trial.terms.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-green-900 font-medium">{t('trial.terms.instant')}</p>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-foreground font-medium">{t('trial.terms.instant')}</p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-green-900 font-medium">{t('trial.terms.noBilling')}</p>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-foreground font-medium">{t('trial.terms.noBilling')}</p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-green-900 font-medium">{t('trial.terms.noChargeUntilEnd')}</p>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-foreground font-medium">{t('trial.terms.noChargeUntilEnd')}</p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-green-900 font-medium">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-foreground font-medium">
                     {t('trial.terms.cancel')}
                   </p>
                 </div>
@@ -153,46 +166,46 @@ export default function StartTrialPage() {
 
           {/* Right: Payment Form */}
           <div>
-            <Card>
+            <Card className="border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg">
               <CardHeader>
-                <CardTitle>{t('trial.form.title')}</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-foreground">{t('trial.form.title')}</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   {t('trial.form.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Plan Selection */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-foreground">
                     {t('trial.form.selectPlan')}
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPlanType('monthly')}
-                      className={`p-4 border-2 rounded-lg text-left transition ${
+                      className={`p-4 rounded-lg text-left transition-all duration-200 ${
                         planType === 'monthly'
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'bg-gradient-to-br from-emerald-500 to-blue-500 shadow-lg shadow-emerald-500/20 border border-emerald-400/50'
+                          : 'bg-slate-800/50 border border-card-border hover:border-emerald-500/30 hover:bg-slate-800/70'
                       }`}
                     >
-                      <div className="font-semibold">{t('trial.form.monthly')}</div>
-                      <div className="text-2xl font-bold mt-1">$14</div>
-                      <div className="text-sm text-gray-600">{t('trial.form.perMonth')}</div>
+                      <div className="font-semibold text-white">{t('trial.form.monthly')}</div>
+                      <div className="text-2xl font-bold mt-1 text-white">$14</div>
+                      <div className="text-sm text-white/80">{t('trial.form.perMonth')}</div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setPlanType('yearly')}
-                      className={`p-4 border-2 rounded-lg text-left transition ${
+                      className={`p-4 rounded-lg text-left transition-all duration-200 relative ${
                         planType === 'yearly'
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'bg-gradient-to-br from-emerald-500 to-blue-500 shadow-lg shadow-emerald-500/20 border border-emerald-400/50'
+                          : 'bg-slate-800/50 border border-card-border hover:border-emerald-500/30 hover:bg-slate-800/70'
                       }`}
                     >
-                      <div className="font-semibold">{t('trial.form.yearly')}</div>
-                      <div className="text-2xl font-bold mt-1">$112</div>
-                      <div className="text-sm text-gray-600">
-                        {t('trial.form.perYear')} <span className="text-green-600 font-semibold">{t('trial.form.discount')}</span>
+                      <div className="font-semibold text-white">{t('trial.form.yearly')}</div>
+                      <div className="text-2xl font-bold mt-1 text-white">$112</div>
+                      <div className="text-sm text-white/80">
+                        {t('trial.form.perYear')} <span className="text-amber-300 font-semibold">{t('trial.form.discount')}</span>
                       </div>
                     </button>
                   </div>
@@ -218,7 +231,7 @@ export default function StartTrialPage() {
                 )}
 
                 {/* Additional Info */}
-                <div className="text-xs text-gray-500 space-y-2 pt-4 border-t">
+                <div className="text-xs text-muted-foreground/70 space-y-2 pt-4 border-t border-card-border">
                   <p>
                     {t('trial.form.info1')}
                   </p>
