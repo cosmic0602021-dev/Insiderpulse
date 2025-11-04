@@ -40,11 +40,12 @@ export default function StartTrialPage() {
   useEffect(() => {
     // Redirect to live trading on success
     if (isSuccess) {
+      // Reload the page to refresh auth state from server
       setTimeout(() => {
-        navigate('/live-trading');
+        window.location.href = '/live-trading';
       }, 2000);
     }
-  }, [isSuccess, navigate]);
+  }, [isSuccess]);
 
   const handleSubmit = async () => {
     await confirmCardSetup(planType);

@@ -1622,7 +1622,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate comprehensive analysis with language support
       const comprehensiveAnalysis = {
-        executiveSummary: analysis.recommendation,
+        executiveSummary: (() => {
+          let summary = analysis.recommendation;
+
+          // Integrate news analysis into executive summary
+          if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
+            const totalNews = newsCorrelationResult.relatedNews.length;
+            const positiveNews = newsCorrelationResult.relatedNews.filter((n: any) =>
+              n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
+            ).length;
+            const negativeNews = newsCorrelationResult.relatedNews.filter((n: any) =>
+              n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
+            ).length;
+            const neutralNews = totalNews - positiveNews - negativeNews;
+
+            // Get most recent news headline
+            const latestNews = newsCorrelationResult.relatedNews
+              .sort((a: any, b: any) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())[0];
+
+            // Create news context based on language
+            let newsContext = '';
+            if (language === 'ko') {
+              newsContext = `최근 30일간 ${totalNews}건의 관련 뉴스가 보도되었으며, `;
+              newsContext += `긍정 ${positiveNews}건, 부정 ${negativeNews}건, 중립 ${neutralNews}건으로 `;
+
+              if (positiveNews > negativeNews) {
+                newsContext += '전반적으로 긍정적인 시장 분위기를 보이고 있습니다. ';
+              } else if (negativeNews > positiveNews) {
+                newsContext += '시장의 우려가 감지되고 있습니다. ';
+              } else {
+                newsContext += '시장은 중립적인 태도를 유지하고 있습니다. ';
+              }
+
+              if (latestNews) {
+                newsContext += `특히 "${latestNews.title}" 뉴스가 주목받고 있으며, `;
+              }
+
+              // Relate to insider trade
+              const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
+              if (isBuy && positiveNews > negativeNews) {
+                newsContext += '긍정적인 뉴스 흐름과 내부자 매수가 맞물려 강력한 매수 신호를 형성하고 있습니다. ';
+              } else if (!isBuy && negativeNews > positiveNews) {
+                newsContext += '부정적인 뉴스와 내부자 매도가 동시에 발생하여 주의가 필요합니다. ';
+              } else if (isBuy && negativeNews > positiveNews) {
+                newsContext += '부정적인 뉴스에도 불구하고 내부자가 매수에 나서 역발상 투자 기회일 수 있습니다. ';
+              }
+            } else {
+              newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
+              newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
+
+              if (positiveNews > negativeNews) {
+                newsContext += 'Overall market sentiment is positive. ';
+              } else if (negativeNews > positiveNews) {
+                newsContext += 'Market concerns have been detected. ';
+              } else {
+                newsContext += 'Market sentiment remains neutral. ';
+              }
+
+              if (latestNews) {
+                newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
+              }
+
+              // Relate to insider trade
+              const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
+              if (isBuy && positiveNews > negativeNews) {
+                newsContext += 'The convergence of positive news flow and insider buying creates a strong buy signal. ';
+              } else if (!isBuy && negativeNews > positiveNews) {
+                newsContext += 'The combination of negative news and insider selling warrants caution. ';
+              } else if (isBuy && negativeNews > positiveNews) {
+                newsContext += 'Insider buying despite negative news may present a contrarian opportunity. ';
+              }
+            }
+
+            summary = newsContext + summary;
+          }
+
+          return summary;
+        })(),
         actionableRecommendation: `${analysis.signalType} ${t('signal')} - ${analysis.recommendation}`,
         priceTargets: {
           conservative: trade.pricePerShare * 0.95,
@@ -1645,9 +1721,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 newsAnalysis: (() => {
           // Reuse the news correlation result already fetched above
           if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
-            // Use real news data
+            // Use real news data - sort by date (newest first)
             const newsItems = newsCorrelationResult.relatedNews
               .slice(0, 10) // Top 10 most relevant news
+              .sort((a: any, b: any) => {
+                // Sort by date, newest first
+                const dateA = new Date(a.publishedDate).getTime();
+                const dateB = new Date(b.publishedDate).getTime();
+                return dateB - dateA;
+              })
               .map((article: any) => ({
                 title: article.title,
                 summary: article.summary,

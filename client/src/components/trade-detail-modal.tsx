@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import html2canvas from 'html2canvas';
 import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
-  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper
+  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper, Zap
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ReferenceArea, Dot } from 'recharts';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
@@ -876,46 +876,6 @@ export function TradeDetailModal({
                 <div className="flex-1">
                   <h4 className="font-semibold text-sm mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
 
-                  {/* 종합의견 - Overall Opinion at the top */}
-                  {(trade.comprehensiveAnalysis || comprehensiveAnalysis) && !isLoadingAnalysis && (() => {
-                    const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
-                    const sentiment = analysis.marketContext?.sentiment || 'NEUTRAL';
-                    const isBullish = sentiment === 'BULLISH';
-                    const isBearish = sentiment === 'BEARISH';
-
-                    return (
-                      <div className={`mb-4 p-4 rounded-lg border-2 ${
-                        isBullish ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
-                        isBearish ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
-                        'bg-gray-50 dark:bg-gray-900/20 border-gray-500'
-                      }`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-bold text-base">📊 {t('tradeDetail.overallOpinion')}</h5>
-                          <Badge className={`text-sm px-3 py-1 font-bold ${
-                            isBullish ? 'bg-green-600 text-white' :
-                            isBearish ? 'bg-red-600 text-white' :
-                            'bg-gray-600 text-white'
-                          }`}>
-                            {isBullish ? t('tradeDetail.buyRecommendation') : isBearish ? t('tradeDetail.sellRecommendation') : t('tradeDetail.holdRecommendation')}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              {isBullish ? t('tradeDetail.insiderBuyingActivity') :
-                               isBearish ? t('tradeDetail.insiderSellingActivity') :
-                               t('tradeDetail.mixedInsiderActivity')}
-                            </p>
-                          </div>
-                          <div className="text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border">
-                            <p className="text-xs text-muted-foreground">{t('tradeDetail.confidenceLevel')}</p>
-                            <p className="text-lg font-bold text-blue-600">{analysis.confidence}%</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
                   <div className="space-y-3 text-sm leading-relaxed" data-testid="text-ai-analysis">
                     {isLoadingAnalysis ? (
                       <div className="flex items-center justify-center p-8">
@@ -923,13 +883,40 @@ export function TradeDetailModal({
                         <span className="ml-3">{t('tradeDetail.aiAnalysisGenerating')}</span>
                       </div>
                     ) : (trade.comprehensiveAnalysis || comprehensiveAnalysis) ? (
-                      // 실제 AI 분석 결과 표시
+                      // 실제 AI 분석 결과 표시 (통합된 종합의견 포함)
                       (() => {
                         const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
+                        const sentiment = analysis.marketContext?.sentiment || 'NEUTRAL';
+                        const isBullish = sentiment === 'BULLISH';
+                        const isBearish = sentiment === 'BEARISH';
+
                         return (<>
-                        <div className="mb-4">
-                          <h5 className="font-semibold mb-2">{t('tradeDetail.aiComprehensiveAnalysis')}</h5>
-                          <p className="text-sm text-muted-foreground">{analysis.executiveSummary}</p>
+                        {/* 통합된 AI 종합 분석 헤더 */}
+                        <div className={`mb-4 p-4 rounded-lg border-2 ${
+                          isBullish ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
+                          isBearish ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+                          'bg-gray-50 dark:bg-gray-900/20 border-gray-500'
+                        }`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-bold text-base flex items-center gap-2">
+                              <BarChart3 className="h-5 w-5" />
+                              {t('tradeDetail.aiComprehensiveAnalysis')}
+                            </h5>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-sm px-3 py-1 font-bold ${
+                                isBullish ? 'bg-green-600 text-white' :
+                                isBearish ? 'bg-red-600 text-white' :
+                                'bg-gray-600 text-white'
+                              }`}>
+                                {isBullish ? t('tradeDetail.buyRecommendation') : isBearish ? t('tradeDetail.sellRecommendation') : t('tradeDetail.holdRecommendation')}
+                              </Badge>
+                              <div className="text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border">
+                                <p className="text-xs text-muted-foreground">{t('tradeDetail.confidenceLevel')}</p>
+                                <p className="text-lg font-bold text-blue-600">{analysis.confidence}%</p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{analysis.executiveSummary}</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -998,7 +985,10 @@ export function TradeDetailModal({
 
                         {analysis.catalysts?.length > 0 && (
                           <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50">
-                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">{t('tradeDetail.keyCatalysts')}</p>
+                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
+                              <Zap className="h-4 w-4" />
+                              {t('tradeDetail.keyCatalysts')}
+                            </p>
                             <ul className="text-xs list-disc list-inside space-y-1">
                               {analysis.catalysts.map((catalyst, index) => (
                                 <li key={index}>{catalyst}</li>
@@ -1040,7 +1030,10 @@ export function TradeDetailModal({
                             {/* 주요 뉴스 목록 */}
                             {analysis.newsAnalysis.majorNews.length > 0 && (
                               <div className="space-y-3">
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('tradeDetail.majorNews')}</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                  <Star className="h-4 w-4" />
+                                  {t('tradeDetail.majorNews')}
+                                </p>
                                 {analysis.newsAnalysis.majorNews.map((news, index) => {
                                   const sentimentLower = news.sentiment.toLowerCase();
                                   const isPositive = sentimentLower.includes('positive') || sentimentLower.includes('bullish');
@@ -1057,13 +1050,14 @@ export function TradeDetailModal({
                                         <h7 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
                                           {news.title}
                                         </h7>
-                                        <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 ${
+                                        <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
                                           isPositive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                                           isNegative ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                                           'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                         }`}>
-                                          {isPositive ? `📈 ${t('tradeDetail.positive')}` :
-                                           isNegative ? `📉 ${t('tradeDetail.negative')}` : `⚖️ ${t('tradeDetail.neutral')}`}
+                                          {isPositive ? <><TrendingUp className="h-3 w-3" /> {t('tradeDetail.positive')}</> :
+                                           isNegative ? <><TrendingDown className="h-3 w-3" /> {t('tradeDetail.negative')}</> :
+                                           <><DollarSign className="h-3 w-3" /> {t('tradeDetail.neutral')}</>}
                                         </Badge>
                                       </div>
 
@@ -1073,9 +1067,20 @@ export function TradeDetailModal({
                                           <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
                                             {news.summary}
                                           </p>
-                                          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                            <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
-                                            <span>{news.source || t('tradeDetail.marketAnalysis')}</span>
+                                          <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                            <div className="flex items-center gap-2">
+                                              <Calendar className="h-4 w-4" />
+                                              <span className="font-medium">
+                                                {new Date(news.published).toLocaleDateString(
+                                                  language === 'ko' ? 'ko-KR' : 'en-US',
+                                                  { year: 'numeric', month: 'short', day: 'numeric' }
+                                                )}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                              <span>{t('tradeDetail.relevance')}: {Math.round(news.relevanceScore * 100)}%</span>
+                                              <span>{news.source || t('tradeDetail.marketAnalysis')}</span>
+                                            </div>
                                           </div>
                                         </div>
                                       )}

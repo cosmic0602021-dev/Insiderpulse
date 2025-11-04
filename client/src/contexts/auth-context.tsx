@@ -26,24 +26,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load auth from localStorage on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('authUser');
+    const initAuth = async () => {
+      const savedToken = localStorage.getItem('authToken');
+      const savedUser = localStorage.getItem('authUser');
 
-    if (savedToken && savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setToken(savedToken);
-        // Set token in API client
-        apiClient.setToken(savedToken);
-      } catch (error) {
-        console.error('Failed to parse saved user:', error);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('authUser');
+      if (savedToken && savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+
+          // Set token in API client first for verification request
+          apiClient.setToken(savedToken);
+
+          // Verify token with server
+          console.log('🔐 Verifying saved token...');
+          const verifyResponse = await apiClient.verifyToken();
+
+          if (verifyResponse.success && verifyResponse.user) {
+            console.log('✅ Token is valid, restoring session');
+            setUser(verifyResponse.user);
+            setToken(savedToken);
+            // Update stored user info in case it changed
+            localStorage.setItem('authUser', JSON.stringify(verifyResponse.user));
+          } else {
+            console.log('❌ Token is invalid, clearing session');
+            // Token is invalid, clear everything
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authUser');
+            apiClient.setToken(null);
+          }
+        } catch (error) {
+          console.error('Failed to verify token:', error);
+          // Token verification failed, clear everything
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+          apiClient.setToken(null);
+        }
       }
-    }
 
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = (newUser: User, newToken: string) => {
@@ -63,6 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Remove token from API client
     apiClient.setToken(null);
   };
+
+  // Listen for 401 unauthorized events from API client
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      console.log('🔓 Received auth:logout event, logging out...');
+      logout();
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
+  }, []);
 
   const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthModalMode(mode);

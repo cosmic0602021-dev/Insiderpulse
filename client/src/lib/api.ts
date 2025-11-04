@@ -91,6 +91,18 @@ class ApiClient {
       }
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401) {
+          console.log('🔓 Token expired or invalid, clearing session');
+          // Clear localStorage and token
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+          this.setToken(null);
+
+          // Dispatch custom event to notify auth context
+          window.dispatchEvent(new Event('auth:logout'));
+        }
+
         // If server returned an error object with message, use it
         const errorMessage = (data as any).message || (data as any).error || response.statusText;
         throw new Error(`API request failed: ${response.status} - ${errorMessage}`);

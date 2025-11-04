@@ -133,7 +133,7 @@ export default function LiveTrading() {
     navigate('/premium-checkout');
   };
 
-  const handleUnlock = async () => {
+  const handleUnlock = () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
       // Show auth modal with signup mode
@@ -141,34 +141,8 @@ export default function LiveTrading() {
       return;
     }
 
-    try {
-      console.log('🎯 Activating 7-day trial...');
-      const result = await apiClient.activateTrial();
-
-      if (result.success) {
-        console.log('✅ Trial activated successfully:', result);
-        alert(`🎉 ${result.message}\n\nYour 7-day free trial is now active! Enjoy real-time insider trading data.`);
-
-        // Update trial state
-        setIsTrialing(true);
-        setHasUsedTrial(true);
-        if (result.expiresAt) {
-          setTrialExpiresAt(result.expiresAt);
-        }
-
-        // Refresh access level from server
-        await refreshAccessLevel();
-
-        // Refresh the page to show unlocked data
-        refetch();
-      } else {
-        console.warn('⚠️ Trial activation failed:', result.message);
-        alert(`❌ ${result.message || result.error}`);
-      }
-    } catch (error: any) {
-      console.error('❌ Trial activation error:', error);
-      alert(`Error: ${error.message || 'Failed to activate trial'}`);
-    }
+    // Navigate to start trial page with Stripe payment collection
+    navigate('/start-trial');
   };
 
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - SEC 파일링 날짜순 정렬 (filedDate)
