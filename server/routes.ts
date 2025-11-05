@@ -286,6 +286,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
   const SALT_ROUNDS = 10;
 
+  // Middleware to extract userId from JWT token
+  const getUserIdFromToken = (req: any): string | null => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return null;
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+      return decoded.userId;
+    } catch (error) {
+      return null;
+    }
+  };
+
   // 🔔 Stripe Webhook - 결제 완료 시 자동으로 사용자 등급 업그레이드
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     const sig = req.headers['stripe-signature'];
@@ -1019,19 +1032,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다' });
     }
   });
-
-  // Middleware to extract userId from JWT token
-  const getUserIdFromToken = (req: any): string | null => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) return null;
-
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
-      return decoded.userId;
-    } catch (error) {
-      return null;
-    }
-  };
 
   // 📊 EXISTING INSIDER TRADING DATA ENDPOINTS
   // Get trading statistics (verified trades only by default)
