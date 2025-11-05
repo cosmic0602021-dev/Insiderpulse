@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/language-context';
 
 interface TrialCardFormProps {
   planType: 'monthly' | 'yearly' | 'test';
-  onSuccess: () => void;
+  onSuccess: (message: string) => void;
   onError: (error: string) => void;
   isLoading: boolean;
   onSubmit: () => Promise<void>;
@@ -95,7 +95,7 @@ export function TrialCardForm({
 
       console.log('✅ Trial activated:', response);
       setIsSubmitting(false);
-      onSuccess();
+      onSuccess(response.message || t('trial.success.message'));
     } catch (error) {
       console.error('Trial activation failed:', error);
       onError(error instanceof Error ? error.message : t('trial.errors.unknown'));

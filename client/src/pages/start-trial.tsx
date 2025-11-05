@@ -21,6 +21,7 @@ export default function StartTrialPage() {
   const { createSetupIntent, isLoading, error, clientSecret } = useTrialSetup();
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [serverMessage, setServerMessage] = useState<string>('');
 
   useEffect(() => {
     // Redirect if not logged in
@@ -31,7 +32,7 @@ export default function StartTrialPage() {
 
     // Redirect if already has trial or subscription
     if (user.hasUsedTrial || user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
-      navigate('/live-trading');
+      navigate('/trades');
       return;
     }
 
@@ -44,12 +45,13 @@ export default function StartTrialPage() {
     if (isSuccess) {
       // Reload the page to refresh auth state from server
       setTimeout(() => {
-        window.location.href = '/live-trading';
+        window.location.href = '/trades';
       }, 2000);
     }
   }, [isSuccess]);
 
-  const handleSuccess = () => {
+  const handleSuccess = (message: string) => {
+    setServerMessage(message);
     setIsSuccess(true);
   };
 
@@ -70,7 +72,7 @@ export default function StartTrialPage() {
             </div>
             <h2 className="text-2xl font-bold mb-2 text-foreground">{t('trial.success.title')}</h2>
             <p className="text-muted-foreground mb-4">
-              {t('trial.success.message')}
+              {serverMessage || t('trial.success.message')}
             </p>
             <p className="text-sm text-muted-foreground/70">{t('trial.success.redirecting')}</p>
           </CardContent>
