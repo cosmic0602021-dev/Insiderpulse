@@ -19,7 +19,7 @@ export default function PremiumCheckout() {
     monthly: {
       name: "Insider Pro",
       price: 14,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_monthly',
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
       interval: "/month",
       billingInterval: "월간 자동결제",
       description: "Real-time insider trading data & AI analysis",
@@ -39,7 +39,7 @@ export default function PremiumCheckout() {
       name: "Insider Pro",
       price: 112,
       originalPrice: 168,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_yearly',
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
       interval: "/year",
       billingInterval: "연간 자동결제",
       pricePerMonth: 9.33,
@@ -60,7 +60,7 @@ export default function PremiumCheckout() {
     test: {
       name: "Mini Plan",
       price: 0.10,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_TEST || 'price_test',
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_TEST || 'price_1SPm4OQ9br8aQ59530R9Dy37',
       interval: "",
       billingInterval: "1분 무료체험 후 자동 청구",
       description: "Test our service with a mini plan",
