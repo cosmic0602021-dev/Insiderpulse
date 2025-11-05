@@ -228,29 +228,28 @@ export default function StartTrialPage() {
                   </div>
                 </div>
 
-                {/* Test Plan - Temporarily hidden for debugging
-                <div className="mt-4 p-4 border-2 border-amber-400 rounded-lg bg-amber-500/10">
+                {/* Mini Plan - Budget option for testing service */}
+                <div className="mt-4 p-4 border-2 border-blue-400 rounded-lg bg-blue-500/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-400 font-bold text-xs px-2 py-1 bg-amber-500/20 rounded">⚠️ TEST ONLY</span>
-                      <span className="text-sm font-semibold text-foreground">테스트 플랜</span>
+                      <span className="text-blue-400 font-bold text-xs px-2 py-1 bg-blue-500/20 rounded">💎 MINI</span>
+                      <span className="text-sm font-semibold text-foreground">미니 플랜</span>
                     </div>
-                    <span className="text-2xl font-bold text-amber-400">$0.10</span>
+                    <span className="text-2xl font-bold text-blue-400">$0.10</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">5분 무료체험 후 자동 청구 (테스트용)</p>
+                  <p className="text-xs text-muted-foreground mb-3">1분 무료체험 후 자동 청구</p>
                   <button
                     type="button"
                     onClick={() => setPlanType('test')}
                     className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
                       planType === 'test'
-                        ? 'bg-amber-500 text-slate-900 shadow-lg'
-                        : 'bg-slate-800/50 text-foreground border border-amber-500/30 hover:bg-amber-500/10'
+                        ? 'bg-blue-500 text-white shadow-lg'
+                        : 'bg-slate-800/50 text-foreground border border-blue-500/30 hover:bg-blue-500/10'
                     }`}
                   >
-                    {planType === 'test' ? '✓ 선택됨' : '테스트 플랜 선택'}
+                    {planType === 'test' ? '✓ 선택됨' : '미니 플랜 선택'}
                   </button>
                 </div>
-                */}
 
                 {/* Stripe Elements Form */}
                 {clientSecret && (

@@ -1349,10 +1349,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Attached payment method to customer: ${customerId}`);
 
-      // Create subscription with trial (7 days for production, 5 minutes for test)
+      // Create subscription with trial (7 days for production, 1 minute for mini plan)
       const isTestPlan = planType === 'test';
       const trialEndTimestamp = isTestPlan
-        ? Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes from now
+        ? Math.floor(Date.now() / 1000) + (1 * 60) // 1 minute from now
         : undefined; // Use trial_period_days for production plans
 
       const subscriptionParams: any = {
@@ -1369,7 +1369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       };
 
-      // For test plan: use trial_end (5 minutes). For production: use trial_period_days (7 days)
+      // For mini plan: use trial_end (1 minute). For production: use trial_period_days (7 days)
       if (isTestPlan) {
         subscriptionParams.trial_end = trialEndTimestamp;
       } else {
@@ -1401,9 +1401,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Trial activated for user ${userId} - expires at ${trialEnd.toISOString()}`);
 
+      const trialMessage = isTestPlan
+        ? '1분 무료 체험이 시작되었습니다'
+        : '7일 무료 체험이 시작되었습니다';
+
       res.json({
         success: true,
-        message: '7일 무료 체험이 시작되었습니다',
+        message: trialMessage,
         trialActivatedAt: trialStart.toISOString(),
         trialExpiresAt: trialEnd.toISOString(),
         subscriptionId: subscription.id,
