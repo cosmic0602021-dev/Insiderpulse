@@ -228,7 +228,7 @@ class ApiClient {
    */
   activateTrialWithCard = async (
     paymentMethodId: string,
-    planType: 'monthly' | 'yearly'
+    planType: 'monthly' | 'yearly' | 'test'
   ): Promise<{
     success: boolean;
     message: string;

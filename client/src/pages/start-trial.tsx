@@ -30,8 +30,17 @@ export default function StartTrialPage() {
       return;
     }
 
-    // Redirect if already has trial or subscription
-    if (user.hasUsedTrial || user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+    // If user already used trial, redirect to premium checkout
+    if (user.hasUsedTrial) {
+      setSubmitError('이미 무료 체험을 사용하셨습니다. 구독을 시작해주세요.');
+      setTimeout(() => {
+        navigate('/premium-checkout');
+      }, 2000);
+      return;
+    }
+
+    // Redirect if already has active subscription
+    if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
       navigate('/trades');
       return;
     }

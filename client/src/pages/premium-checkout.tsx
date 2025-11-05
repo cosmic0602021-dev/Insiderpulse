@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 
 export default function PremiumCheckout() {
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly' | 'test'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -56,6 +56,22 @@ export default function PremiumCheckout() {
       ],
       savings: "Save 33% with annual billing",
       discount: "33% OFF"
+    },
+    test: {
+      name: "Mini Plan",
+      price: 0.10,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_TEST || 'price_test',
+      interval: "",
+      billingInterval: "1분 무료체험 후 자동 청구",
+      description: "Test our service with a mini plan",
+      features: [
+        "1분 무료 체험",
+        "모든 Pro 기능 이용 가능",
+        "체험 후 자동 청구 $0.10",
+        "언제든지 취소 가능"
+      ],
+      savings: null,
+      discount: "💎 MINI"
     }
   };
 
@@ -200,6 +216,21 @@ export default function PremiumCheckout() {
                   {selectedPlan !== 'yearly' && (
                     <span className="absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">
                       -33%
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setSelectedPlan('test')}
+                  className={`relative px-6 py-3 rounded-md font-semibold transition-all ${
+                    selectedPlan === 'test'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  💎 Mini
+                  {selectedPlan !== 'test' && (
+                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      $0.10
                     </span>
                   )}
                 </button>

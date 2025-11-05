@@ -141,6 +141,12 @@ export default function LiveTrading() {
       return;
     }
 
+    // If user already used trial, go to premium checkout page
+    if (hasUsedTrial) {
+      navigate('/premium-checkout');
+      return;
+    }
+
     // Navigate to start trial page with Stripe payment collection
     navigate('/start-trial');
   };
@@ -353,8 +359,13 @@ export default function LiveTrading() {
         <TrialTimerBanner trialExpiresAt={trialExpiresAt} />
       )}
 
-      {/* Free Zone Banner - 48h delay notice */}
-      {accessLevel && !accessLevel.hasRealtimeAccess && !isTrialing && accessLevel.delayHours > 0 && (
+      {/* Trial Expired Banner - Show after trial ends */}
+      {hasUsedTrial && !isTrialing && accessLevel && !accessLevel.hasRealtimeAccess && (
+        <TrialExpiredBanner onUpgrade={handleUpgrade} />
+      )}
+
+      {/* Free Zone Banner - 48h delay notice (only for users who haven't used trial) */}
+      {accessLevel && !accessLevel.hasRealtimeAccess && !isTrialing && !hasUsedTrial && accessLevel.delayHours > 0 && (
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
       )}
 
