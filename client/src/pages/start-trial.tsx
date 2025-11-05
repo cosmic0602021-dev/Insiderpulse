@@ -219,16 +219,16 @@ export default function StartTrialPage() {
                         <div className="text-sm text-white/60 line-through">$168</div>
                       </div>
                       <div className="text-xs text-white/80 mt-1">
-                        = 월 <span className="font-bold text-amber-300">$9.33</span>
+                        = <span className="font-bold text-amber-300">$9.33</span>{t('trial.yearly.perMonth')}
                       </div>
                       <div className="text-xs text-emerald-300 font-medium mt-0.5">
-                        💰 매년 $56 절약
+                        {t('trial.yearly.savings')}
                       </div>
                     </button>
                   </div>
                 </div>
 
-                {/* Test Plan - Temporary (for testing only) */}
+                {/* Test Plan - Temporarily hidden for debugging
                 <div className="mt-4 p-4 border-2 border-amber-400 rounded-lg bg-amber-500/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -250,6 +250,7 @@ export default function StartTrialPage() {
                     {planType === 'test' ? '✓ 선택됨' : '테스트 플랜 선택'}
                   </button>
                 </div>
+                */}
 
                 {/* Stripe Elements Form */}
                 {clientSecret && (

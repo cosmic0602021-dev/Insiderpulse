@@ -135,6 +135,23 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.success.message': '7-day free trial activated. Start using real-time trade tracking now!',
     'trial.success.redirecting': 'Redirecting automatically...',
 
+    // Trial form additional translations
+    'trial.yearly.perMonth': '/mo',
+    'trial.yearly.savings': '💰 Save $56/year',
+    'trial.errors.stripeNotLoaded': 'Stripe failed to load',
+    'trial.errors.enterCard': 'Please enter your card information',
+    'trial.errors.cardNotFound': 'Card information not found',
+    'trial.errors.cardVerificationFailed': 'Card verification failed',
+    'trial.errors.paymentSaveFailed': 'Failed to save payment information',
+    'trial.errors.activationFailed': 'Trial activation failed',
+    'trial.errors.unknown': 'An unknown error occurred',
+    'trial.form.cardInfo': 'Card Information',
+    'trial.form.securePayment': 'Secure Payment · Stripe Protected',
+    'trial.form.processing': 'Processing...',
+    'trial.form.startTrial': 'Start Free Trial',
+    'trial.form.afterTrialMonthly': 'Auto-billing after 7 days: $14/month',
+    'trial.form.afterTrialYearly': 'Auto-billing after 7 days: $112/year',
+
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ Trial expires in {hours} hours!',
     'fomo.upgradeToKeepAccess': 'Upgrade now to keep real-time access.',
@@ -1055,6 +1072,23 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.success.message': '7일 무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!',
     'trial.success.redirecting': '잠시 후 자동으로 이동합니다...',
 
+    // Trial form additional translations
+    'trial.yearly.perMonth': '/월',
+    'trial.yearly.savings': '💰 매년 $56 절약',
+    'trial.errors.stripeNotLoaded': 'Stripe가 로드되지 않았습니다',
+    'trial.errors.enterCard': '카드 정보를 입력해주세요',
+    'trial.errors.cardNotFound': '카드 정보를 찾을 수 없습니다',
+    'trial.errors.cardVerificationFailed': '카드 정보 확인 실패',
+    'trial.errors.paymentSaveFailed': '결제 정보 저장 실패',
+    'trial.errors.activationFailed': '트라이얼 활성화 실패',
+    'trial.errors.unknown': '알 수 없는 오류가 발생했습니다',
+    'trial.form.cardInfo': '카드 정보',
+    'trial.form.securePayment': '안전한 결제 · Stripe 보안 처리',
+    'trial.form.processing': '처리 중...',
+    'trial.form.startTrial': '무료 체험 시작하기',
+    'trial.form.afterTrialMonthly': '7일 후 자동 결제: 월 $14',
+    'trial.form.afterTrialYearly': '7일 후 자동 결제: 연 $112',
+
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ 체험이 {hours}시간 후 만료됩니다!',
     'fomo.upgradeToKeepAccess': '지금 업그레이드하여 실시간 접근을 유지하세요.',
@@ -1760,6 +1794,23 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.success.message': '7日間の無料トライアルが有効になりました。今すぐリアルタイム取引追跡をご利用ください！',
     'trial.success.redirecting': '自動的にリダイレクトしています...',
 
+    // Trial form additional translations
+    'trial.yearly.perMonth': '/月',
+    'trial.yearly.savings': '💰 年間$56節約',
+    'trial.errors.stripeNotLoaded': 'Stripeの読み込みに失敗しました',
+    'trial.errors.enterCard': 'カード情報を入力してください',
+    'trial.errors.cardNotFound': 'カード情報が見つかりません',
+    'trial.errors.cardVerificationFailed': 'カード情報の確認に失敗しました',
+    'trial.errors.paymentSaveFailed': '支払い情報の保存に失敗しました',
+    'trial.errors.activationFailed': 'トライアルの有効化に失敗しました',
+    'trial.errors.unknown': '不明なエラーが発生しました',
+    'trial.form.cardInfo': 'カード情報',
+    'trial.form.securePayment': '安全な決済 · Stripe保護',
+    'trial.form.processing': '処理中...',
+    'trial.form.startTrial': '無料トライアルを開始',
+    'trial.form.afterTrialMonthly': '7日後の自動請求: 月額$14',
+    'trial.form.afterTrialYearly': '7日後の自動請求: 年額$112',
+
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ トライアルは{hours}時間後に期限切れ！',
     'fomo.upgradeToKeepAccess': '今すぐアップグレードしてリアルタイムアクセスを維持。',
@@ -2358,6 +2409,23 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.success.title': '试用开始！',
     'trial.success.message': '7天免费试用已激活。立即开始使用实时交易追踪！',
     'trial.success.redirecting': '正在自动跳转...',
+
+    // Trial form additional translations
+    'trial.yearly.perMonth': '/月',
+    'trial.yearly.savings': '💰 每年节省$56',
+    'trial.errors.stripeNotLoaded': 'Stripe加载失败',
+    'trial.errors.enterCard': '请输入卡信息',
+    'trial.errors.cardNotFound': '找不到卡信息',
+    'trial.errors.cardVerificationFailed': '卡验证失败',
+    'trial.errors.paymentSaveFailed': '保存付款信息失败',
+    'trial.errors.activationFailed': '试用激活失败',
+    'trial.errors.unknown': '发生未知错误',
+    'trial.form.cardInfo': '卡信息',
+    'trial.form.securePayment': '安全付款 · Stripe保护',
+    'trial.form.processing': '处理中...',
+    'trial.form.startTrial': '开始免费试用',
+    'trial.form.afterTrialMonthly': '7天后自动计费: 每月$14',
+    'trial.form.afterTrialYearly': '7天后自动计费: 每年$112',
 
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ 试用将在{hours}小时后过期！',

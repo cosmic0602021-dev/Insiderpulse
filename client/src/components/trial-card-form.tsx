@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { useLanguage } from '@/contexts/language-context';
 
 interface TrialCardFormProps {
   planType: 'monthly' | 'yearly' | 'test';
@@ -27,6 +28,7 @@ export function TrialCardForm({
 }: TrialCardFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const { t } = useLanguage();
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,18 +39,18 @@ export function TrialCardForm({
     e.preventDefault();
 
     if (!stripe || !elements) {
-      onError('Stripe가 로드되지 않았습니다');
+      onError(t('trial.errors.stripeNotLoaded'));
       return;
     }
 
     if (!cardComplete) {
-      onError('카드 정보를 입력해주세요');
+      onError(t('trial.errors.enterCard'));
       return;
     }
 
     const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
-      onError('카드 정보를 찾을 수 없습니다');
+      onError(t('trial.errors.cardNotFound'));
       return;
     }
 
@@ -66,13 +68,13 @@ export function TrialCardForm({
       );
 
       if (stripeError) {
-        onError(stripeError.message || '카드 정보 확인 실패');
+        onError(stripeError.message || t('trial.errors.cardVerificationFailed'));
         setIsSubmitting(false);
         return;
       }
 
       if (!setupIntent || !setupIntent.payment_method) {
-        onError('결제 정보 저장 실패');
+        onError(t('trial.errors.paymentSaveFailed'));
         setIsSubmitting(false);
         return;
       }
@@ -86,7 +88,7 @@ export function TrialCardForm({
       );
 
       if (!response.success) {
-        onError(response.message || response.error || '트라이얼 활성화 실패');
+        onError(response.message || response.error || t('trial.errors.activationFailed'));
         setIsSubmitting(false);
         return;
       }
@@ -96,7 +98,7 @@ export function TrialCardForm({
       onSuccess();
     } catch (error) {
       console.error('Trial activation failed:', error);
-      onError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다');
+      onError(error instanceof Error ? error.message : t('trial.errors.unknown'));
       setIsSubmitting(false);
     }
   };
@@ -135,7 +137,7 @@ export function TrialCardForm({
       {/* Card Input */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">
-          카드 정보
+          {t('trial.form.cardInfo')}
         </label>
         <div className="group p-4 border border-card-border rounded-lg bg-card/50 backdrop-blur-sm
                       transition-all duration-200
@@ -172,7 +174,7 @@ export function TrialCardForm({
             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
           />
         </svg>
-        <span>안전한 결제 · Stripe 보안 처리</span>
+        <span>{t('trial.form.securePayment')}</span>
       </div>
 
       {/* Submit Button */}
@@ -184,16 +186,16 @@ export function TrialCardForm({
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            처리 중...
+            {t('trial.form.processing')}
           </>
         ) : (
-          '무료 체험 시작하기'
+          t('trial.form.startTrial')
         )}
       </Button>
 
       {/* Plan Info */}
       <p className="text-center text-sm text-muted-foreground/70">
-        7일 후 자동 결제: {planType === 'monthly' ? '월 $14' : '연 $112'}
+        {planType === 'monthly' ? t('trial.form.afterTrialMonthly') : t('trial.form.afterTrialYearly')}
       </p>
     </form>
   );
