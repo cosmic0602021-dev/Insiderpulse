@@ -118,18 +118,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let customerId = user.stripeCustomerId;
 
       // Verify stored customer ID still exists in Stripe
-      if (customerId) {
+      if (customerId && typeof customerId === 'string' && customerId.trim() !== '') {
         try {
           await stripe.customers.retrieve(customerId);
           console.log(`✅ Using existing Stripe customer: ${customerId}`);
         } catch (error: any) {
-          if (error.code === 'resource_missing') {
-            console.warn(`⚠️ Stored customer ${customerId} not found in Stripe, creating new one`);
-            customerId = null; // Force creation of new customer
+          console.warn(`⚠️ Stored customer ${customerId} validation failed:`, error.message);
+          // Create new customer for any Stripe error instead of crashing
+          if (error.type === 'StripeInvalidRequestError' || error.code === 'resource_missing') {
+            console.warn(`⚠️ Customer not found in Stripe, will create new one`);
           } else {
-            throw error; // Re-throw other errors
+            console.error(`⚠️ Unexpected Stripe error, will create new customer:`, error);
           }
+          customerId = null; // Force creation of new customer
         }
+      } else if (customerId) {
+        console.warn(`⚠️ Invalid customer ID format: "${customerId}", will create new one`);
+        customerId = null;
       }
 
       if (!customerId) {
@@ -1226,18 +1231,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let customerId = user.stripeCustomerId;
 
       // Verify stored customer ID still exists in Stripe
-      if (customerId) {
+      if (customerId && typeof customerId === 'string' && customerId.trim() !== '') {
         try {
           await stripe.customers.retrieve(customerId);
           console.log(`✅ Using existing Stripe customer: ${customerId}`);
         } catch (error: any) {
-          if (error.code === 'resource_missing') {
-            console.warn(`⚠️ Stored customer ${customerId} not found in Stripe, creating new one`);
-            customerId = null; // Force creation of new customer
+          console.warn(`⚠️ Stored customer ${customerId} validation failed:`, error.message);
+          // Create new customer for any Stripe error instead of crashing
+          if (error.type === 'StripeInvalidRequestError' || error.code === 'resource_missing') {
+            console.warn(`⚠️ Customer not found in Stripe, will create new one`);
           } else {
-            throw error; // Re-throw other errors
+            console.error(`⚠️ Unexpected Stripe error, will create new customer:`, error);
           }
+          customerId = null; // Force creation of new customer
         }
+      } else if (customerId) {
+        console.warn(`⚠️ Invalid customer ID format: "${customerId}", will create new one`);
+        customerId = null;
       }
 
       if (!customerId) {
@@ -1358,18 +1368,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let customerId = user.stripeCustomerId;
 
       // Verify stored customer ID still exists in Stripe
-      if (customerId) {
+      if (customerId && typeof customerId === 'string' && customerId.trim() !== '') {
         try {
           await stripe.customers.retrieve(customerId);
           console.log(`✅ Using existing Stripe customer: ${customerId}`);
         } catch (error: any) {
-          if (error.code === 'resource_missing') {
-            console.warn(`⚠️ Stored customer ${customerId} not found in Stripe, creating new one`);
-            customerId = null; // Force creation of new customer
+          console.warn(`⚠️ Stored customer ${customerId} validation failed:`, error.message);
+          // Create new customer for any Stripe error instead of crashing
+          if (error.type === 'StripeInvalidRequestError' || error.code === 'resource_missing') {
+            console.warn(`⚠️ Customer not found in Stripe, will create new one`);
           } else {
-            throw error; // Re-throw other errors
+            console.error(`⚠️ Unexpected Stripe error, will create new customer:`, error);
           }
+          customerId = null; // Force creation of new customer
         }
+      } else if (customerId) {
+        console.warn(`⚠️ Invalid customer ID format: "${customerId}", will create new one`);
+        customerId = null;
       }
 
       if (!customerId) {

@@ -3,7 +3,14 @@
     "allow": [
       "Bash(replit secrets list:*)",
       "Bash(rm:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(cat:*)",
+      "Bash(npm run check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(awk:*)",
+      "Bash(node -e:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
