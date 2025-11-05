@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useLocation } from 'wouter';
 export default function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly' | 'test'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  const isSubmittingRef = useRef(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -83,6 +84,12 @@ export default function PremiumCheckout() {
   const trialDuration = selectedPlan === 'test' ? '1-Minute' : '7-Day';
 
   const handleCheckout = async () => {
+    // Prevent double-clicks and concurrent requests
+    if (isSubmittingRef.current) {
+      console.log('⚠️ Already submitting, ignoring duplicate click');
+      return;
+    }
+
     // Double-check authentication before proceeding
     if (!user) {
       toast({
@@ -94,6 +101,7 @@ export default function PremiumCheckout() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsProcessing(true);
 
     try {
@@ -105,17 +113,31 @@ export default function PremiumCheckout() {
 
       if (data.url) {
         // Redirect to Stripe Checkout
+        // Note: Don't reset isSubmittingRef or isProcessing here since we're redirecting
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL received');
       }
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
-      toast({
-        title: "결제 오류",
-        description: error.message || "결제 세션을 생성할 수 없습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      });
+
+      // Handle specific error for duplicate subscriptions
+      if (error.message && error.message.includes('이미 활성 구독이 있습니다')) {
+        toast({
+          title: "이미 구독 중입니다",
+          description: "이미 활성 구독이 있습니다. 대시보드로 이동합니다.",
+          variant: "default",
+        });
+        setTimeout(() => setLocation('/dashboard'), 2000);
+      } else {
+        toast({
+          title: "결제 오류",
+          description: error.message || "결제 세션을 생성할 수 없습니다. 다시 시도해주세요.",
+          variant: "destructive",
+        });
+      }
+
+      isSubmittingRef.current = false;
       setIsProcessing(false);
     }
   };
@@ -140,68 +162,6 @@ export default function PremiumCheckout() {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  // Check if user should see trial page instead
-  const shouldStartTrial = user && !user.hasUsedTrial && user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing';
-
-  if (shouldStartTrial) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-        <div className="max-w-2xl mx-auto mt-20">
-          <Card className="border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900">
-            <CardHeader className="text-center pb-4">
-              <Badge className="mb-4 bg-amber-500 text-slate-900 font-bold mx-auto w-fit">
-                <Zap className="w-4 h-4 mr-1" />
-                7일 무료 체험
-              </Badge>
-              <CardTitle className="text-3xl text-white mb-2">
-                먼저 무료 체험을 시작하세요!
-              </CardTitle>
-              <CardDescription className="text-slate-300 text-lg">
-                Pro 기능을 7일간 무료로 체험하실 수 있습니다
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4 p-6 bg-slate-900/50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium">Pro 즉시 이용 가능</p>
-                    <p className="text-sm text-slate-400">가입 즉시 모든 Pro 기능을 사용할 수 있습니다</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium">오늘 청구 없음</p>
-                    <p className="text-sm text-slate-400">지금은 카드 등록만, 결제는 7일 후</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium">언제든지 취소 가능</p>
-                    <p className="text-sm text-slate-400">취소 시 즉시 구독이 종료됩니다</p>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                onClick={() => setLocation('/start-trial')}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600"
-              >
-                7일 무료 체험 시작하기
-              </Button>
-
-              <p className="text-center text-sm text-slate-400">
-                무료 체험 후 월 $14 또는 연 $112 (33% 할인)
-              </p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     );
   }

@@ -10,12 +10,14 @@ export default function PaymentSuccess() {
   useEffect(() => {
     // Check URL parameters for payment confirmation
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentIntent = urlParams.get('payment_intent');
-    const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret');
+    // For subscription checkout, Stripe returns session_id (not payment_intent)
+    const sessionId = urlParams.get('session_id');
 
-    if (paymentIntent && paymentIntentClientSecret) {
+    if (sessionId) {
+      console.log('✅ Subscription checkout successful, session:', sessionId);
       setPaymentStatus('success');
     } else {
+      console.log('❌ No session_id found in URL');
       setPaymentStatus('error');
     }
   }, []);

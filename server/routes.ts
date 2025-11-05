@@ -114,6 +114,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // ✅ Check for existing active subscriptions to prevent duplicates
+      if (user.stripeSubscriptionId) {
+        try {
+          const existingSub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+          if (existingSub.status === 'active' || existingSub.status === 'trialing') {
+            console.log(`⚠️ User ${userId} already has active subscription: ${existingSub.id}`);
+            return res.status(400).json({
+              error: '이미 활성 구독이 있습니다',
+              subscriptionId: existingSub.id,
+              status: existingSub.status
+            });
+          }
+        } catch (error: any) {
+          // Subscription doesn't exist in Stripe anymore, continue with checkout
+          console.log(`⚠️ Stored subscription ${user.stripeSubscriptionId} not found in Stripe, allowing new checkout`);
+        }
+      }
+
+      // Also check database subscription status
+      if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+        console.log(`⚠️ User ${userId} has active subscription status in database: ${user.subscriptionStatus}`);
+        return res.status(400).json({
+          error: '이미 활성 구독이 있습니다',
+          status: user.subscriptionStatus
+        });
+      }
+
       // Create or find customer
       let customerId = user.stripeCustomerId;
 
@@ -153,7 +180,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`💾 Created Stripe customer for user ${userId}`);
       }
 
-      // Create Checkout Session with 7-day free trial
+      // ✅ Double-check: ensure customer has no active subscriptions in Stripe
+      if (customerId) {
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customerId,
+          status: 'all',
+          limit: 10
+        });
+
+        const activeOrTrialing = subscriptions.data.filter(
+          sub => sub.status === 'active' || sub.status === 'trialing'
+        );
+
+        if (activeOrTrialing.length > 0) {
+          console.log(`⚠️ Customer ${customerId} already has ${activeOrTrialing.length} active subscription(s)`);
+          return res.status(400).json({
+            error: '이미 활성 구독이 있습니다',
+            existingSubscriptions: activeOrTrialing.map(s => ({ id: s.id, status: s.status }))
+          });
+        }
+      }
+
+      // Determine if this is the mini plan (1 minute trial) or regular plan (7 day trial)
+      const testPriceId = process.env.STRIPE_PRICE_ID_TEST;
+      const isMiniPlan = priceId === testPriceId;
+
+      console.log(`🔍 Plan comparison - Received: "${priceId}", Test Price: "${testPriceId}", Is Mini: ${isMiniPlan}`);
+
+      // For mini plan, use trial_end with 1 minute timestamp
+      // For regular plans, use trial_period_days
+      const subscriptionData: any = {
+        metadata: {
+          userId: userId
+        }
+      };
+
+      if (isMiniPlan) {
+        // Mini plan: 1 minute trial using trial_end timestamp
+        const trialEndTimestamp = Math.floor(Date.now() / 1000) + (1 * 60); // 1 minute from now
+        subscriptionData.trial_end = trialEndTimestamp;
+        console.log(`🎯 Creating mini plan checkout with 1 minute trial (ends at ${new Date(trialEndTimestamp * 1000).toISOString()})`);
+      } else {
+        // Regular plans: 7 day trial
+        subscriptionData.trial_period_days = 7;
+        console.log(`🎯 Creating checkout with 7 day trial`);
+      }
+
+      // Create Checkout Session with idempotency key to prevent duplicate requests
+      // Idempotency key is valid for 1 minute window per user
+      const idempotencyKey = `checkout_${userId}_${Math.floor(Date.now() / 60000)}`;
+
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         mode: 'subscription',
@@ -164,17 +240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             quantity: 1,
           },
         ],
-        subscription_data: {
-          trial_period_days: 7, // 7-day free trial
-          metadata: {
-            userId: userId
-          }
-        },
+        subscription_data: subscriptionData,
         success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
         metadata: {
           userId: userId
         }
+      }, {
+        idempotencyKey
       });
 
       console.log(`💳 Created Checkout Session for ${user.email}: ${session.id}`);
