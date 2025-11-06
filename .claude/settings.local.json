@@ -18,7 +18,10 @@
       "WebFetch(domain:docs.stripe.com)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nFix Stripe checkout error by removing invalid trial_period_days setting\n\nStripe requires trial_period_days to be at least 1 day. Setting it to 0 caused checkout sessions to fail with \"The minimum number of trial period days is 1.\" For mini plan immediate billing, we simply don''t set any trial parameter, which correctly triggers immediate billing without trial period.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "WebFetch(domain:support.stripe.com)"
+      "WebFetch(domain:support.stripe.com)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

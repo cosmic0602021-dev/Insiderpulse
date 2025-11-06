@@ -314,12 +314,6 @@ async function collectFromFinnhub(tickerLimit: number = 30) {
   }
 }
 
-collectFromFinnhub(30)
-  .then(() => {
-    console.log('\n✨ 완료!');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('\n💥 실패:', error.message);
-    process.exit(1);
-  });
+// Auto-execution removed to prevent server shutdown
+// This function is now only called when explicitly invoked
+// The auto-scheduler will handle data collection automatically
