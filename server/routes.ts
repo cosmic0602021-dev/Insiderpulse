@@ -295,11 +295,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               request_three_d_secure: 'automatic'
             }
           },
-          consent_collection: {
-            payment_method_reuse_agreement: {
-              position: 'hidden'
-            }
-          },
           line_items: [
             {
               price: priceId,
