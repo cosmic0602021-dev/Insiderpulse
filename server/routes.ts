@@ -285,13 +285,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let session;
       try {
-        session = await stripe.checkout.sessions.create({
+        // Checkout session configuration
+        const sessionConfig: any = {
           customer: customerId,
           mode: 'subscription',
           payment_method_types: ['card'],
           payment_method_options: {
             card: {
               request_three_d_secure: 'automatic'
+            },
+            link: {
+              persistent_token: null
             }
           },
           line_items: [
@@ -306,7 +310,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metadata: {
             userId: userId
           }
-        }, {
+        };
+
+        // Link 비활성화: Payment Method Configuration 사용
+        // Dashboard에서 생성한 PMC ID를 환경변수에 설정하면 Link가 비활성화됩니다
+        if (process.env.STRIPE_PAYMENT_METHOD_CONFIG) {
+          sessionConfig.payment_method_configuration = process.env.STRIPE_PAYMENT_METHOD_CONFIG;
+        }
+
+        session = await stripe.checkout.sessions.create(sessionConfig, {
           idempotencyKey
         });
 
