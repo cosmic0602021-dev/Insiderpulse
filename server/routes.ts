@@ -40,7 +40,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2023-10-16",
 });
 
 // Global WebSocket server for real-time updates
@@ -295,11 +295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payment_method_types: ['card'],
           payment_method_options: {
             card: {
-              request_three_d_secure: 'automatic',
-              setup_future_usage: null
+              request_three_d_secure: 'automatic'
             }
           },
-          payment_method_collection: 'always',
           line_items: [
             {
               price: priceId,
@@ -313,6 +311,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId: userId
           }
         }
+
+        console.log('🔍 DEBUG: Checkout session config:', JSON.stringify(sessionConfig, null, 2));
 
         session = await stripe.checkout.sessions.create(sessionConfig, {
           idempotencyKey
