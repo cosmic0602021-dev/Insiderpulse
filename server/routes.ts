@@ -204,6 +204,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerId = null;
       }
 
+      // Force delete existing customer and create fresh one to remove Link
+      if (customerId) {
+        try {
+          await stripe.customers.del(customerId);
+          console.log(`🗑️ Deleted old Stripe customer to remove Link: ${customerId}`);
+        } catch (e) {
+          console.log(`⚠️ Could not delete old customer: ${e.message}`);
+        }
+        customerId = null;
+      }
+
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user.email,
@@ -220,7 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.update(users)
           .set({ stripeCustomerId: customerId })
           .where(eq(users.id, userId));
-        console.log(`💾 Created Stripe customer for user ${userId}`);
+        console.log(`💾 Created fresh Stripe customer for user ${userId} (Link removed)`);
       }
 
       // ✅ Double-check: ensure customer has no active subscriptions in Stripe
