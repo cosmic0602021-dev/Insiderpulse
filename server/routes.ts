@@ -270,8 +270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (isMiniPlan) {
         // Mini plan: No trial (immediate billing)
-        // Note: trial_end requires minimum 48 hours, so we use trial_period_days: 0 instead
-        subscriptionData.trial_period_days = 0;
+        // Note: trial_end requires 48 hours minimum, trial_period_days requires 1 day minimum
+        // So we simply don't set any trial parameter for immediate billing
         console.log(`🎯 Creating mini plan checkout with immediate billing (no trial)`);
       } else {
         // Regular plans: 7 day trial
