@@ -289,6 +289,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customer: customerId,
           mode: 'subscription',
           payment_method_types: ['card'],
+          payment_method_collection: 'always',
+          payment_method_options: {
+            card: {
+              setup_future_usage: 'off_session',
+            },
+          },
           line_items: [
             {
               price: priceId,
