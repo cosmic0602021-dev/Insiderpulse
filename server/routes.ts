@@ -40,7 +40,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2024-11-20.acacia",
 });
 
 // Global WebSocket server for real-time updates
@@ -209,6 +209,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           metadata: {
             userId: userId
+          },
+          invoice_settings: {
+            default_payment_method: null
           }
         });
         customerId = customer.id;
@@ -292,9 +295,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payment_method_types: ['card'],
           payment_method_options: {
             card: {
-              request_three_d_secure: 'automatic'
+              request_three_d_secure: 'automatic',
+              setup_future_usage: null
             }
           },
+          payment_method_collection: 'always',
+          payment_method_configuration: null,
           line_items: [
             {
               price: priceId,
@@ -1406,6 +1412,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customer = await stripe.customers.create({
           email: user.email,
           metadata: { userId: user.id },
+          invoice_settings: {
+            default_payment_method: null
+          }
         });
         customerId = customer.id;
 
@@ -1543,6 +1552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customer = await stripe.customers.create({
           email: user.email,
           metadata: { userId: user.id },
+          invoice_settings: {
+            default_payment_method: null
+          }
         });
         customerId = customer.id;
 
