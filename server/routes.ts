@@ -300,7 +300,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           },
           payment_method_collection: 'always',
-          payment_method_configuration: null,
           line_items: [
             {
               price: priceId,
