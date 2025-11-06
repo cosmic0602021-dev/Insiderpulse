@@ -188,10 +188,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             console.error(`⚠️ Unexpected Stripe error, will create new customer:`, error);
           }
+          // Clear invalid customer ID from database immediately
+          await db.update(users)
+            .set({ stripeCustomerId: null })
+            .where(eq(users.id, userId));
+          console.log(`🔄 Cleared invalid customer ID from database for user ${userId}`);
           customerId = null; // Force creation of new customer
         }
       } else if (customerId) {
         console.warn(`⚠️ Invalid customer ID format: "${customerId}", will create new one`);
+        // Clear invalid customer ID from database
+        await db.update(users)
+          .set({ stripeCustomerId: null })
+          .where(eq(users.id, userId));
         customerId = null;
       }
 
@@ -213,22 +222,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ✅ Double-check: ensure customer has no active subscriptions in Stripe
       if (customerId) {
-        const subscriptions = await stripe.subscriptions.list({
-          customer: customerId,
-          status: 'all',
-          limit: 10
-        });
+        try {
+          const subscriptions = await stripe.subscriptions.list({
+            customer: customerId,
+            status: 'all',
+            limit: 10
+          });
 
-        // Filter for truly active subscriptions (not set to cancel)
-        const activeOrTrialing = subscriptions.data.filter(
-          sub => (sub.status === 'active' || sub.status === 'trialing') && !sub.cancel_at_period_end
-        );
+          // Filter for truly active subscriptions (not set to cancel)
+          const activeOrTrialing = subscriptions.data.filter(
+            sub => (sub.status === 'active' || sub.status === 'trialing') && !sub.cancel_at_period_end
+          );
 
-        if (activeOrTrialing.length > 0) {
-          console.log(`⚠️ Customer ${customerId} already has ${activeOrTrialing.length} active subscription(s)`);
+          if (activeOrTrialing.length > 0) {
+            console.log(`⚠️ Customer ${customerId} already has ${activeOrTrialing.length} active subscription(s)`);
+            return res.status(400).json({
+              error: '이미 활성 구독이 있습니다',
+              existingSubscriptions: activeOrTrialing.map(s => ({ id: s.id, status: s.status }))
+            });
+          }
+        } catch (error: any) {
+          // Customer doesn't exist - clear from DB and return error
+          console.error(`❌ Failed to check subscriptions for customer ${customerId}:`, error.message);
+          await db.update(users)
+            .set({ stripeCustomerId: null })
+            .where(eq(users.id, userId));
           return res.status(400).json({
-            error: '이미 활성 구독이 있습니다',
-            existingSubscriptions: activeOrTrialing.map(s => ({ id: s.id, status: s.status }))
+            error: '결제 정보를 확인할 수 없습니다. 다시 시도해주세요.',
+            details: 'Customer validation failed'
           });
         }
       }
@@ -262,27 +283,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Idempotency key is valid for 1 minute window per user
       const idempotencyKey = `checkout_${userId}_${Math.floor(Date.now() / 60000)}`;
 
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        subscription_data: subscriptionData,
-        success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
-        metadata: {
-          userId: userId
-        }
-      }, {
-        idempotencyKey
-      });
+      let session;
+      try {
+        session = await stripe.checkout.sessions.create({
+          customer: customerId,
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          subscription_data: subscriptionData,
+          success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
+          metadata: {
+            userId: userId
+          }
+        }, {
+          idempotencyKey
+        });
 
-      console.log(`💳 Created Checkout Session for ${user.email}: ${session.id}`);
+        console.log(`💳 Created Checkout Session for ${user.email}: ${session.id}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to create checkout session:`, error.message);
+
+        // If customer-related error, clear from database
+        if (error.message?.includes('customer') || error.code === 'resource_missing') {
+          await db.update(users)
+            .set({ stripeCustomerId: null })
+            .where(eq(users.id, userId));
+          console.log(`🔄 Cleared invalid customer from database`);
+        }
+
+        return res.status(500).json({
+          error: '결제 세션을 생성할 수 없습니다. 페이지를 새로고침한 후 다시 시도해주세요.',
+          details: error.message
+        });
+      }
 
       res.json({
         sessionId: session.id,
