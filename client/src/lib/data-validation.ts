@@ -171,18 +171,27 @@ export class DataValidator {
     let realCount = 0;
     let freshCount = 0;
 
-    for (const trade of trades) {
-      const validation = this.validateTrade(trade);
+    // Filter out null/undefined trades to prevent errors
+    const safeTrades = trades.filter(trade => trade != null);
 
-      if (validation.isValid && validation.isReal) {
-        validTrades.push(trade);
-      } else {
+    for (const trade of safeTrades) {
+      try {
+        const validation = this.validateTrade(trade);
+
+        if (validation.isValid && validation.isReal) {
+          validTrades.push(trade);
+        } else {
+          invalidTrades.push(trade);
+          allIssues.push(...validation.issues);
+        }
+
+        if (validation.isReal) realCount++;
+        if (validation.isFresh) freshCount++;
+      } catch (error) {
+        console.error('Error validating trade:', error, trade);
         invalidTrades.push(trade);
-        allIssues.push(...validation.issues);
+        allIssues.push(`Trade validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-
-      if (validation.isReal) realCount++;
-      if (validation.isFresh) freshCount++;
     }
 
     return {

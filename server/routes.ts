@@ -118,31 +118,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.stripeSubscriptionId) {
         try {
           const existingSub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          if (existingSub.status === 'active' || existingSub.status === 'trialing') {
+          console.log(`🔍 Existing subscription status: ${existingSub.status}, cancel_at_period_end: ${existingSub.cancel_at_period_end}`);
+
+          // Only block if truly active (not set to cancel)
+          if ((existingSub.status === 'active' || existingSub.status === 'trialing') && !existingSub.cancel_at_period_end) {
             console.log(`⚠️ User ${userId} already has active subscription: ${existingSub.id}`);
             return res.status(400).json({
               error: '이미 활성 구독이 있습니다',
               subscriptionId: existingSub.id,
               status: existingSub.status
             });
+          } else if (existingSub.status === 'canceled' || existingSub.status === 'incomplete_expired' || existingSub.cancel_at_period_end) {
+            // Subscription is canceled, expired, or set to cancel - sync DB and allow new checkout
+            console.log(`✅ Subscription ${existingSub.id} is ${existingSub.status} (cancel_at_period_end: ${existingSub.cancel_at_period_end}), syncing DB and allowing new checkout`);
+            await db.update(users)
+              .set({
+                subscriptionStatus: 'canceled',
+                stripeSubscriptionId: null
+              })
+              .where(eq(users.id, userId));
           }
         } catch (error: any) {
           // Subscription doesn't exist in Stripe anymore, continue with checkout
           console.log(`⚠️ Stored subscription ${user.stripeSubscriptionId} not found in Stripe, allowing new checkout`);
+          // Clear the invalid subscription ID
+          await db.update(users)
+            .set({
+              subscriptionStatus: 'inactive',
+              stripeSubscriptionId: null
+            })
+            .where(eq(users.id, userId));
         }
       }
 
-      // Also check database subscription status
-      if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
-        console.log(`⚠️ User ${userId} has active subscription status in database: ${user.subscriptionStatus}`);
-        return res.status(400).json({
-          error: '이미 활성 구독이 있습니다',
-          status: user.subscriptionStatus
+      // Re-fetch user to get updated subscription status after potential sync
+      const updatedUser = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({
+          error: 'User not found after update'
         });
       }
 
-      // Create or find customer
-      let customerId = user.stripeCustomerId;
+      // Also check database subscription status (but only for truly active states)
+      // Note: Don't block 'canceled' status as user should be able to re-subscribe
+      if ((updatedUser.subscriptionStatus === 'active' || updatedUser.subscriptionStatus === 'trialing') && updatedUser.stripeSubscriptionId) {
+        console.log(`⚠️ User ${userId} has active subscription status in database: ${updatedUser.subscriptionStatus}`);
+        return res.status(400).json({
+          error: '이미 활성 구독이 있습니다',
+          status: updatedUser.subscriptionStatus
+        });
+      }
+
+      // Create or find customer (use updated user data)
+      let customerId = updatedUser.stripeCustomerId;
 
       // Verify stored customer ID still exists in Stripe
       if (customerId && typeof customerId === 'string' && customerId.trim() !== '') {
@@ -188,8 +219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limit: 10
         });
 
+        // Filter for truly active subscriptions (not set to cancel)
         const activeOrTrialing = subscriptions.data.filter(
-          sub => sub.status === 'active' || sub.status === 'trialing'
+          sub => (sub.status === 'active' || sub.status === 'trialing') && !sub.cancel_at_period_end
         );
 
         if (activeOrTrialing.length > 0) {
