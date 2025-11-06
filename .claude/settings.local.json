@@ -13,7 +13,9 @@
       "Bash(npx tsx:*)",
       "Bash(curl:*)",
       "Bash(git log:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.stripe.com)"
     ],
     "deny": [],
     "ask": []
