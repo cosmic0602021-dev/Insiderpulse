@@ -114,13 +114,25 @@ app.use((req, res, next) => {
 
   // Start server with proper error handling
   // Add error event listener BEFORE calling listen (catches async errors)
-  server.on('error', (error: any) => {
-    console.error('❌ Server error:', error);
+  server.on('error', async (error: any) => {
+    console.error('❌ HTTP Server error:', error);
     if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use`);
-      console.error(`💡 Current PORT setting: ${process.env.PORT || '5000 (default)'}`);
-      console.error(`💡 To fix: Change PORT in .env file or kill the process using port ${port}`);
-      console.error(`💡 You can also try: pkill -f "node.*server" or fuser -k ${port}/tcp`);
+      console.error(`❌ Port is already in use`);
+      console.error(`💡 Current PORT setting: ${port}`);
+      console.error(`💡 Solution: Change PORT in .env file or kill the process using this port`);
+
+      // Attempt to kill existing process on this port and retry
+      try {
+        console.log(`🔧 Attempting to kill process on port ${port}...`);
+        await execAsync(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`);
+        console.log(`✅ Killed existing process, retrying in 2 seconds...`);
+        setTimeout(() => {
+          server.listen({ port, host: "0.0.0.0" });
+        }, 2000);
+        return; // Don't exit, wait for retry
+      } catch (killError) {
+        console.error(`❌ Could not kill existing process:`, killError);
+      }
     }
     process.exit(1);
   });
