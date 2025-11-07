@@ -3,24 +3,50 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, TrendingUp, Shield } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
+import { apiClient } from "@/lib/api";
 
 export default function PaymentSuccess() {
   const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const { user, login } = useAuth();
 
   useEffect(() => {
-    // Check URL parameters for payment confirmation
-    const urlParams = new URLSearchParams(window.location.search);
-    // For subscription checkout, Stripe returns session_id (not payment_intent)
-    const sessionId = urlParams.get('session_id');
+    const refreshUserData = async () => {
+      // Check URL parameters for payment confirmation
+      const urlParams = new URLSearchParams(window.location.search);
+      // For subscription checkout, Stripe returns session_id (not payment_intent)
+      const sessionId = urlParams.get('session_id');
 
-    if (sessionId) {
-      console.log('✅ Subscription checkout successful, session:', sessionId);
-      setPaymentStatus('success');
-    } else {
-      console.log('❌ No session_id found in URL');
-      setPaymentStatus('error');
-    }
-  }, []);
+      if (sessionId) {
+        console.log('✅ Subscription checkout successful, session:', sessionId);
+        
+        // Wait a bit for webhook to process (Stripe webhooks are fast but not instant)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Refresh user data from server
+        try {
+          const token = localStorage.getItem('authToken');
+          if (token) {
+            apiClient.setToken(token);
+            const response = await apiClient.verifyToken();
+            if (response.success && response.user) {
+              console.log('🔄 Refreshed user data after payment:', response.user);
+              login(response.user, token);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+        
+        setPaymentStatus('success');
+      } else {
+        console.log('❌ No session_id found in URL');
+        setPaymentStatus('error');
+      }
+    };
+
+    refreshUserData();
+  }, [login]);
 
   if (paymentStatus === 'loading') {
     return (

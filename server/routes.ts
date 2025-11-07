@@ -268,29 +268,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Determine if this is the mini plan (1 minute trial) or regular plan (7 day trial)
+      // Determine plan type and set appropriate trial period
+      // Note: Stripe requires trial_end to be at least 48 hours in the future
+      // For Mini plan, we'll do immediate billing (no trial) - the "1 minute" is app-enforced
+      const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY;
+      const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
       const testPriceId = process.env.STRIPE_PRICE_ID_TEST;
-      const isMiniPlan = priceId === testPriceId;
 
-      console.log(`🔍 Plan comparison - Received: "${priceId}", Test Price: "${testPriceId}", Is Mini: ${isMiniPlan}`);
+      console.log(`🔍 Plan detection - Received priceId: "${priceId}"`);
+      console.log(`🔍 Available prices - Monthly: "${monthlyPriceId}", Yearly: "${yearlyPriceId}", Test: "${testPriceId}"`);
 
-      // For mini plan, use trial_end with 1 minute timestamp
-      // For regular plans, use trial_period_days
+      let planType: 'monthly' | 'yearly' | 'test' = 'monthly';
+      let isMiniPlan = false;
+
+      if (priceId === testPriceId) {
+        planType = 'test';
+        isMiniPlan = true;
+        console.log(`🎯 Detected MINI PLAN - immediate billing ($0.10), no Stripe trial`);
+      } else if (priceId === yearlyPriceId) {
+        planType = 'yearly';
+        console.log(`🎯 Detected YEARLY PLAN - 7 day trial`);
+      } else {
+        planType = 'monthly';
+        console.log(`🎯 Detected MONTHLY PLAN - 7 day trial`);
+      }
+
       const subscriptionData: any = {
         metadata: {
-          userId: userId
+          userId: userId,
+          planType: planType
         }
       };
 
-      if (isMiniPlan) {
-        // Mini plan: NO trial (immediate billing)
-        // Stripe requires trial_end to be at least 48 hours in future
-        // So we don't set any trial parameter - this results in immediate billing
-        console.log(`🎯 Creating mini plan checkout with NO trial (immediate $0.10 billing)`);
-      } else {
-        // Regular plans: 7 day trial
+      // For regular plans (monthly/yearly), add 7-day trial
+      // For Mini plan, skip trial (immediate $0.10 charge)
+      if (!isMiniPlan) {
         subscriptionData.trial_period_days = 7;
-        console.log(`🎯 Creating checkout with 7 day trial`);
+        console.log(`✅ Setting 7-day trial period for ${planType} plan`);
+      } else {
+        console.log(`✅ No trial for Mini plan - immediate $0.10 billing`);
       }
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
@@ -511,18 +527,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             if (user) {
-              // Get subscription details to extract period end
+              // Get subscription details to extract period end and determine tier
               const subscription = await stripe.subscriptions.retrieve(subscriptionId);
               const periodEnd = new Date(subscription.current_period_end * 1000);
 
-              // Upgrade user to Insider Pro with correct end date
-              await subscriptionService.upgradeToInsiderPro(
-                user.id,
-                customerId,
-                subscriptionId,
-                periodEnd
-              );
-              console.log(`✅ User ${user.email} upgraded to Insider Pro until ${periodEnd}`);
+              // Get the priceId from the subscription to determine the plan type
+              const priceId = subscription.items.data[0]?.price?.id;
+              console.log(`🔍 Subscription priceId: "${priceId}"`);
+
+              // Determine tier based on priceId
+              const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY;
+              const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
+              const testPriceId = process.env.STRIPE_PRICE_ID_TEST;
+
+              let tier: 'Insider Pro' | 'Insider Mini' = 'Insider Pro';
+              if (priceId === testPriceId) {
+                tier = 'Insider Mini';
+                console.log(`🎯 Detected MINI PLAN subscription`);
+              } else if (priceId === yearlyPriceId || priceId === monthlyPriceId) {
+                tier = 'Insider Pro';
+                console.log(`🎯 Detected PRO PLAN subscription`);
+              }
+
+              // Upgrade user with correct tier
+              await db.update(users)
+                .set({
+                  subscriptionTier: tier,
+                  subscriptionStatus: subscription.status as any,
+                  stripeCustomerId: customerId,
+                  stripeSubscriptionId: subscriptionId,
+                  subscriptionEndDate: periodEnd,
+                  hasUsedTrial: true,
+                })
+                .where(eq(users.id, user.id));
+
+              console.log(`✅ User ${user.email} upgraded to ${tier} until ${periodEnd}`);
             } else {
               console.warn(`⚠️ User not found for Stripe customer ${customerId}`);
             }
