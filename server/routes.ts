@@ -299,9 +299,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let session;
       try {
-        // Checkout session configuration
+        // Checkout session configuration - use customer_email instead of customer to avoid Link
         const sessionConfig: any = {
-          customer: customerId,
+          customer_email: user.email,
           mode: 'subscription',
           payment_method_types: ['card'],
           payment_method_options: {
@@ -315,7 +315,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               quantity: 1,
             },
           ],
-          subscription_data: subscriptionData,
+          subscription_data: {
+            ...subscriptionData,
+            metadata: {
+              userId: userId
+            }
+          },
           success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
           metadata: {
