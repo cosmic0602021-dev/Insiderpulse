@@ -87,17 +87,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create Checkout Session for subscription with 7-day free trial
   app.post("/api/create-subscription", async (req, res) => {
+    console.log('\n🔵 ===== CREATE SUBSCRIPTION REQUEST =====');
+    console.log('📥 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('📨 Headers:', {
+      'content-type': req.headers['content-type'],
+      'authorization': req.headers.authorization ? 'Bearer ***' : 'missing'
+    });
+
     try {
       const { priceId } = req.body;
       const userId = getUserIdFromToken(req);
 
+      console.log('🔍 Extracted data:', {
+        priceId,
+        userId,
+        hasUserId: !!userId
+      });
+
       if (!priceId) {
+        console.error('❌ Missing priceId in request');
         return res.status(400).json({
           error: 'Missing required field: priceId'
         });
       }
 
       if (!userId) {
+        console.error('❌ User not authenticated - no userId from token');
         return res.status(401).json({
           error: 'User not authenticated'
         });

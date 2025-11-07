@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, TrendingUp, Shield } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api";
 
 export default function PaymentSuccess() {
   const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const { user, login } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const refreshUserData = async () => {
@@ -17,36 +18,45 @@ export default function PaymentSuccess() {
       // For subscription checkout, Stripe returns session_id (not payment_intent)
       const sessionId = urlParams.get('session_id');
 
-      if (sessionId) {
-        console.log('✅ Subscription checkout successful, session:', sessionId);
-        
-        // Wait a bit for webhook to process (Stripe webhooks are fast but not instant)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Refresh user data from server
-        try {
-          const token = localStorage.getItem('authToken');
-          if (token) {
-            apiClient.setToken(token);
-            const response = await apiClient.verifyToken();
-            if (response.success && response.user) {
-              console.log('🔄 Refreshed user data after payment:', response.user);
-              login(response.user, token);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to refresh user data:', error);
+      // Redirect to home if no session_id (prevents direct URL access)
+      if (!sessionId) {
+        console.log('❌ No session_id found in URL - redirecting to home');
+        setLocation('/');
+        return;
+      }
+
+      console.log('✅ Subscription checkout successful, session:', sessionId);
+      
+      // Wait a bit for webhook to process (Stripe webhooks are fast but not instant)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh user data from server
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          console.log('❌ No auth token found - redirecting to login');
+          setLocation('/login');
+          return;
         }
-        
-        setPaymentStatus('success');
-      } else {
-        console.log('❌ No session_id found in URL');
+
+        apiClient.setToken(token);
+        const response = await apiClient.verifyToken();
+        if (response.success && response.user) {
+          console.log('🔄 Refreshed user data after payment:', response.user);
+          login(response.user, token);
+          setPaymentStatus('success');
+        } else {
+          console.log('❌ Failed to verify user token');
+          setPaymentStatus('error');
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
         setPaymentStatus('error');
       }
     };
 
     refreshUserData();
-  }, [login]);
+  }, [login, setLocation]);
 
   if (paymentStatus === 'loading') {
     return (

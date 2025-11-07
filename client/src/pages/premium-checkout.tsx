@@ -92,6 +92,7 @@ export default function PremiumCheckout() {
 
     // Double-check authentication before proceeding
     if (!user) {
+      console.error('❌ No user found when attempting checkout');
       toast({
         title: "로그인 필요",
         description: "구독하려면 먼저 로그인해주세요.",
@@ -101,17 +102,44 @@ export default function PremiumCheckout() {
       return;
     }
 
+    // Verify auth token exists
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('❌ No auth token found in localStorage');
+      toast({
+        title: "세션 만료",
+        description: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
+        variant: "destructive",
+      });
+      setLocation('/login?redirect=/premium-checkout');
+      return;
+    }
+
     isSubmittingRef.current = true;
     setIsProcessing(true);
+
+    console.log('🚀 Starting checkout process', {
+      userId: user.id,
+      email: user.email,
+      plan: selectedPlan,
+      priceId: currentPlan.priceId
+    });
 
     try {
       const response = await apiRequest("POST", "/api/create-subscription", {
         priceId: currentPlan.priceId,
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `서버 오류: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('✅ Checkout session created:', data);
 
       if (data.url) {
+        console.log('🔗 Redirecting to Stripe Checkout:', data.url);
         // Redirect to Stripe Checkout
         // Note: Don't reset isSubmittingRef or isProcessing here since we're redirecting
         window.location.href = data.url;
@@ -119,7 +147,7 @@ export default function PremiumCheckout() {
         throw new Error('No checkout URL received');
       }
     } catch (error: any) {
-      console.error('Error creating checkout session:', error);
+      console.error('❌ Error creating checkout session:', error);
 
       // Handle specific error for duplicate subscriptions
       if (error.message && error.message.includes('이미 활성 구독이 있습니다')) {
