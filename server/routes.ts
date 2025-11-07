@@ -283,10 +283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       if (isMiniPlan) {
-        // Mini plan: 1 minute trial (almost immediate billing)
-        // trial_end must be in the future, so set to 1 minute from now
-        subscriptionData.trial_end = Math.floor(Date.now() / 1000) + 60; // Unix timestamp, 1 minute from now
-        console.log(`🎯 Creating mini plan checkout with 1 minute trial (immediate billing)`);
+        // Mini plan: NO trial (immediate billing)
+        // Stripe requires trial_end to be at least 48 hours in future
+        // So we don't set any trial parameter - this results in immediate billing
+        console.log(`🎯 Creating mini plan checkout with NO trial (immediate $0.10 billing)`);
       } else {
         // Regular plans: 7 day trial
         subscriptionData.trial_period_days = 7;
