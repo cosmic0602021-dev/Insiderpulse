@@ -555,13 +555,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
               const testPriceId = process.env.STRIPE_PRICE_ID_TEST;
 
-              let tier: 'Insider Pro' | 'Insider Mini' = 'Insider Pro';
+              // Both Mini and Pro plans grant insider_pro tier (they both provide premium features)
+              // The difference is only in price/billing, not in access level
+              const tier: 'insider_pro' = 'insider_pro';
+
               if (priceId === testPriceId) {
-                tier = 'Insider Mini';
-                console.log(`🎯 Detected MINI PLAN subscription`);
+                console.log(`🎯 Detected MINI PLAN subscription - setting tier to 'insider_pro'`);
               } else if (priceId === yearlyPriceId || priceId === monthlyPriceId) {
-                tier = 'Insider Pro';
-                console.log(`🎯 Detected PRO PLAN subscription`);
+                console.log(`🎯 Detected PRO PLAN subscription - setting tier to 'insider_pro'`);
               }
 
               // Upgrade user with correct tier
@@ -580,8 +581,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else {
               console.warn(`⚠️ User not found for Stripe customer ${customerId}`);
             }
-          } catch (error) {
-            console.error('❌ Error upgrading user:', error);
+          } catch (error: any) {
+            console.error('❌ Error upgrading user:', {
+              error: error.message,
+              stack: error.stack,
+              userId: user?.id,
+              customerId,
+              subscriptionId,
+              attemptedTier: 'insider_pro'
+            });
           }
         }
         break;

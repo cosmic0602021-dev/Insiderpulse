@@ -26,9 +26,10 @@ export default function PaymentSuccess() {
       }
 
       console.log('✅ Subscription checkout successful, session:', sessionId);
-      
+
       // Wait a bit for webhook to process (Stripe webhooks are fast but not instant)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Increased from 2s to 3s to give more time for webhook processing
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Refresh user data from server
       try {

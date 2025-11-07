@@ -273,16 +273,19 @@ export function AppSidebar() {
           </div>
         )}
 
-        <Button
-          className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
-          asChild
-          data-testid="button-upgrade-premium"
-        >
-          <Link href="/premium-checkout" onClick={() => console.log('Premium checkout clicked')}>
-            <Crown className="h-4 w-4 mr-2" />
-            Upgrade to Premium
-          </Link>
-        </Button>
+        {/* Only show upgrade button for free users */}
+        {user && user.subscriptionTier !== 'insider_pro' && user.subscriptionStatus !== 'active' && (
+          <Button
+            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
+            asChild
+            data-testid="button-upgrade-premium"
+          >
+            <Link href="/premium-checkout" onClick={() => console.log('Premium checkout clicked')}>
+              <Crown className="h-4 w-4 mr-2" />
+              Upgrade to Premium
+            </Link>
+          </Button>
+        )}
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="w-2 h-2 bg-chart-2 rounded-full animate-pulse"></div>
