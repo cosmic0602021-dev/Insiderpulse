@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, X } from 'lucide-react';
+import { Loader2, AlertCircle, X, Mail, CheckCircle, ArrowLeft } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
@@ -16,7 +16,14 @@ export function AuthModal() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'login' | 'signup'>(authModalMode);
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify'>(authModalMode);
+
+  // Verification code states
+  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Sync mode with authModalMode
   useEffect(() => {
@@ -30,8 +37,18 @@ export function AuthModal() {
       setPassword('');
       setConfirmPassword('');
       setError('');
+      setCode(['', '', '', '', '', '']);
+      setVerificationSuccess(false);
     }
   }, [showAuthModal]);
+
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,9 +108,13 @@ export function AuthModal() {
       const response = await apiClient.signup(email, password);
 
       if (response.success) {
-        // Show success message and prompt to check email
-        alert(t('auth.signup.successDesc'));
-        closeAuthModal();
+        // Switch to verification mode instead of closing modal
+        setMode('verify');
+        setCode(['', '', '', '', '', '']);
+        // Focus first input after a brief delay to ensure render
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 100);
       } else {
         setError(response.message || t('auth.signup.errorFailed'));
       }
@@ -103,6 +124,132 @@ export function AuthModal() {
       setIsLoading(false);
     }
   };
+
+  // Handle verification code input change
+  const handleCodeChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // Only allow digits
+
+    const newCode = [...code];
+    newCode[index] = value.slice(-1); // Only take last character
+    setCode(newCode);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // Handle backspace in verification code
+  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle paste in verification code
+  const handleCodePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newCode = [...code];
+
+    pastedData.split('').forEach((digit, index) => {
+      if (index < 6) {
+        newCode[index] = digit;
+      }
+    });
+
+    setCode(newCode);
+
+    // Focus last filled input or first empty
+    const nextEmptyIndex = newCode.findIndex(c => !c);
+    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+    inputRefs.current[focusIndex]?.focus();
+  };
+
+  // Submit verification code
+  const handleVerifyCode = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError('');
+
+    const codeString = code.join('');
+    if (codeString.length !== 6) {
+      setError(t('auth.verifyCode.errorEnterAll'));
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: codeString }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setVerificationSuccess(true);
+        // Auto-login after successful verification
+        setTimeout(async () => {
+          try {
+            const loginResponse = await apiClient.login(email, password);
+            if (loginResponse.success && loginResponse.user && loginResponse.token) {
+              login(loginResponse.user, loginResponse.token);
+              closeAuthModal();
+            }
+          } catch (err) {
+            console.error('Auto-login failed:', err);
+            // Still close modal, user can login manually
+            closeAuthModal();
+          }
+        }, 1500);
+      } else {
+        setError(data.message || t('auth.verifyCode.errorFailed'));
+      }
+    } catch (err: any) {
+      setError(err.message || t('auth.verifyCode.errorFailed'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend verification code
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+
+    setIsResending(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResendCooldown(60);
+        setCode(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      } else {
+        setError(data.message || t('auth.verifyCode.errorResend'));
+      }
+    } catch (err: any) {
+      setError(err.message || t('auth.verifyCode.errorResend'));
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    if (mode === 'verify' && code.every(digit => digit !== '') && !isLoading) {
+      handleVerifyCode();
+    }
+  }, [code, mode, isLoading]);
 
   if (!showAuthModal) return null;
 
@@ -117,104 +264,227 @@ export function AuthModal() {
           <X className="h-5 w-5" />
         </button>
 
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">
-            {mode === 'login' ? t('auth.login.title') : t('auth.signup.title')}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {mode === 'login' ? t('auth.login.subtitle') : t('auth.signup.subtitle')}
-          </p>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Form */}
-        <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">{t('auth.login.email')}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={t('auth.login.emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">{t('auth.login.password')}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t('auth.login.passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          {mode === 'signup' && (
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('auth.signup.confirmPassword')}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder={t('auth.login.passwordPlaceholder')}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isLoading}
-              />
+        {/* Verification Success View */}
+        {verificationSuccess ? (
+          <div className="space-y-6 py-12 text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-white" />
+              </div>
             </div>
-          )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {t('auth.verifyCode.successTitle')}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                {t('auth.verifyCode.successDesc')}
+              </p>
+            </div>
+          </div>
+        ) : mode === 'verify' ? (
+          /* Verification Code View */
+          <>
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 mb-4">
+                <Mail className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">
+                {t('auth.verifyCode.title')}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                <strong>{email}</strong>{t('auth.verifyCode.subtitle')}<br />
+                {t('auth.verifyCode.enterCode')}
+              </p>
+            </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {mode === 'login' ? t('auth.login.signingIn') : t('auth.signup.creating')}
-              </>
-            ) : (
-              mode === 'login' ? t('auth.login.button') : t('auth.signup.button')
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </Button>
-        </form>
 
-        {/* Switch mode */}
-        <div className="mt-6 text-center text-sm">
-          {mode === 'login' ? (
-            <p className="text-muted-foreground">
-              {t('auth.login.noAccount')}{' '}
-              <button
-                onClick={() => setMode('signup')}
-                className="text-primary font-semibold hover:underline"
+            {/* Code Input */}
+            <form onSubmit={handleVerifyCode} className="space-y-6">
+              <div className="flex justify-center gap-2">
+                {code.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleCodeChange(index, e.target.value)}
+                    onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                    onPaste={handleCodePaste}
+                    disabled={isLoading}
+                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+
+              <p className="text-center text-sm text-slate-500">
+                {t('auth.verifyCode.codeValid')}
+              </p>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || code.join('').length !== 6}
               >
-                {t('auth.login.signUp')}
-              </button>
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              {t('auth.signup.haveAccount')}{' '}
-              <button
-                onClick={() => setMode('login')}
-                className="text-primary font-semibold hover:underline"
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('auth.verifyCode.verifying')}
+                  </>
+                ) : (
+                  t('auth.verifyCode.verify')
+                )}
+              </Button>
+
+              {/* Resend */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendCooldown > 0 || isResending}
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 font-medium disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  {isResending ? (
+                    <>
+                      <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+                      {t('auth.verifyCode.resending')}
+                    </>
+                  ) : resendCooldown > 0 ? (
+                    t('auth.verifyCode.resendIn', { seconds: resendCooldown })
+                  ) : (
+                    t('auth.verifyCode.resendCode')
+                  )}
+                </button>
+              </div>
+
+              {/* Back Button */}
+              <div className="text-center pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setMode('signup')}
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {t('auth.verifyCode.backToSignup')}
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          /* Login/Signup Form View */
+          <>
+            {/* Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">
+                {mode === 'login' ? t('auth.login.title') : t('auth.signup.title')}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'login' ? t('auth.login.subtitle') : t('auth.signup.subtitle')}
+              </p>
+            </div>
+
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Form */}
+            <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('auth.login.email')}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder={t('auth.login.emailPlaceholder')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('auth.login.password')}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              {mode === 'signup' && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">{t('auth.signup.confirmPassword')}</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
               >
-                {t('auth.signup.signIn')}
-              </button>
-            </p>
-          )}
-        </div>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {mode === 'login' ? t('auth.login.signingIn') : t('auth.signup.creating')}
+                  </>
+                ) : (
+                  mode === 'login' ? t('auth.login.button') : t('auth.signup.button')
+                )}
+              </Button>
+            </form>
+
+            {/* Switch mode */}
+            <div className="mt-6 text-center text-sm">
+              {mode === 'login' ? (
+                <p className="text-muted-foreground">
+                  {t('auth.login.noAccount')}{' '}
+                  <button
+                    onClick={() => setMode('signup')}
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    {t('auth.login.signUp')}
+                  </button>
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  {t('auth.signup.haveAccount')}{' '}
+                  <button
+                    onClick={() => setMode('login')}
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    {t('auth.signup.signIn')}
+                  </button>
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

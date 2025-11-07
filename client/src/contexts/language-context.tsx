@@ -595,7 +595,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Auth pages - Signup
     'auth.signup.title': 'Create Account',
-    'auth.signup.subtitle': 'Start for free. No card required.',
+    'auth.signup.subtitle': 'Join us and explore real-time insider trading insights.',
     'auth.signup.email': 'Email',
     'auth.signup.password': 'Password',
     'auth.signup.confirmPassword': 'Confirm Password',
@@ -1516,7 +1516,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Auth pages - Signup
     'auth.signup.title': '계정 만들기',
-    'auth.signup.subtitle': '무료로 시작하세요. 카드 등록 불필요.',
+    'auth.signup.subtitle': '지금 가입하고 실시간 인사이더 거래를 추적하세요.',
     'auth.signup.email': '이메일',
     'auth.signup.password': '비밀번호',
     'auth.signup.confirmPassword': '비밀번호 확인',
