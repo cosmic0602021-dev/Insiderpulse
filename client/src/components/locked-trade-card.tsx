@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Lock, TrendingUp, Users, Unlock, ChevronDown, ArrowDown } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { useAuth } from "@/contexts/auth-context";
 import type { InsiderTrade } from "@shared/schema";
 
 interface LockedTradeCardProps {
@@ -79,8 +80,15 @@ interface LockedTradesSectionProps {
 
 export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   if (trades.length === 0) return null;
+
+  // Don't show locked section if user has premium subscription
+  if (user && user.subscriptionTier === 'insider_pro' &&
+     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">
@@ -95,32 +103,52 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
         </span>
       </div>
 
-      {/* Start Trial Button - Professional Design */}
-      <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-        {/* Description */}
-        <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
-          {t('lockedTrade.unlockDescription')}
-        </p>
+      {/* Start Trial Button - Only show if user hasn't used trial yet */}
+      {user && !user.hasUsedTrial && (
+        <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          {/* Description */}
+          <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
+            {t('lockedTrade.unlockDescription')}
+          </p>
 
-        {/* Main Button - Professional */}
-        <button
-          onClick={onUnlock}
-          className="w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
-        >
-          <div className="flex items-center justify-center gap-2.5">
-            <Unlock className="h-5 w-5" />
-            <span>{t('lockedTrade.startTrial')}</span>
-          </div>
-        </button>
+          {/* Main Button - Professional */}
+          <button
+            onClick={onUnlock}
+            className="w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-center gap-2.5">
+              <Unlock className="h-5 w-5" />
+              <span>{t('lockedTrade.startTrial')}</span>
+            </div>
+          </button>
 
-        {/* Arrow pointing down */}
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
-            <ArrowDown className="h-3.5 w-3.5" />
-            <span>{t('lockedTrade.unlockBelow')}</span>
+          {/* Arrow pointing down */}
+          <div className="flex justify-center mt-4">
+            <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
+              <ArrowDown className="h-3.5 w-3.5" />
+              <span>{t('lockedTrade.unlockBelow')}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Show premium upgrade button if user has used trial */}
+      {user && user.hasUsedTrial && (
+        <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
+            {t('lockedTrade.unlockDescription')}
+          </p>
+          <button
+            onClick={onUnlock}
+            className="w-full px-6 py-3.5 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold text-base rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-center gap-2.5">
+              <Unlock className="h-5 w-5" />
+              <span>Upgrade to Premium</span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* Locked cards grid */}
       <div className="grid grid-cols-1 gap-4">

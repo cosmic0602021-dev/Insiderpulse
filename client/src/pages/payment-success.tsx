@@ -27,11 +27,11 @@ export default function PaymentSuccess() {
 
       console.log('✅ Subscription checkout successful, session:', sessionId);
 
-      // Wait a bit for webhook to process (Stripe webhooks are fast but not instant)
-      // Increased from 2s to 3s to give more time for webhook processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Refresh user data from server
+      // Wait longer for webhook to process (Stripe webhooks can take a few seconds)
+      // Increased from 3s to 5s to ensure webhook has time to complete
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Refresh user data from server with retry logic
       try {
         const token = localStorage.getItem('authToken');
         if (!token) {
@@ -41,13 +41,47 @@ export default function PaymentSuccess() {
         }
 
         apiClient.setToken(token);
-        const response = await apiClient.verifyToken();
-        if (response.success && response.user) {
-          console.log('🔄 Refreshed user data after payment:', response.user);
-          login(response.user, token);
-          setPaymentStatus('success');
-        } else {
-          console.log('❌ Failed to verify user token');
+
+        // Retry logic: try up to 3 times to verify subscription was activated
+        let retries = 0;
+        const maxRetries = 3;
+        let userUpdated = false;
+
+        while (retries < maxRetries && !userUpdated) {
+          console.log(`🔄 Attempt ${retries + 1}/${maxRetries} to verify user subscription status`);
+
+          const response = await apiClient.verifyToken();
+          if (response.success && response.user) {
+            console.log('🔄 User data received:', {
+              tier: response.user.subscriptionTier,
+              status: response.user.subscriptionStatus
+            });
+
+            // Check if user is now premium
+            if (response.user.subscriptionTier === 'insider_pro') {
+              console.log('✅ User successfully upgraded to premium!');
+              login(response.user, token);
+              setPaymentStatus('success');
+              userUpdated = true;
+            } else {
+              console.log(`⚠️ User still shows tier: ${response.user.subscriptionTier}, will retry...`);
+              retries++;
+              if (retries < maxRetries) {
+                // Wait 2 more seconds before retrying
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+            }
+          } else {
+            console.log('❌ Failed to verify user token');
+            retries++;
+            if (retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+        }
+
+        if (!userUpdated) {
+          console.log('❌ User subscription status did not update after retries');
           setPaymentStatus('error');
         }
       } catch (error) {

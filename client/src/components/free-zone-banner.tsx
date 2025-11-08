@@ -1,6 +1,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Clock, Lock } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { useAuth } from "@/contexts/auth-context";
 
 interface FreeZoneBannerProps {
   delayHours: number;
@@ -8,6 +9,13 @@ interface FreeZoneBannerProps {
 
 export function FreeZoneBanner({ delayHours }: FreeZoneBannerProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // Don't show banner if user has premium subscription
+  if (user && user.subscriptionTier === 'insider_pro' &&
+     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+    return null;
+  }
 
   return (
     <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-900/20">
@@ -27,6 +35,13 @@ interface UnlockPromptProps {
 
 export function UnlockPrompt({ onUnlock }: UnlockPromptProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // Don't show prompt if user has premium subscription
+  if (user && user.subscriptionTier === 'insider_pro' &&
+     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+    return null;
+  }
 
   return (
     <Alert className="border-slate-700 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900">

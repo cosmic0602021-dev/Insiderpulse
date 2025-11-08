@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
 
 interface TrialTimerBannerProps {
@@ -11,8 +12,14 @@ interface TrialTimerBannerProps {
 
 export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBannerProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState<string>('');
+
+  // Don't show banner if user has active paid subscription
+  if (user && user.subscriptionTier === 'insider_pro' && user.subscriptionStatus === 'active') {
+    return null;
+  }
 
   useEffect(() => {
     const calculateTimeLeft = () => {

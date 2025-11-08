@@ -273,8 +273,8 @@ export function AppSidebar() {
           </div>
         )}
 
-        {/* Only show upgrade button for free users */}
-        {user && user.subscriptionTier !== 'insider_pro' && user.subscriptionStatus !== 'active' && (
+        {/* Only show upgrade button for free users (not active, not trialing) */}
+        {user && user.subscriptionTier !== 'insider_pro' && user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing' && (
           <Button
             className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
             asChild

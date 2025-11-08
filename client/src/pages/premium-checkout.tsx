@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,18 @@ export default function PremiumCheckout() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Redirect if user already has active subscription
+  useEffect(() => {
+    if (user && user.subscriptionTier === 'insider_pro' &&
+       (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+      toast({
+        title: "이미 프리미엄 구독 중입니다",
+        description: "트레이딩 페이지로 이동합니다.",
+      });
+      setTimeout(() => setLocation('/trades'), 1500);
+    }
+  }, [user, setLocation, toast]);
 
   const plans = {
     monthly: {

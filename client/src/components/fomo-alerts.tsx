@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, TrendingUp, Clock, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
 
 interface TrialExpiringAlertProps {
@@ -12,6 +13,12 @@ interface TrialExpiringAlertProps {
 
 export function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }: TrialExpiringAlertProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // Don't show alert if user has active paid subscription
+  if (user && user.subscriptionTier === 'insider_pro' && user.subscriptionStatus === 'active') {
+    return null;
+  }
 
   return (
     <Alert className="border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 relative">
@@ -52,6 +59,13 @@ interface MissedGainsAlertProps {
 
 export function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }: MissedGainsAlertProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // Don't show alert if user has active subscription
+  if (user && user.subscriptionTier === 'insider_pro' &&
+     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+    return null;
+  }
 
   const formatValue = (value: number) => {
     if (value >= 1000000) {
