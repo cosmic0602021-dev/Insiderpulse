@@ -90,11 +90,6 @@ export default function PremiumCheckout() {
 
   const currentPlan = plans[selectedPlan];
 
-  // Trial period display text - all plans now have 5-minute trial
-  const trialPeriod = '5분';
-  const trialPeriodEn = '5 minutes';
-  const trialDuration = '5-Minute';
-
   const handleCheckout = async () => {
     // Prevent double-clicks and concurrent requests
     if (isSubmittingRef.current) {
@@ -333,18 +328,18 @@ export default function PremiumCheckout() {
               </CardContent>
             </Card>
 
-            {/* Free Trial Info */}
+            {/* Immediate Billing Info */}
             <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-sm text-white">
-                    {selectedPlan === 'test' ? '즉시 청구' : `${trialPeriod} 무료체험`}
+                    즉시 결제
                   </h3>
                   <p className="text-sm text-slate-300 mt-1">
                     {selectedPlan === 'test'
                       ? '테스트 목적의 소액 플랜입니다. 결제 즉시 $0.10이 청구되며 모든 Pro 기능을 이용할 수 있습니다. 언제든지 해지 가능합니다.'
-                      : `오늘부터 ${trialPeriod}간 무료로 모든 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${currentPlan.billingInterval}가 시작됩니다. 언제든지 해지 가능합니다.`
+                      : `결제 즉시 ${currentPlan.price}달러가 청구되며 모든 Pro 기능을 바로 이용하실 수 있습니다. 다음 ${currentPlan.billingInterval}부터 자동으로 갱신됩니다. 언제든지 해지 가능합니다.`
                     }
                   </p>
                 </div>
@@ -384,13 +379,10 @@ export default function PremiumCheckout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  {selectedPlan === 'test' ? 'Complete Payment' : 'Start Your Free Trial'}
+                  Complete Payment
                 </CardTitle>
                 <CardDescription>
-                  {selectedPlan === 'test'
-                    ? `즉시 ${currentPlan.price}달러 청구`
-                    : `${trialPeriod} 무료체험 후 $${currentPlan.price}${currentPlan.interval}`
-                  }
+                  즉시 ${currentPlan.price} 청구
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -399,21 +391,13 @@ export default function PremiumCheckout() {
                     <span>Plan:</span>
                     <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : selectedPlan === 'yearly' ? 'Yearly' : 'Mini'})</span>
                   </div>
-                  {selectedPlan !== 'test' && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span>Free Trial:</span>
-                        <span className="font-semibold text-green-600 dark:text-green-400">{trialPeriodEn}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>After Trial:</span>
-                        <span className="font-semibold">${currentPlan.price}{currentPlan.interval}</span>
-                      </div>
-                    </>
-                  )}
-                  <div className={`flex items-center justify-between${selectedPlan === 'test' ? '' : ' text-xs text-slate-500'}`}>
-                    <span>{selectedPlan === 'test' ? 'Charge:' : 'Billing:'}</span>
-                    <span className={selectedPlan === 'test' ? 'font-semibold text-green-600 dark:text-green-400' : ''}>{selectedPlan === 'test' ? `$${currentPlan.price}` : currentPlan.billingInterval}</span>
+                  <div className="flex items-center justify-between">
+                    <span>Immediate Charge:</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">${currentPlan.price}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Billing Cycle:</span>
+                    <span>{currentPlan.billingInterval}</span>
                   </div>
                 </div>
 
@@ -431,16 +415,13 @@ export default function PremiumCheckout() {
                   ) : (
                     <>
                       <Shield className="w-5 h-5 mr-2" />
-                      {selectedPlan === 'test' ? 'Complete Payment ($0.10)' : `Start ${trialDuration} Free Trial`}
+                      Complete Payment (${currentPlan.price})
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-slate-500">
-                  {selectedPlan === 'test'
-                    ? 'You will be charged $0.10 immediately for testing. Cancel anytime.'
-                    : `You won't be charged for ${trialPeriodEn}. Cancel anytime during the trial.`
-                  }
+                  You will be charged ${currentPlan.price} immediately. Cancel anytime.
                 </p>
               </CardContent>
             </Card>

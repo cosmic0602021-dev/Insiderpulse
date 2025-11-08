@@ -315,11 +315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      // All plans now have 5-minute trial period
-      // Using trial_end (Unix timestamp) instead of trial_period_days for minute-level precision
-      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (5 * 60); // 5 minutes from now
-      subscriptionData.trial_end = trialEndTimestamp;
-      console.log(`✅ Setting 5-minute trial period for ${planType} plan`);
+      // No free trial - immediate billing starts
+      // User will be charged immediately upon subscription
+      console.log(`✅ Immediate billing for ${planType} plan (no trial period)`);
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
       // Idempotency key is valid for 1 minute window per user
@@ -1825,9 +1823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Attached payment method to customer: ${customerId}`);
 
-      // Create subscription with 5-minute trial for all plans
-      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (5 * 60); // 5 minutes from now
-
+      // Create subscription with immediate billing (no trial)
       const subscriptionParams: any = {
         customer: customerId,
         items: [{ price: priceId }],
@@ -1840,16 +1836,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           userId: user.id,
         },
-        trial_end: trialEndTimestamp,
+        // No trial_end - immediate billing
       };
 
       const subscription = await stripe.subscriptions.create(subscriptionParams);
 
-      console.log(`✅ Created Stripe subscription with trial: ${subscription.id}`);
+      console.log(`✅ Created Stripe subscription with immediate billing: ${subscription.id}`);
 
-      // Calculate trial dates
-      const trialStart = new Date();
-      const trialEnd = new Date(subscription.trial_end! * 1000); // Convert Unix timestamp
+      // Calculate subscription period
+      const subscriptionStart = new Date();
+      const subscriptionEnd = new Date(subscription.current_period_end * 1000);
 
       // Update user in database
       await db.update(users)
@@ -1857,34 +1853,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
           subscriptionTier: 'insider_pro',
-          subscriptionStatus: 'trialing',
-          subscriptionStartDate: trialStart,
-          subscriptionEndDate: trialEnd,
-          trialActivatedAt: trialStart,
-          trialExpiresAt: trialEnd,
-          hasUsedTrial: true,
+          subscriptionStatus: subscription.status as any, // Will be 'incomplete' until payment succeeds
+          subscriptionStartDate: subscriptionStart,
+          subscriptionEndDate: subscriptionEnd,
+          hasUsedTrial: false, // No trial used - immediate billing
         })
         .where(eq(users.id, userId));
 
-      console.log(`✅ Trial activated for user ${userId} - expires at ${trialEnd.toISOString()}`);
+      console.log(`✅ Subscription created for user ${userId} - billing immediately`);
 
-      const trialMessage = isTestPlan
-        ? '1분 무료 체험이 시작되었습니다'
-        : '7일 무료 체험이 시작되었습니다';
+      const subscriptionMessage = '구독이 생성되었습니다. 결제 완료 후 즉시 프리미엄 기능을 이용하실 수 있습니다.';
 
       res.json({
         success: true,
-        message: trialMessage,
-        trialActivatedAt: trialStart.toISOString(),
-        trialExpiresAt: trialEnd.toISOString(),
+        message: subscriptionMessage,
+        subscriptionStartDate: subscriptionStart.toISOString(),
+        subscriptionEndDate: subscriptionEnd.toISOString(),
         subscriptionId: subscription.id,
       });
 
     } catch (error: any) {
-      console.error('❌ Trial activation error:', error);
+      console.error('❌ Subscription creation error:', error);
       res.status(500).json({
         success: false,
-        error: '무료 체험 활성화 실패: ' + error.message
+        error: '구독 생성 실패: ' + error.message
       });
     }
   });
