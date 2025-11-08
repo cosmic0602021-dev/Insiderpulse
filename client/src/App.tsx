@@ -27,6 +27,8 @@ import PremiumCheckout from "@/pages/premium-checkout";
 import PaymentSuccess from "@/pages/payment-success";
 import SignupPage from "@/pages/signup";
 import LoginPage from "@/pages/login";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import VerifyEmail from "@/pages/verify-email";
 import VerifyCode from "@/pages/verify-code";
 import StartTrialPage from "@/pages/start-trial";
@@ -41,6 +43,8 @@ function Router() {
       {/* Public routes */}
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/verify-code" component={VerifyCode} />
       <Route path="/start-trial" component={StartTrialPage} />
@@ -80,7 +84,7 @@ function AppContent() {
   }, []);
 
   // Authentication/verification pages that should skip language selection
-  const publicAuthPaths = ['/signup', '/login', '/verify-code', '/verify-email', '/start-trial'];
+  const publicAuthPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial'];
   const currentPath = window.location.pathname;
 
   // Show language selection screen if user hasn't selected a language

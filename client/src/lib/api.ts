@@ -278,6 +278,20 @@ class ApiClient {
   verifyToken = async (): Promise<AuthResponse> => {
     return this.request<AuthResponse>('/auth/verify');
   }
+
+  requestPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
+    return this.request<{ success: boolean; message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  resetPassword = async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    return this.request<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

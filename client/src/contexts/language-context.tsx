@@ -90,7 +90,7 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.realtimeZone': 'Real-Time Zone',
     'lockedTrade.lockedTrades': 'locked trades',
     'lockedTrade.unlockPrompt': 'Unlock {count} real-time insider trades and see what the insiders are doing right now!',
-    'lockedTrade.startTrial': 'Start 7-Day Free Trial',
+    'lockedTrade.startTrial': 'Start 5-Minute Free Trial',
     'lockedTrade.unlockDescription': 'Instantly unlock all trades below and see real-time insider activities',
     'lockedTrade.unlockBelow': 'Unlock below',
 
@@ -104,7 +104,7 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.subscribeNow': 'Subscribe Now',
 
     // Trial Start Page
-    'trial.heading': 'InsiderPulse Pro 7-Day Free Trial',
+    'trial.heading': 'InsiderPulse Pro 5-Minute Free Trial',
     'trial.description': 'Track real-time insider trades and get AI-powered analysis',
     'trial.benefits.title': 'Pro Benefits',
     'trial.benefits.realtime': 'Real-time Trade Tracking',
@@ -121,18 +121,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.terms.noChargeUntilEnd': 'No charge until trial ends',
     'trial.terms.cancel': 'Cancel anytime — cancellation takes effect immediately',
     'trial.form.title': 'Enter Payment Information',
-    'trial.form.description': 'Subscription starts automatically after 7-day free trial',
+    'trial.form.description': 'Subscription starts automatically after 5-minute free trial',
     'trial.form.selectPlan': 'Select Subscription Plan',
     'trial.form.monthly': 'Monthly',
     'trial.form.yearly': 'Annual',
     'trial.form.perMonth': 'Billed monthly',
     'trial.form.perYear': 'Billed annually',
     'trial.form.discount': '(33% off)',
-    'trial.form.info1': '* No charges during the 7-day free trial period.',
+    'trial.form.info1': '* No charges during the 5-minute free trial period.',
     'trial.form.info2': '* Automatically converts to selected plan when trial ends.',
     'trial.form.info3': '* Cancel anytime; Pro features will be disabled immediately upon cancellation.',
     'trial.success.title': 'Trial Started!',
-    'trial.success.message': '7-day free trial activated. Start using real-time trade tracking now!',
+    'trial.success.message': '5-minute free trial activated. Start using real-time trade tracking now!',
     'trial.success.redirecting': 'Redirecting automatically...',
 
     // Trial form additional translations
@@ -593,6 +593,42 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.login.errorRequired': 'Please enter email and password',
     'auth.login.errorFailed': 'Login failed',
 
+    // Auth pages - Forgot Password
+    'auth.forgotPassword.title': 'Forgot Password',
+    'auth.forgotPassword.description': 'Enter your email address and we will send you a password reset link',
+    'auth.forgotPassword.emailLabel': 'Email',
+    'auth.forgotPassword.emailPlaceholder': 'name@company.com',
+    'auth.forgotPassword.sendButton': 'Send Reset Link',
+    'auth.forgotPassword.sending': 'Sending...',
+    'auth.forgotPassword.backToLogin': 'Back to login',
+    'auth.forgotPassword.errorEmailRequired': 'Please enter your email',
+    'auth.forgotPassword.errorFailed': 'Failed to send reset email',
+    'auth.forgotPassword.successMessage': 'Password reset email has been sent',
+    'auth.forgotPassword.checkEmail': 'Please check your email for the password reset link',
+    'auth.forgotPassword.secureReset': 'Secure Password Reset',
+    'auth.forgotPassword.feature1Title': 'Email Verification',
+    'auth.forgotPassword.feature1Description': 'We will send a secure reset link to your email address',
+
+    // Auth pages - Reset Password
+    'auth.resetPassword.title': 'Reset Password',
+    'auth.resetPassword.description': 'Enter your new password below',
+    'auth.resetPassword.newPasswordLabel': 'New Password',
+    'auth.resetPassword.newPasswordPlaceholder': 'Enter new password',
+    'auth.resetPassword.confirmPasswordLabel': 'Confirm Password',
+    'auth.resetPassword.confirmPasswordPlaceholder': 'Confirm new password',
+    'auth.resetPassword.resetButton': 'Reset Password',
+    'auth.resetPassword.resetting': 'Resetting...',
+    'auth.resetPassword.backToLogin': 'Back to login',
+    'auth.resetPassword.errorRequired': 'Please enter both password fields',
+    'auth.resetPassword.errorTooShort': 'Password must be at least 6 characters',
+    'auth.resetPassword.errorMismatch': 'Passwords do not match',
+    'auth.resetPassword.errorNoToken': 'Invalid or missing reset token',
+    'auth.resetPassword.errorFailed': 'Failed to reset password',
+    'auth.resetPassword.successMessage': 'Password successfully reset! Redirecting to login...',
+    'auth.resetPassword.secureAccount': 'Secure Your Account',
+    'auth.resetPassword.feature1Title': 'Strong Password',
+    'auth.resetPassword.feature1Description': 'Choose a strong password to keep your account secure',
+
     // Auth pages - Signup
     'auth.signup.title': 'Create Account',
     'auth.signup.subtitle': 'Join us and explore real-time insider trading insights.',
@@ -1027,7 +1063,7 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.realtimeZone': '실시간 구역',
     'lockedTrade.lockedTrades': '개 잠금 거래',
     'lockedTrade.unlockPrompt': '{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!',
-    'lockedTrade.startTrial': '7일 무료 체험 시작',
+    'lockedTrade.startTrial': '5분 무료 체험 시작',
     'lockedTrade.unlockDescription': '아래 모든 거래를 즉시 잠금 해제하고 실시간 내부자 활동 확인',
     'lockedTrade.unlockBelow': '아래 거래 잠금 해제',
 
@@ -1041,7 +1077,7 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.subscribeNow': '지금 구독',
 
     // Trial Start Page
-    'trial.heading': 'InsiderPulse Pro 7일 무료 체험',
+    'trial.heading': 'InsiderPulse Pro 5분 무료 체험',
     'trial.description': '실시간 내부자 거래를 추적하고 AI 분석을 받아보세요',
     'trial.benefits.title': 'Pro 혜택',
     'trial.benefits.realtime': '실시간 거래 추적',
@@ -1058,18 +1094,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.terms.noChargeUntilEnd': '무료체험 종료 이전에는 청구되지 않습니다',
     'trial.terms.cancel': '언제든지 취소할 수 있습니다 — 단, 취소 시 구독이 종료됩니다',
     'trial.form.title': '결제 정보 입력',
-    'trial.form.description': '7일 무료 체험 후 자동으로 구독이 시작됩니다',
+    'trial.form.description': '5분 무료 체험 후 자동으로 구독이 시작됩니다',
     'trial.form.selectPlan': '구독 플랜 선택',
     'trial.form.monthly': '월간 구독',
     'trial.form.yearly': '연간 구독',
     'trial.form.perMonth': '매월 청구',
     'trial.form.perYear': '연간 청구',
     'trial.form.discount': '(33% 할인)',
-    'trial.form.info1': '* 7일 무료 체험 기간 동안 카드에서 청구되지 않습니다.',
+    'trial.form.info1': '* 5분 무료 체험 기간 동안 카드에서 청구되지 않습니다.',
     'trial.form.info2': '* 체험 기간 종료 시 선택하신 플랜으로 자동 전환됩니다.',
     'trial.form.info3': '* 언제든지 구독을 취소할 수 있으며, 취소 시 즉시 Pro 기능 사용이 중지됩니다.',
     'trial.success.title': '체험 시작!',
-    'trial.success.message': '7일 무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!',
+    'trial.success.message': '5분 무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!',
     'trial.success.redirecting': '잠시 후 자동으로 이동합니다...',
 
     // Trial form additional translations
@@ -1086,8 +1122,8 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.form.securePayment': '안전한 결제 · Stripe 보안 처리',
     'trial.form.processing': '처리 중...',
     'trial.form.startTrial': '무료 체험 시작하기',
-    'trial.form.afterTrialMonthly': '7일 후 자동 결제: 월 $14',
-    'trial.form.afterTrialYearly': '7일 후 자동 결제: 연 $112',
+    'trial.form.afterTrialMonthly': '5분 후 자동 결제: 월 $14',
+    'trial.form.afterTrialYearly': '5분 후 자동 결제: 연 $112',
 
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ 체험이 {hours}시간 후 만료됩니다!',
@@ -1749,7 +1785,7 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.realtimeZone': 'リアルタイムゾーン',
     'lockedTrade.lockedTrades': '件のロック取引',
     'lockedTrade.unlockPrompt': '{count}件のリアルタイムインサイダー取引をアンロックして、インサイダーが今何をしているか確認！',
-    'lockedTrade.startTrial': '7日間無料トライアル開始',
+    'lockedTrade.startTrial': '5分間無料トライアル開始',
     'lockedTrade.unlockDescription': '以下の全取引を即座にアンロックし、リアルタイムのインサイダー活動を確認',
     'lockedTrade.unlockBelow': '以下をアンロック',
 
@@ -1763,7 +1799,7 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.subscribeNow': '今すぐ購読',
 
     // Trial Start Page
-    'trial.heading': 'InsiderPulse Pro 7日間無料トライアル',
+    'trial.heading': 'InsiderPulse Pro 5分間無料トライアル',
     'trial.description': 'リアルタイムのインサイダー取引を追跡し、AI分析を受けましょう',
     'trial.benefits.title': 'Proの特典',
     'trial.benefits.realtime': 'リアルタイム取引追跡',
@@ -1780,18 +1816,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.terms.noChargeUntilEnd': 'トライアル終了まで請求なし',
     'trial.terms.cancel': 'いつでもキャンセル可能 — キャンセル時はサブスクリプションが終了します',
     'trial.form.title': 'お支払い情報の入力',
-    'trial.form.description': '7日間の無料トライアル後、自動的にサブスクリプションが開始されます',
+    'trial.form.description': '5分間の無料トライアル後、自動的にサブスクリプションが開始されます',
     'trial.form.selectPlan': 'サブスクリプションプランを選択',
     'trial.form.monthly': '月額プラン',
     'trial.form.yearly': '年間プラン',
     'trial.form.perMonth': '毎月請求',
     'trial.form.perYear': '年間請求',
     'trial.form.discount': '(33%オフ)',
-    'trial.form.info1': '* 7日間の無料トライアル期間中はカードに請求されません。',
+    'trial.form.info1': '* 5分間の無料トライアル期間中はカードに請求されません。',
     'trial.form.info2': '* トライアル期間終了時に選択したプランに自動的に切り替わります。',
     'trial.form.info3': '* いつでもサブスクリプションをキャンセルでき、キャンセル時は即座にPro機能の使用が停止されます。',
     'trial.success.title': 'トライアル開始！',
-    'trial.success.message': '7日間の無料トライアルが有効になりました。今すぐリアルタイム取引追跡をご利用ください！',
+    'trial.success.message': '5分間の無料トライアルが有効になりました。今すぐリアルタイム取引追跡をご利用ください！',
     'trial.success.redirecting': '自動的にリダイレクトしています...',
 
     // Trial form additional translations
@@ -1808,8 +1844,8 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.form.securePayment': '安全な決済 · Stripe保護',
     'trial.form.processing': '処理中...',
     'trial.form.startTrial': '無料トライアルを開始',
-    'trial.form.afterTrialMonthly': '7日後の自動請求: 月額$14',
-    'trial.form.afterTrialYearly': '7日後の自動請求: 年額$112',
+    'trial.form.afterTrialMonthly': '5分後の自動請求: 月額$14',
+    'trial.form.afterTrialYearly': '5分後の自動請求: 年額$112',
 
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ トライアルは{hours}時間後に期限切れ！',
@@ -2365,7 +2401,7 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.realtimeZone': '实时区域',
     'lockedTrade.lockedTrades': '笔锁定交易',
     'lockedTrade.unlockPrompt': '解锁{count}笔实时内幕交易，看看内幕人士现在在做什么！',
-    'lockedTrade.startTrial': '开始7天免费试用',
+    'lockedTrade.startTrial': '开始5分钟免费试用',
     'lockedTrade.unlockDescription': '立即解锁下方所有交易并查看实时内幕活动',
     'lockedTrade.unlockBelow': '解锁下方',
 
@@ -2379,7 +2415,7 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.subscribeNow': '立即订阅',
 
     // Trial Start Page
-    'trial.heading': 'InsiderPulse Pro 7天免费试用',
+    'trial.heading': 'InsiderPulse Pro 5分钟免费试用',
     'trial.description': '追踪实时内幕交易并获得AI分析',
     'trial.benefits.title': 'Pro权益',
     'trial.benefits.realtime': '实时交易追踪',
@@ -2396,18 +2432,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.terms.noChargeUntilEnd': '试用结束前不收费',
     'trial.terms.cancel': '随时取消 — 取消后订阅立即终止',
     'trial.form.title': '输入付款信息',
-    'trial.form.description': '7天免费试用后自动开始订阅',
+    'trial.form.description': '5分钟免费试用后自动开始订阅',
     'trial.form.selectPlan': '选择订阅计划',
     'trial.form.monthly': '月度订阅',
     'trial.form.yearly': '年度订阅',
     'trial.form.perMonth': '每月计费',
     'trial.form.perYear': '每年计费',
     'trial.form.discount': '(33%折扣)',
-    'trial.form.info1': '* 7天免费试用期间不会从卡中扣费。',
+    'trial.form.info1': '* 5分钟免费试用期间不会从卡中扣费。',
     'trial.form.info2': '* 试用期结束时自动转换为所选计划。',
     'trial.form.info3': '* 随时可以取消订阅，取消后Pro功能立即停用。',
     'trial.success.title': '试用开始！',
-    'trial.success.message': '7天免费试用已激活。立即开始使用实时交易追踪！',
+    'trial.success.message': '5分钟免费试用已激活。立即开始使用实时交易追踪！',
     'trial.success.redirecting': '正在自动跳转...',
 
     // Trial form additional translations
@@ -2424,8 +2460,8 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.form.securePayment': '安全付款 · Stripe保护',
     'trial.form.processing': '处理中...',
     'trial.form.startTrial': '开始免费试用',
-    'trial.form.afterTrialMonthly': '7天后自动计费: 每月$14',
-    'trial.form.afterTrialYearly': '7天后自动计费: 每年$112',
+    'trial.form.afterTrialMonthly': '5分钟后自动计费: 每月$14',
+    'trial.form.afterTrialYearly': '5分钟后自动计费: 每年$112',
 
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ 试用将在{hours}小时后过期！',

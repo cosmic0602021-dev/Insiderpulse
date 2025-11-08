@@ -19,6 +19,10 @@ export const users = pgTable("users", {
   verificationCode: text("verification_code"), // 6-digit code for email verification
   verificationCodeExpires: timestamp("verification_code_expires"), // Code expires in 10 minutes
 
+  // Password reset
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"), // Token expires in 1 hour
+
   // Subscription & Trial Management
   subscriptionTier: text("subscription_tier").notNull().default("free"), // "free" | "insider_pro"
   subscriptionStatus: text("subscription_status").notNull().default("inactive"), // "active" | "inactive" | "trialing" | "canceled"

@@ -315,14 +315,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      // For regular plans (monthly/yearly), add 7-day trial
-      // For Mini plan, skip trial (immediate $0.10 charge)
-      if (!isMiniPlan) {
-        subscriptionData.trial_period_days = 7;
-        console.log(`✅ Setting 7-day trial period for ${planType} plan`);
-      } else {
-        console.log(`✅ No trial for Mini plan - immediate $0.10 billing`);
-      }
+      // All plans now have 5-minute trial period
+      // Using trial_end (Unix timestamp) instead of trial_period_days for minute-level precision
+      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (5 * 60); // 5 minutes from now
+      subscriptionData.trial_end = trialEndTimestamp;
+      console.log(`✅ Setting 5-minute trial period for ${planType} plan`);
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
       // Idempotency key is valid for 1 minute window per user
@@ -902,6 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('👤 User found:', user ? `Yes (${user.email})` : 'No');
 
       if (!user) {
+        console.log('❌ Login failed: User not found');
         return res.status(401).json({
           success: false,
           message: '이메일 또는 비밀번호가 올바르지 않습니다',
@@ -909,7 +907,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if email is verified
+      console.log('✉️ Email verified status:', user.emailVerified);
       if (!user.emailVerified) {
+        console.log('❌ Login failed: Email not verified');
         return res.status(403).json({
           success: false,
           message: '이메일 인증이 필요합니다. 가입 시 받은 인증 이메일을 확인해주세요.',
@@ -922,11 +922,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔑 Password valid:', isValidPassword);
 
       if (!isValidPassword) {
+        console.log('❌ Login failed: Invalid password for', email);
         return res.status(401).json({
           success: false,
           message: '이메일 또는 비밀번호가 올바르지 않습니다',
         });
       }
+
+      console.log('✅ Password verified successfully');
 
       // Generate JWT token
       const token = jwt.sign(
@@ -957,6 +960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Failed to track session:', sessionError);
       }
 
+      console.log('✅ Login successful for:', email);
       res.json({
         success: true,
         message: '로그인 성공',
@@ -976,6 +980,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: '로그인에 실패했습니다',
+      });
+    }
+  });
+
+  // Forgot password - Request password reset
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log('🔐 Password reset request for:', email);
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일을 입력해주세요',
+        });
+      }
+
+      // Find user by email
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      // Always return success even if user doesn't exist (security best practice)
+      if (!user) {
+        console.log('⚠️ User not found, but returning success for security');
+        return res.json({
+          success: true,
+          message: '비밀번호 재설정 이메일이 발송되었습니다',
+        });
+      }
+
+      // Generate reset token
+      const resetToken = jwt.sign(
+        { email: user.email, timestamp: Date.now() },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      // Set token expiration (1 hour from now)
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+      // Save reset token to database
+      console.log('💾 Saving reset token to database...');
+      await db.update(users)
+        .set({
+          passwordResetToken: resetToken,
+          passwordResetExpires: resetExpires,
+        })
+        .where(eq(users.id, user.id));
+      console.log('✅ Reset token saved to database');
+
+      // Send password reset email (non-blocking - don't fail if email fails)
+      try {
+        console.log('📧 Attempting to send password reset email...');
+        await emailNotificationService.sendPasswordResetEmail(email, resetToken);
+        console.log('✅ Password reset email sent to:', email);
+      } catch (emailError) {
+        console.error('⚠️ Email sending failed (non-critical):', emailError);
+        console.error('Email error details:', emailError);
+        // Continue - token is saved, user can still reset via direct link if needed
+      }
+
+      // Development: Print reset link to console
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+      console.log('🔗 Password reset link (DEV ONLY):', resetUrl);
+
+      res.json({
+        success: true,
+        message: '비밀번호 재설정 이메일이 발송되었습니다',
+      });
+    } catch (error) {
+      console.error('❌ Password reset request error:', error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      res.status(500).json({
+        success: false,
+        message: '비밀번호 재설정 요청에 실패했습니다',
+      });
+    }
+  });
+
+  // Reset password - Complete password reset with token
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      console.log('🔐 Password reset attempt with token');
+
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: '토큰과 새 비밀번호를 입력해주세요',
+        });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: '비밀번호는 최소 6자 이상이어야 합니다',
+        });
+      }
+
+      // Verify JWT token
+      let decoded: { email: string; timestamp: number };
+      try {
+        decoded = jwt.verify(token, JWT_SECRET) as { email: string; timestamp: number };
+        console.log('✅ Reset token verified for:', decoded.email);
+      } catch (error) {
+        console.log('❌ Invalid or expired token');
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않거나 만료된 토큰입니다',
+        });
+      }
+
+      // Find user with matching reset token
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, decoded.email),
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다',
+        });
+      }
+
+      // Check if token matches and hasn't expired
+      if (user.passwordResetToken !== token) {
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않은 토큰입니다',
+        });
+      }
+
+      if (user.passwordResetExpires && user.passwordResetExpires < new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: '토큰이 만료되었습니다. 비밀번호 재설정을 다시 요청해주세요.',
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+      // Update password and clear reset token
+      await db.update(users)
+        .set({
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+        })
+        .where(eq(users.id, user.id));
+
+      console.log('✅ Password reset successful for:', decoded.email);
+
+      res.json({
+        success: true,
+        message: '비밀번호가 성공적으로 변경되었습니다',
+      });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        success: false,
+        message: '비밀번호 재설정에 실패했습니다',
       });
     }
   });
@@ -1657,11 +1825,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Attached payment method to customer: ${customerId}`);
 
-      // Create subscription with trial (7 days for production, 1 minute for mini plan)
-      const isTestPlan = planType === 'test';
-      const trialEndTimestamp = isTestPlan
-        ? Math.floor(Date.now() / 1000) + (1 * 60) // 1 minute from now
-        : undefined; // Use trial_period_days for production plans
+      // Create subscription with 5-minute trial for all plans
+      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (5 * 60); // 5 minutes from now
 
       const subscriptionParams: any = {
         customer: customerId,
@@ -1675,14 +1840,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           userId: user.id,
         },
+        trial_end: trialEndTimestamp,
       };
-
-      // For mini plan: use trial_end (1 minute). For production: use trial_period_days (7 days)
-      if (isTestPlan) {
-        subscriptionParams.trial_end = trialEndTimestamp;
-      } else {
-        subscriptionParams.trial_period_days = 7;
-      }
 
       const subscription = await stripe.subscriptions.create(subscriptionParams);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
 
 export function AuthModal() {
+  const [, navigate] = useLocation();
   const { showAuthModal, authModalMode, login, closeAuthModal } = useAuth();
   const { t } = useLanguage();
   const [email, setEmail] = useState('');
@@ -418,7 +420,21 @@ export function AuthModal() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t('auth.login.password')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t('auth.login.password')}</Label>
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      onClick={() => {
+                        closeAuthModal();
+                        navigate('/forgot-password');
+                      }}
+                    >
+                      {t('auth.login.forgotPassword')}
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="password"
                   type="password"

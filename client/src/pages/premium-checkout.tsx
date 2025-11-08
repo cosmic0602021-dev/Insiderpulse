@@ -90,10 +90,10 @@ export default function PremiumCheckout() {
 
   const currentPlan = plans[selectedPlan];
 
-  // Trial period display text based on plan
-  const trialPeriod = selectedPlan === 'test' ? '즉시' : '7일';
-  const trialPeriodEn = selectedPlan === 'test' ? 'immediate' : '7 days';
-  const trialDuration = selectedPlan === 'test' ? 'Immediate' : '7-Day';
+  // Trial period display text - all plans now have 5-minute trial
+  const trialPeriod = '5분';
+  const trialPeriodEn = '5 minutes';
+  const trialDuration = '5-Minute';
 
   const handleCheckout = async () => {
     // Prevent double-clicks and concurrent requests

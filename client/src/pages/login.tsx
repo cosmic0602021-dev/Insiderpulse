@@ -150,7 +150,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  onClick={() => {/* TODO: 비밀번호 찾기 */}}
+                  onClick={() => navigate('/forgot-password')}
                   data-testid="button-forgot-password"
                 >
                   {t('auth.login.forgotPassword')}
