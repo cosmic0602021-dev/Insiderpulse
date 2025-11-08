@@ -43,10 +43,11 @@ class AutoScheduler {
       this.runOpenInsiderCollection();
     }, 30000);
 
-    console.log('✅ Auto scheduler started successfully - MAXIMUM SPEED OPTIMIZED:');
-    console.log('   🔄 OpenInsider: Every 5 minutes (MAXIMUM FREQUENCY)');
-    console.log('   🔄 MarketBeat: Every 30 minutes (COMPREHENSIVE)');
-    console.log('   🔄 SEC RSS: Every 15 minutes (DIRECT SEC DATA)');
+    console.log('✅ Auto scheduler started successfully - COST OPTIMIZED:');
+    console.log('   🔄 OpenInsider: Every 6 hours (COST SAVING)');
+    console.log('   🔄 MarketBeat: Every 6 hours (COST SAVING)');
+    console.log('   🔄 SEC RSS: Every 6 hours (COST SAVING)');
+    console.log('   🏖️ Weekends: SKIPPED (US market closed - additional 28% cost saving)');
   }
 
   stop() {
@@ -77,45 +78,61 @@ class AutoScheduler {
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 5 minutes for real-time updates
+    // Run OpenInsider collection every 6 hours to save costs
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 5 * 60 * 1000);
+    }, 6 * 60 * 60 * 1000); // 6 hours
 
-    console.log('📅 OpenInsider scheduled: Every 5 minutes (REAL-TIME MODE)');
+    console.log('📅 OpenInsider scheduled: Every 6 hours (COST OPTIMIZED)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 30 minutes for real-time updates
-    // Offset by 5 minutes to avoid conflicts with OpenInsider
+    // Run MarketBeat collection every 6 hours to save costs
+    // Offset by 10 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 30 * 60 * 1000);
+      }, 6 * 60 * 60 * 1000); // 6 hours
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
-    }, 5 * 60 * 1000); // Start after 5 minutes
+    }, 10 * 60 * 1000); // Start after 10 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 30 minutes (REAL-TIME MODE)');
+    console.log('📅 MarketBeat scheduled: Every 6 hours (COST OPTIMIZED)');
   }
 
   private startSecRssSchedule() {
-    // Run SEC RSS collection every 15 minutes for direct SEC data
-    // Offset by 7 minutes to avoid conflicts with other collectors
+    // Run SEC RSS collection every 6 hours to save costs
+    // Offset by 20 minutes to avoid conflicts with other collectors
     setTimeout(() => {
       this.secRssInterval = setInterval(() => {
         this.runSecRssCollection();
-      }, 15 * 60 * 1000);
+      }, 6 * 60 * 60 * 1000); // 6 hours
 
       // Run first SEC RSS collection after the initial delay
       this.runSecRssCollection();
-    }, 7 * 60 * 1000); // Start after 7 minutes
+    }, 20 * 60 * 1000); // Start after 20 minutes
 
-    console.log('📅 SEC RSS scheduled: Every 15 minutes (DIRECT SEC DATA)');
+    console.log('📅 SEC RSS scheduled: Every 6 hours (COST OPTIMIZED)');
+  }
+
+  // Check if it's weekend in US Eastern Time
+  private isUSWeekend(): boolean {
+    // Get current time in US Eastern Time
+    const now = new Date();
+    const usEasternTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const dayOfWeek = usEasternTime.getDay(); // 0 = Sunday, 6 = Saturday
+
+    return dayOfWeek === 0 || dayOfWeek === 6;
   }
 
   private async runOpenInsiderCollection() {
+    // Skip collection on US weekends to save costs
+    if (this.isUSWeekend()) {
+      console.log('🏖️ [AUTO] Skipping OpenInsider collection - US weekend (market closed)');
+      return;
+    }
+
     const startedAt = new Date();
     let runId: string | null = null;
 
@@ -167,6 +184,12 @@ class AutoScheduler {
   }
 
   private async runMarketBeatCollection() {
+    // Skip collection on US weekends to save costs
+    if (this.isUSWeekend()) {
+      console.log('🏖️ [AUTO] Skipping MarketBeat collection - US weekend (market closed)');
+      return;
+    }
+
     const startedAt = new Date();
     let runId: string | null = null;
 
@@ -218,6 +241,12 @@ class AutoScheduler {
   }
 
   private async runSecRssCollection() {
+    // Skip collection on US weekends to save costs
+    if (this.isUSWeekend()) {
+      console.log('🏖️ [AUTO] Skipping SEC RSS collection - US weekend (market closed)');
+      return;
+    }
+
     const startedAt = new Date();
     let runId: string | null = null;
 
@@ -355,9 +384,9 @@ class AutoScheduler {
       openInsiderScheduled: !!this.openInsiderInterval,
       marketBeatScheduled: !!this.marketBeatInterval,
       secRssScheduled: !!this.secRssInterval,
-      nextOpenInsiderRun: this.openInsiderInterval ? 'Every 5 minutes' : 'Not scheduled',
-      nextMarketBeatRun: this.marketBeatInterval ? 'Every 30 minutes' : 'Not scheduled',
-      nextSecRssRun: this.secRssInterval ? 'Every 15 minutes' : 'Not scheduled',
+      nextOpenInsiderRun: this.openInsiderInterval ? 'Every 6 hours' : 'Not scheduled',
+      nextMarketBeatRun: this.marketBeatInterval ? 'Every 6 hours' : 'Not scheduled',
+      nextSecRssRun: this.secRssInterval ? 'Every 6 hours' : 'Not scheduled',
     };
   }
 

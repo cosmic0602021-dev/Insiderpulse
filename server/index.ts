@@ -85,9 +85,9 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 Automated data collection enabled
+  // 🚀 Automated data collection enabled (cost optimized)
   console.log('🚀 Server started with automated data collection enabled');
-  console.log('📊 SEC data will be automatically collected every 30 minutes');
+  console.log('💰 Data collection optimized: Every 6 hours to reduce costs (was 5-30 min)');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
