@@ -7,6 +7,7 @@ import type { InsertInsiderTrade } from '@shared/schema';
 import { db } from './db-storage';
 import { collectionRuns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { shouldRunDataCollection } from './utils/market-hours';
 
 class AutoScheduler {
   private openInsiderInterval: NodeJS.Timeout | null = null;
@@ -116,21 +117,10 @@ class AutoScheduler {
     console.log('📅 SEC RSS scheduled: Every 6 hours (COST OPTIMIZED)');
   }
 
-  // Check if it's weekend in US Eastern Time
-  private isUSWeekend(): boolean {
-    // Get current time in US Eastern Time
-    const now = new Date();
-    const usEasternTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const dayOfWeek = usEasternTime.getDay(); // 0 = Sunday, 6 = Saturday
-
-    return dayOfWeek === 0 || dayOfWeek === 6;
-  }
-
   private async runOpenInsiderCollection() {
-    // Skip collection on US weekends to save costs
-    if (this.isUSWeekend()) {
-      console.log('🏖️ [AUTO] Skipping OpenInsider collection - US weekend (market closed)');
-      return;
+    // Skip collection on US weekends/holidays to save costs
+    if (!shouldRunDataCollection()) {
+      return; // Logging is done inside shouldRunDataCollection()
     }
 
     const startedAt = new Date();
@@ -184,10 +174,9 @@ class AutoScheduler {
   }
 
   private async runMarketBeatCollection() {
-    // Skip collection on US weekends to save costs
-    if (this.isUSWeekend()) {
-      console.log('🏖️ [AUTO] Skipping MarketBeat collection - US weekend (market closed)');
-      return;
+    // Skip collection on US weekends/holidays to save costs
+    if (!shouldRunDataCollection()) {
+      return; // Logging is done inside shouldRunDataCollection()
     }
 
     const startedAt = new Date();
@@ -241,10 +230,9 @@ class AutoScheduler {
   }
 
   private async runSecRssCollection() {
-    // Skip collection on US weekends to save costs
-    if (this.isUSWeekend()) {
-      console.log('🏖️ [AUTO] Skipping SEC RSS collection - US weekend (market closed)');
-      return;
+    // Skip collection on US weekends/holidays to save costs
+    if (!shouldRunDataCollection()) {
+      return; // Logging is done inside shouldRunDataCollection()
     }
 
     const startedAt = new Date();

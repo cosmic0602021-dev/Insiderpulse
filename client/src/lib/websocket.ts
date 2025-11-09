@@ -28,13 +28,13 @@ export function useWebSocket(url: string): WebSocketHook {
       clearInterval(heartbeatInterval.current);
     }
 
-    // Send PING every 30 seconds to keep connection alive
+    // Send PING every 2 minutes to keep connection alive (was 30s) - Cost optimization
     heartbeatInterval.current = setInterval(() => {
       if (ws.current?.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ type: 'PING' }));
         console.log('💓 Heartbeat PING sent');
       }
-    }, 30000);
+    }, 2 * 60 * 1000); // 2 minutes
   };
 
   const connect = () => {

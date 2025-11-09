@@ -166,8 +166,8 @@ export default function LiveTrading() {
       }
       return response;
     },
-    staleTime: 30000, // 30초 캐시
-    refetchInterval: 30000, // 30초마다 자동 갱신 (실시간 업데이트)
+    staleTime: 5 * 60 * 1000, // 5분 캐시 (was 30s) - Cost optimization
+    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신 (was 30s) - Cost optimization
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -178,8 +178,8 @@ export default function LiveTrading() {
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
-    staleTime: 30000,
-    refetchInterval: 30000, // 30초마다 자동 갱신 (실시간 업데이트)
+    staleTime: 5 * 60 * 1000, // 5분 캐시 (was 30s) - Cost optimization
+    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신 (was 30s) - Cost optimization
   });
 
   // WebSocket for real-time updates

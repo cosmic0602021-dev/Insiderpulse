@@ -11,6 +11,7 @@ interface AuthContextType {
   authModalMode: 'login' | 'signup';
   login: (user: User, token: string) => void;
   logout: () => void;
+  refreshUser: () => Promise<boolean>;
   openAuthModal: (mode: 'login' | 'signup') => void;
   closeAuthModal: () => void;
 }
@@ -43,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (verifyResponse.success && verifyResponse.user) {
             console.log('✅ Token is valid, restoring session');
+            console.log('   📊 User tier:', verifyResponse.user.subscriptionTier);
+            console.log('   📊 User status:', verifyResponse.user.subscriptionStatus);
             setUser(verifyResponse.user);
             setToken(savedToken);
             // Update stored user info in case it changed
@@ -87,6 +90,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiClient.setToken(null);
   };
 
+  // Manual refresh user data from server
+  const refreshUser = async (): Promise<boolean> => {
+    const savedToken = localStorage.getItem('authToken');
+
+    if (!savedToken) {
+      console.log('⚠️ No token found, cannot refresh user');
+      return false;
+    }
+
+    try {
+      console.log('🔄 Manually refreshing user data from server...');
+      apiClient.setToken(savedToken);
+      const verifyResponse = await apiClient.verifyToken();
+
+      if (verifyResponse.success && verifyResponse.user) {
+        console.log('✅ User data refreshed successfully:', verifyResponse.user);
+        console.log('   📊 Subscription tier:', verifyResponse.user.subscriptionTier);
+        console.log('   📊 Subscription status:', verifyResponse.user.subscriptionStatus);
+
+        setUser(verifyResponse.user);
+        setToken(savedToken);
+        localStorage.setItem('authUser', JSON.stringify(verifyResponse.user));
+        return true;
+      } else {
+        console.log('❌ Failed to refresh user data');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing user data:', error);
+      return false;
+    }
+  };
+
   // Listen for 401 unauthorized events from API client
   useEffect(() => {
     const handleAuthLogout = () => {
@@ -121,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authModalMode,
         login,
         logout,
+        refreshUser,
         openAuthModal,
         closeAuthModal,
       }}

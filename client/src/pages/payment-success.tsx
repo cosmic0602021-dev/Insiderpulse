@@ -8,7 +8,8 @@ import { apiClient } from "@/lib/api";
 
 export default function PaymentSuccess() {
   const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const { user, login } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { user, login, refreshUser } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -104,20 +105,45 @@ export default function PaymentSuccess() {
     );
   }
 
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    console.log('🔄 User manually triggered refresh...');
+    const success = await refreshUser();
+
+    if (success && user && user.subscriptionTier === 'insider_pro') {
+      console.log('✅ Manual refresh successful, subscription activated!');
+      setPaymentStatus('success');
+    } else {
+      console.log('❌ Manual refresh failed or subscription not active yet');
+      alert('Subscription not activated yet. Please wait a moment and try again, or contact support.');
+    }
+    setIsRefreshing(false);
+  };
+
   if (paymentStatus === 'error') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle className="text-destructive">Payment Error</CardTitle>
+            <CardTitle className="text-destructive">Subscription Activation Delayed</CardTitle>
             <CardDescription>
-              There was an issue processing your payment. Please try again.
+              Your payment was successful, but we're still activating your subscription. This can take a few moments.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? 'Checking...' : 'Check Subscription Status'}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              If the issue persists, please contact support with your payment confirmation.
+            </p>
             <Link href="/premium-checkout">
-              <Button className="w-full">
-                Try Again
+              <Button variant="outline" className="w-full">
+                Return to Checkout
               </Button>
             </Link>
           </CardContent>

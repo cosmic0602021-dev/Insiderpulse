@@ -2,6 +2,7 @@ import { storage } from './storage';
 import { dataIntegrityService } from './data-integrity-service';
 import { realTimeFreshnessMonitor } from './real-time-freshness-monitor';
 import { enhancedDataValidator } from './enhanced-data-validation';
+import { shouldRunMonitoring } from './utils/market-hours';
 
 /**
  * 자동화된 데이터 품질 검사 및 알림 시스템
@@ -89,6 +90,11 @@ export class AutomatedQualityAlerts {
    * 종합 품질 검사 실행
    */
   private async runQualityCheck(): Promise<void> {
+    // Skip monitoring on weekends to save costs
+    if (!shouldRunMonitoring()) {
+      return; // Logging is done inside shouldRunMonitoring()
+    }
+
     try {
       console.log('🔍 Running comprehensive quality check...');
 

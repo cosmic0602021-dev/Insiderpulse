@@ -1,5 +1,6 @@
 import { dataIntegrityService } from './data-integrity-service';
 import { storage } from './storage';
+import { shouldRunMonitoring } from './utils/market-hours';
 
 /**
  * 자동화된 데이터 품질 모니터링 서비스
@@ -64,6 +65,11 @@ export class DataQualityMonitor {
    * 데이터 품질 검사 실행
    */
   private async runQualityCheck(): Promise<void> {
+    // Skip monitoring on weekends to save costs
+    if (!shouldRunMonitoring()) {
+      return; // Logging is done inside shouldRunMonitoring()
+    }
+
     try {
       console.log('🔍 Running data quality check...');
 

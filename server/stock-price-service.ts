@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { storage } from './storage';
 import type { InsertStockPrice, InsertStockPriceHistory } from '@shared/schema';
+import { shouldUpdateStockPrices } from './utils/market-hours';
 
 export class StockPriceService {
   private cache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours (was 5 min) - OPTIMAL for cost/freshness balance
 
   // Company name to ticker mapping for common companies
   private readonly companyToTicker: { [key: string]: string } = {
@@ -342,12 +343,16 @@ export class StockPriceService {
   async startPeriodicUpdates(): Promise<void> {
     console.log('🚀 Starting periodic stock price updates (every 6 hours - COST OPTIMIZED)...');
 
-    // Initial update
-    await this.updateStockPricesForTrades();
-
-    // Schedule periodic updates
-    setInterval(async () => {
+    // Initial update (if not weekend)
+    if (shouldUpdateStockPrices()) {
       await this.updateStockPricesForTrades();
+    }
+
+    // Schedule periodic updates (skip on weekends/holidays)
+    setInterval(async () => {
+      if (shouldUpdateStockPrices()) {
+        await this.updateStockPricesForTrades();
+      }
     }, 6 * 60 * 60 * 1000); // 6 hours - Cost optimization
   }
 }

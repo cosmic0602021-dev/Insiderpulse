@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import { dataIntegrityService } from './data-integrity-service';
+import { shouldRunMonitoring } from './utils/market-hours';
 
 /**
  * 실시간 데이터 신선도 모니터링 시스템
@@ -101,6 +102,11 @@ export class RealTimeFreshnessMonitor {
    * 데이터 신선도 체크
    */
   private async checkDataFreshness(): Promise<void> {
+    // Skip monitoring on weekends to save costs
+    if (!shouldRunMonitoring()) {
+      return; // Logging is done inside shouldRunMonitoring()
+    }
+
     try {
       console.log('🔍 Checking data freshness...');
 

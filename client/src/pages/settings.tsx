@@ -11,6 +11,7 @@ import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
+import { RefreshAccountButton } from '@/components/refresh-account-button';
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
@@ -229,24 +230,30 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground">
                 Manage your subscription, update payment methods, view invoices, or cancel your subscription through our secure payment portal.
               </p>
-              <Button
-                onClick={handleManageSubscription}
-                disabled={isLoadingPortal}
-                className="w-full"
-                variant="outline"
-              >
-                {isLoadingPortal ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Manage Subscription
-                  </>
-                )}
-              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button
+                  onClick={handleManageSubscription}
+                  disabled={isLoadingPortal}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {isLoadingPortal ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Manage Subscription
+                    </>
+                  )}
+                </Button>
+                <RefreshAccountButton className="w-full" />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                💡 Click "Refresh Account" if your subscription status doesn't update automatically
+              </p>
             </div>
 
             <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm">
