@@ -284,40 +284,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Determine plan type and set appropriate trial period
-      // Note: Stripe requires trial_end to be at least 48 hours in the future
-      // For Mini plan, we'll do immediate billing (no trial) - the "1 minute" is app-enforced
+      // Monthly: 3 days free trial (72 hours)
+      // Yearly: 7 days free trial (168 hours)
       const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY;
       const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
-      const testPriceId = process.env.STRIPE_PRICE_ID_TEST;
 
       console.log(`🔍 Plan detection - Received priceId: "${priceId}"`);
-      console.log(`🔍 Available prices - Monthly: "${monthlyPriceId}", Yearly: "${yearlyPriceId}", Test: "${testPriceId}"`);
+      console.log(`🔍 Available prices - Monthly: "${monthlyPriceId}", Yearly: "${yearlyPriceId}"`);
 
-      let planType: 'monthly' | 'yearly' | 'test' = 'monthly';
-      let isMiniPlan = false;
+      let planType: 'monthly' | 'yearly' = 'monthly';
+      let trialDays = 3; // Default: 3 days for monthly
 
-      if (priceId === testPriceId) {
-        planType = 'test';
-        isMiniPlan = true;
-        console.log(`🎯 Detected MINI PLAN - immediate billing ($0.10), no Stripe trial`);
-      } else if (priceId === yearlyPriceId) {
+      if (priceId === yearlyPriceId) {
         planType = 'yearly';
-        console.log(`🎯 Detected YEARLY PLAN - 7 day trial`);
-      } else {
+        trialDays = 7; // 7 days for yearly
+        console.log(`🎯 Detected YEARLY PLAN - ${trialDays} day trial`);
+      } else if (priceId === monthlyPriceId) {
         planType = 'monthly';
-        console.log(`🎯 Detected MONTHLY PLAN - 7 day trial`);
+        trialDays = 3; // 3 days for monthly
+        console.log(`🎯 Detected MONTHLY PLAN - ${trialDays} day trial`);
+      } else {
+        // Unknown price ID - default to monthly with 3 days
+        console.warn(`⚠️ Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
+
+      // Calculate trial_end timestamp
+      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60);
 
       const subscriptionData: any = {
         metadata: {
           userId: userId,
           planType: planType
-        }
+        },
+        trial_end: trialEndTimestamp,
       };
 
-      // No free trial - immediate billing starts
-      // User will be charged immediately upon subscription
-      console.log(`✅ Immediate billing for ${planType} plan (no trial period)`);
+      console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan`);
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
       // Idempotency key is valid for 1 minute window per user

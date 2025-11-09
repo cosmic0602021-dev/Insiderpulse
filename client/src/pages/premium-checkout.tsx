@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 
 export default function PremiumCheckout() {
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly' | 'test'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
   const isSubmittingRef = useRef(false);
   const { toast } = useToast();
@@ -70,25 +70,14 @@ export default function PremiumCheckout() {
       savings: "Save 33% with annual billing",
       discount: "33% OFF"
     },
-    test: {
-      name: "Mini Plan",
-      price: 0.10,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_TEST || 'price_1SPm4OQ9br8aQ59530R9Dy37',
-      interval: "",
-      billingInterval: "즉시 청구",
-      description: "Test our service with a mini plan",
-      features: [
-        "즉시 $0.10 청구",
-        "모든 Pro 기능 이용 가능",
-        "테스트 목적 소액 플랜",
-        "언제든지 취소 가능"
-      ],
-      savings: null,
-      discount: "💎 MINI"
-    }
   };
 
   const currentPlan = plans[selectedPlan];
+
+  // Trial periods by plan
+  const trialDays = selectedPlan === 'yearly' ? 7 : 3;
+  const trialPeriodKo = selectedPlan === 'yearly' ? '7일' : '3일';
+  const trialPeriodEn = selectedPlan === 'yearly' ? '7 days' : '3 days';
 
   const handleCheckout = async () => {
     // Prevent double-clicks and concurrent requests
@@ -244,21 +233,6 @@ export default function PremiumCheckout() {
                     </span>
                   )}
                 </button>
-                <button
-                  onClick={() => setSelectedPlan('test')}
-                  className={`relative px-6 py-3 rounded-md font-semibold transition-all ${
-                    selectedPlan === 'test'
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  💎 Mini
-                  {selectedPlan !== 'test' && (
-                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      $0.10
-                    </span>
-                  )}
-                </button>
               </div>
             </div>
 
@@ -328,19 +302,16 @@ export default function PremiumCheckout() {
               </CardContent>
             </Card>
 
-            {/* Immediate Billing Info */}
+            {/* Free Trial Info */}
             <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-sm text-white">
-                    즉시 결제
+                    {trialPeriodKo} 무료체험
                   </h3>
                   <p className="text-sm text-slate-300 mt-1">
-                    {selectedPlan === 'test'
-                      ? '테스트 목적의 소액 플랜입니다. 결제 즉시 $0.10이 청구되며 모든 Pro 기능을 이용할 수 있습니다. 언제든지 해지 가능합니다.'
-                      : `결제 즉시 ${currentPlan.price}달러가 청구되며 모든 Pro 기능을 바로 이용하실 수 있습니다. 다음 ${currentPlan.billingInterval}부터 자동으로 갱신됩니다. 언제든지 해지 가능합니다.`
-                    }
+                    오늘부터 {trialPeriodKo}간 무료로 모든 Pro 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${currentPlan.price}{currentPlan.interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.
                   </p>
                 </div>
               </div>
@@ -379,21 +350,25 @@ export default function PremiumCheckout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  Complete Payment
+                  Start Free Trial
                 </CardTitle>
                 <CardDescription>
-                  즉시 ${currentPlan.price} 청구
+                  {trialPeriodKo} 무료체험 후 ${currentPlan.price}{currentPlan.interval}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                   <div className="flex items-center justify-between">
                     <span>Plan:</span>
-                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : selectedPlan === 'yearly' ? 'Yearly' : 'Mini'})</span>
+                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'})</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Immediate Charge:</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">${currentPlan.price}</span>
+                    <span>Free Trial:</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">{trialPeriodEn}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>After Trial:</span>
+                    <span className="font-semibold">${currentPlan.price}{currentPlan.interval} (세금별도)</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Billing Cycle:</span>
@@ -415,13 +390,13 @@ export default function PremiumCheckout() {
                   ) : (
                     <>
                       <Shield className="w-5 h-5 mr-2" />
-                      Complete Payment (${currentPlan.price})
+                      Start {trialPeriodEn} Free Trial
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-slate-500">
-                  You will be charged ${currentPlan.price} immediately. Cancel anytime.
+                  You won't be charged for {trialPeriodEn}. Cancel anytime during the trial.
                 </p>
               </CardContent>
             </Card>
