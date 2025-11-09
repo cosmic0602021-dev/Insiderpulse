@@ -245,7 +245,9 @@ class ApiClient {
   }
 
   getTrialStatus = async (): Promise<TrialStatusResponse> => {
-    return this.request<TrialStatusResponse>('/trial/status');
+    // Add timestamp to bypass browser cache
+    const timestamp = Date.now();
+    return this.request<TrialStatusResponse>(`/trial/status?t=${timestamp}`);
   }
 
   // Health check

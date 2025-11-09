@@ -340,15 +340,15 @@ export class StockPriceService {
   }
 
   async startPeriodicUpdates(): Promise<void> {
-    console.log('🚀 Starting periodic stock price updates (every 10 minutes)...');
-    
+    console.log('🚀 Starting periodic stock price updates (every 6 hours - COST OPTIMIZED)...');
+
     // Initial update
     await this.updateStockPricesForTrades();
-    
+
     // Schedule periodic updates
     setInterval(async () => {
       await this.updateStockPricesForTrades();
-    }, 10 * 60 * 1000); // 10 minutes
+    }, 6 * 60 * 60 * 1000); // 6 hours - Cost optimization
   }
 }
 
