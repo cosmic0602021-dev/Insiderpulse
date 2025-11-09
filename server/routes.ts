@@ -590,6 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   subscriptionStatus: subscription.status as any,
                   stripeCustomerId: customerId,
                   stripeSubscriptionId: subscriptionId,
+                  subscriptionStartDate: new Date(subscription.created * 1000),
                   subscriptionEndDate: periodEnd,
                   hasUsedTrial: true,
                 })
@@ -609,6 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               subscriptionId,
               attemptedTier: 'insider_pro'
             });
+            return res.status(500).send(`Error processing webhook: ${error.message}`);
           }
         }
         break;
