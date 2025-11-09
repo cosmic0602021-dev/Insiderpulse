@@ -1700,9 +1700,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdFromToken(req);
 
       let hasRealtimeAccess = false;
-      if (userId) {
+      if (!userId) {
+        console.log('🔒 [/api/trades] No auth token found - treating as free user');
+      } else {
         const accessLevel = await subscriptionService.getUserAccessLevel(userId);
         hasRealtimeAccess = accessLevel.canAccessRealtime;
+        console.log(`🔑 [/api/trades] User ${userId.substring(0, 20)}... - hasRealtimeAccess: ${hasRealtimeAccess}`);
+        console.log(`   📊 Tier: ${accessLevel.tier}, Status: ${accessLevel.status}, Trial: ${accessLevel.isTrialing}`);
       }
 
       // If user doesn't have real-time access, filter to 48h+ old trades
@@ -2119,11 +2123,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdFromToken(req);
 
       if (!userId) {
+        console.log('🔒 [/api/trial/status] No auth token found - returning 401');
         return res.status(401).json({
           success: false,
           message: '로그인이 필요합니다',
         });
       }
+
+      console.log(`🔑 [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
 
       const accessLevel = await subscriptionService.getUserAccessLevel(userId);
 

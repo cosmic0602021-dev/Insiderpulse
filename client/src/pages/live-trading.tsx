@@ -68,22 +68,8 @@ export default function LiveTrading() {
     }
   }, []);
 
-  // Load trial status on mount
-  useEffect(() => {
-    const loadTrialStatus = async () => {
-      try {
-        const status = await apiClient.getTrialStatus();
-        setIsTrialing(status.isTrialing);
-        setHasUsedTrial(status.hasUsedTrial);
-        if (status.trialExpiresAt) {
-          setTrialExpiresAt(status.trialExpiresAt);
-        }
-      } catch (error) {
-        console.error('Failed to load trial status:', error);
-      }
-    };
-    loadTrialStatus();
-  }, []);
+  // Trial status is now managed by AccessContext - no need to load here
+  // This prevents race condition where API is called before auth token is set
 
   const handleTradeClick = (trade: InsiderTrade) => {
     setSelectedTrade(trade);
