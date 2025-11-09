@@ -42,7 +42,8 @@
       "Bash(ssh:*)",
       "WebFetch(domain:insiderpulse.pro)",
       "Bash(replit --help)",
-      "Bash(replit deployments --help:*)"
+      "Bash(replit deployments --help:*)",
+      "Bash(ADMIN_KEY='Ski0602021!@#$')"
     ],
     "deny": [],
     "ask": []
