@@ -327,9 +327,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let session;
       try {
-        // Checkout session configuration - use customer_email instead of customer to avoid Link
+        // Checkout session configuration - use customer ID to ensure proper webhook matching
         const sessionConfig: any = {
-          customer_email: user.email,
+          customer: customerId,
           mode: 'subscription',
           payment_method_types: ['card'],
           payment_method_options: {
@@ -597,7 +597,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               console.log(`✅ User ${user.email} upgraded to ${tier} until ${periodEnd}`);
             } else {
-              console.warn(`⚠️ User not found for Stripe customer ${customerId}`);
+              console.error(`❌ CRITICAL: User not found for Stripe customer ${customerId}`);
+              return res.status(400).send(`User not found for customer ${customerId}`);
             }
           } catch (error: any) {
             console.error('❌ Error upgrading user:', {
@@ -867,6 +868,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Failed to sync subscription',
+        error: error.message
+      });
+    }
+  });
+
+  // 🔄 Admin: Sync ALL subscriptions from Stripe (batch recovery)
+  app.post('/api/admin/sync-all-subscriptions', protectAdminEndpoint, async (req, res) => {
+    try {
+      console.log('🔄 Starting batch subscription sync from Stripe...');
+
+      // Get all active/trialing subscriptions from Stripe
+      const subscriptions = await stripe.subscriptions.list({
+        status: 'all',
+        limit: 100
+      });
+
+      const results = {
+        total: subscriptions.data.length,
+        synced: 0,
+        failed: 0,
+        skipped: 0,
+        errors: [] as any[]
+      };
+
+      for (const subscription of subscriptions.data) {
+        try {
+          // Skip if not active or trialing
+          if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+            results.skipped++;
+            continue;
+          }
+
+          // Get customer email
+          const customer = await stripe.customers.retrieve(subscription.customer as string);
+          if (!customer || customer.deleted || !customer.email) {
+            console.warn(`⚠️ No email for customer ${subscription.customer}`);
+            results.skipped++;
+            continue;
+          }
+
+          // Find user in database
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, customer.email),
+          });
+
+          if (!user) {
+            console.warn(`⚠️ No database user for email ${customer.email}`);
+            results.skipped++;
+            continue;
+          }
+
+          // Calculate subscription end date
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+          const trialEnd = subscription.trial_end
+            ? new Date(subscription.trial_end * 1000)
+            : null;
+          const isTrialing = subscription.status === 'trialing';
+          const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
+
+          // Update database
+          await db.update(users)
+            .set({
+              stripeCustomerId: customer.id,
+              stripeSubscriptionId: subscription.id,
+              subscriptionTier: 'insider_pro',
+              subscriptionStatus: subscription.status as any,
+              subscriptionEndDate: subscriptionEndDate,
+              subscriptionStartDate: new Date(subscription.created * 1000),
+            })
+            .where(eq(users.id, user.id));
+
+          console.log(`✅ Synced ${customer.email}`);
+          results.synced++;
+
+        } catch (error: any) {
+          console.error(`❌ Error syncing subscription ${subscription.id}:`, error.message);
+          results.failed++;
+          results.errors.push({
+            subscriptionId: subscription.id,
+            error: error.message
+          });
+        }
+      }
+
+      console.log(`✅ Batch sync completed: ${results.synced} synced, ${results.failed} failed, ${results.skipped} skipped`);
+
+      return res.json({
+        success: true,
+        message: 'Batch subscription sync completed',
+        results
+      });
+
+    } catch (error: any) {
+      console.error('❌ Error in batch sync:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Batch sync failed',
         error: error.message
       });
     }
