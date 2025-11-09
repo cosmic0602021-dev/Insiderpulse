@@ -54,9 +54,9 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
     user.trialExpiresAt &&
     now < user.trialExpiresAt;
 
-  // Check if subscription is active
+  // Check if subscription is active or trialing
   const isSubscriptionActive =
-    user.subscriptionStatus === "active" &&
+    (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") &&
     user.subscriptionTier === "insider_pro" &&
     (!user.subscriptionEndDate || now < user.subscriptionEndDate);
 

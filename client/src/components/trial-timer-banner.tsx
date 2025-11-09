@@ -16,8 +16,9 @@ export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBanner
   const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState<string>('');
 
-  // Don't show banner if user has active paid subscription
-  if (user && user.subscriptionTier === 'insider_pro' && user.subscriptionStatus === 'active') {
+  // Don't show banner if user has active or trialing subscription
+  if (user && user.subscriptionTier === 'insider_pro' &&
+     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
     return null;
   }
 
