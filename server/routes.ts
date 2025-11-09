@@ -534,9 +534,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (customerId && subscriptionId) {
           try {
             // Find user by stripe customer ID
-            const user = await db.query.users.findFirst({
+            let user = await db.query.users.findFirst({
               where: eq(users.stripeCustomerId, customerId),
             });
+
+            // Fallback: If user not found by Stripe ID, search by email
+            if (!user) {
+              console.log(`⚠️ User not found by Stripe customer ID ${customerId}, trying email fallback...`);
+
+              // Get customer email from Stripe
+              const customer = await stripe.customers.retrieve(customerId);
+              if (customer && !customer.deleted && customer.email) {
+                console.log(`🔍 Searching for user by email: ${customer.email}`);
+
+                user = await db.query.users.findFirst({
+                  where: eq(users.email, customer.email),
+                });
+
+                if (user) {
+                  console.log(`✅ Found user by email fallback: ${customer.email}`);
+                } else {
+                  console.warn(`⚠️ User not found by email either: ${customer.email}`);
+                }
+              }
+            }
 
             if (user) {
               // Get subscription details to extract period end and determine tier
@@ -738,6 +759,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json({ received: true });
+  });
+
+  // 🔄 Admin: Sync subscription from Stripe (fixes orphaned subscriptions)
+  app.post('/api/admin/sync-subscription', protectAdminEndpoint, async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      console.log(`🔍 Syncing subscription for email: ${email}`);
+
+      // Find user in database
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found in database'
+        });
+      }
+
+      // Search for customer in Stripe by email
+      const customers = await stripe.customers.list({
+        email: email,
+        limit: 1
+      });
+
+      if (customers.data.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No Stripe customer found for this email'
+        });
+      }
+
+      const customer = customers.data[0];
+      console.log(`✅ Found Stripe customer: ${customer.id}`);
+
+      // Get customer's subscriptions
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customer.id,
+        status: 'all',
+        limit: 10
+      });
+
+      if (subscriptions.data.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No subscriptions found for this customer'
+        });
+      }
+
+      // Find the most recent active or trialing subscription
+      const activeSubscription = subscriptions.data.find(
+        sub => sub.status === 'active' || sub.status === 'trialing'
+      ) || subscriptions.data[0]; // Fallback to most recent
+
+      console.log(`✅ Found subscription: ${activeSubscription.id} (status: ${activeSubscription.status})`);
+
+      // Get subscription details
+      const periodEnd = new Date(activeSubscription.current_period_end * 1000);
+      const trialEnd = activeSubscription.trial_end
+        ? new Date(activeSubscription.trial_end * 1000)
+        : null;
+
+      // Determine if user is trialing
+      const isTrialing = activeSubscription.status === 'trialing';
+      const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
+
+      // Update database with Stripe data
+      await db.update(users)
+        .set({
+          stripeCustomerId: customer.id,
+          stripeSubscriptionId: activeSubscription.id,
+          subscriptionTier: 'insider_pro',
+          subscriptionStatus: activeSubscription.status as any,
+          subscriptionEndDate: subscriptionEndDate,
+          subscriptionStartDate: new Date(activeSubscription.created * 1000),
+        })
+        .where(eq(users.id, user.id));
+
+      console.log(`✅ Database updated for user ${email}`);
+
+      return res.json({
+        success: true,
+        message: 'Subscription synced successfully',
+        data: {
+          email: email,
+          stripeCustomerId: customer.id,
+          stripeSubscriptionId: activeSubscription.id,
+          subscriptionStatus: activeSubscription.status,
+          subscriptionEndDate: subscriptionEndDate,
+          isTrialing: isTrialing,
+          trialEnd: trialEnd
+        }
+      });
+
+    } catch (error: any) {
+      console.error('❌ Error syncing subscription:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to sync subscription',
+        error: error.message
+      });
+    }
   });
 
   // Sign up
