@@ -2,8 +2,15 @@ import { useState, useCallback } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { apiClient } from '@/lib/api';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+// Initialize Stripe - SSR-safe (only loads in browser)
+let stripePromise: Promise<Stripe | null> | null = null;
+const getStripe = () => {
+  if (typeof window === 'undefined') return null;
+  if (!stripePromise) {
+    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+  }
+  return stripePromise;
+};
 
 export interface TrialSetupState {
   isLoading: boolean;
@@ -76,7 +83,7 @@ export function useTrialSetup(): UseTrialSetupReturn {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const stripe = await stripePromise;
+      const stripe = await getStripe();
       if (!stripe) {
         throw new Error('Stripe를 로드할 수 없습니다');
       }

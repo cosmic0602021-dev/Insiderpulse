@@ -10,8 +10,15 @@ import { useTrialSetup } from '@/hooks/use-trial-setup';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+// Initialize Stripe - SSR-safe (only loads in browser)
+let stripePromise: Promise<any> | null = null;
+const getStripe = () => {
+  if (typeof window === 'undefined') return null;
+  if (!stripePromise) {
+    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+  }
+  return stripePromise;
+};
 
 export default function StartTrialPage() {
   const [, navigate] = useLocation();
@@ -264,7 +271,7 @@ export default function StartTrialPage() {
 
                 {/* Stripe Elements Form */}
                 {clientSecret && (
-                  <Elements stripe={stripePromise}>
+                  <Elements stripe={getStripe()}>
                     <TrialCardForm
                       planType={planType}
                       onSuccess={handleSuccess}

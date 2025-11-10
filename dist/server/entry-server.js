@@ -14337,7 +14337,14 @@ function TrialCardForm({
     /* @__PURE__ */ jsx("p", { className: "text-center text-sm text-muted-foreground/70", children: planType === "monthly" ? t("trial.form.afterTrialMonthly") : t("trial.form.afterTrialYearly") })
   ] });
 }
-const stripePromise$1 = loadStripe("pk_live_51SOwUMQ9br8aQ595DPCku84CHeluDHnp90rUF5FVVrMwFrYE5HHMx3MYvWUSUjEWZfqI9dsq44x07s2HmMnK70ep00XLlAWoTn");
+let stripePromise$1 = null;
+const getStripe$1 = () => {
+  if (typeof window === "undefined") return null;
+  if (!stripePromise$1) {
+    stripePromise$1 = loadStripe("pk_live_51SOwUMQ9br8aQ595DPCku84CHeluDHnp90rUF5FVVrMwFrYE5HHMx3MYvWUSUjEWZfqI9dsq44x07s2HmMnK70ep00XLlAWoTn");
+  }
+  return stripePromise$1;
+};
 function useTrialSetup() {
   const [state, setState] = useState({
     isLoading: false,
@@ -14384,7 +14391,7 @@ function useTrialSetup() {
     }
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
-      const stripe = await stripePromise$1;
+      const stripe = await getStripe$1();
       if (!stripe) {
         throw new Error("Stripe를 로드할 수 없습니다");
       }
@@ -14433,7 +14440,14 @@ function useTrialSetup() {
     reset
   };
 }
-const stripePromise = loadStripe("pk_live_51SOwUMQ9br8aQ595DPCku84CHeluDHnp90rUF5FVVrMwFrYE5HHMx3MYvWUSUjEWZfqI9dsq44x07s2HmMnK70ep00XLlAWoTn");
+let stripePromise = null;
+const getStripe = () => {
+  if (typeof window === "undefined") return null;
+  if (!stripePromise) {
+    stripePromise = loadStripe("pk_live_51SOwUMQ9br8aQ595DPCku84CHeluDHnp90rUF5FVVrMwFrYE5HHMx3MYvWUSUjEWZfqI9dsq44x07s2HmMnK70ep00XLlAWoTn");
+  }
+  return stripePromise;
+};
 function StartTrialPage() {
   const [, navigate2] = useLocation();
   const { user } = useAuth();
@@ -14616,7 +14630,7 @@ function StartTrialPage() {
               }
             )
           ] }),
-          clientSecret && /* @__PURE__ */ jsx(Elements, { stripe: stripePromise, children: /* @__PURE__ */ jsx(
+          clientSecret && /* @__PURE__ */ jsx(Elements, { stripe: getStripe(), children: /* @__PURE__ */ jsx(
             TrialCardForm,
             {
               planType,
