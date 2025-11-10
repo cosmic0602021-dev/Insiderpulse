@@ -2942,6 +2942,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>(() => {
+    // SSR 환경에서는 기본값 반환
+    if (typeof window === 'undefined') {
+      return 'en';
+    }
+
     // 초기값을 결정하는 함수
     try {
       // localStorage에서 언어 가져오기
@@ -2977,7 +2982,10 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem('language', lang);
+    // Only access localStorage in browser environment
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
   };
 
   const t = (key: string, variables?: Record<string, string | number>): string => {

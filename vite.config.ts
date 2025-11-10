@@ -27,6 +27,15 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(import.meta.dirname, "client/index.html"),
+      },
+    },
+  },
+  ssr: {
+    // Don't externalize these packages in SSR build
+    noExternal: ['wouter', '@tanstack/react-query'],
   },
   server: {
     host: true, // Expose to external network (Replit)
