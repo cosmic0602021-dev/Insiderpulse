@@ -44,7 +44,8 @@
       "Bash(replit --help)",
       "Bash(replit deployments --help:*)",
       "Bash(ADMIN_KEY='Ski0602021!@#$')",
-      "Bash(replit deployments list:*)"
+      "Bash(replit deployments list:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []
