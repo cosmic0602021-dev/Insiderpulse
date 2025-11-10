@@ -1,5 +1,5 @@
 node_modules
-dist
+# dist (commented out - needed for production deployment with SSR)
 .DS_Store
 server/public
 vite.config.ts.*
