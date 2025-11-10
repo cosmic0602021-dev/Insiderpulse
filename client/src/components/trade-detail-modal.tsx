@@ -388,8 +388,18 @@ export function TradeDetailModal({
     }).format(value);
   };
 
+  const getLocale = () => {
+    const localeMap: Record<string, string> = {
+      en: 'en-US',
+      ko: 'ko-KR',
+      ja: 'ja-JP',
+      zh: 'zh-CN'
+    };
+    return localeMap[language] || 'en-US';
+  };
+
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -659,7 +669,7 @@ export function TradeDetailModal({
                       formatter={(value: any) => [`$${value.toFixed(2)}`, t('priceChart.price') || 'Price']}
                       labelFormatter={(label) => {
                         const date = new Date(label);
-                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        return date.toLocaleDateString(getLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
                       }}
                     />
 

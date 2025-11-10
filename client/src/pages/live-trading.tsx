@@ -21,7 +21,6 @@ import { LockedTradesSection } from '@/components/locked-trade-card';
 import { FreeZoneBanner } from '@/components/free-zone-banner';
 import { TrialTimerBanner, TrialExpiredBanner } from '@/components/trial-timer-banner';
 import { FOMOAlertManager } from '@/components/fomo-alerts';
-import { AISignalFeed } from '@/components/ai-signal-feed';
 import { ShareButton } from '@/components/social-share';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
@@ -417,11 +416,6 @@ export default function LiveTrading() {
         )}
       </div>
 
-      {/* AI Signal Feed - Top 3 Recommendations */}
-      {accessLevel && accessLevel.hasRealtimeAccess && validatedData.trades.length > 0 && (
-        <AISignalFeed trades={validatedData.trades} limit={3} />
-      )}
-
       {/* Locked Real-Time Trades Section - FOMO Zone */}
       {accessLevel && !accessLevel.hasRealtimeAccess && (
         <LockedTradesSection
@@ -460,10 +454,14 @@ export default function LiveTrading() {
                 const pricePerShare = trade.pricePerShare || (trade.totalValue / (trade.shares || 1));
                 const isRecent = trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - (24 * 60 * 60 * 1000); // 24시간 이내
 
+                // Percentage change from trade price to current price
+                const priceChangePercent = (trade as any).priceChangePercent;
+                const hasPercentChange = priceChangePercent !== undefined && priceChangePercent !== null;
+
                 return (
                   <div
                     key={trade.id}
-                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 w-full"
+                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 md:p-5 w-full"
                     onClick={() => handleTradeClick(trade)}
                     data-testid={`trade-card-${trade.id}`}
                   >
@@ -472,20 +470,20 @@ export default function LiveTrading() {
                       {/* 상단: 회사 정보 */}
                       <div className="flex items-start gap-2 w-full min-w-0">
                         {/* 거래 타입 아이콘 */}
-                        <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
+                        <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
                           {getTradeTypeIcon(trade.tradeType)}
                         </div>
 
                         {/* 회사 & 트레이더 정보 */}
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="flex items-start gap-1 mb-1 w-full min-w-0 flex-wrap">
-                            <span className="font-bold text-sm sm:text-base break-words max-w-full">{trade.companyName}</span>
+                            <span className="font-bold text-base sm:text-lg md:text-xl break-words max-w-full">{trade.companyName}</span>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <Badge variant="outline" className="font-mono text-xs">{trade.ticker}</Badge>
+                              <Badge variant="outline" className="font-mono text-xs sm:text-sm md:text-base">{trade.ticker}</Badge>
                             </div>
                           </div>
 
-                          <div className="text-xs text-muted-foreground break-words max-w-full">
+                          <div className="text-xs sm:text-sm text-muted-foreground break-words max-w-full">
                             {trade.traderName} • {trade.traderTitle}
                           </div>
                         </div>
@@ -494,7 +492,7 @@ export default function LiveTrading() {
                       {/* 하단: 거래 세부정보 */}
                       <div className="flex items-center justify-between gap-2 w-full min-w-0">
                         {/* 왼쪽: 주식 정보 */}
-                        <div className="flex items-center gap-1 text-xs flex-shrink-0">
+                        <div className="flex items-center gap-1 text-sm md:text-base flex-shrink-0">
                           <span className="font-semibold">{trade.shares?.toLocaleString()}</span>
                           <span className="text-muted-foreground">{t('liveTrading.shares')} @</span>
                           <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
@@ -502,20 +500,39 @@ export default function LiveTrading() {
 
                         {/* 오른쪽: 금액 & 시간 */}
                         <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                          {/* 거래 금액 */}
-                          <div className={`text-base sm:text-lg font-bold ${getTradeTypeColor(trade.tradeType)}`}>
-                            {formatCurrency(Math.abs(trade.totalValue))}
+                          {/* 거래 금액 & 퍼센트 변화 */}
+                          <div className="flex items-center gap-2">
+                            <div className={`text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
+                              {formatCurrency(Math.abs(trade.totalValue))}
+                            </div>
+                            {hasPercentChange && (
+                              <Badge
+                                variant="outline"
+                                className={`flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${
+                                  priceChangePercent >= 0
+                                    ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
+                                    : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
+                                }`}
+                              >
+                                {priceChangePercent >= 0 ? (
+                                  <TrendingUp className="h-3 w-3" />
+                                ) : (
+                                  <TrendingDown className="h-3 w-3" />
+                                )}
+                                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
+                              </Badge>
+                            )}
                           </div>
 
                           {/* 업데이트 시간 */}
                           <div className="flex items-center gap-1">
                             {trade.createdAt && (
-                              <div className="text-xs text-muted-foreground whitespace-nowrap">
+                              <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                 {formatTimeAgo(trade.createdAt)}
                               </div>
                             )}
                             {trade.secFilingUrl && (
-                              <div className="text-xs text-blue-600">
+                              <div className="text-xs sm:text-sm text-blue-600">
                                 SEC
                               </div>
                             )}

@@ -15,6 +15,7 @@ import dataCollectionRouter from "./data-collection-api";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import OpenAI from "openai";
 import { adminMetricsService } from "./admin-metrics-service";
 import { ipGeolocationService } from "./ip-geolocation-service";
 // Import scraping manager (always needed for auto-collection)
@@ -42,6 +43,47 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2023-10-16",
 });
+
+// Initialize OpenAI for translation
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Helper function to translate text
+async function translateText(text: string, targetLanguage: string): Promise<string> {
+  if (!text || targetLanguage === 'en') {
+    return text;
+  }
+
+  const languageNames: Record<string, string> = {
+    ko: 'Korean',
+    ja: 'Japanese',
+    zh: 'Chinese (Simplified)'
+  };
+
+  const targetLangName = languageNames[targetLanguage] || 'English';
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional translator. Translate the following text to ${targetLangName}. Only return the translated text, nothing else.`
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    });
+
+    return response.choices[0].message.content || text;
+  } catch (error) {
+    console.error('Translation error:', error);
+    return text; // Return original text if translation fails
+  }
+}
 
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
@@ -1637,18 +1679,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = req.headers.authorization?.replace('Bearer ', '');
 
       if (!token) {
+        console.log('❌ [/api/auth/verify] No token provided');
         return res.status(401).json({ success: false, message: '토큰이 없습니다' });
       }
 
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+      console.log(`🔐 [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
 
       const user = await db.query.users.findFirst({
         where: eq(users.id, decoded.userId),
       });
 
       if (!user) {
+        console.log(`❌ [/api/auth/verify] User not found for userId: ${decoded.userId}`);
         return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다' });
       }
+
+      console.log(`✅ [/api/auth/verify] User found - email: ${user.email}, tier: ${user.subscriptionTier}, status: ${user.subscriptionStatus}`);
 
       res.json({
         success: true,
@@ -1663,7 +1710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error) {
-      console.error('Token verification error:', error);
+      console.error('❌ [/api/auth/verify] Token verification error:', error);
       res.status(401).json({ success: false, message: '유효하지 않은 토큰입니다' });
     }
   });
@@ -1734,6 +1781,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Enrich trades with current stock prices for percentage calculation
+      const uniqueTickers = [...new Set(rawTrades.map(t => t.ticker).filter(Boolean))];
+      const stockPriceMap = new Map<string, number>();
+
+      if (uniqueTickers.length > 0) {
+        try {
+          const prices = await db.query.stockPrices.findMany({
+            where: (stockPrices, { inArray }) => inArray(stockPrices.ticker, uniqueTickers as string[]),
+            columns: {
+              ticker: true,
+              currentPrice: true,
+            }
+          });
+
+          prices.forEach(price => {
+            if (price.ticker && price.currentPrice) {
+              stockPriceMap.set(price.ticker, Number(price.currentPrice));
+            }
+          });
+        } catch (error) {
+          console.warn('Failed to fetch stock prices for percentage calculation:', error);
+        }
+      }
+
+      // Add current price and percentage change to each trade
+      const enrichedTrades = rawTrades.map(trade => {
+        const currentPrice = trade.ticker ? stockPriceMap.get(trade.ticker) : undefined;
+        let priceChangePercent: number | undefined = undefined;
+
+        if (currentPrice && trade.pricePerShare) {
+          priceChangePercent = ((currentPrice - trade.pricePerShare) / trade.pricePerShare) * 100;
+        }
+
+        return {
+          ...trade,
+          currentPrice,
+          priceChangePercent: priceChangePercent !== undefined ? Number(priceChangePercent.toFixed(2)) : undefined,
+        };
+      });
+
       // Add cache control headers to prevent browser caching of stale data
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -1741,7 +1828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add access level info to response
       res.json({
-        trades: rawTrades,
+        trades: enrichedTrades,
         accessLevel: {
           hasRealtimeAccess,
           isDelayed: !hasRealtimeAccess,
@@ -2339,6 +2426,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return translations[key]?.[language] || translations[key]?.['en'] || key;
       };
 
+      // Pre-compute news analysis with translation
+      let newsAnalysis;
+      if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
+        // Use real news data - sort by date (newest first)
+        const newsItems = newsCorrelationResult.relatedNews
+          .slice(0, 10) // Top 10 most relevant news
+          .sort((a: any, b: any) => {
+            // Sort by date, newest first
+            const dateA = new Date(a.publishedDate).getTime();
+            const dateB = new Date(b.publishedDate).getTime();
+            return dateB - dateA;
+          });
+
+        // Translate news items if needed
+        const translatedNewsItems = await Promise.all(
+          newsItems.map(async (article: any) => ({
+            title: await translateText(article.title, language),
+            summary: await translateText(article.summary, language),
+            sentiment: article.sentiment,
+            published: new Date(article.publishedDate),
+            relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
+            source: article.source
+          }))
+        );
+
+        const positiveCount = translatedNewsItems.filter((n: any) =>
+          n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
+        ).length;
+        const negativeCount = translatedNewsItems.filter((n: any) =>
+          n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
+        ).length;
+
+        newsAnalysis = {
+          totalNews: newsCorrelationResult.relatedNews.length,
+          positiveCount,
+          negativeCount,
+          majorNews: translatedNewsItems,
+          // Additional insights from news correlation
+          correlationScore: newsCorrelationResult.correlationScore,
+          aiInsights: newsCorrelationResult.aiInsights
+        };
+      } else {
+        // Fallback to basic analysis if no news available
+        console.log('No news available, using fallback analysis');
+        const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
+        const fallbackTitle = `${trade.traderTitle || 'Insider'} ${isBuy ? 'purchased' : 'sold'} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`;
+        const fallbackSummary = isBuy ?
+          `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected` :
+          `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`;
+
+        const translatedFallbackNews = [{
+          title: await translateText(fallbackTitle, language),
+          summary: await translateText(fallbackSummary, language),
+          sentiment: isBuy ? 'BULLISH' : 'BEARISH',
+          published: new Date(trade.filedDate),
+          relevanceScore: 0.95,
+          source: 'SEC Form 4'
+        }];
+
+        newsAnalysis = {
+          totalNews: 1,
+          positiveCount: isBuy ? 1 : 0,
+          negativeCount: isBuy ? 0 : 1,
+          majorNews: translatedFallbackNews
+        };
+      }
+
       // Generate comprehensive analysis with language support
       const comprehensiveAnalysis = {
         executiveSummary: (() => {
@@ -2437,66 +2591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         catalysts: analysis.keyInsights,
         timeHorizon: t('timeHorizon'),
         confidence: analysis.significanceScore,
-newsAnalysis: (() => {
-          // Reuse the news correlation result already fetched above
-          if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
-            // Use real news data - sort by date (newest first)
-            const newsItems = newsCorrelationResult.relatedNews
-              .slice(0, 10) // Top 10 most relevant news
-              .sort((a: any, b: any) => {
-                // Sort by date, newest first
-                const dateA = new Date(a.publishedDate).getTime();
-                const dateB = new Date(b.publishedDate).getTime();
-                return dateB - dateA;
-              })
-              .map((article: any) => ({
-                title: article.title,
-                summary: article.summary,
-                sentiment: article.sentiment,
-                published: new Date(article.publishedDate),
-                relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
-                source: article.source
-              }));
-
-            const positiveCount = newsItems.filter((n: any) =>
-              n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
-            ).length;
-            const negativeCount = newsItems.filter((n: any) =>
-              n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
-            ).length;
-
-            return {
-              totalNews: newsCorrelationResult.relatedNews.length,
-              positiveCount,
-              negativeCount,
-              majorNews: newsItems,
-              // Additional insights from news correlation
-              correlationScore: newsCorrelationResult.correlationScore,
-              aiInsights: newsCorrelationResult.aiInsights
-            };
-          }
-
-          // Fallback to basic analysis if no news available
-          console.log('No news available, using fallback analysis');
-          const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
-          const fallbackNews = [{
-            title: `${trade.traderTitle || 'Insider'} ${isBuy ? 'purchased' : 'sold'} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`,
-            summary: isBuy ?
-              `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected` :
-              `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`,
-            sentiment: isBuy ? 'BULLISH' : 'BEARISH',
-            published: new Date(trade.filedDate),
-            relevanceScore: 0.95,
-            source: 'SEC Form 4'
-          }];
-
-          return {
-            totalNews: 1,
-            positiveCount: isBuy ? 1 : 0,
-            negativeCount: isBuy ? 0 : 1,
-            majorNews: fallbackNews
-          };
-        })()
+        newsAnalysis: newsAnalysis
       };
 
       res.json(comprehensiveAnalysis);

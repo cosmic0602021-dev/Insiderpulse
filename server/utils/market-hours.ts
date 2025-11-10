@@ -6,17 +6,14 @@
 
 /**
  * Check if current time is during US weekend (Saturday or Sunday)
- * Uses UTC time and converts to US Eastern Time
+ * Uses toLocaleString for accurate EST/EDT conversion
  */
 export function isUSWeekend(): boolean {
   const now = new Date();
 
-  // Convert to US Eastern Time (UTC-5 or UTC-4 during DST)
-  const estOffset = -5; // Standard time offset
-  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const estTime = new Date(utcTime + (3600000 * estOffset));
-
-  const dayOfWeek = estTime.getUTCDay();
+  // Get day of week in US Eastern Time (handles EST/EDT automatically)
+  const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const dayOfWeek = estTime.getDay();
 
   // 0 = Sunday, 6 = Saturday
   return dayOfWeek === 0 || dayOfWeek === 6;
@@ -34,13 +31,11 @@ export function isMarketHours(): boolean {
 
   const now = new Date();
 
-  // Convert to US Eastern Time
-  const estOffset = -5;
-  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const estTime = new Date(utcTime + (3600000 * estOffset));
+  // Get current time in US Eastern Time (handles EST/EDT automatically)
+  const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
 
-  const hours = estTime.getUTCHours();
-  const minutes = estTime.getUTCMinutes();
+  const hours = estTime.getHours();
+  const minutes = estTime.getMinutes();
   const currentTimeInMinutes = hours * 60 + minutes;
 
   // Market hours: 9:30 AM - 4:00 PM ET

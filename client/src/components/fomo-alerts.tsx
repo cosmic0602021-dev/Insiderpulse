@@ -115,6 +115,13 @@ interface BigTradeAlertProps {
 
 export function BigTradeAlert({ companyName, ticker, tradeValue, traderTitle, onDismiss, onUnlock }: BigTradeAlertProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  // PRO 사용자에게는 무료체험 알림을 표시하지 않음
+  if (user?.subscriptionTier === 'insider_pro' &&
+      (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+    return null;
+  }
 
   const formatValue = (value: number) => {
     if (value >= 1000000) {

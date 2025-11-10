@@ -1,6 +1,7 @@
 import { storage } from './storage';
 import { automatedQualityAlerts } from './automated-quality-alerts';
 import { realTimeFreshnessMonitor } from './real-time-freshness-monitor';
+import { shouldRunMonitoring } from './utils/market-hours';
 
 /**
  * 앱 크래시 방지 및 복구 시스템
@@ -189,6 +190,11 @@ export class CrashPreventionSystem {
    * 건강성 체크 수행
    */
   private async performHealthCheck(): Promise<void> {
+    // 주말에는 건강성 체크 스킵 (비용 절감)
+    if (!shouldRunMonitoring()) {
+      return;
+    }
+
     try {
       const health = this.getSystemHealth();
 
@@ -223,6 +229,11 @@ export class CrashPreventionSystem {
   private startContinuousMonitoring(): void {
     // 메모리 사용량 모니터링 (5분마다)
     setInterval(() => {
+      // 주말에는 모니터링 스킵 (비용 절감)
+      if (!shouldRunMonitoring()) {
+        return;
+      }
+
       const memUsage = process.memoryUsage();
       const memUsageMB = memUsage.heapUsed / 1024 / 1024;
 
@@ -233,6 +244,11 @@ export class CrashPreventionSystem {
 
     // 에러율 리셋 (1시간마다)
     setInterval(() => {
+      // 주말에는 에러율 리셋 스킵 (비용 절감)
+      if (!shouldRunMonitoring()) {
+        return;
+      }
+
       this.errorCount = 0;
       this.lastErrorReset = Date.now();
     }, 60 * 60 * 1000);

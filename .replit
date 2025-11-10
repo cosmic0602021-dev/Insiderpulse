@@ -52,6 +52,10 @@ localPort = 37401
 externalPort = 5173
 
 [[ports]]
+localPort = 37659
+externalPort = 9000
+
+[[ports]]
 localPort = 38133
 externalPort = 3000
 
@@ -101,6 +105,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[objectURL]
+url = "/"
 
 [agent]
 integrations = ["javascript_websocket:1.0.0", "javascript_openai:1.0.0", "javascript_stripe:1.0.0"]

@@ -80,7 +80,7 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.description': 'You are viewing trades from {hours} hours ago. Upgrade to Insider Pro for real-time access.',
     'freeZone.realtimeLocked': '🔒 Real-Time Data Locked',
     'freeZone.unlockMessage': 'Try 24-hour Insider access for free!',
-    'freeZone.unlockButton': 'Unlock Now ($0)',
+    'freeZone.unlockButton': 'Start Free Trial ($0)',
 
     // Locked Trade Card
     'lockedTrade.realtimeInsider': 'Real-Time Insider Trade Detected',
@@ -163,7 +163,7 @@ const translations: Record<Language, Record<string, string>> = {
     'fomo.bought': 'just bought',
     'fomo.of': 'of',
     'fomo.unlockToSee': '- Unlock to see details!',
-    'fomo.unlockNow': 'Unlock Now',
+    'fomo.unlockNow': 'Start Free Trial',
 
     // Social Share
     'social.share': 'Share',
@@ -1053,7 +1053,7 @@ const translations: Record<Language, Record<string, string>> = {
     'freeZone.description': '{hours}시간 전 거래를 보고 있습니다. Insider Pro로 업그레이드하여 실시간 접근하세요.',
     'freeZone.realtimeLocked': '🔒 실시간 데이터 잠금',
     'freeZone.unlockMessage': '24시간 Insider 등급을 무료로 체험하세요!',
-    'freeZone.unlockButton': '지금 해제 ($0)',
+    'freeZone.unlockButton': '무료체험 신청 ($0)',
 
     // Locked Trade Card
     'lockedTrade.realtimeInsider': '실시간 내부자 거래 감지',
@@ -1136,7 +1136,7 @@ const translations: Record<Language, Record<string, string>> = {
     'fomo.bought': '방금 매수했습니다',
     'fomo.of': '',
     'fomo.unlockToSee': '- 자세히 보려면 해제하세요!',
-    'fomo.unlockNow': '지금 해제',
+    'fomo.unlockNow': '무료체험 신청',
 
     // Social Share
     'social.share': '공유',
