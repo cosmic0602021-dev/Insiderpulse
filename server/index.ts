@@ -1,3 +1,6 @@
+import path from "path";
+import fs from "fs";
+import { createServer } from "http";
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -88,6 +91,39 @@ app.use((req, res, next) => {
   // 🚀 Automated data collection enabled (cost optimized)
   console.log('🚀 Server started with automated data collection enabled');
   console.log('💰 Data collection optimized: Every 6 hours to reduce costs (was 5-30 min)');
+
+  // Serve sitemap.xml and robots.txt
+  app.get('/sitemap.xml', (_req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), 'sitemap', 'sitemap.xml');
+      if (fs.existsSync(filePath)) {
+        const file = fs.readFileSync(filePath);
+        res.setHeader('Content-Type', 'application/xml');
+        res.send(file);
+      } else {
+        res.status(404).send('Sitemap not found');
+      }
+    } catch (error) {
+      log('Error serving sitemap:', error);
+      res.status(500).send('Error serving sitemap');
+    }
+  });
+
+  app.get('/robots.txt', (_req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), 'sitemap', 'robots.txt');
+      if (fs.existsSync(filePath)) {
+        const file = fs.readFileSync(filePath);
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(file);
+      } else {
+        res.status(404).send('Robots.txt not found');
+      }
+    } catch (error) {
+      log('Error serving robots.txt:', error);
+      res.status(500).send('Error serving robots.txt');
+    }
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -233,8 +269,3 @@ app.use((req, res, next) => {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 })();
 
-/**
- * 최후 수단: 검증된 샘플 데이터 생성
- * 실제 SEC 패턴을 따르는 유효한 데이터만 생성
- */
-// 가짜 데이터 생성 함수 완전 제거 - 실제 데이터만 사용
