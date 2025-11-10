@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -34,13 +34,12 @@ import VerifyCode from "@/pages/verify-code";
 import StartTrialPage from "@/pages/start-trial";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin-dashboard";
+import LandingPage from "@/pages/landing";
 
-function Router() {
-  const { t } = useLanguage();
-
+function PublicRouter() {
   return (
     <Switch>
-      {/* Public routes */}
+      <Route path="/" component={LandingPage} />
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
@@ -48,9 +47,17 @@ function Router() {
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/verify-code" component={VerifyCode} />
       <Route path="/start-trial" component={StartTrialPage} />
+      <Route path="/premium-checkout" component={PremiumCheckout} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
 
-      {/* All routes are now public */}
-      <Route path="/" component={LiveTrading} />
+function AppRouter() {
+  const { t } = useLanguage();
+
+  return (
+    <Switch>
       <Route path="/trade/:tradeId" component={TradeDetail} />
       <Route path="/trades" component={LiveTrading} />
       <Route path="/dashboard" component={Dashboard} />
@@ -59,11 +66,9 @@ function Router() {
       <Route path="/ranking" component={Ranking} />
       <Route path="/password-demo" component={PasswordDemo} />
       <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
-      <Route path="/premium-checkout" component={PremiumCheckout} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/settings" component={Settings} />
       <Route path="/admin" component={AdminDashboard} />
-
       <Route component={NotFound} />
     </Switch>
   );
@@ -72,9 +77,9 @@ function Router() {
 function AppContent() {
   const { t, language } = useLanguage();
   const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
+  const [location] = useLocation();
 
   useEffect(() => {
-    // Check if user has already selected a language
     const languageSelected = localStorage.getItem('language-selected');
     const savedLanguage = localStorage.getItem('language');
 
@@ -83,20 +88,20 @@ function AppContent() {
     }
   }, []);
 
-  // Authentication/verification pages that should skip language selection
-  const publicAuthPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial'];
-  const currentPath = window.location.pathname;
+  const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
+  const isPublicRoute = publicPaths.includes(location);
 
-  // Show language selection screen if user hasn't selected a language
-  // BUT skip for auth/verification pages to not interrupt the signup flow
-  if (!hasSelectedLanguage && !publicAuthPaths.includes(currentPath)) {
+  if (!hasSelectedLanguage && !isPublicRoute) {
     return <LanguageSelection onLanguageSelected={() => setHasSelectedLanguage(true)} />;
   }
 
-  // Custom sidebar width for financial dashboard
+  if (isPublicRoute) {
+    return <PublicRouter />;
+  }
+
   const style = {
-    "--sidebar-width": "18rem",       // 288px for better content
-    "--sidebar-width-icon": "4rem",   // default icon width
+    "--sidebar-width": "18rem",
+    "--sidebar-width-icon": "4rem",
   };
 
   return (
@@ -117,7 +122,7 @@ function AppContent() {
             </div>
           </header>
           <main className="flex-1 overflow-x-hidden overflow-y-auto w-full">
-            <Router />
+            <AppRouter />
           </main>
         </div>
       </div>
