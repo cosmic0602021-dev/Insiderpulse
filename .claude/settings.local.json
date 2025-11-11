@@ -46,7 +46,8 @@
       "Bash(ADMIN_KEY='Ski0602021!@#$')",
       "Bash(replit deployments list:*)",
       "Bash(chmod:*)",
-      "Bash(tsc:*)"
+      "Bash(tsc:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
