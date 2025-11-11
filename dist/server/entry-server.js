@@ -9306,16 +9306,20 @@ function hasPremiumAccess(user) {
     return false;
   }
   const isPro = user.subscriptionTier === "insider_pro";
-  const isActive = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing";
+  const now = /* @__PURE__ */ new Date();
+  const hasValidStatus = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled";
+  const hasActiveAccess = hasValidStatus && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
   console.log("[SUBSCRIPTION UTILS] hasPremiumAccess check:", {
     email: user.email,
     tier: user.subscriptionTier,
     status: user.subscriptionStatus,
+    endDate: user.subscriptionEndDate,
     isPro,
-    isActive,
-    result: isPro && isActive
+    hasValidStatus,
+    hasActiveAccess,
+    result: isPro && hasActiveAccess
   });
-  return isPro && isActive;
+  return isPro && hasActiveAccess;
 }
 function LockedTradeCard({ trade, onUnlock }) {
   var _a, _b, _c;

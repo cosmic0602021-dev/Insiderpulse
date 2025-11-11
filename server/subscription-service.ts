@@ -122,10 +122,13 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
     now < user.trialExpiresAt;
 
   // Check if subscription is active based on DB data
+  // Allow 'canceled' status as long as subscriptionEndDate is in the future
   let isSubscriptionActive =
-    user.subscriptionStatus !== "canceled" &&
-    user.subscriptionStatus !== "inactive" &&
     user.subscriptionTier === "insider_pro" &&
+    (user.subscriptionStatus === "active" ||
+     user.subscriptionStatus === "trialing" ||
+     user.subscriptionStatus === "canceled") &&
+    user.subscriptionStatus !== "inactive" &&
     (!user.subscriptionEndDate || now < user.subscriptionEndDate);
 
   // If DB shows subscription as expired/inactive BUT user has Stripe subscription ID,
@@ -146,10 +149,13 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
       if (updatedUser) {
         user = updatedUser;
         // Recalculate subscription status with updated data
+        // Allow 'canceled' status as long as subscriptionEndDate is in the future
         isSubscriptionActive =
-          user.subscriptionStatus !== "canceled" &&
-          user.subscriptionStatus !== "inactive" &&
           user.subscriptionTier === "insider_pro" &&
+          (user.subscriptionStatus === "active" ||
+           user.subscriptionStatus === "trialing" ||
+           user.subscriptionStatus === "canceled") &&
+          user.subscriptionStatus !== "inactive" &&
           (!user.subscriptionEndDate || now < user.subscriptionEndDate);
 
         console.log(`[Access Check] ✅ After Stripe sync, user ${userId} subscription active: ${isSubscriptionActive}`);

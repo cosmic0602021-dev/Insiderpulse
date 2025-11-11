@@ -9,7 +9,7 @@ import type { User } from '@shared/schema';
  * Check if user has active premium (Insider Pro) subscription
  * Returns true if:
  * - User subscription tier is 'insider_pro' AND
- * - User subscription status is 'active' OR 'trialing'
+ * - User subscription status is 'active', 'trialing', OR 'canceled' (if subscriptionEndDate is in future)
  */
 export function hasPremiumAccess(user: User | null): boolean {
   if (!user) {
@@ -17,18 +17,32 @@ export function hasPremiumAccess(user: User | null): boolean {
   }
 
   const isPro = user.subscriptionTier === 'insider_pro';
-  const isActive = user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing';
+  const now = new Date();
+
+  // Check if subscription status is valid (active, trialing, or canceled)
+  const hasValidStatus =
+    user.subscriptionStatus === 'active' ||
+    user.subscriptionStatus === 'trialing' ||
+    user.subscriptionStatus === 'canceled';
+
+  // For canceled subscriptions, must have subscriptionEndDate in the future
+  // For active/trialing, either no endDate or endDate in future
+  const hasActiveAccess =
+    hasValidStatus &&
+    (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
 
   console.log('[SUBSCRIPTION UTILS] hasPremiumAccess check:', {
     email: user.email,
     tier: user.subscriptionTier,
     status: user.subscriptionStatus,
+    endDate: user.subscriptionEndDate,
     isPro,
-    isActive,
-    result: isPro && isActive
+    hasValidStatus,
+    hasActiveAccess,
+    result: isPro && hasActiveAccess
   });
 
-  return isPro && isActive;
+  return isPro && hasActiveAccess;
 }
 
 /**

@@ -8861,7 +8861,7 @@ async function getUserAccessLevel(userId) {
   }
   const now = /* @__PURE__ */ new Date();
   const isTrialActive = user2.trialActivatedAt && user2.trialExpiresAt && now < user2.trialExpiresAt;
-  let isSubscriptionActive = user2.subscriptionStatus !== "canceled" && user2.subscriptionStatus !== "inactive" && user2.subscriptionTier === "insider_pro" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
+  let isSubscriptionActive = user2.subscriptionTier === "insider_pro" && (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing" || user2.subscriptionStatus === "canceled") && user2.subscriptionStatus !== "inactive" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
   const hasStripeSubscription = user2.stripeSubscriptionId && user2.subscriptionTier === "insider_pro";
   const dbShowsExpired = !isSubscriptionActive && hasStripeSubscription;
   if (dbShowsExpired) {
@@ -8873,7 +8873,7 @@ async function getUserAccessLevel(userId) {
       });
       if (updatedUser) {
         user2 = updatedUser;
-        isSubscriptionActive = user2.subscriptionStatus !== "canceled" && user2.subscriptionStatus !== "inactive" && user2.subscriptionTier === "insider_pro" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
+        isSubscriptionActive = user2.subscriptionTier === "insider_pro" && (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing" || user2.subscriptionStatus === "canceled") && user2.subscriptionStatus !== "inactive" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
         console.log(`[Access Check] \u2705 After Stripe sync, user ${userId} subscription active: ${isSubscriptionActive}`);
       }
     }
