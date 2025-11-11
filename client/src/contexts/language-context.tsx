@@ -537,6 +537,9 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.loading': 'Loading stock rankings...',
     'ranking.noData': 'No ranking data available',
     'ranking.refreshData': 'Refresh Data',
+    'ranking.lockedTitle': 'Premium Feature',
+    'ranking.lockedDescription': 'Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns',
+    'ranking.unlockButton': 'Unlock Top Rankings',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'Add InsiderPulse to Home Screen',
@@ -1545,6 +1548,9 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.loading': '주식 순위를 불러오는 중...',
     'ranking.noData': '순위 데이터가 없습니다',
     'ranking.refreshData': '데이터 새로고침',
+    'ranking.lockedTitle': '프리미엄 기능',
+    'ranking.lockedDescription': 'Insider Pro로 업그레이드하여 내부자 거래 패턴 기반 최고의 주식 추천을 확인하세요',
+    'ranking.unlockButton': '상위 순위 잠금 해제',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'InsiderPulse 홈 화면에 추가',
@@ -2314,6 +2320,9 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.loading': '株式ランキングを読み込み中...',
     'ranking.noData': 'ランキングデータがありません',
     'ranking.refreshData': 'データを更新',
+    'ranking.lockedTitle': 'プレミアム機能',
+    'ranking.lockedDescription': 'Insider Proにアップグレードして、インサイダー取引パターンに基づくトップの株式推奨をご覧ください',
+    'ranking.unlockButton': 'トップランキングのロック解除',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'InsiderPulseをホーム画面に追加',
@@ -2930,6 +2939,9 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.loading': '正在加载股票排名...',
     'ranking.noData': '没有排名数据',
     'ranking.refreshData': '刷新数据',
+    'ranking.lockedTitle': '高级功能',
+    'ranking.lockedDescription': '升级到Insider Pro，查看基于内幕交易模式的顶级股票推荐',
+    'ranking.unlockButton': '解锁顶级排名',
 
     // PWA Install Prompt
     'pwa.prompt.title': '添加 InsiderPulse 到主屏幕',

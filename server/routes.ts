@@ -1702,6 +1702,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ [/api/auth/verify] User found - email: ${user.email}, tier: ${user.subscriptionTier}, status: ${user.subscriptionStatus}`);
 
+      // Prevent caching of user authentication data
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       res.json({
         success: true,
         user: {
@@ -2232,6 +2237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await db.query.users.findFirst({
         where: eq(users.id, userId),
       });
+
+      // Prevent caching of trial/subscription status data
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
 
       res.json({
         isTrialing: accessLevel.isTrialing,

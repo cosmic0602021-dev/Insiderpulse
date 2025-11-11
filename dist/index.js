@@ -11467,6 +11467,9 @@ async function registerRoutes(app2) {
         return res.status(401).json({ success: false, message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" });
       }
       console.log(`\u2705 [/api/auth/verify] User found - email: ${user2.email}, tier: ${user2.subscriptionTier}, status: ${user2.subscriptionStatus}`);
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       res.json({
         success: true,
         user: {
@@ -11877,6 +11880,9 @@ async function registerRoutes(app2) {
       const user2 = await db4.query.users.findFirst({
         where: eq5(users.id, userId)
       });
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       res.json({
         isTrialing: accessLevel.isTrialing,
         canAccessRealtime: accessLevel.canAccessRealtime,

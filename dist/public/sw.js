@@ -1,4 +1,4 @@
-const CACHE_NAME = 'insiderpulse-v1';
+const CACHE_NAME = 'insiderpulse-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -38,8 +38,27 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - network first, falling back to cache
+// Fetch event - network first, NO CACHING for API calls
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // NEVER cache API requests - always go to network for fresh data
+  if (url.pathname.startsWith('/api/')) {
+    console.log('[SW] API request detected - bypassing cache:', url.pathname);
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // If network fails for API, return error (don't use stale cache)
+          return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        })
+    );
+    return;
+  }
+
+  // For non-API requests, use network-first with cache fallback
   event.respondWith(
     fetch(event.request)
       .then((response) => {
