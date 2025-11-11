@@ -1,13 +1,18 @@
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  TrendingUp, 
-  Brain, 
-  Bell, 
-  Shield, 
-  Zap, 
+import { MeshGradientBackground } from "@/components/mesh-gradient-background";
+import { useAuth } from "@/contexts/auth-context";
+import { useLanguage } from "@/contexts/language-context";
+import LanguageSelection from "@/pages/language-selection";
+import {
+  TrendingUp,
+  Brain,
+  Bell,
+  Shield,
+  Zap,
   CheckCircle2,
   ArrowRight,
   BarChart3,
@@ -16,81 +21,95 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
+  const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+  const [showLanguageSelection, setShowLanguageSelection] = useState(false);
+
+  // Check if language was selected
+  useEffect(() => {
+    const languageSelected = localStorage.getItem('language-selected');
+    if (!languageSelected) {
+      setShowLanguageSelection(true);
+    }
+  }, []);
+
+  // Redirect authenticated users to trades page
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/trades');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Show language selection modal if needed
+  if (showLanguageSelection) {
+    return (
+      <LanguageSelection
+        onLanguageSelected={() => setShowLanguageSelection(false)}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative">
+      {/* Mesh Gradient Background Effect */}
+      <MeshGradientBackground />
+
       {/* Header/Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">InsiderPulse</span>
+            <TrendingUp className="h-6 w-6 text-blue-400" />
+            <span className="text-xl font-bold text-white">InsiderPulse</span>
           </div>
-          <nav className="flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" data-testid="button-login">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button data-testid="button-signup">
-                Get Started Free
-              </Button>
-            </Link>
-          </nav>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container py-20 md:py-32">
+      <section className="container px-4 lg:px-6 py-24 md:py-40">
         <div className="mx-auto max-w-4xl text-center">
           <Badge className="mb-4" variant="secondary">
-            AI-Powered SEC Filing Analysis
+            {t('landing.tagline')}
           </Badge>
-          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-            Track Insider Trading in Real-Time
+          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">
+            {t('landing.title')}
           </h1>
-          <p className="mb-8 text-xl text-muted-foreground max-w-2xl mx-auto">
-            Get instant alerts and AI-powered insights from SEC Form 4 filings. 
-            Make informed investment decisions based on what corporate insiders are doing.
+          <p className="mb-8 text-xl text-slate-300 max-w-2xl mx-auto">
+            {t('landing.description')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="w-full sm:w-auto" data-testid="button-hero-signup">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+          <div className="flex justify-center">
             <Link href="/trades">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-view-trades">
-                View Live Trades
+              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6" data-testid="button-hero-browse">
+                {t('landing.browse')}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required • Free 48-hour delayed data • Upgrade anytime
+            {t('landing.noCreditCard')}
           </p>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="container py-20 bg-muted/50">
+      <section className="container px-4 lg:px-6 py-24 md:py-32 bg-slate-900/50">
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">
-              Everything You Need to Track Insider Activity
+            <h2 className="text-3xl font-bold mb-4 text-white">
+              {t('landing.features.title')}
             </h2>
-            <p className="text-lg text-muted-foreground">
-              Powerful features designed for serious investors
+            <p className="text-lg text-slate-400">
+              {t('landing.features.subtitle')}
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card>
               <CardHeader>
                 <Brain className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>AI-Powered Analysis</CardTitle>
+                <CardTitle>{t('landing.features.aiAnalysis')}</CardTitle>
                 <CardDescription>
-                  Advanced GPT analysis extracts buy/sell signals and significance scores (1-100) from every trade
+                  {t('landing.features.aiAnalysisDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -98,9 +117,9 @@ export default function LandingPage() {
             <Card>
               <CardHeader>
                 <Zap className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Real-Time Updates</CardTitle>
+                <CardTitle>{t('landing.features.realtime')}</CardTitle>
                 <CardDescription>
-                  WebSocket-powered live updates deliver new insider trades the moment they're filed with the SEC
+                  {t('landing.features.realtimeDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -108,9 +127,9 @@ export default function LandingPage() {
             <Card>
               <CardHeader>
                 <BarChart3 className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Smart Filtering</CardTitle>
+                <CardTitle>{t('landing.features.filtering')}</CardTitle>
                 <CardDescription>
-                  Filter by ticker, signal type, significance score, and transaction type to find the trades that matter
+                  {t('landing.features.filteringDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -118,9 +137,9 @@ export default function LandingPage() {
             <Card>
               <CardHeader>
                 <Bell className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Custom Alerts</CardTitle>
+                <CardTitle>{t('landing.features.alerts')}</CardTitle>
                 <CardDescription>
-                  Set up personalized notifications for specific companies or trade patterns you want to monitor
+                  {t('landing.features.alertsDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -128,9 +147,9 @@ export default function LandingPage() {
             <Card>
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>SEC Data Direct</CardTitle>
+                <CardTitle>{t('landing.features.secData')}</CardTitle>
                 <CardDescription>
-                  Automated collection from official SEC EDGAR filings ensures accuracy and compliance
+                  {t('landing.features.secDataDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -138,9 +157,9 @@ export default function LandingPage() {
             <Card>
               <CardHeader>
                 <Clock className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Historical Analysis</CardTitle>
+                <CardTitle>{t('landing.features.historical')}</CardTitle>
                 <CardDescription>
-                  Access complete trading history and pattern analysis to identify insider buying trends
+                  {t('landing.features.historicalDesc')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -149,14 +168,14 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="container py-20">
+      <section className="container px-4 lg:px-6 py-24 md:py-32">
         <div className="mx-auto max-w-4xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">
-              How InsiderPulse Works
+            <h2 className="text-3xl font-bold mb-4 text-white">
+              {t('landing.howItWorks.title')}
             </h2>
-            <p className="text-lg text-muted-foreground">
-              From SEC filing to actionable insight in seconds
+            <p className="text-lg text-slate-400">
+              {t('landing.howItWorks.subtitle')}
             </p>
           </div>
 
@@ -168,9 +187,9 @@ export default function LandingPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Automated Data Collection</h3>
-                <p className="text-muted-foreground">
-                  Our system monitors SEC EDGAR filings 24/7, automatically collecting Form 4 insider trading reports every 10 minutes.
+                <h3 className="text-xl font-semibold mb-2 text-white">{t('landing.howItWorks.step1')}</h3>
+                <p className="text-slate-400">
+                  {t('landing.howItWorks.step1Desc')}
                 </p>
               </div>
             </div>
@@ -182,9 +201,9 @@ export default function LandingPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">AI-Powered Analysis</h3>
-                <p className="text-muted-foreground">
-                  Each trade is instantly analyzed using advanced AI to extract significance scores, trading signals, and key insights about the transaction.
+                <h3 className="text-xl font-semibold mb-2 text-white">{t('landing.howItWorks.step2')}</h3>
+                <p className="text-slate-400">
+                  {t('landing.howItWorks.step2Desc')}
                 </p>
               </div>
             </div>
@@ -196,9 +215,9 @@ export default function LandingPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Instant Alerts</h3>
-                <p className="text-muted-foreground">
-                  Premium users receive real-time notifications when significant insider trades occur in their watchlist companies.
+                <h3 className="text-xl font-semibold mb-2 text-white">{t('landing.howItWorks.step3')}</h3>
+                <p className="text-slate-400">
+                  {t('landing.howItWorks.step3Desc')}
                 </p>
               </div>
             </div>
@@ -210,9 +229,9 @@ export default function LandingPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Make Informed Decisions</h3>
-                <p className="text-muted-foreground">
-                  Use our insights and analytics to guide your investment strategy based on what corporate insiders are doing with their own money.
+                <h3 className="text-xl font-semibold mb-2 text-white">{t('landing.howItWorks.step4')}</h3>
+                <p className="text-slate-400">
+                  {t('landing.howItWorks.step4Desc')}
                 </p>
               </div>
             </div>
@@ -220,170 +239,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="container py-20 bg-muted/50">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Choose the plan that's right for you
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Free Plan */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Free</CardTitle>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$0</span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>48-hour delayed insider trade data</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>AI-powered analysis and insights</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>Basic filtering and search</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>Historical data access</span>
-                  </li>
-                </ul>
-                <Link href="/signup">
-                  <Button variant="outline" className="w-full" data-testid="button-signup-free">
-                    Get Started Free
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Premium Plan */}
-            <Card className="border-primary">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Premium</CardTitle>
-                  <Badge>Most Popular</Badge>
-                </div>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$14</span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="font-semibold">Real-time insider trade data</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>WebSocket live updates</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>Custom alerts and notifications</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>Advanced filtering and analytics</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span>Priority support</span>
-                  </li>
-                </ul>
-                <Link href="/premium-checkout">
-                  <Button className="w-full" data-testid="button-upgrade-premium">
-                    Upgrade to Premium
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-sm text-muted-foreground">
-              All plans include AI-powered analysis • Cancel anytime • No hidden fees
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="container py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Start Tracking Insider Trades Today
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" className="w-full sm:w-auto" data-testid="button-cta-signup">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/trades">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto" data-testid="button-cta-demo">
-                View Demo
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t bg-muted/50">
-        <div className="container py-12">
+      <footer className="border-t border-slate-800 bg-slate-900/50">
+        <div className="container px-4 lg:px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/trades"><a className="hover:text-foreground">Live Trades</a></Link></li>
-                <li><Link href="/premium-checkout"><a className="hover:text-foreground">Pricing</a></Link></li>
-                <li><Link href="/trades"><a className="hover:text-foreground">Features</a></Link></li>
+              <h3 className="font-semibold mb-4 text-white">Product</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><Link href="/trades"><a className="hover:text-white">Live Trades</a></Link></li>
+                <li><Link href="/premium-checkout"><a className="hover:text-white">Pricing</a></Link></li>
+                <li><Link href="/trades"><a className="hover:text-white">Features</a></Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact</a></li>
+              <h3 className="font-semibold mb-4 text-white">Company</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-white">About</a></li>
+                <li><a href="#" className="hover:text-white">Blog</a></li>
+                <li><a href="#" className="hover:text-white">Contact</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms</a></li>
-                <li><a href="/sitemap.xml" className="hover:text-foreground">Sitemap</a></li>
+              <h3 className="font-semibold mb-4 text-white">Legal</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-white">Privacy</a></li>
+                <li><a href="#" className="hover:text-white">Terms</a></li>
+                <li><a href="/sitemap.xml" className="hover:text-white">Sitemap</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Connect</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Twitter</a></li>
-                <li><a href="#" className="hover:text-foreground">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-foreground">GitHub</a></li>
+              <h3 className="font-semibold mb-4 text-white">Connect</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-white">Twitter</a></li>
+                <li><a href="#" className="hover:text-white">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-white">GitHub</a></li>
               </ul>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+          <div className="mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
             <p>&copy; 2025 InsiderPulse. All rights reserved.</p>
           </div>
         </div>

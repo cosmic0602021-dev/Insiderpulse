@@ -158,7 +158,7 @@ export default function SignupPage() {
             const loginResponse = await apiClient.login(email, password);
             if (loginResponse.success && loginResponse.user && loginResponse.token) {
               login(loginResponse.user, loginResponse.token);
-              navigate('/');
+              navigate('/trades');
             }
           } catch (err) {
             console.error('Auto-login failed:', err);

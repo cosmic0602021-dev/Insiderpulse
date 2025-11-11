@@ -62,10 +62,10 @@ export function ParticleBackground() {
     yC: 0,
     stepCount: 0,
     particles: [],
-    lifespan: 1000,
+    lifespan: 1500,
     popPerBirth: 1,
-    maxPop: 300,
-    birthFreq: 2,
+    maxPop: 120,
+    birthFreq: 3,
     gridSize: 8,
     gridSteps: 0,
     grid: [],
@@ -84,12 +84,16 @@ export function ParticleBackground() {
 
     // Setup
     const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
       appRef.current.width = canvas.width;
       appRef.current.height = canvas.height;
       appRef.current.xC = canvas.width / 2;
       appRef.current.yC = canvas.height / 2;
+      appRef.current.dataToImageRatio = dpr;
     };
 
     handleResize();
@@ -139,12 +143,8 @@ export function ParticleBackground() {
     appRef.current.grid = grid;
     appRef.current.gridMaxIndex = i;
 
-    // Initial draw
-    ctx.beginPath();
-    ctx.rect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'black';
-    ctx.fill();
-    ctx.closePath();
+    // Initial draw - transparent background to show landing page gradient
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Animation loop
     const evolve = () => {
@@ -175,9 +175,9 @@ export function ParticleBackground() {
       const y = gridSpot.y;
 
       const particle: Particle = {
-        hue: 200,
-        sat: 95,
-        lum: 20 + Math.floor(40 * Math.random()),
+        hue: 210 + Math.floor(20 * Math.random()), // Blue-gray range
+        sat: 40 + Math.floor(30 * Math.random()), // Lower saturation for subtle effect
+        lum: 50 + Math.floor(20 * Math.random()), // Lighter for visibility on dark bg
         x: x,
         y: y,
         xLast: x,
@@ -256,7 +256,7 @@ export function ParticleBackground() {
           }
         }
 
-        const k = 8;
+        const k = 5; // Slower, more elegant movement
         const visc = 0.4;
         const dx = p.x - gridSpot.x;
         const dy = p.y - gridSpot.y;
@@ -301,11 +301,9 @@ export function ParticleBackground() {
       app.drawnInLastFrame = 0;
       if (!app.particles.length) return;
 
-      app.ctx.beginPath();
-      app.ctx.rect(0, 0, app.width, app.height);
-      app.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      app.ctx.fill();
-      app.ctx.closePath();
+      // Fade effect to clear previous frames cleanly
+      app.ctx.fillStyle = 'rgba(2, 6, 23, 0.15)'; // Increased fade to reduce trail buildup
+      app.ctx.fillRect(0, 0, app.width, app.height);
 
       for (let i = 0; i < app.particles.length; i++) {
         const p = app.particles[i];
@@ -313,7 +311,7 @@ export function ParticleBackground() {
         const h = p.hue + app.stepCount / 30;
         const s = p.sat;
         const l = p.lum;
-        const a = 1;
+        const a = 0.35; // Semi-transparent for subtle, blurred effect
 
         const last = dataXYtoCanvasXY(p.xLast, p.yLast);
         const now = dataXYtoCanvasXY(p.x, p.y);
@@ -365,8 +363,8 @@ export function ParticleBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full -z-10"
-      style={{ background: 'black' }}
+      className="fixed inset-0 w-full h-full pointer-events-none"
+      style={{ background: 'transparent', zIndex: -1 }}
     />
   );
 }

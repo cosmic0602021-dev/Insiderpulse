@@ -36,7 +36,7 @@ export default function LoginPage() {
 
       if (response.success && response.user && response.token) {
         login(response.user, response.token);
-        navigate('/');
+        navigate('/trades');
       } else {
         setError(response.message || t('auth.login.errorFailed'));
       }

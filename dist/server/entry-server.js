@@ -13169,7 +13169,7 @@ function SignupPage() {
             const loginResponse = await apiClient.login(email, password);
             if (loginResponse.success && loginResponse.user && loginResponse.token) {
               login(loginResponse.user, loginResponse.token);
-              navigate2("/");
+              navigate2("/trades");
             }
           } catch (err) {
             console.error("Auto-login failed:", err);
@@ -13447,7 +13447,7 @@ function LoginPage() {
       const response = await apiClient.login(email, password);
       if (response.success && response.user && response.token) {
         login(response.user, response.token);
-        navigate2("/");
+        navigate2("/trades");
       } else {
         setError(response.message || t("auth.login.errorFailed"));
       }
@@ -15145,12 +15145,272 @@ function AdminDashboard() {
     ] })
   ] });
 }
+function ParticleBackground() {
+  const canvasRef = useRef(null);
+  const animationRef = useRef();
+  const appRef = useRef({
+    canvas: null,
+    ctx: null,
+    width: 0,
+    height: 0,
+    xC: 0,
+    yC: 0,
+    stepCount: 0,
+    particles: [],
+    lifespan: 1500,
+    popPerBirth: 1,
+    maxPop: 120,
+    birthFreq: 3,
+    gridSize: 8,
+    gridSteps: 0,
+    grid: [],
+    gridMaxIndex: 0,
+    drawnInLastFrame: 0,
+    deathCount: 0,
+    dataToImageRatio: 1
+  });
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      appRef.current.width = canvas.width;
+      appRef.current.height = canvas.height;
+      appRef.current.xC = canvas.width / 2;
+      appRef.current.yC = canvas.height / 2;
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    appRef.current.canvas = canvas;
+    appRef.current.ctx = ctx;
+    ctx.imageSmoothingEnabled = false;
+    const gridSize = 8;
+    const gridSteps = Math.floor(1e3 / gridSize);
+    appRef.current.gridSize = gridSize;
+    appRef.current.gridSteps = gridSteps;
+    const grid = [];
+    let i = 0;
+    for (let xx = -500; xx < 500; xx += gridSize) {
+      for (let yy = -500; yy < 500; yy += gridSize) {
+        const r = Math.sqrt(xx * xx + yy * yy);
+        const r0 = 100;
+        let field;
+        if (r < r0) field = 255 / r0 * r;
+        else field = 255 - Math.min(255, (r - r0) / 2);
+        grid.push({
+          x: xx,
+          y: yy,
+          busyAge: 0,
+          spotIndex: i,
+          isEdge: xx === -500 ? "left" : xx === -500 + gridSize * (gridSteps - 1) ? "right" : yy === -500 ? "top" : yy === -500 + gridSize * (gridSteps - 1) ? "bottom" : false,
+          field
+        });
+        i++;
+      }
+    }
+    appRef.current.grid = grid;
+    appRef.current.gridMaxIndex = i;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const evolve = () => {
+      const app = appRef.current;
+      if (!app.ctx) return;
+      app.stepCount++;
+      app.grid.forEach((e) => {
+        if (e.busyAge > 0) e.busyAge++;
+      });
+      if (app.stepCount % app.birthFreq === 0 && app.particles.length + app.popPerBirth < app.maxPop) {
+        birth();
+      }
+      move();
+      draw();
+    };
+    const birth = () => {
+      const app = appRef.current;
+      const gridSpotIndex = Math.floor(Math.random() * app.gridMaxIndex);
+      const gridSpot = app.grid[gridSpotIndex];
+      const x = gridSpot.x;
+      const y = gridSpot.y;
+      const particle = {
+        hue: 210 + Math.floor(20 * Math.random()),
+        // Blue-gray range
+        sat: 40 + Math.floor(30 * Math.random()),
+        // Lower saturation for subtle effect
+        lum: 50 + Math.floor(20 * Math.random()),
+        // Lighter for visibility on dark bg
+        x,
+        y,
+        xLast: x,
+        yLast: y,
+        xSpeed: 0,
+        ySpeed: 0,
+        age: 0,
+        ageSinceStuck: 0,
+        attractor: {
+          oldIndex: gridSpotIndex,
+          gridSpotIndex
+        },
+        name: "seed-" + Math.ceil(1e7 * Math.random())
+      };
+      app.particles.push(particle);
+    };
+    const kill = (particleName) => {
+      const app = appRef.current;
+      app.particles = app.particles.filter((seed) => seed.name !== particleName);
+    };
+    const move = () => {
+      const app = appRef.current;
+      for (let i2 = 0; i2 < app.particles.length; i2++) {
+        const p = app.particles[i2];
+        p.xLast = p.x;
+        p.yLast = p.y;
+        const index = p.attractor.gridSpotIndex;
+        let gridSpot = app.grid[index];
+        if (Math.random() < 0.5) {
+          if (!gridSpot.isEdge) {
+            const topIndex = index - 1;
+            const bottomIndex = index + 1;
+            const leftIndex = index - app.gridSteps;
+            const rightIndex = index + app.gridSteps;
+            const topSpot = app.grid[topIndex];
+            const bottomSpot = app.grid[bottomIndex];
+            const leftSpot = app.grid[leftIndex];
+            const rightSpot = app.grid[rightIndex];
+            const chaos = 30;
+            const spots = [topSpot, bottomSpot, leftSpot, rightSpot];
+            let maxFieldSpot = spots[0];
+            let maxField = spots[0].field + chaos * Math.random();
+            for (const spot of spots) {
+              const field = spot.field + chaos * Math.random();
+              if (field > maxField) {
+                maxField = field;
+                maxFieldSpot = spot;
+              }
+            }
+            const potentialNewGridSpot = maxFieldSpot;
+            if (potentialNewGridSpot.busyAge === 0 || potentialNewGridSpot.busyAge > 15) {
+              p.ageSinceStuck = 0;
+              p.attractor.oldIndex = index;
+              p.attractor.gridSpotIndex = potentialNewGridSpot.spotIndex;
+              gridSpot = potentialNewGridSpot;
+              gridSpot.busyAge = 1;
+            } else {
+              p.ageSinceStuck++;
+            }
+          } else {
+            p.ageSinceStuck++;
+          }
+          if (p.ageSinceStuck === 10) {
+            kill(p.name);
+            continue;
+          }
+        }
+        const k = 5;
+        const visc = 0.4;
+        const dx = p.x - gridSpot.x;
+        const dy = p.y - gridSpot.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const xAcc = -k * dx;
+        const yAcc = -k * dy;
+        p.xSpeed += xAcc;
+        p.ySpeed += yAcc;
+        p.xSpeed *= visc;
+        p.ySpeed *= visc;
+        p.speed = Math.sqrt(p.xSpeed * p.xSpeed + p.ySpeed * p.ySpeed);
+        p.dist = dist;
+        p.x += 0.1 * p.xSpeed;
+        p.y += 0.1 * p.ySpeed;
+        p.age++;
+        if (p.age > app.lifespan) {
+          kill(p.name);
+          app.deathCount++;
+        }
+      }
+    };
+    const dataXYtoCanvasXY = (x, y) => {
+      const app = appRef.current;
+      const zoom = 1.6;
+      const xx = app.xC + x * zoom * app.dataToImageRatio;
+      const yy = app.yC + y * zoom * app.dataToImageRatio;
+      return { x: xx, y: yy };
+    };
+    const draw = () => {
+      const app = appRef.current;
+      if (!app.ctx) return;
+      app.drawnInLastFrame = 0;
+      if (!app.particles.length) return;
+      app.ctx.fillStyle = "rgba(2, 6, 23, 0.03)";
+      app.ctx.fillRect(0, 0, app.width, app.height);
+      for (let i2 = 0; i2 < app.particles.length; i2++) {
+        const p = app.particles[i2];
+        const h = p.hue + app.stepCount / 30;
+        const s = p.sat;
+        const l = p.lum;
+        const a = 1;
+        const last = dataXYtoCanvasXY(p.xLast, p.yLast);
+        const now = dataXYtoCanvasXY(p.x, p.y);
+        const attracSpot = app.grid[p.attractor.gridSpotIndex];
+        const attracXY = dataXYtoCanvasXY(attracSpot.x, attracSpot.y);
+        const oldAttracSpot = app.grid[p.attractor.oldIndex];
+        const oldAttracXY = dataXYtoCanvasXY(oldAttracSpot.x, oldAttracSpot.y);
+        app.ctx.beginPath();
+        app.ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
+        app.ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
+        app.ctx.moveTo(last.x, last.y);
+        app.ctx.lineTo(now.x, now.y);
+        app.ctx.lineWidth = 1.5 * app.dataToImageRatio;
+        app.ctx.stroke();
+        app.ctx.closePath();
+        app.ctx.beginPath();
+        app.ctx.lineWidth = 1.5 * app.dataToImageRatio;
+        app.ctx.moveTo(oldAttracXY.x, oldAttracXY.y);
+        app.ctx.lineTo(attracXY.x, attracXY.y);
+        app.ctx.arc(attracXY.x, attracXY.y, 1.5 * app.dataToImageRatio, 0, 2 * Math.PI, false);
+        app.ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
+        app.ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
+        app.ctx.stroke();
+        app.ctx.fill();
+        app.ctx.closePath();
+        app.drawnInLastFrame++;
+      }
+    };
+    const frame = () => {
+      evolve();
+      animationRef.current = requestAnimationFrame(frame);
+    };
+    frame();
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+  return /* @__PURE__ */ jsx(
+    "canvas",
+    {
+      ref: canvasRef,
+      className: "fixed inset-0 w-full h-full pointer-events-none",
+      style: { background: "transparent", zIndex: 0 }
+    }
+  );
+}
 function LandingPage() {
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-background", children: [
-    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between", children: [
+  const [, navigate2] = useLocation();
+  const { isAuthenticated } = useAuth();
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate2("/trades");
+    }
+  }, [isAuthenticated, navigate2]);
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative", children: [
+    /* @__PURE__ */ jsx(ParticleBackground, {}),
+    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-primary" }),
-        /* @__PURE__ */ jsx("span", { className: "text-xl font-bold", children: "InsiderPulse" })
+        /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-blue-400" }),
+        /* @__PURE__ */ jsx("span", { className: "text-xl font-bold text-white", children: "InsiderPulse" })
       ] }),
       /* @__PURE__ */ jsxs("nav", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Link, { href: "/login", children: /* @__PURE__ */ jsx(Button, { variant: "ghost", "data-testid": "button-login", children: "Sign In" }) }),
@@ -15159,8 +15419,8 @@ function LandingPage() {
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container py-20 md:py-32", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl text-center", children: [
       /* @__PURE__ */ jsx(Badge, { className: "mb-4", variant: "secondary", children: "AI-Powered SEC Filing Analysis" }),
-      /* @__PURE__ */ jsx("h1", { className: "mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl", children: "Track Insider Trading in Real-Time" }),
-      /* @__PURE__ */ jsx("p", { className: "mb-8 text-xl text-muted-foreground max-w-2xl mx-auto", children: "Get instant alerts and AI-powered insights from SEC Form 4 filings. Make informed investment decisions based on what corporate insiders are doing." }),
+      /* @__PURE__ */ jsx("h1", { className: "mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent", children: "Track Insider Trading in Real-Time" }),
+      /* @__PURE__ */ jsx("p", { className: "mb-8 text-xl text-slate-300 max-w-2xl mx-auto", children: "Get instant alerts and AI-powered insights from SEC Form 4 filings. Make informed investment decisions based on what corporate insiders are doing." }),
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row gap-4 justify-center", children: [
         /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "w-full sm:w-auto", "data-testid": "button-hero-signup", children: [
           "Start Free Trial",
@@ -15170,10 +15430,10 @@ function LandingPage() {
       ] }),
       /* @__PURE__ */ jsx("p", { className: "mt-4 text-sm text-muted-foreground", children: "No credit card required • Free 48-hour delayed data • Upgrade anytime" })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-muted/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
+    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4", children: "Everything You Need to Track Insider Activity" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-muted-foreground", children: "Powerful features designed for serious investors" })
+        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Everything You Need to Track Insider Activity" }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "Powerful features designed for serious investors" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
@@ -15210,44 +15470,44 @@ function LandingPage() {
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container py-20", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4", children: "How InsiderPulse Works" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-muted-foreground", children: "From SEC filing to actionable insight in seconds" })
+        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "How InsiderPulse Works" }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "From SEC filing to actionable insight in seconds" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-8", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "1" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: "Automated Data Collection" }),
-            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "Our system monitors SEC EDGAR filings 24/7, automatically collecting Form 4 insider trading reports every 10 minutes." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Automated Data Collection" }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Our system monitors SEC EDGAR filings 24/7, automatically collecting Form 4 insider trading reports every 10 minutes." })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "2" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: "AI-Powered Analysis" }),
-            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "Each trade is instantly analyzed using advanced AI to extract significance scores, trading signals, and key insights about the transaction." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "AI-Powered Analysis" }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Each trade is instantly analyzed using advanced AI to extract significance scores, trading signals, and key insights about the transaction." })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "3" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: "Instant Alerts" }),
-            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "Premium users receive real-time notifications when significant insider trades occur in their watchlist companies." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Instant Alerts" }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Premium users receive real-time notifications when significant insider trades occur in their watchlist companies." })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "4" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: "Make Informed Decisions" }),
-            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "Use our insights and analytics to guide your investment strategy based on what corporate insiders are doing with their own money." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Make Informed Decisions" }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Use our insights and analytics to guide your investment strategy based on what corporate insiders are doing with their own money." })
           ] })
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-muted/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl", children: [
+    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4", children: "Simple, Transparent Pricing" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-muted-foreground", children: "Choose the plan that's right for you" })
+        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Simple, Transparent Pricing" }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "Choose the plan that's right for you" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 gap-8 max-w-3xl mx-auto", children: [
         /* @__PURE__ */ jsxs(Card, { children: [
@@ -15318,11 +15578,11 @@ function LandingPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "text-center mt-8", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: "All plans include AI-powered analysis • Cancel anytime • No hidden fees" }) })
+      /* @__PURE__ */ jsx("div", { className: "text-center mt-8", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500", children: "All plans include AI-powered analysis • Cancel anytime • No hidden fees" }) })
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container py-20", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-3xl text-center", children: [
-      /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4", children: "Start Tracking Insider Trades Today" }),
-      /* @__PURE__ */ jsx("p", { className: "text-lg text-muted-foreground mb-8", children: "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity." }),
+      /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Start Tracking Insider Trades Today" }),
+      /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400 mb-8", children: "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity." }),
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row gap-4 justify-center", children: [
         /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "w-full sm:w-auto", "data-testid": "button-cta-signup", children: [
           "Get Started Free",
@@ -15331,42 +15591,42 @@ function LandingPage() {
         /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx(Button, { size: "lg", variant: "outline", className: "w-full sm:w-auto", "data-testid": "button-cta-demo", children: "View Demo" }) })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("footer", { className: "border-t bg-muted/50", children: /* @__PURE__ */ jsxs("div", { className: "container py-12", children: [
+    /* @__PURE__ */ jsx("footer", { className: "border-t border-slate-800 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "container py-12", children: [
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-8", children: [
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4", children: "Product" }),
-          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-muted-foreground", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-foreground", children: "Live Trades" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-foreground", children: "Pricing" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-foreground", children: "Features" }) }) })
+          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Product" }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-slate-400", children: [
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Live Trades" }) }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Pricing" }) }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Features" }) }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4", children: "Company" }),
-          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-muted-foreground", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "About" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "Blog" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "Contact" }) })
+          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Company" }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-slate-400", children: [
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "About" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "Blog" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "Contact" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4", children: "Legal" }),
-          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-muted-foreground", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "Privacy" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "Terms" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-foreground", children: "Sitemap" }) })
+          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Legal" }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-slate-400", children: [
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "Privacy" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "Terms" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-white", children: "Sitemap" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4", children: "Connect" }),
-          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-muted-foreground", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "Twitter" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "LinkedIn" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-foreground", children: "GitHub" }) })
+          /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Connect" }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-slate-400", children: [
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "Twitter" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "LinkedIn" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white", children: "GitHub" }) })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "mt-8 pt-8 border-t text-center text-sm text-muted-foreground", children: /* @__PURE__ */ jsx("p", { children: "© 2025 InsiderPulse. All rights reserved." }) })
+      /* @__PURE__ */ jsx("div", { className: "mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500", children: /* @__PURE__ */ jsx("p", { children: "© 2025 InsiderPulse. All rights reserved." }) })
     ] }) })
   ] });
 }
