@@ -8805,11 +8805,50 @@ var init_data_integrity_service = __esm({
 // server/subscription-service.ts
 import { drizzle as drizzle3 } from "drizzle-orm/neon-http";
 import { eq as eq3 } from "drizzle-orm";
+import Stripe from "stripe";
 function canAccessRealtimeData(accessLevel) {
   return accessLevel.canAccessRealtime;
 }
+async function syncSubscriptionFromStripe(user2) {
+  if (!user2.stripeSubscriptionId) {
+    return false;
+  }
+  try {
+    console.log(`[Stripe Sync] Checking Stripe for user ${user2.id} subscription ${user2.stripeSubscriptionId}`);
+    const subscription = await stripe.subscriptions.retrieve(user2.stripeSubscriptionId);
+    if (!subscription) {
+      console.log(`[Stripe Sync] No subscription found in Stripe for ${user2.stripeSubscriptionId}`);
+      return false;
+    }
+    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${new Date(subscription.current_period_end * 1e3)}`);
+    const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
+    const stripePeriodEnd = new Date(subscription.current_period_end * 1e3);
+    const now = /* @__PURE__ */ new Date();
+    if (isStripeActive && stripePeriodEnd > now) {
+      console.log(`[Stripe Sync] \u2705 Stripe shows active subscription, updating DB for user ${user2.id}`);
+      await db3.update(users).set({
+        subscriptionStatus: subscription.status,
+        subscriptionEndDate: stripePeriodEnd,
+        subscriptionTier: "insider_pro"
+      }).where(eq3(users.id, user2.id));
+      return true;
+    }
+    if (!isStripeActive || stripePeriodEnd <= now) {
+      console.log(`[Stripe Sync] \u274C Stripe shows inactive/expired subscription for user ${user2.id}`);
+      await db3.update(users).set({
+        subscriptionStatus: subscription.status === "canceled" ? "canceled" : "inactive",
+        subscriptionEndDate: stripePeriodEnd
+      }).where(eq3(users.id, user2.id));
+      return false;
+    }
+    return false;
+  } catch (error) {
+    console.error(`[Stripe Sync] Error syncing subscription for user ${user2.id}:`, error);
+    return false;
+  }
+}
 async function getUserAccessLevel(userId) {
-  const user2 = await db3.query.users.findFirst({
+  let user2 = await db3.query.users.findFirst({
     where: eq3(users.id, userId)
   });
   if (!user2) {
@@ -8822,7 +8861,26 @@ async function getUserAccessLevel(userId) {
   }
   const now = /* @__PURE__ */ new Date();
   const isTrialActive = user2.trialActivatedAt && user2.trialExpiresAt && now < user2.trialExpiresAt;
-  const isSubscriptionActive = (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing") && user2.subscriptionTier === "insider_pro" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
+  let isSubscriptionActive = user2.subscriptionStatus !== "canceled" && user2.subscriptionStatus !== "inactive" && user2.subscriptionTier === "insider_pro" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
+  const hasStripeSubscription = user2.stripeSubscriptionId && user2.subscriptionTier === "insider_pro";
+  const dbShowsExpired = !isSubscriptionActive && hasStripeSubscription;
+  if (dbShowsExpired) {
+    console.log(`[Access Check] DB shows expired for user ${userId}, checking Stripe...`);
+    const syncedSuccessfully = await syncSubscriptionFromStripe(user2);
+    if (syncedSuccessfully) {
+      const updatedUser = await db3.query.users.findFirst({
+        where: eq3(users.id, userId)
+      });
+      if (updatedUser) {
+        user2 = updatedUser;
+        isSubscriptionActive = user2.subscriptionStatus !== "canceled" && user2.subscriptionStatus !== "inactive" && user2.subscriptionTier === "insider_pro" && (!user2.subscriptionEndDate || now < user2.subscriptionEndDate);
+        console.log(`[Access Check] \u2705 After Stripe sync, user ${userId} subscription active: ${isSubscriptionActive}`);
+      }
+    }
+  }
+  if (isSubscriptionActive && user2.subscriptionStatus !== "active" && user2.subscriptionStatus !== "trialing") {
+    console.log(`[INFO] User ${userId} has Insider Pro access with status: ${user2.subscriptionStatus}`);
+  }
   const canAccessRealtime = isTrialActive || isSubscriptionActive;
   return {
     canAccessRealtime,
@@ -8916,13 +8974,16 @@ async function cancelSubscription(userId, periodEndDate) {
     console.log(`\u274C Subscription canceled for user ${userId}, access ended immediately`);
   }
 }
-var db3, subscriptionService;
+var db3, stripe, subscriptionService;
 var init_subscription_service = __esm({
   "server/subscription-service.ts"() {
     "use strict";
     init_schema();
     init_schema();
     db3 = drizzle3(process.env.DATABASE_URL, { schema: schema_exports });
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-11-20.acacia"
+    });
     subscriptionService = {
       getUserAccessLevel,
       canAccessRealtimeData,
@@ -10151,7 +10212,7 @@ import { WebSocketServer } from "ws";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
 import { eq as eq5 } from "drizzle-orm";
 import { z as z3 } from "zod";
-import Stripe from "stripe";
+import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import OpenAI4 from "openai";
@@ -10201,7 +10262,7 @@ async function registerRoutes(app2) {
       if (!amount || amount < 1) {
         return res.status(400).json({ error: "Invalid amount" });
       }
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await stripe2.paymentIntents.create({
         amount: Math.round(amount * 100),
         // Convert to cents
         currency: "usd",
@@ -10255,7 +10316,7 @@ async function registerRoutes(app2) {
       }
       if (user2.stripeSubscriptionId) {
         try {
-          const existingSub = await stripe.subscriptions.retrieve(user2.stripeSubscriptionId);
+          const existingSub = await stripe2.subscriptions.retrieve(user2.stripeSubscriptionId);
           console.log(`\u{1F50D} Existing subscription status: ${existingSub.status}, cancel_at_period_end: ${existingSub.cancel_at_period_end}`);
           if ((existingSub.status === "active" || existingSub.status === "trialing") && !existingSub.cancel_at_period_end) {
             console.log(`\u26A0\uFE0F User ${userId} already has active subscription: ${existingSub.id}`);
@@ -10297,7 +10358,7 @@ async function registerRoutes(app2) {
       let customerId = updatedUser.stripeCustomerId;
       if (customerId && typeof customerId === "string" && customerId.trim() !== "") {
         try {
-          await stripe.customers.retrieve(customerId);
+          await stripe2.customers.retrieve(customerId);
           console.log(`\u2705 Using existing Stripe customer: ${customerId}`);
         } catch (error) {
           console.warn(`\u26A0\uFE0F Stored customer ${customerId} validation failed:`, error.message);
@@ -10317,7 +10378,7 @@ async function registerRoutes(app2) {
       }
       if (customerId) {
         try {
-          await stripe.customers.del(customerId);
+          await stripe2.customers.del(customerId);
           console.log(`\u{1F5D1}\uFE0F Deleted old Stripe customer to remove Link: ${customerId}`);
         } catch (e) {
           console.log(`\u26A0\uFE0F Could not delete old customer: ${e.message}`);
@@ -10325,7 +10386,7 @@ async function registerRoutes(app2) {
         customerId = null;
       }
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripe2.customers.create({
           email: user2.email,
           metadata: {
             userId
@@ -10340,7 +10401,7 @@ async function registerRoutes(app2) {
       }
       if (customerId) {
         try {
-          const subscriptions = await stripe.subscriptions.list({
+          const subscriptions = await stripe2.subscriptions.list({
             customer: customerId,
             status: "all",
             limit: 10
@@ -10421,7 +10482,7 @@ async function registerRoutes(app2) {
           }
         };
         console.log("\u{1F50D} DEBUG: Checkout session config:", JSON.stringify(sessionConfig, null, 2));
-        session = await stripe.checkout.sessions.create(sessionConfig, {
+        session = await stripe2.checkout.sessions.create(sessionConfig, {
           idempotencyKey
         });
         console.log(`\u{1F4B3} Created Checkout Session for ${user2.email}: ${session.id}`);
@@ -10450,7 +10511,7 @@ async function registerRoutes(app2) {
   app2.get("/api/subscription/:subscriptionId", async (req, res) => {
     try {
       const { subscriptionId } = req.params;
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await stripe2.subscriptions.retrieve(subscriptionId);
       res.json({
         id: subscription.id,
         status: subscription.status,
@@ -10471,7 +10532,7 @@ async function registerRoutes(app2) {
       if (!subscriptionId) {
         return res.status(400).json({ error: "Missing subscriptionId" });
       }
-      const subscription = await stripe.subscriptions.update(subscriptionId, {
+      const subscription = await stripe2.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true
       });
       console.log(`\u{1F4B3} Cancelled subscription: ${subscriptionId}`);
@@ -10503,7 +10564,7 @@ async function registerRoutes(app2) {
           error: "User not found or no active subscription"
         });
       }
-      const session = await stripe.billingPortal.sessions.create({
+      const session = await stripe2.billingPortal.sessions.create({
         customer: user2.stripeCustomerId,
         return_url: `${process.env.FRONTEND_URL || "http://localhost:5000"}/settings`
       });
@@ -10539,7 +10600,7 @@ async function registerRoutes(app2) {
     }
     let event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      event = stripe2.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
       console.error("\u26A0\uFE0F Webhook signature verification failed:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -10558,7 +10619,7 @@ async function registerRoutes(app2) {
             });
             if (!user2) {
               console.log(`\u26A0\uFE0F User not found by Stripe customer ID ${customerId}, trying email fallback...`);
-              const customer = await stripe.customers.retrieve(customerId);
+              const customer = await stripe2.customers.retrieve(customerId);
               if (customer && !customer.deleted && customer.email) {
                 console.log(`\u{1F50D} Searching for user by email: ${customer.email}`);
                 user2 = await db4.query.users.findFirst({
@@ -10572,7 +10633,7 @@ async function registerRoutes(app2) {
               }
             }
             if (user2) {
-              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+              const subscription = await stripe2.subscriptions.retrieve(subscriptionId);
               const periodEnd = new Date(subscription.current_period_end * 1e3);
               const priceId = subscription.items.data[0]?.price?.id;
               console.log(`\u{1F50D} Subscription priceId: "${priceId}"`);
@@ -10594,10 +10655,11 @@ async function registerRoutes(app2) {
                 subscriptionEndDate: periodEnd,
                 hasUsedTrial: true
               }).where(eq5(users.id, user2.id));
-              console.log(`\u2705 User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
+              console.log(`\u2705 [Webhook Success] User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
+              console.log(`\u{1F4CA} [Webhook Success] Details: userId=${user2.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
               console.error(`\u274C CRITICAL: User not found for Stripe customer ${customerId}`);
-              return res.status(400).send(`User not found for customer ${customerId}`);
+              return res.status(200).json({ received: true, error: "user_not_found", customerId });
             }
           } catch (error) {
             console.error("\u274C Error upgrading user:", {
@@ -10608,7 +10670,7 @@ async function registerRoutes(app2) {
               subscriptionId,
               attemptedTier: "insider_pro"
             });
-            return res.status(500).send(`Error processing webhook: ${error.message}`);
+            return res.status(200).json({ received: true, error: "processing_error", message: error.message });
           }
         }
         break;
@@ -10665,7 +10727,7 @@ async function registerRoutes(app2) {
               where: eq5(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
-              const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+              const subscription = await stripe2.subscriptions.retrieve(invoice.subscription);
               const periodEnd = new Date(subscription.current_period_end * 1e3);
               const updates = {
                 subscriptionEndDate: periodEnd
@@ -10744,7 +10806,7 @@ async function registerRoutes(app2) {
           message: "User not found in database"
         });
       }
-      const customers = await stripe.customers.list({
+      const customers = await stripe2.customers.list({
         email,
         limit: 1
       });
@@ -10756,7 +10818,7 @@ async function registerRoutes(app2) {
       }
       const customer = customers.data[0];
       console.log(`\u2705 Found Stripe customer: ${customer.id}`);
-      const subscriptions = await stripe.subscriptions.list({
+      const subscriptions = await stripe2.subscriptions.list({
         customer: customer.id,
         status: "all",
         limit: 10
@@ -10809,7 +10871,7 @@ async function registerRoutes(app2) {
   app2.post("/api/admin/sync-all-subscriptions", protectAdminEndpoint, async (req, res) => {
     try {
       console.log("\u{1F504} Starting batch subscription sync from Stripe...");
-      const subscriptions = await stripe.subscriptions.list({
+      const subscriptions = await stripe2.subscriptions.list({
         status: "all",
         limit: 100
       });
@@ -10826,7 +10888,7 @@ async function registerRoutes(app2) {
             results.skipped++;
             continue;
           }
-          const customer = await stripe.customers.retrieve(subscription.customer);
+          const customer = await stripe2.customers.retrieve(subscription.customer);
           if (!customer || customer.deleted || !customer.email) {
             console.warn(`\u26A0\uFE0F No email for customer ${subscription.customer}`);
             results.skipped++;
@@ -11614,7 +11676,7 @@ async function registerRoutes(app2) {
       let customerId = user2.stripeCustomerId;
       if (customerId && typeof customerId === "string" && customerId.trim() !== "") {
         try {
-          await stripe.customers.retrieve(customerId);
+          await stripe2.customers.retrieve(customerId);
           console.log(`\u2705 Using existing Stripe customer: ${customerId}`);
         } catch (error) {
           console.warn(`\u26A0\uFE0F Stored customer ${customerId} validation failed:`, error.message);
@@ -11630,7 +11692,7 @@ async function registerRoutes(app2) {
         customerId = null;
       }
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripe2.customers.create({
           email: user2.email,
           metadata: { userId: user2.id },
           invoice_settings: {
@@ -11641,7 +11703,7 @@ async function registerRoutes(app2) {
         await db4.update(users).set({ stripeCustomerId: customerId }).where(eq5(users.id, userId));
         console.log(`\u2705 Created Stripe customer for user ${userId}: ${customerId}`);
       }
-      const setupIntent = await stripe.setupIntents.create({
+      const setupIntent = await stripe2.setupIntents.create({
         customer: customerId,
         payment_method_types: ["card"],
         metadata: {
@@ -11718,7 +11780,7 @@ async function registerRoutes(app2) {
       let customerId = user2.stripeCustomerId;
       if (customerId && typeof customerId === "string" && customerId.trim() !== "") {
         try {
-          await stripe.customers.retrieve(customerId);
+          await stripe2.customers.retrieve(customerId);
           console.log(`\u2705 Using existing Stripe customer: ${customerId}`);
         } catch (error) {
           console.warn(`\u26A0\uFE0F Stored customer ${customerId} validation failed:`, error.message);
@@ -11734,7 +11796,7 @@ async function registerRoutes(app2) {
         customerId = null;
       }
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripe2.customers.create({
           email: user2.email,
           metadata: { userId: user2.id },
           invoice_settings: {
@@ -11745,10 +11807,10 @@ async function registerRoutes(app2) {
         await db4.update(users).set({ stripeCustomerId: customerId }).where(eq5(users.id, userId));
         console.log(`\u2705 Created Stripe customer: ${customerId}`);
       }
-      await stripe.paymentMethods.attach(paymentMethodId, {
+      await stripe2.paymentMethods.attach(paymentMethodId, {
         customer: customerId
       });
-      await stripe.customers.update(customerId, {
+      await stripe2.customers.update(customerId, {
         invoice_settings: {
           default_payment_method: paymentMethodId
         }
@@ -11768,7 +11830,7 @@ async function registerRoutes(app2) {
         }
         // No trial_end - immediate billing
       };
-      const subscription = await stripe.subscriptions.create(subscriptionParams);
+      const subscription = await stripe2.subscriptions.create(subscriptionParams);
       console.log(`\u2705 Created Stripe subscription with immediate billing: ${subscription.id}`);
       const subscriptionStart = /* @__PURE__ */ new Date();
       const subscriptionEnd = new Date(subscription.current_period_end * 1e3);
@@ -13906,7 +13968,7 @@ function broadcastUpdate(type, data) {
     });
   }
 }
-var db4, stripe, openai2, wss;
+var db4, stripe2, openai2, wss;
 var init_routes = __esm({
   "server/routes.ts"() {
     "use strict";
@@ -13937,10 +13999,126 @@ var init_routes = __esm({
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
     }
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2023-10-16"
     });
     openai2 = new OpenAI4({ apiKey: process.env.OPENAI_API_KEY });
+  }
+});
+
+// server/cron-jobs.ts
+var cron_jobs_exports = {};
+__export(cron_jobs_exports, {
+  startAllCronJobs: () => startAllCronJobs,
+  startSubscriptionSyncJob: () => startSubscriptionSyncJob,
+  startTrialExpirationCheckJob: () => startTrialExpirationCheckJob
+});
+import cron from "node-cron";
+import Stripe3 from "stripe";
+import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { eq as eq6 } from "drizzle-orm";
+function startSubscriptionSyncJob() {
+  cron.schedule("0 2 * * *", async () => {
+    console.log("[Cron] Starting daily subscription sync...");
+    try {
+      const insiderProUsers = await db5.query.users.findMany({
+        where: eq6(users.subscriptionTier, "insider_pro")
+      });
+      console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
+      let syncedCount = 0;
+      let errorCount = 0;
+      for (const user2 of insiderProUsers) {
+        if (!user2.stripeSubscriptionId) {
+          console.log(`[Cron] User ${user2.id} (${user2.email}) has no Stripe subscription ID, skipping`);
+          continue;
+        }
+        try {
+          const subscription = await stripe3.subscriptions.retrieve(user2.stripeSubscriptionId);
+          const stripePeriodEnd = new Date(subscription.current_period_end * 1e3);
+          const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
+          const now = /* @__PURE__ */ new Date();
+          const dbShowsExpired = user2.subscriptionEndDate && user2.subscriptionEndDate < now;
+          const dbStatusMismatch = user2.subscriptionStatus !== subscription.status;
+          const dbEndDateMismatch = !user2.subscriptionEndDate || Math.abs(user2.subscriptionEndDate.getTime() - stripePeriodEnd.getTime()) > 6e4;
+          if (dbShowsExpired && isStripeActive) {
+            console.log(`[Cron] \u26A0\uFE0F  MISMATCH: User ${user2.id} (${user2.email}) - DB expired but Stripe active`);
+            console.log(`[Cron]     DB: status=${user2.subscriptionStatus}, end=${user2.subscriptionEndDate}`);
+            console.log(`[Cron]     Stripe: status=${subscription.status}, end=${stripePeriodEnd}`);
+            await db5.update(users).set({
+              subscriptionStatus: subscription.status,
+              subscriptionEndDate: stripePeriodEnd
+            }).where(eq6(users.id, user2.id));
+            console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
+            syncedCount++;
+          } else if (dbStatusMismatch || dbEndDateMismatch) {
+            console.log(`[Cron] \u{1F504} Minor sync for user ${user2.id} (${user2.email})`);
+            await db5.update(users).set({
+              subscriptionStatus: subscription.status,
+              subscriptionEndDate: stripePeriodEnd
+            }).where(eq6(users.id, user2.id));
+            syncedCount++;
+          } else {
+            console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
+          }
+        } catch (error) {
+          if (error.type === "StripeInvalidRequestError" && error.code === "resource_missing") {
+            console.log(`[Cron] \u26A0\uFE0F  Subscription ${user2.stripeSubscriptionId} not found in Stripe for user ${user2.id} (${user2.email})`);
+          } else {
+            console.error(`[Cron] \u274C Error syncing user ${user2.id} (${user2.email}):`, error.message);
+            errorCount++;
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      console.log(`[Cron] Subscription sync complete: ${syncedCount} synced, ${errorCount} errors`);
+    } catch (error) {
+      console.error("[Cron] Fatal error in subscription sync:", error);
+    }
+  });
+  console.log("\u2705 Subscription sync cron job scheduled (daily at 2 AM)");
+}
+function startTrialExpirationCheckJob() {
+  cron.schedule("0 * * * *", async () => {
+    console.log("[Cron] Checking for expired trials...");
+    try {
+      const now = /* @__PURE__ */ new Date();
+      const expiredTrialUsers = await db5.query.users.findMany({
+        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
+          eq7(users2.subscriptionStatus, "trialing"),
+          isNotNull(users2.trialExpiresAt),
+          lt(users2.trialExpiresAt, now)
+        )
+      });
+      if (expiredTrialUsers.length > 0) {
+        console.log(`[Cron] Found ${expiredTrialUsers.length} expired trials`);
+        for (const user2 of expiredTrialUsers) {
+          await db5.update(users).set({
+            subscriptionStatus: "inactive"
+          }).where(eq6(users.id, user2.id));
+          console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
+        }
+      }
+    } catch (error) {
+      console.error("[Cron] Error checking expired trials:", error);
+    }
+  });
+  console.log("\u2705 Trial expiration check cron job scheduled (hourly)");
+}
+function startAllCronJobs() {
+  startSubscriptionSyncJob();
+  startTrialExpirationCheckJob();
+  console.log("\u{1F550} All cron jobs started");
+}
+var db5, stripe3;
+var init_cron_jobs = __esm({
+  "server/cron-jobs.ts"() {
+    "use strict";
+    init_schema();
+    init_schema();
+    db5 = drizzle5(process.env.DATABASE_URL, { schema: schema_exports });
+    stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-11-20.acacia"
+    });
   }
 });
 
@@ -15783,6 +15961,16 @@ app.use((req, res, next) => {
       setTimeout(() => {
         stockPriceService.startPeriodicUpdates();
       }, 35e3);
+      setTimeout(async () => {
+        try {
+          log("\u{1F550} Starting cron jobs...");
+          const { startAllCronJobs: startAllCronJobs2 } = await Promise.resolve().then(() => (init_cron_jobs(), cron_jobs_exports));
+          startAllCronJobs2();
+          log("\u2705 Cron jobs started successfully");
+        } catch (error) {
+          log("\u26A0\uFE0F Cron jobs initialization failed:", error);
+        }
+      }, 4e4);
     });
   } catch (error) {
     console.error("\u274C Failed to start server:", error);

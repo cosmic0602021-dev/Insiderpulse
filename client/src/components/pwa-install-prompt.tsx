@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Bell, Zap, Smartphone, Share2, Plus } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { useLocation } from 'wouter';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,8 +12,14 @@ export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const { t, language } = useLanguage();
+  const [location] = useLocation();
 
   useEffect(() => {
+    // Only show on /trades page
+    if (location !== '/trades') {
+      return;
+    }
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInstalled = localStorage.getItem('pwa-installed') === 'true';
@@ -53,7 +60,7 @@ export function PWAInstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
     };
-  }, []);
+  }, [location]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) {

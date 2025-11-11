@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MeshGradientBackground } from "@/components/mesh-gradient-background";
+import { AuroraBackground } from "@/components/aurora-background";
 import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import LanguageSelection from "@/pages/language-selection";
@@ -52,21 +52,20 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Mesh Gradient Background Effect */}
-      <MeshGradientBackground />
+      {/* Aurora Gradient Background Effect */}
+      <AuroraBackground />
 
       {/* Header/Navigation */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-blue-400" />
             <span className="text-xl font-bold text-white">InsiderPulse</span>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container px-4 lg:px-6 py-24 md:py-40">
+      <section className="container px-4 lg:px-6 py-24 md:py-40 relative z-10">
         <div className="mx-auto max-w-4xl text-center">
           <Badge className="mb-4" variant="secondary">
             {t('landing.tagline')}
@@ -79,7 +78,18 @@ export default function LandingPage() {
           </p>
           <div className="flex justify-center">
             <Link href="/trades">
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6" data-testid="button-hero-browse">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto text-lg px-8 py-6
+                           bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700
+                           hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600
+                           shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]
+                           hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)]
+                           transition-all duration-200 ease-out
+                           hover:-translate-y-0.5 active:translate-y-0
+                           border-0 text-white font-semibold"
+                data-testid="button-hero-browse"
+              >
                 {t('landing.browse')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -92,7 +102,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="container px-4 lg:px-6 py-24 md:py-32 bg-slate-900/50">
+      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10">
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4 text-white">
@@ -168,7 +178,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="container px-4 lg:px-6 py-24 md:py-32">
+      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10">
         <div className="mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4 text-white">
@@ -240,15 +250,13 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-900/50">
+      <footer className="border-t border-slate-800 relative z-10">
         <div className="container px-4 lg:px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <h3 className="font-semibold mb-4 text-white">Product</h3>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><Link href="/trades"><a className="hover:text-white">Live Trades</a></Link></li>
                 <li><Link href="/premium-checkout"><a className="hover:text-white">Pricing</a></Link></li>
-                <li><Link href="/trades"><a className="hover:text-white">Features</a></Link></li>
               </ul>
             </div>
             <div>

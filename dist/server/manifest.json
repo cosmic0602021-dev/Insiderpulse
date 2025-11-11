@@ -1,7 +1,7 @@
 {
   "name": "InsiderPulse Pro",
   "short_name": "InsiderPulse",
-  "description": "실시간 내부자 거래 추적 및 AI 분석 플랫폼",
+  "description": "Real-time insider trading tracking and AI-powered analysis platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -25,16 +25,16 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "대시보드",
+      "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "메인 대시보드로 이동",
+      "description": "Go to main dashboard",
       "url": "/",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "실시간 거래",
+      "name": "Live Trades",
       "short_name": "Live",
-      "description": "실시간 거래 데이터 확인",
+      "description": "View real-time trading data",
       "url": "/live-trading",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }

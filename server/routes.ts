@@ -638,10 +638,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 })
                 .where(eq(users.id, user.id));
 
-              console.log(`✅ User ${user.email} upgraded to ${tier} until ${periodEnd}`);
+              console.log(`✅ [Webhook Success] User ${user.email} upgraded to ${tier} until ${periodEnd}`);
+              console.log(`📊 [Webhook Success] Details: userId=${user.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
               console.error(`❌ CRITICAL: User not found for Stripe customer ${customerId}`);
-              return res.status(400).send(`User not found for customer ${customerId}`);
+              // Stripe에게는 200 OK를 보내서 재시도 중지
+              // 에러는 로그에만 기록하고 추후 수동 처리
+              return res.status(200).json({ received: true, error: 'user_not_found', customerId });
             }
           } catch (error: any) {
             console.error('❌ Error upgrading user:', {
@@ -652,7 +655,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               subscriptionId,
               attemptedTier: 'insider_pro'
             });
-            return res.status(500).send(`Error processing webhook: ${error.message}`);
+            // Stripe에게는 200 OK를 보내서 재시도 중지
+            // 에러는 로그에만 기록하고 추후 수동 처리
+            return res.status(200).json({ received: true, error: 'processing_error', message: error.message });
           }
         }
         break;

@@ -7,8 +7,12 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
+import Stripe from "stripe";
 
 const db = drizzle(process.env.DATABASE_URL!, { schema });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-11-20.acacia",
+});
 
 export type SubscriptionTier = "free" | "insider_pro";
 export type SubscriptionStatus = "active" | "inactive" | "trialing" | "canceled";
@@ -30,10 +34,73 @@ export function canAccessRealtimeData(accessLevel: AccessLevel): boolean {
 }
 
 /**
+ * Sync user subscription from Stripe if DB data appears stale
+ */
+async function syncSubscriptionFromStripe(user: any): Promise<boolean> {
+  // Only sync if user has a Stripe subscription ID
+  if (!user.stripeSubscriptionId) {
+    return false;
+  }
+
+  try {
+    console.log(`[Stripe Sync] Checking Stripe for user ${user.id} subscription ${user.stripeSubscriptionId}`);
+
+    // Fetch subscription from Stripe
+    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+
+    if (!subscription) {
+      console.log(`[Stripe Sync] No subscription found in Stripe for ${user.stripeSubscriptionId}`);
+      return false;
+    }
+
+    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${new Date(subscription.current_period_end * 1000)}`);
+
+    // Check if Stripe says subscription is active
+    const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
+    const stripePeriodEnd = new Date(subscription.current_period_end * 1000);
+    const now = new Date();
+
+    // If Stripe shows active but DB shows expired, sync the DB
+    if (isStripeActive && stripePeriodEnd > now) {
+      console.log(`[Stripe Sync] ✅ Stripe shows active subscription, updating DB for user ${user.id}`);
+
+      await db.update(users)
+        .set({
+          subscriptionStatus: subscription.status as any,
+          subscriptionEndDate: stripePeriodEnd,
+          subscriptionTier: "insider_pro",
+        })
+        .where(eq(users.id, user.id));
+
+      return true; // Synced successfully
+    }
+
+    // If Stripe shows canceled or expired
+    if (!isStripeActive || stripePeriodEnd <= now) {
+      console.log(`[Stripe Sync] ❌ Stripe shows inactive/expired subscription for user ${user.id}`);
+
+      await db.update(users)
+        .set({
+          subscriptionStatus: subscription.status === "canceled" ? "canceled" : "inactive",
+          subscriptionEndDate: stripePeriodEnd,
+        })
+        .where(eq(users.id, user.id));
+
+      return false; // No active subscription
+    }
+
+    return false;
+  } catch (error) {
+    console.error(`[Stripe Sync] Error syncing subscription for user ${user.id}:`, error);
+    return false;
+  }
+}
+
+/**
  * Get user's current access level
  */
 export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
-  const user = await db.query.users.findFirst({
+  let user = await db.query.users.findFirst({
     where: eq(users.id, userId),
   });
 
@@ -54,14 +121,41 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
     user.trialExpiresAt &&
     now < user.trialExpiresAt;
 
-  // Check if subscription is active
-  // Allow access for any non-canceled Insider Pro subscription within its valid period
-  // This includes active, trialing, past_due, and other legitimate states
-  const isSubscriptionActive =
+  // Check if subscription is active based on DB data
+  let isSubscriptionActive =
     user.subscriptionStatus !== "canceled" &&
     user.subscriptionStatus !== "inactive" &&
     user.subscriptionTier === "insider_pro" &&
     (!user.subscriptionEndDate || now < user.subscriptionEndDate);
+
+  // If DB shows subscription as expired/inactive BUT user has Stripe subscription ID,
+  // check Stripe directly to see if it's actually still active
+  const hasStripeSubscription = user.stripeSubscriptionId && user.subscriptionTier === "insider_pro";
+  const dbShowsExpired = !isSubscriptionActive && hasStripeSubscription;
+
+  if (dbShowsExpired) {
+    console.log(`[Access Check] DB shows expired for user ${userId}, checking Stripe...`);
+    const syncedSuccessfully = await syncSubscriptionFromStripe(user);
+
+    if (syncedSuccessfully) {
+      // Re-fetch user data after sync
+      const updatedUser = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (updatedUser) {
+        user = updatedUser;
+        // Recalculate subscription status with updated data
+        isSubscriptionActive =
+          user.subscriptionStatus !== "canceled" &&
+          user.subscriptionStatus !== "inactive" &&
+          user.subscriptionTier === "insider_pro" &&
+          (!user.subscriptionEndDate || now < user.subscriptionEndDate);
+
+        console.log(`[Access Check] ✅ After Stripe sync, user ${userId} subscription active: ${isSubscriptionActive}`);
+      }
+    }
+  }
 
   // Log unexpected subscription states for monitoring
   if (isSubscriptionActive && user.subscriptionStatus !== "active" && user.subscriptionStatus !== "trialing") {

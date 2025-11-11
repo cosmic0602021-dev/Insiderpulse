@@ -198,6 +198,18 @@ app.use((req, res, next) => {
         stockPriceService.startPeriodicUpdates();
       }, 35000); // After auto-scheduler initialization
 
+      // Start cron jobs for subscription sync and trial checks
+      setTimeout(async () => {
+        try {
+          log('🕐 Starting cron jobs...');
+          const { startAllCronJobs } = await import('./cron-jobs');
+          startAllCronJobs();
+          log('✅ Cron jobs started successfully');
+        } catch (error) {
+          log('⚠️ Cron jobs initialization failed:', error);
+        }
+      }, 40000); // After stock price service
+
       // 🔄 Auto-detect and fill data gaps - disabled on startup to prevent blocking
       // Run manually via API endpoint /api/admin/backfill-missing if needed
       // setTimeout(async () => {

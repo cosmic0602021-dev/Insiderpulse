@@ -2185,7 +2185,57 @@ const translations = {
     "tradeDetail.preparingAdvancedAnalysis": "Preparing advanced AI analysis results",
     "tradeDetail.shareText": "{company} Insider Trade Information",
     // Dashboard
-    "dashboard.loadMoreTradesError": "Failed to load more trades. Please try again."
+    "dashboard.loadMoreTradesError": "Failed to load more trades. Please try again.",
+    // Landing Page
+    "landing.browse": "Browse",
+    "landing.tagline": "AI-Powered SEC Filing Analysis",
+    "landing.title": "InsiderPulse: Track Insider Trading in Real-Time",
+    "landing.description": "Get instant alerts and AI-powered insights from SEC Form 4 filings. Make informed investment decisions based on what corporate insiders are doing.",
+    "landing.noCreditCard": "No credit card required • Free 48-hour delayed data • Upgrade anytime",
+    "landing.features.title": "Everything You Need to Track Insider Activity",
+    "landing.features.subtitle": "Powerful features designed for serious investors",
+    "landing.features.aiAnalysis": "AI-Powered Analysis",
+    "landing.features.aiAnalysisDesc": "Advanced GPT analysis extracts buy/sell signals and significance scores (1-100) from every trade",
+    "landing.features.realtime": "Real-Time Updates",
+    "landing.features.realtimeDesc": "WebSocket-powered live updates deliver new insider trades the moment they're filed with the SEC",
+    "landing.features.filtering": "Smart Filtering",
+    "landing.features.filteringDesc": "Filter by ticker, signal type, significance score, and transaction type to find the trades that matter",
+    "landing.features.alerts": "Custom Alerts",
+    "landing.features.alertsDesc": "Set up personalized notifications for specific companies or trade patterns you want to monitor",
+    "landing.features.secData": "SEC Data Direct",
+    "landing.features.secDataDesc": "Automated collection from official SEC EDGAR filings ensures accuracy and compliance",
+    "landing.features.historical": "Historical Analysis",
+    "landing.features.historicalDesc": "Access complete trading history and pattern analysis to identify insider buying trends",
+    "landing.howItWorks.title": "How InsiderPulse Works",
+    "landing.howItWorks.subtitle": "From SEC filing to actionable insight in seconds",
+    "landing.howItWorks.step1": "Automated Data Collection",
+    "landing.howItWorks.step1Desc": "Our system monitors SEC EDGAR filings 24/7, automatically collecting Form 4 insider trading reports every 10 minutes.",
+    "landing.howItWorks.step2": "AI-Powered Analysis",
+    "landing.howItWorks.step2Desc": "Each trade is instantly analyzed using advanced AI to extract significance scores, trading signals, and key insights about the transaction.",
+    "landing.howItWorks.step3": "Instant Alerts",
+    "landing.howItWorks.step3Desc": "Premium users receive real-time notifications when significant insider trades occur in their watchlist companies.",
+    "landing.howItWorks.step4": "Make Informed Decisions",
+    "landing.howItWorks.step4Desc": "Use our insights and analytics to guide your investment strategy based on what corporate insiders are doing with their own money.",
+    "landing.pricing.title": "Simple, Transparent Pricing",
+    "landing.pricing.subtitle": "Choose the plan that's right for you",
+    "landing.pricing.free": "Free",
+    "landing.pricing.premium": "Premium",
+    "landing.pricing.mostPopular": "Most Popular",
+    "landing.pricing.perMonth": "/month",
+    "landing.pricing.freeFeature1": "48-hour delayed insider trade data",
+    "landing.pricing.freeFeature2": "AI-powered analysis and insights",
+    "landing.pricing.freeFeature3": "Basic filtering and search",
+    "landing.pricing.freeFeature4": "Historical data access",
+    "landing.pricing.premiumFeature1": "Real-time insider trade data",
+    "landing.pricing.premiumFeature2": "WebSocket live updates",
+    "landing.pricing.premiumFeature3": "Custom alerts and notifications",
+    "landing.pricing.premiumFeature4": "Advanced filtering and analytics",
+    "landing.pricing.premiumFeature5": "Priority support",
+    "landing.pricing.signupFree": "Get Started Free",
+    "landing.pricing.upgradePremium": "Upgrade to Premium",
+    "landing.pricing.allPlans": "All plans include AI-powered analysis • Cancel anytime • No hidden fees",
+    "landing.cta.title": "Start Tracking Insider Trades Today",
+    "landing.cta.subtitle": "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity."
   },
   ko: {
     // Navigation
@@ -2862,7 +2912,57 @@ const translations = {
     "pwa.android.step1": "우측 상단 메뉴(⋮) 탭",
     "pwa.android.step2": '"앱 설치" 또는 "홈 화면에 추가" 선택',
     "pwa.android.step3": '"설치" 탭',
-    "pwa.afterInstall": "설치 후에는 이 버튼을 다시 눌러 <strong>{ticker}</strong>의 거래 알림을 구독할 수 있습니다."
+    "pwa.afterInstall": "설치 후에는 이 버튼을 다시 눌러 <strong>{ticker}</strong>의 거래 알림을 구독할 수 있습니다.",
+    // Landing Page
+    "landing.browse": "둘러보기",
+    "landing.tagline": "AI 기반 SEC 공시 분석",
+    "landing.title": "InsiderPulse: 실시간 내부자 거래 추적",
+    "landing.description": "SEC Form 4 공시를 AI로 분석하여 즉각적인 알림과 인사이트를 받으세요. 기업 내부자의 거래를 기반으로 정보에 입각한 투자 결정을 내리세요.",
+    "landing.noCreditCard": "신용카드 불필요 • 무료 48시간 지연 데이터 • 언제든 업그레이드",
+    "landing.features.title": "내부자 활동 추적을 위한 모든 기능",
+    "landing.features.subtitle": "진지한 투자자를 위한 강력한 기능",
+    "landing.features.aiAnalysis": "AI 기반 분석",
+    "landing.features.aiAnalysisDesc": "고급 GPT 분석으로 모든 거래에서 매수/매도 신호와 중요도 점수(1-100)를 추출합니다",
+    "landing.features.realtime": "실시간 업데이트",
+    "landing.features.realtimeDesc": "WebSocket 기반 실시간 업데이트로 SEC에 제출되는 즉시 새로운 내부자 거래를 확인할 수 있습니다",
+    "landing.features.filtering": "스마트 필터링",
+    "landing.features.filteringDesc": "티커, 신호 유형, 중요도 점수, 거래 유형별로 필터링하여 중요한 거래를 찾으세요",
+    "landing.features.alerts": "맞춤형 알림",
+    "landing.features.alertsDesc": "특정 기업이나 거래 패턴에 대한 개인화된 알림을 설정하세요",
+    "landing.features.secData": "SEC 데이터 직접 연동",
+    "landing.features.secDataDesc": "공식 SEC EDGAR 공시에서 자동으로 수집하여 정확성과 규정 준수를 보장합니다",
+    "landing.features.historical": "과거 분석",
+    "landing.features.historicalDesc": "완전한 거래 기록과 패턴 분석으로 내부자 매수 트렌드를 파악하세요",
+    "landing.howItWorks.title": "InsiderPulse 작동 방식",
+    "landing.howItWorks.subtitle": "SEC 공시에서 실행 가능한 인사이트까지 몇 초 만에",
+    "landing.howItWorks.step1": "자동 데이터 수집",
+    "landing.howItWorks.step1Desc": "시스템이 24시간 SEC EDGAR 공시를 모니터링하여 10분마다 Form 4 내부자 거래 보고서를 자동으로 수집합니다.",
+    "landing.howItWorks.step2": "AI 기반 분석",
+    "landing.howItWorks.step2Desc": "각 거래는 고급 AI를 사용하여 즉시 분석되어 중요도 점수, 거래 신호 및 거래에 대한 주요 인사이트를 추출합니다.",
+    "landing.howItWorks.step3": "즉각적인 알림",
+    "landing.howItWorks.step3Desc": "프리미엄 사용자는 관심 목록 기업에서 중요한 내부자 거래가 발생하면 실시간 알림을 받습니다.",
+    "landing.howItWorks.step4": "정보에 입각한 결정",
+    "landing.howItWorks.step4Desc": "기업 내부자가 자신의 돈으로 무엇을 하는지를 기반으로 투자 전략을 안내하는 인사이트와 분석을 활용하세요.",
+    "landing.pricing.title": "간단하고 투명한 가격",
+    "landing.pricing.subtitle": "당신에게 맞는 플랜을 선택하세요",
+    "landing.pricing.free": "무료",
+    "landing.pricing.premium": "프리미엄",
+    "landing.pricing.mostPopular": "가장 인기 있음",
+    "landing.pricing.perMonth": "/월",
+    "landing.pricing.freeFeature1": "48시간 지연 내부자 거래 데이터",
+    "landing.pricing.freeFeature2": "AI 기반 분석 및 인사이트",
+    "landing.pricing.freeFeature3": "기본 필터링 및 검색",
+    "landing.pricing.freeFeature4": "과거 데이터 액세스",
+    "landing.pricing.premiumFeature1": "실시간 내부자 거래 데이터",
+    "landing.pricing.premiumFeature2": "WebSocket 실시간 업데이트",
+    "landing.pricing.premiumFeature3": "맞춤형 알림 및 알람",
+    "landing.pricing.premiumFeature4": "고급 필터링 및 분석",
+    "landing.pricing.premiumFeature5": "우선 지원",
+    "landing.pricing.signupFree": "무료로 시작하기",
+    "landing.pricing.upgradePremium": "프리미엄으로 업그레이드",
+    "landing.pricing.allPlans": "모든 플랜에 AI 기반 분석 포함 • 언제든 취소 • 숨겨진 비용 없음",
+    "landing.cta.title": "오늘부터 내부자 거래 추적 시작",
+    "landing.cta.subtitle": "InsiderPulse를 사용하여 내부자 활동을 기반으로 정보에 입각한 거래 결정을 내리는 수천 명의 투자자와 함께하세요."
   },
   ja: {
     // Navigation
@@ -4849,7 +4949,11 @@ function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const { t, language } = useLanguage();
+  const [location2] = useLocation();
   useEffect(() => {
+    if (location2 !== "/trades") {
+      return;
+    }
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
     const isInstalled = localStorage.getItem("pwa-installed") === "true";
     const isDismissed = localStorage.getItem("pwa-prompt-dismissed") === "true";
@@ -4878,7 +4982,7 @@ function PWAInstallPrompt() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
     };
-  }, []);
+  }, [location2]);
   const handleInstall = async () => {
     if (!deferredPrompt) {
       setShowPrompt(false);
@@ -9638,11 +9742,7 @@ function LiveTrading() {
       openAuthModal("signup");
       return;
     }
-    if (hasUsedTrial) {
-      navigate2("/premium-checkout");
-      return;
-    }
-    navigate2("/start-trial");
+    navigate2("/premium-checkout");
   };
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
@@ -15145,461 +15245,352 @@ function AdminDashboard() {
     ] })
   ] });
 }
-function ParticleBackground() {
-  const canvasRef = useRef(null);
-  const animationRef = useRef();
-  const appRef = useRef({
-    canvas: null,
-    ctx: null,
-    width: 0,
-    height: 0,
-    xC: 0,
-    yC: 0,
-    stepCount: 0,
-    particles: [],
-    lifespan: 1500,
-    popPerBirth: 1,
-    maxPop: 120,
-    birthFreq: 3,
-    gridSize: 8,
-    gridSteps: 0,
-    grid: [],
-    gridMaxIndex: 0,
-    drawnInLastFrame: 0,
-    deathCount: 0,
-    dataToImageRatio: 1
-  });
+function AuroraBackground() {
+  const [isReducedMotion, setIsReducedMotion] = useState(false);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      appRef.current.width = canvas.width;
-      appRef.current.height = canvas.height;
-      appRef.current.xC = canvas.width / 2;
-      appRef.current.yC = canvas.height / 2;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setIsReducedMotion(mediaQuery.matches);
+    const handleChange = (e) => {
+      setIsReducedMotion(e.matches);
     };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    appRef.current.canvas = canvas;
-    appRef.current.ctx = ctx;
-    ctx.imageSmoothingEnabled = false;
-    const gridSize = 8;
-    const gridSteps = Math.floor(1e3 / gridSize);
-    appRef.current.gridSize = gridSize;
-    appRef.current.gridSteps = gridSteps;
-    const grid = [];
-    let i = 0;
-    for (let xx = -500; xx < 500; xx += gridSize) {
-      for (let yy = -500; yy < 500; yy += gridSize) {
-        const r = Math.sqrt(xx * xx + yy * yy);
-        const r0 = 100;
-        let field;
-        if (r < r0) field = 255 / r0 * r;
-        else field = 255 - Math.min(255, (r - r0) / 2);
-        grid.push({
-          x: xx,
-          y: yy,
-          busyAge: 0,
-          spotIndex: i,
-          isEdge: xx === -500 ? "left" : xx === -500 + gridSize * (gridSteps - 1) ? "right" : yy === -500 ? "top" : yy === -500 + gridSize * (gridSteps - 1) ? "bottom" : false,
-          field
-        });
-        i++;
-      }
-    }
-    appRef.current.grid = grid;
-    appRef.current.gridMaxIndex = i;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const evolve = () => {
-      const app = appRef.current;
-      if (!app.ctx) return;
-      app.stepCount++;
-      app.grid.forEach((e) => {
-        if (e.busyAge > 0) e.busyAge++;
-      });
-      if (app.stepCount % app.birthFreq === 0 && app.particles.length + app.popPerBirth < app.maxPop) {
-        birth();
-      }
-      move();
-      draw();
-    };
-    const birth = () => {
-      const app = appRef.current;
-      const gridSpotIndex = Math.floor(Math.random() * app.gridMaxIndex);
-      const gridSpot = app.grid[gridSpotIndex];
-      const x = gridSpot.x;
-      const y = gridSpot.y;
-      const particle = {
-        hue: 210 + Math.floor(20 * Math.random()),
-        // Blue-gray range
-        sat: 40 + Math.floor(30 * Math.random()),
-        // Lower saturation for subtle effect
-        lum: 50 + Math.floor(20 * Math.random()),
-        // Lighter for visibility on dark bg
-        x,
-        y,
-        xLast: x,
-        yLast: y,
-        xSpeed: 0,
-        ySpeed: 0,
-        age: 0,
-        ageSinceStuck: 0,
-        attractor: {
-          oldIndex: gridSpotIndex,
-          gridSpotIndex
-        },
-        name: "seed-" + Math.ceil(1e7 * Math.random())
-      };
-      app.particles.push(particle);
-    };
-    const kill = (particleName) => {
-      const app = appRef.current;
-      app.particles = app.particles.filter((seed) => seed.name !== particleName);
-    };
-    const move = () => {
-      const app = appRef.current;
-      for (let i2 = 0; i2 < app.particles.length; i2++) {
-        const p = app.particles[i2];
-        p.xLast = p.x;
-        p.yLast = p.y;
-        const index = p.attractor.gridSpotIndex;
-        let gridSpot = app.grid[index];
-        if (Math.random() < 0.5) {
-          if (!gridSpot.isEdge) {
-            const topIndex = index - 1;
-            const bottomIndex = index + 1;
-            const leftIndex = index - app.gridSteps;
-            const rightIndex = index + app.gridSteps;
-            const topSpot = app.grid[topIndex];
-            const bottomSpot = app.grid[bottomIndex];
-            const leftSpot = app.grid[leftIndex];
-            const rightSpot = app.grid[rightIndex];
-            const chaos = 30;
-            const spots = [topSpot, bottomSpot, leftSpot, rightSpot];
-            let maxFieldSpot = spots[0];
-            let maxField = spots[0].field + chaos * Math.random();
-            for (const spot of spots) {
-              const field = spot.field + chaos * Math.random();
-              if (field > maxField) {
-                maxField = field;
-                maxFieldSpot = spot;
-              }
-            }
-            const potentialNewGridSpot = maxFieldSpot;
-            if (potentialNewGridSpot.busyAge === 0 || potentialNewGridSpot.busyAge > 15) {
-              p.ageSinceStuck = 0;
-              p.attractor.oldIndex = index;
-              p.attractor.gridSpotIndex = potentialNewGridSpot.spotIndex;
-              gridSpot = potentialNewGridSpot;
-              gridSpot.busyAge = 1;
-            } else {
-              p.ageSinceStuck++;
-            }
-          } else {
-            p.ageSinceStuck++;
-          }
-          if (p.ageSinceStuck === 10) {
-            kill(p.name);
-            continue;
-          }
-        }
-        const k = 5;
-        const visc = 0.4;
-        const dx = p.x - gridSpot.x;
-        const dy = p.y - gridSpot.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const xAcc = -k * dx;
-        const yAcc = -k * dy;
-        p.xSpeed += xAcc;
-        p.ySpeed += yAcc;
-        p.xSpeed *= visc;
-        p.ySpeed *= visc;
-        p.speed = Math.sqrt(p.xSpeed * p.xSpeed + p.ySpeed * p.ySpeed);
-        p.dist = dist;
-        p.x += 0.1 * p.xSpeed;
-        p.y += 0.1 * p.ySpeed;
-        p.age++;
-        if (p.age > app.lifespan) {
-          kill(p.name);
-          app.deathCount++;
-        }
-      }
-    };
-    const dataXYtoCanvasXY = (x, y) => {
-      const app = appRef.current;
-      const zoom = 1.6;
-      const xx = app.xC + x * zoom * app.dataToImageRatio;
-      const yy = app.yC + y * zoom * app.dataToImageRatio;
-      return { x: xx, y: yy };
-    };
-    const draw = () => {
-      const app = appRef.current;
-      if (!app.ctx) return;
-      app.drawnInLastFrame = 0;
-      if (!app.particles.length) return;
-      app.ctx.fillStyle = "rgba(2, 6, 23, 0.03)";
-      app.ctx.fillRect(0, 0, app.width, app.height);
-      for (let i2 = 0; i2 < app.particles.length; i2++) {
-        const p = app.particles[i2];
-        const h = p.hue + app.stepCount / 30;
-        const s = p.sat;
-        const l = p.lum;
-        const a = 1;
-        const last = dataXYtoCanvasXY(p.xLast, p.yLast);
-        const now = dataXYtoCanvasXY(p.x, p.y);
-        const attracSpot = app.grid[p.attractor.gridSpotIndex];
-        const attracXY = dataXYtoCanvasXY(attracSpot.x, attracSpot.y);
-        const oldAttracSpot = app.grid[p.attractor.oldIndex];
-        const oldAttracXY = dataXYtoCanvasXY(oldAttracSpot.x, oldAttracSpot.y);
-        app.ctx.beginPath();
-        app.ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
-        app.ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
-        app.ctx.moveTo(last.x, last.y);
-        app.ctx.lineTo(now.x, now.y);
-        app.ctx.lineWidth = 1.5 * app.dataToImageRatio;
-        app.ctx.stroke();
-        app.ctx.closePath();
-        app.ctx.beginPath();
-        app.ctx.lineWidth = 1.5 * app.dataToImageRatio;
-        app.ctx.moveTo(oldAttracXY.x, oldAttracXY.y);
-        app.ctx.lineTo(attracXY.x, attracXY.y);
-        app.ctx.arc(attracXY.x, attracXY.y, 1.5 * app.dataToImageRatio, 0, 2 * Math.PI, false);
-        app.ctx.strokeStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
-        app.ctx.fillStyle = `hsla(${h}, ${s}%, ${l}%, ${a})`;
-        app.ctx.stroke();
-        app.ctx.fill();
-        app.ctx.closePath();
-        app.drawnInLastFrame++;
-      }
-    };
-    const frame = () => {
-      evolve();
-      animationRef.current = requestAnimationFrame(frame);
-    };
-    frame();
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
-  return /* @__PURE__ */ jsx(
-    "canvas",
-    {
-      ref: canvasRef,
-      className: "fixed inset-0 w-full h-full pointer-events-none",
-      style: { background: "transparent", zIndex: 0 }
-    }
-  );
+  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+    /* @__PURE__ */ jsx("style", { children: `
+        @keyframes aurora-1 {
+          0%, 100% {
+            transform: translate(0%, 0%) rotate(0deg) scale(1);
+            opacity: 0.6;
+          }
+          33% {
+            transform: translate(30%, -20%) rotate(120deg) scale(1.1);
+            opacity: 0.8;
+          }
+          66% {
+            transform: translate(-20%, 30%) rotate(240deg) scale(0.95);
+            opacity: 0.7;
+          }
+        }
+
+        @keyframes aurora-2 {
+          0%, 100% {
+            transform: translate(0%, 0%) rotate(0deg) scale(1);
+            opacity: 0.5;
+          }
+          33% {
+            transform: translate(-30%, 30%) rotate(-120deg) scale(1.15);
+            opacity: 0.7;
+          }
+          66% {
+            transform: translate(25%, -25%) rotate(-240deg) scale(0.9);
+            opacity: 0.6;
+          }
+        }
+
+        @keyframes aurora-3 {
+          0%, 100% {
+            transform: translate(0%, 0%) rotate(0deg) scale(1);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translate(15%, 20%) rotate(180deg) scale(1.2);
+            opacity: 0.9;
+          }
+        }
+
+        @keyframes aurora-border {
+          0%, 100% {
+            border-radius: 50% 60% 70% 40%;
+          }
+          25% {
+            border-radius: 60% 40% 50% 70%;
+          }
+          50% {
+            border-radius: 70% 50% 60% 40%;
+          }
+          75% {
+            border-radius: 40% 70% 50% 60%;
+          }
+        }
+
+        .aurora-container {
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1;
+          overflow: hidden;
+          background: #0f172a;
+          pointer-events: none;
+        }
+
+        .aurora-gradient {
+          position: absolute;
+          width: 200%;
+          height: 200%;
+          top: -50%;
+          left: -50%;
+        }
+
+        .aurora-blob {
+          position: absolute;
+          filter: blur(80px);
+          mix-blend-mode: normal;
+          will-change: transform, opacity;
+          animation: aurora-border 20s ease-in-out infinite;
+        }
+
+        .aurora-blob-1 {
+          width: 70%;
+          height: 70%;
+          top: -5%;
+          left: 10%;
+          background: radial-gradient(circle at center,
+            rgba(59, 130, 246, 0.25) 0%,
+            rgba(59, 130, 246, 0.20) 25%,
+            rgba(59, 130, 246, 0.12) 50%,
+            transparent 70%
+          );
+          animation: aurora-1 25s ease-in-out infinite, aurora-border 20s ease-in-out infinite;
+        }
+
+        .aurora-blob-2 {
+          width: 80%;
+          height: 80%;
+          top: 25%;
+          right: -5%;
+          background: radial-gradient(circle at center,
+            rgba(79, 70, 229, 0.20) 0%,
+            rgba(79, 70, 229, 0.15) 25%,
+            rgba(79, 70, 229, 0.10) 50%,
+            transparent 70%
+          );
+          animation: aurora-2 30s ease-in-out infinite, aurora-border 25s ease-in-out infinite reverse;
+        }
+
+        .aurora-blob-3 {
+          width: 75%;
+          height: 75%;
+          bottom: 5%;
+          left: 15%;
+          background: radial-gradient(circle at center,
+            rgba(99, 102, 241, 0.22) 0%,
+            rgba(99, 102, 241, 0.17) 25%,
+            rgba(99, 102, 241, 0.10) 50%,
+            transparent 70%
+          );
+          animation: aurora-3 28s ease-in-out infinite, aurora-border 22s ease-in-out infinite;
+        }
+
+        .aurora-blob-4 {
+          width: 65%;
+          height: 65%;
+          top: 35%;
+          left: 35%;
+          background: radial-gradient(circle at center,
+            rgba(37, 99, 235, 0.18) 0%,
+            rgba(37, 99, 235, 0.14) 25%,
+            rgba(37, 99, 235, 0.08) 50%,
+            transparent 70%
+          );
+          animation: aurora-1 32s ease-in-out infinite reverse, aurora-border 18s ease-in-out infinite reverse;
+        }
+
+        .aurora-blob-5 {
+          width: 60%;
+          height: 60%;
+          bottom: 15%;
+          right: 10%;
+          background: radial-gradient(circle at center,
+            rgba(67, 56, 202, 0.20) 0%,
+            rgba(67, 56, 202, 0.15) 25%,
+            rgba(67, 56, 202, 0.09) 50%,
+            transparent 70%
+          );
+          animation: aurora-2 27s ease-in-out infinite reverse, aurora-border 23s ease-in-out infinite;
+        }
+
+        /* Accent gradient layers for more depth */
+        .aurora-blob-6 {
+          width: 55%;
+          height: 55%;
+          top: 55%;
+          left: 45%;
+          background: radial-gradient(circle at center,
+            rgba(30, 64, 175, 0.15) 0%,
+            rgba(30, 64, 175, 0.12) 25%,
+            transparent 60%
+          );
+          animation: aurora-3 24s ease-in-out infinite reverse, aurora-border 20s ease-in-out infinite reverse;
+        }
+
+        /* Reduced motion support - disabled to ensure animation always shows */
+        /* @media (prefers-reduced-motion: reduce) {
+          .aurora-blob {
+            animation: none !important;
+          }
+        } */
+
+        /* Noise texture overlay for added depth */
+        .aurora-gradient::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+          opacity: 0.4;
+          mix-blend-mode: overlay;
+          pointer-events: none;
+        }
+
+        /* Vignette effect for better content readability */
+        .aurora-container::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            ellipse at center,
+            transparent 0%,
+            rgba(15, 23, 42, 0.3) 70%,
+            rgba(15, 23, 42, 0.6) 100%
+          );
+          pointer-events: none;
+        }
+      ` }),
+    /* @__PURE__ */ jsx("div", { className: "aurora-container", children: /* @__PURE__ */ jsxs("div", { className: "aurora-gradient", children: [
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-1" }),
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-2" }),
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-3" }),
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-4" }),
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-5" }),
+      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-6" })
+    ] }) })
+  ] });
 }
 function LandingPage() {
   const [, navigate2] = useLocation();
   const { isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+  const [showLanguageSelection, setShowLanguageSelection] = useState(false);
+  useEffect(() => {
+    const languageSelected = localStorage.getItem("language-selected");
+    if (!languageSelected) {
+      setShowLanguageSelection(true);
+    }
+  }, []);
   useEffect(() => {
     if (isAuthenticated) {
       navigate2("/trades");
     }
   }, [isAuthenticated, navigate2]);
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative", children: [
-    /* @__PURE__ */ jsx(ParticleBackground, {}),
-    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between", children: [
-      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-blue-400" }),
-        /* @__PURE__ */ jsx("span", { className: "text-xl font-bold text-white", children: "InsiderPulse" })
-      ] }),
-      /* @__PURE__ */ jsxs("nav", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/login", children: /* @__PURE__ */ jsx(Button, { variant: "ghost", "data-testid": "button-login", children: "Sign In" }) }),
-        /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsx(Button, { "data-testid": "button-signup", children: "Get Started Free" }) })
-      ] })
+  if (showLanguageSelection) {
+    return /* @__PURE__ */ jsx(
+      LanguageSelection,
+      {
+        onLanguageSelected: () => setShowLanguageSelection(false)
+      }
+    );
+  }
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen relative", children: [
+    /* @__PURE__ */ jsx(AuroraBackground, {}),
+    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/60", children: /* @__PURE__ */ jsx("div", { className: "container flex h-16 items-center justify-between px-6", children: /* @__PURE__ */ jsx("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx("span", { className: "text-xl font-bold text-white", children: "InsiderPulse" }) }) }) }),
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-40 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl text-center", children: [
+      /* @__PURE__ */ jsx(Badge, { className: "mb-4", variant: "secondary", children: t("landing.tagline") }),
+      /* @__PURE__ */ jsx("h1", { className: "mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent", children: t("landing.title") }),
+      /* @__PURE__ */ jsx("p", { className: "mb-8 text-xl text-slate-300 max-w-2xl mx-auto", children: t("landing.description") }),
+      /* @__PURE__ */ jsx("div", { className: "flex justify-center", children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(
+        Button,
+        {
+          size: "lg",
+          className: "w-full sm:w-auto text-lg px-8 py-6\n                           bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700\n                           hover:from-blue-500 hover:via-blue-600 hover:to-indigo-600\n                           shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]\n                           hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)]\n                           transition-all duration-200 ease-out\n                           hover:-translate-y-0.5 active:translate-y-0\n                           border-0 text-white font-semibold",
+          "data-testid": "button-hero-browse",
+          children: [
+            t("landing.browse"),
+            /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
+          ]
+        }
+      ) }) }),
+      /* @__PURE__ */ jsx("p", { className: "mt-4 text-sm text-muted-foreground", children: t("landing.noCreditCard") })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20 md:py-32", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl text-center", children: [
-      /* @__PURE__ */ jsx(Badge, { className: "mb-4", variant: "secondary", children: "AI-Powered SEC Filing Analysis" }),
-      /* @__PURE__ */ jsx("h1", { className: "mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent", children: "Track Insider Trading in Real-Time" }),
-      /* @__PURE__ */ jsx("p", { className: "mb-8 text-xl text-slate-300 max-w-2xl mx-auto", children: "Get instant alerts and AI-powered insights from SEC Form 4 filings. Make informed investment decisions based on what corporate insiders are doing." }),
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row gap-4 justify-center", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "w-full sm:w-auto", "data-testid": "button-hero-signup", children: [
-          "Start Free Trial",
-          /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-4 w-4" })
-        ] }) }),
-        /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx(Button, { size: "lg", variant: "outline", className: "w-full sm:w-auto", "data-testid": "button-view-trades", children: "View Live Trades" }) })
-      ] }),
-      /* @__PURE__ */ jsx("p", { className: "mt-4 text-sm text-muted-foreground", children: "No credit card required • Free 48-hour delayed data • Upgrade anytime" })
-    ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Everything You Need to Track Insider Activity" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "Powerful features designed for serious investors" })
+        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: t("landing.features.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: t("landing.features.subtitle") })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
+      /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 lg:grid-cols-3 gap-8", children: [
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(Brain, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "AI-Powered Analysis" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "Advanced GPT analysis extracts buy/sell signals and significance scores (1-100) from every trade" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.aiAnalysis") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.aiAnalysisDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(Zap, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "Real-Time Updates" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "WebSocket-powered live updates deliver new insider trades the moment they're filed with the SEC" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.realtime") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.realtimeDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(BarChart3, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "Smart Filtering" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "Filter by ticker, signal type, significance score, and transaction type to find the trades that matter" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.filtering") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.filteringDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(Bell, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "Custom Alerts" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "Set up personalized notifications for specific companies or trade patterns you want to monitor" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.alerts") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.alertsDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "SEC Data Direct" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "Automated collection from official SEC EDGAR filings ensures accuracy and compliance" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.secData") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.secDataDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
           /* @__PURE__ */ jsx(Clock, { className: "h-10 w-10 text-primary mb-2" }),
-          /* @__PURE__ */ jsx(CardTitle, { children: "Historical Analysis" }),
-          /* @__PURE__ */ jsx(CardDescription, { children: "Access complete trading history and pattern analysis to identify insider buying trends" })
+          /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.historical") }),
+          /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.historicalDesc") })
         ] }) })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl", children: [
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "How InsiderPulse Works" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "From SEC filing to actionable insight in seconds" })
+        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: t("landing.howItWorks.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: t("landing.howItWorks.subtitle") })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-8", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "1" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Automated Data Collection" }),
-            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Our system monitors SEC EDGAR filings 24/7, automatically collecting Form 4 insider trading reports every 10 minutes." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: t("landing.howItWorks.step1") }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: t("landing.howItWorks.step1Desc") })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "2" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "AI-Powered Analysis" }),
-            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Each trade is instantly analyzed using advanced AI to extract significance scores, trading signals, and key insights about the transaction." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: t("landing.howItWorks.step2") }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: t("landing.howItWorks.step2Desc") })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "3" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Instant Alerts" }),
-            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Premium users receive real-time notifications when significant insider trades occur in their watchlist companies." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: t("landing.howItWorks.step3") }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: t("landing.howItWorks.step3Desc") })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
           /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold", children: "4" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: "Make Informed Decisions" }),
-            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: "Use our insights and analytics to guide your investment strategy based on what corporate insiders are doing with their own money." })
+            /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2 text-white", children: t("landing.howItWorks.step4") }),
+            /* @__PURE__ */ jsx("p", { className: "text-slate-400", children: t("landing.howItWorks.step4Desc") })
           ] })
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-12", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Simple, Transparent Pricing" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: "Choose the plan that's right for you" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 gap-8 max-w-3xl mx-auto", children: [
-        /* @__PURE__ */ jsxs(Card, { children: [
-          /* @__PURE__ */ jsxs(CardHeader, { children: [
-            /* @__PURE__ */ jsx(CardTitle, { children: "Free" }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-4", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-4xl font-bold", children: "$0" }),
-              /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "/month" })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
-            /* @__PURE__ */ jsxs("ul", { className: "space-y-3 mb-6", children: [
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "48-hour delayed insider trade data" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "AI-powered analysis and insights" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "Basic filtering and search" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "Historical data access" })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsx(Button, { variant: "outline", className: "w-full", "data-testid": "button-signup-free", children: "Get Started Free" }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs(Card, { className: "border-primary", children: [
-          /* @__PURE__ */ jsxs(CardHeader, { children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ jsx(CardTitle, { children: "Premium" }),
-              /* @__PURE__ */ jsx(Badge, { children: "Most Popular" })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-4", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-4xl font-bold", children: "$14" }),
-              /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "/month" })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
-            /* @__PURE__ */ jsxs("ul", { className: "space-y-3 mb-6", children: [
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "font-semibold", children: "Real-time insider trade data" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "WebSocket live updates" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "Custom alerts and notifications" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "Advanced filtering and analytics" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-primary flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { children: "Priority support" })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(Button, { className: "w-full", "data-testid": "button-upgrade-premium", children: "Upgrade to Premium" }) })
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "text-center mt-8", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500", children: "All plans include AI-powered analysis • Cancel anytime • No hidden fees" }) })
-    ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container py-20", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-3xl text-center", children: [
-      /* @__PURE__ */ jsx("h2", { className: "text-3xl font-bold mb-4 text-white", children: "Start Tracking Insider Trades Today" }),
-      /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400 mb-8", children: "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity." }),
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row gap-4 justify-center", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/signup", children: /* @__PURE__ */ jsxs(Button, { size: "lg", className: "w-full sm:w-auto", "data-testid": "button-cta-signup", children: [
-          "Get Started Free",
-          /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-4 w-4" })
-        ] }) }),
-        /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx(Button, { size: "lg", variant: "outline", className: "w-full sm:w-auto", "data-testid": "button-cta-demo", children: "View Demo" }) })
-      ] })
-    ] }) }),
-    /* @__PURE__ */ jsx("footer", { className: "border-t border-slate-800 bg-slate-900/50", children: /* @__PURE__ */ jsxs("div", { className: "container py-12", children: [
+    /* @__PURE__ */ jsx("footer", { className: "border-t border-slate-800 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "container px-4 lg:px-6 py-12", children: [
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-8", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Product" }),
-          /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Live Trades" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Pricing" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Features" }) }) })
-          ] })
+          /* @__PURE__ */ jsx("ul", { className: "space-y-2 text-sm text-slate-400", children: /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white", children: "Pricing" }) }) }) })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("h3", { className: "font-semibold mb-4 text-white", children: "Company" }),

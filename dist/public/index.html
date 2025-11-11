@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background-color: #0f172a; margin: 0; padding: 0;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
@@ -9,7 +9,7 @@
     <title>InsiderPulse - AI-Powered Insider Trading Monitor & Real-time SEC Filing Analysis</title>
     <meta name="title" content="InsiderPulse - AI-Powered Insider Trading Monitor & Real-time SEC Filing Analysis" />
     <meta name="description" content="Track insider trading activity in real-time with AI-powered analysis of SEC Form 4 filings. Get actionable insights, buy/sell signals, and significance scores for informed investment decisions." />
-    <meta name="keywords" content="insiderpulse, insider pulse, InsiderPulse, insider trading monitor, insider trading, SEC filings, Form 4, stock analysis, AI trading, investment signals, insider transactions, stock market, trading analysis, real-time insider trading" />
+    <meta name="keywords" content="insider trading, SEC filings, Form 4, stock analysis, AI trading, investment signals, insider transactions, stock market, trading analysis" />
     <meta name="author" content="InsiderPulse" />
     <link rel="canonical" href="https://insiderpulse.pro/" />
 
@@ -29,7 +29,7 @@
     <meta property="twitter:image" content="https://insiderpulse.pro/icon-192x192.png" />
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0f172a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="InsiderPulse" />
@@ -41,9 +41,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
 
+    <!-- Pretendard Korean Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Outfit:wght@100..900&family=Oxanium:wght@200..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100..900;1,100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Structured Data (JSON-LD) for SEO -->
     <script type="application/ld+json">
@@ -85,60 +88,10 @@
       ]
     }
     </script>
-
-    <!-- FAQ Structured Data for SEO -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is InsiderPulse?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "InsiderPulse is an AI-powered platform that tracks insider trading activity in real-time by monitoring SEC Form 4 filings. It provides actionable insights, buy/sell signals, and significance scores to help investors make informed decisions based on what corporate insiders are doing."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How does InsiderPulse track insider trading?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "InsiderPulse automatically monitors the SEC EDGAR database every 10 minutes for new Form 4 filings. Each insider trade is then analyzed using advanced AI to extract significance scores (1-100), trading signals (buy/sell/hold), and key insights. Premium users receive real-time WebSocket updates the moment new trades are filed."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is insider trading data free on InsiderPulse?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "InsiderPulse offers a free tier with 48-hour delayed insider trading data, AI-powered analysis, and basic filtering. The Premium plan ($14/month) provides real-time data access, live WebSocket updates, custom alerts, and advanced filtering features."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What is the difference between free and premium insider trading data?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The free plan provides insider trading data with a 48-hour delay, while the Premium plan delivers real-time data the moment it's filed with the SEC. Premium subscribers also get live WebSocket updates, custom alerts for specific companies, and advanced filtering capabilities."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How accurate is InsiderPulse AI analysis?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "InsiderPulse uses advanced GPT-based AI to analyze SEC Form 4 filings and extract buy/sell signals with significance scores from 1-100. The AI analyzes transaction details, filing patterns, and insider positions to provide actionable insights. All data is sourced directly from official SEC EDGAR filings to ensure accuracy."
-          }
-        }
-      ]
-    }
-    </script>
-    <script type="module" crossorigin src="/assets/main-D3uICcdZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/main-BDTlJ1Cw.css">
+    <script type="module" crossorigin src="/assets/main-WKYK9f53.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-DJ77FwaL.css">
   </head>
-  <body>
+  <body style="background-color: #0f172a; margin: 0; padding: 0; overflow-x: hidden;">
     <noscript>
       <div style="padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
         <h1>InsiderPulse - AI-Powered Insider Trading Monitor</h1>
@@ -149,7 +102,7 @@
     </noscript>
     <div id="root">
       <!-- Static SEO content for Google crawler - React will replace this -->
-      <div style="max-width: 1200px; margin: 0 auto; padding: 20px; font-family: system-ui, sans-serif;">
+      <div style="display: none; max-width: 1200px; margin: 0 auto; padding: 20px; font-family: system-ui, sans-serif;">
         <header style="text-align: center; padding: 40px 20px; border-bottom: 1px solid #eee;">
           <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; color: #1a1a1a;">
             InsiderPulse - AI-Powered Insider Trading Monitor
