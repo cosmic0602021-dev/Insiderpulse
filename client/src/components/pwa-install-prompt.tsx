@@ -20,6 +20,12 @@ export function PWAInstallPrompt() {
       return;
     }
 
+    // Check if card has been registered (payment completed)
+    const cardRegistered = localStorage.getItem('card-registered') === 'true';
+    if (!cardRegistered) {
+      return;
+    }
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInstalled = localStorage.getItem('pwa-installed') === 'true';

@@ -5,10 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
-import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { useAuth } from '@/contexts/auth-context';
 import { apiClient } from '@/lib/api';
 import html2canvas from 'html2canvas';
+import { hasPremiumAccess } from '@/lib/subscription-utils';
+import { useLocation } from 'wouter';
 
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
 const logoDark = '/insiderpulse_logo1.png';
@@ -56,6 +59,8 @@ interface RankingsResponse {
 
 export default function Ranking() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
@@ -65,6 +70,14 @@ export default function Ranking() {
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState<any | null>(null);
   const [sharedCardIndex, setSharedCardIndex] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Check if user has premium access
+  const isPremium = hasPremiumAccess(user);
+
+  console.log('[RANKING] User premium status:', {
+    isPremium,
+    user: user ? { tier: user.subscriptionTier, status: user.subscriptionStatus } : 'null'
+  });
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({
     queryKey: ['/api/rankings'],
@@ -77,7 +90,14 @@ export default function Ranking() {
     setRefreshing(false);
   };
 
-  const handleStockClick = async (ticker: string, companyName: string) => {
+  const handleStockClick = async (ticker: string, companyName: string, index: number) => {
+    // If user doesn't have premium and tries to access top 3, redirect to upgrade
+    if (!isPremium && index < 3) {
+      console.log('[RANKING] Free user trying to access top 3 ranking, redirecting to upgrade');
+      setLocation('/premium-checkout');
+      return;
+    }
+
     try {
       setSelectedTicker(ticker);
       // Get recent trade data for this ticker
@@ -327,14 +347,43 @@ export default function Ranking() {
 
       {/* Rankings List */}
       <div className="space-y-4">
-        {data?.rankings.map((item, index) => (
+        {data?.rankings.map((item, index) => {
+          const isLocked = !isPremium && index < 3; // Top 3 locked for free users
+
+          return (
           <Card
             key={item.ticker}
             ref={el => cardRefs.current[index] = el}
-            className="hover-elevate cursor-pointer relative"
+            className={`hover-elevate cursor-pointer relative ${isLocked ? 'overflow-hidden' : ''}`}
             data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
-            onClick={() => handleStockClick(item.ticker, item.companyName)}
+            onClick={() => handleStockClick(item.ticker, item.companyName, index)}
           >
+            {/* Lock Overlay for Top 3 (Free Users Only) */}
+            {isLocked && (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="text-center p-6 space-y-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-2">
+                    <Lock className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    {t('ranking.lockedTitle') || `Premium Feature: #${index + 1} Ranking`}
+                  </h3>
+                  <p className="text-sm text-gray-300 max-w-xs">
+                    {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns'}
+                  </p>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation('/premium-checkout');
+                    }}
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-6 py-2"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    {t('ranking.unlockButton') || 'Unlock Top Rankings'}
+                  </Button>
+                </div>
+              </div>
+            )}
             {/* 공유 버튼 */}
             <Button
               size="icon"
@@ -352,7 +401,7 @@ export default function Ranking() {
               )}
             </Button>
 
-            <CardContent className="p-3 sm:p-6 relative">
+            <CardContent className={`p-3 sm:p-6 relative ${isLocked ? 'blur-sm' : ''}`}>
               {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
                 <img
@@ -605,7 +654,8 @@ export default function Ranking() {
               ) : null}
             </CardContent>
           </Card>
-        ))}
+        );
+        })}
       </div>
 
       {/* Empty state */}

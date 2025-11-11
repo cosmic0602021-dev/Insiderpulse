@@ -273,14 +273,19 @@ export function AppSidebar() {
           </div>
         )}
 
-        {/* Only show upgrade button for free users (not active, not trialing) */}
-        {user && user.subscriptionTier !== 'insider_pro' && user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing' && (
+        {/* Only show upgrade button for free users (not Pro tier OR not active/trialing) */}
+        {user && !(user.subscriptionTier === 'insider_pro' && (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) && (
           <Button
             className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
             asChild
             data-testid="button-upgrade-premium"
           >
-            <Link href="/premium-checkout" onClick={() => console.log('Premium checkout clicked')}>
+            <Link href="/premium-checkout" onClick={() => {
+              console.log('[APP SIDEBAR] Upgrade button clicked. User:', {
+                tier: user.subscriptionTier,
+                status: user.subscriptionStatus
+              });
+            }}>
               <Crown className="h-4 w-4 mr-2" />
               Upgrade to Premium
             </Link>

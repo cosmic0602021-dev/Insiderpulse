@@ -4,6 +4,7 @@ import { Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
+import { hasPremiumAccess } from '@/lib/subscription-utils';
 
 interface TrialTimerBannerProps {
   trialExpiresAt: string | Date;
@@ -17,8 +18,7 @@ export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBanner
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   // Don't show banner if user has active or trialing subscription
-  if (user && user.subscriptionTier === 'insider_pro' &&
-     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 

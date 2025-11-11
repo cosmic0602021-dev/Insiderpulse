@@ -4,6 +4,7 @@ import { AlertTriangle, TrendingUp, Clock, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
+import { hasPremiumAccess } from '@/lib/subscription-utils';
 
 interface TrialExpiringAlertProps {
   hoursLeft: number;
@@ -16,7 +17,7 @@ export function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }: TrialExp
   const { user } = useAuth();
 
   // Don't show alert if user has active paid subscription
-  if (user && user.subscriptionTier === 'insider_pro' && user.subscriptionStatus === 'active') {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 
@@ -62,8 +63,7 @@ export function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscr
   const { user } = useAuth();
 
   // Don't show alert if user has active subscription
-  if (user && user.subscriptionTier === 'insider_pro' &&
-     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 
@@ -118,8 +118,7 @@ export function BigTradeAlert({ companyName, ticker, tradeValue, traderTitle, on
   const { user } = useAuth();
 
   // PRO 사용자에게는 무료체험 알림을 표시하지 않음
-  if (user?.subscriptionTier === 'insider_pro' &&
-      (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 

@@ -2,6 +2,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Clock, Lock } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
+import { hasPremiumAccess } from "@/lib/subscription-utils";
 
 interface FreeZoneBannerProps {
   delayHours: number;
@@ -12,8 +13,7 @@ export function FreeZoneBanner({ delayHours }: FreeZoneBannerProps) {
   const { user } = useAuth();
 
   // Don't show banner if user has premium subscription
-  if (user && user.subscriptionTier === 'insider_pro' &&
-     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 
@@ -38,8 +38,7 @@ export function UnlockPrompt({ onUnlock }: UnlockPromptProps) {
   const { user } = useAuth();
 
   // Don't show prompt if user has premium subscription
-  if (user && user.subscriptionTier === 'insider_pro' &&
-     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
 

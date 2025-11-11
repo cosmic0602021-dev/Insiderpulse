@@ -74,12 +74,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (newUser: User, newToken: string) => {
+    console.log('🔐 [AUTH CONTEXT] Login called with user:', {
+      email: newUser.email,
+      tier: newUser.subscriptionTier,
+      status: newUser.subscriptionStatus,
+      hasUsedTrial: newUser.hasUsedTrial
+    });
+
     setUser(newUser);
     setToken(newToken);
     localStorage.setItem('authToken', newToken);
     localStorage.setItem('authUser', JSON.stringify(newUser));
     // Set token in API client
     apiClient.setToken(newToken);
+
+    console.log('✅ [AUTH CONTEXT] User logged in and state updated');
   };
 
   const logout = () => {

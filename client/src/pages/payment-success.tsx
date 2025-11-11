@@ -27,6 +27,13 @@ export default function PaymentSuccess() {
       }
 
       console.log('✅ Subscription checkout successful, session:', sessionId);
+      console.log('🔄 [PAYMENT SUCCESS] Clearing all localStorage caches to force fresh data load');
+
+      // Clear ALL potentially stale cached data EXCEPT authToken
+      const savedToken = localStorage.getItem('authToken');
+      localStorage.removeItem('authUser'); // Remove stale user data
+      localStorage.removeItem('pwa-installed');
+      localStorage.removeItem('pwa-prompt-dismissed');
 
       // Wait longer for webhook to process (Stripe webhooks can take a few seconds)
       // Increased from 3s to 5s to ensure webhook has time to complete
@@ -53,19 +60,32 @@ export default function PaymentSuccess() {
 
           const response = await apiClient.verifyToken();
           if (response.success && response.user) {
-            console.log('🔄 User data received:', {
+            console.log('🔄 [PAYMENT SUCCESS] User data received from server:', {
               tier: response.user.subscriptionTier,
-              status: response.user.subscriptionStatus
+              status: response.user.subscriptionStatus,
+              hasUsedTrial: response.user.hasUsedTrial
             });
 
-            // Check if user is now premium
-            if (response.user.subscriptionTier === 'insider_pro') {
-              console.log('✅ User successfully upgraded to premium!');
+            // Check if user is now premium (active OR trialing)
+            const isPremium = response.user.subscriptionTier === 'insider_pro' &&
+                            (response.user.subscriptionStatus === 'active' || response.user.subscriptionStatus === 'trialing');
+
+            if (isPremium) {
+              console.log('✅ [PAYMENT SUCCESS] User successfully upgraded to premium!');
+              console.log('🔐 [PAYMENT SUCCESS] Logging in with fresh user data...');
+
+              // Force login with fresh data from server
               login(response.user, token);
               setPaymentStatus('success');
               userUpdated = true;
+
+              // Set flag for PWA install prompt
+              localStorage.setItem('card-registered', 'true');
+
+              console.log('✅ [PAYMENT SUCCESS] Payment success process completed successfully');
             } else {
-              console.log(`⚠️ User still shows tier: ${response.user.subscriptionTier}, will retry...`);
+              console.log(`⚠️ [PAYMENT SUCCESS] User tier: ${response.user.subscriptionTier}, status: ${response.user.subscriptionStatus}`);
+              console.log(`⚠️ [PAYMENT SUCCESS] Premium check failed, will retry... (attempt ${retries + 1}/${maxRetries})`);
               retries++;
               if (retries < maxRetries) {
                 // Wait 2 more seconds before retrying
@@ -113,6 +133,8 @@ export default function PaymentSuccess() {
     if (success && user && user.subscriptionTier === 'insider_pro') {
       console.log('✅ Manual refresh successful, subscription activated!');
       setPaymentStatus('success');
+      // Set flag for PWA install prompt
+      localStorage.setItem('card-registered', 'true');
     } else {
       console.log('❌ Manual refresh failed or subscription not active yet');
       alert('Subscription not activated yet. Please wait a moment and try again, or contact support.');

@@ -138,9 +138,20 @@ export default function LiveTrading() {
       sortBy: 'filedDate'
     }),
     queryFn: async () => {
+      console.log('[LIVE TRADING] Fetching trades and access level...');
       const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'filedDate');
+      console.log('[LIVE TRADING] Response received:', {
+        tradesCount: response.trades?.length || 0,
+        hasAccessLevel: !!response.accessLevel,
+        accessLevel: response.accessLevel
+      });
       // Update global access level
       if (response.accessLevel) {
+        console.log('[LIVE TRADING] Updating access level:', {
+          hasRealtimeAccess: response.accessLevel.hasRealtimeAccess,
+          isDelayed: response.accessLevel.isDelayed,
+          delayHours: response.accessLevel.delayHours
+        });
         setAccessLevel(response.accessLevel);
       }
       return response;

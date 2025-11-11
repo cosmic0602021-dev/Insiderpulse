@@ -3,6 +3,7 @@ import { Lock, TrendingUp, Users, Unlock, ChevronDown, ArrowDown } from "lucide-
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import type { InsiderTrade } from "@shared/schema";
+import { hasPremiumAccess } from "@/lib/subscription-utils";
 
 interface LockedTradeCardProps {
   trade: InsiderTrade;
@@ -85,10 +86,12 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
   if (trades.length === 0) return null;
 
   // Don't show locked section if user has premium subscription
-  if (user && user.subscriptionTier === 'insider_pro' &&
-     (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
+  if (hasPremiumAccess(user)) {
+    console.log('[LOCKED TRADES] User has premium access, hiding locked section');
     return null;
   }
+
+  console.log('[LOCKED TRADES] Showing locked trades section for free user');
 
   return (
     <div className="space-y-4">

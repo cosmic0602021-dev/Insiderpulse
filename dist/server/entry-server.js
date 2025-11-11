@@ -4410,11 +4410,18 @@ function AuthProvider({ children }) {
     initAuth();
   }, []);
   const login = (newUser, newToken) => {
+    console.log("🔐 [AUTH CONTEXT] Login called with user:", {
+      email: newUser.email,
+      tier: newUser.subscriptionTier,
+      status: newUser.subscriptionStatus,
+      hasUsedTrial: newUser.hasUsedTrial
+    });
     setUser(newUser);
     setToken(newToken);
     localStorage.setItem("authToken", newToken);
     localStorage.setItem("authUser", JSON.stringify(newUser));
     apiClient.setToken(newToken);
+    console.log("✅ [AUTH CONTEXT] User logged in and state updated");
   };
   const logout = () => {
     setUser(null);
@@ -4707,13 +4714,18 @@ function AppSidebar() {
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: user.subscriptionTier === "insider_pro" ? "Pro" : "Free" })
         ] })
       ] }),
-      user && user.subscriptionTier !== "insider_pro" && user.subscriptionStatus !== "active" && user.subscriptionStatus !== "trialing" && /* @__PURE__ */ jsx(
+      user && !(user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) && /* @__PURE__ */ jsx(
         Button,
         {
           className: "w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold",
           asChild: true,
           "data-testid": "button-upgrade-premium",
-          children: /* @__PURE__ */ jsxs(Link, { href: "/premium-checkout", onClick: () => console.log("Premium checkout clicked"), children: [
+          children: /* @__PURE__ */ jsxs(Link, { href: "/premium-checkout", onClick: () => {
+            console.log("[APP SIDEBAR] Upgrade button clicked. User:", {
+              tier: user.subscriptionTier,
+              status: user.subscriptionStatus
+            });
+          }, children: [
             /* @__PURE__ */ jsx(Crown, { className: "h-4 w-4 mr-2" }),
             "Upgrade to Premium"
           ] })
@@ -4954,6 +4966,10 @@ function PWAInstallPrompt() {
     if (location2 !== "/trades") {
       return;
     }
+    const cardRegistered = localStorage.getItem("card-registered") === "true";
+    if (!cardRegistered) {
+      return;
+    }
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
     const isInstalled = localStorage.getItem("pwa-installed") === "true";
     const isDismissed = localStorage.getItem("pwa-prompt-dismissed") === "true";
@@ -5093,9 +5109,17 @@ const AccessContext = createContext(void 0);
 function AccessProvider({ children }) {
   const [accessLevel, setAccessLevel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth();
   const refreshAccessLevel = async () => {
+    console.log("🔄 [ACCESS CONTEXT] Refreshing access level...");
+    console.log("   isAuthenticated:", isAuthenticated);
+    console.log("   user:", user ? {
+      email: user.email,
+      tier: user.subscriptionTier,
+      status: user.subscriptionStatus
+    } : "null");
     if (!isAuthenticated || !token) {
+      console.log("🔒 [ACCESS CONTEXT] User not authenticated, setting free access");
       setAccessLevel({
         hasRealtimeAccess: false,
         isDelayed: true,
@@ -5105,13 +5129,22 @@ function AccessProvider({ children }) {
     }
     try {
       const trialStatus = await apiClient.getTrialStatus();
+      console.log("✅ [ACCESS CONTEXT] Trial status received:", {
+        canAccessRealtime: trialStatus.canAccessRealtime,
+        tier: trialStatus.tier,
+        status: trialStatus.status,
+        isTrialing: trialStatus.isTrialing
+      });
       setAccessLevel({
         hasRealtimeAccess: trialStatus.canAccessRealtime,
         isDelayed: !trialStatus.canAccessRealtime,
         delayHours: trialStatus.canAccessRealtime ? 0 : 48
       });
+      console.log("✅ [ACCESS CONTEXT] Access level updated:", {
+        hasRealtimeAccess: trialStatus.canAccessRealtime
+      });
     } catch (error) {
-      console.error("Failed to fetch access level:", error);
+      console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
       setAccessLevel({
         hasRealtimeAccess: false,
         isDelayed: true,
@@ -5120,13 +5153,14 @@ function AccessProvider({ children }) {
     }
   };
   useEffect(() => {
+    console.log("🔄 [ACCESS CONTEXT] useEffect triggered - isAuthenticated:", isAuthenticated, ", token:", !!token);
     const loadAccessLevel = async () => {
       setIsLoading(true);
       await refreshAccessLevel();
       setIsLoading(false);
     };
     loadAccessLevel();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, user == null ? void 0 : user.subscriptionTier, user == null ? void 0 : user.subscriptionStatus]);
   return /* @__PURE__ */ jsx(AccessContext.Provider, { value: { accessLevel, setAccessLevel, isLoading, refreshAccessLevel }, children });
 }
 function useAccess() {
@@ -9255,6 +9289,22 @@ function TradeDetailModal({
     ] }) })
   ] });
 }
+function hasPremiumAccess(user) {
+  if (!user) {
+    return false;
+  }
+  const isPro = user.subscriptionTier === "insider_pro";
+  const isActive = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing";
+  console.log("[SUBSCRIPTION UTILS] hasPremiumAccess check:", {
+    email: user.email,
+    tier: user.subscriptionTier,
+    status: user.subscriptionStatus,
+    isPro,
+    isActive,
+    result: isPro && isActive
+  });
+  return isPro && isActive;
+}
 function LockedTradeCard({ trade, onUnlock }) {
   var _a, _b, _c;
   const { t } = useLanguage();
@@ -9308,9 +9358,11 @@ function LockedTradesSection({ trades, onUnlock }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   if (trades.length === 0) return null;
-  if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+  if (hasPremiumAccess(user)) {
+    console.log("[LOCKED TRADES] User has premium access, hiding locked section");
     return null;
   }
+  console.log("[LOCKED TRADES] Showing locked trades section for free user");
   return /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
@@ -9361,7 +9413,7 @@ function LockedTradesSection({ trades, onUnlock }) {
 function FreeZoneBanner({ delayHours }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
   return /* @__PURE__ */ jsx(Alert, { className: "border-amber-500/50 bg-amber-50 dark:bg-amber-900/20", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
@@ -9374,7 +9426,7 @@ function TrialTimerBanner({ trialExpiresAt, onUpgrade }) {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState("");
-  if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
   useEffect(() => {
@@ -9458,7 +9510,7 @@ function TrialExpiredBanner({ onUpgrade }) {
 function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  if (user && user.subscriptionTier === "insider_pro" && user.subscriptionStatus === "active") {
+  if (hasPremiumAccess(user)) {
     return null;
   }
   return /* @__PURE__ */ jsxs(Alert, { className: "border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 relative", children: [
@@ -9496,7 +9548,7 @@ function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }) {
 function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
   const formatValue = (value) => {
@@ -9540,7 +9592,7 @@ function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }) 
 function BigTradeAlert({ companyName, ticker, tradeValue, traderTitle, onDismiss, onUnlock }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  if ((user == null ? void 0 : user.subscriptionTier) === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+  if (hasPremiumAccess(user)) {
     return null;
   }
   const formatValue = (value) => {
@@ -9751,8 +9803,20 @@ function LiveTrading() {
       sortBy: "filedDate"
     }),
     queryFn: async () => {
+      var _a;
+      console.log("[LIVE TRADING] Fetching trades and access level...");
       const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, void 0, void 0, "filedDate");
+      console.log("[LIVE TRADING] Response received:", {
+        tradesCount: ((_a = response.trades) == null ? void 0 : _a.length) || 0,
+        hasAccessLevel: !!response.accessLevel,
+        accessLevel: response.accessLevel
+      });
       if (response.accessLevel) {
+        console.log("[LIVE TRADING] Updating access level:", {
+          hasRealtimeAccess: response.accessLevel.hasRealtimeAccess,
+          isDelayed: response.accessLevel.isDelayed,
+          delayHours: response.accessLevel.delayHours
+        });
         setAccessLevel(response.accessLevel);
       }
       return response;
@@ -10066,6 +10130,8 @@ const logoLight$4 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
 const logoDark$4 = "/insiderpulse_logo1.png";
 function Ranking() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState(null);
@@ -10075,6 +10141,11 @@ function Ranking() {
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState(null);
   const [sharedCardIndex, setSharedCardIndex] = useState(null);
   const cardRefs = useRef([]);
+  const isPremium = hasPremiumAccess(user);
+  console.log("[RANKING] User premium status:", {
+    isPremium,
+    user: user ? { tier: user.subscriptionTier, status: user.subscriptionStatus } : "null"
+  });
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/rankings"],
     staleTime: 5 * 60 * 1e3
@@ -10085,7 +10156,12 @@ function Ranking() {
     await refetch();
     setRefreshing(false);
   };
-  const handleStockClick = async (ticker, companyName) => {
+  const handleStockClick = async (ticker, companyName, index) => {
+    if (!isPremium && index < 3) {
+      console.log("[RANKING] Free user trying to access top 3 ranking, redirecting to upgrade");
+      setLocation("/premium-checkout");
+      return;
+    }
     try {
       setSelectedTicker(ticker);
       const allTrades = await apiClient.getInsiderTrades(100, 0);
@@ -10281,249 +10357,271 @@ function Ranking() {
       }),
       " ET"
     ] }),
-    /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => /* @__PURE__ */ jsxs(
-      Card,
-      {
-        ref: (el) => cardRefs.current[index] = el,
-        className: "hover-elevate cursor-pointer relative",
-        "data-testid": `ranking-item-${item.ticker.toLowerCase()}`,
-        onClick: () => handleStockClick(item.ticker, item.companyName),
-        children: [
-          /* @__PURE__ */ jsx(
-            Button,
-            {
-              size: "icon",
-              variant: "ghost",
-              className: "absolute top-2 right-2 z-10 hover:bg-muted/50",
-              onClick: (e) => {
-                e.stopPropagation();
-                shareRankingCard(index);
-              },
-              children: sharedCardIndex === index ? /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Share2, { className: "h-4 w-4" })
-            }
-          ),
-          /* @__PURE__ */ jsxs(CardContent, { className: "p-3 sm:p-6 relative", children: [
-            /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden", children: [
-              /* @__PURE__ */ jsx(
-                "img",
+    /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => {
+      const isLocked = !isPremium && index < 3;
+      return /* @__PURE__ */ jsxs(
+        Card,
+        {
+          ref: (el) => cardRefs.current[index] = el,
+          className: `hover-elevate cursor-pointer relative ${isLocked ? "overflow-hidden" : ""}`,
+          "data-testid": `ranking-item-${item.ticker.toLowerCase()}`,
+          onClick: () => handleStockClick(item.ticker, item.companyName, index),
+          children: [
+            isLocked && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm", children: /* @__PURE__ */ jsxs("div", { className: "text-center p-6 space-y-4", children: [
+              /* @__PURE__ */ jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-2", children: /* @__PURE__ */ jsx(Lock, { className: "w-8 h-8 text-amber-500" }) }),
+              /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-white", children: t("ranking.lockedTitle") || `Premium Feature: #${index + 1} Ranking` }),
+              /* @__PURE__ */ jsx("p", { className: "text-sm text-gray-300 max-w-xs", children: t("ranking.lockedDescription") || "Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns" }),
+              /* @__PURE__ */ jsxs(
+                Button,
                 {
-                  src: logoLight$4,
-                  alt: "InsiderPulse",
-                  className: "w-48 sm:w-80 h-auto opacity-10 select-none dark:hidden"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "img",
-                {
-                  src: logoDark$4,
-                  alt: "InsiderPulse",
-                  className: "w-48 sm:w-80 h-auto opacity-10 select-none hidden dark:block"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between relative z-10 flex-wrap gap-2", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 sm:gap-4 min-w-0 flex-1", children: [
-                /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg", children: /* @__PURE__ */ jsxs("span", { className: "text-lg font-bold text-primary", children: [
-                  "#",
-                  index + 1
-                ] }) }),
-                /* @__PURE__ */ jsxs("div", { className: "relative h-16 w-16 flex-shrink-0", children: [
-                  /* @__PURE__ */ jsx(
-                    "img",
-                    {
-                      src: `https://assets.parqet.com/logos/resolution/${item.ticker}.png`,
-                      alt: `${item.companyName} logo`,
-                      className: "h-16 w-16 rounded-lg object-contain",
-                      onError: (e) => {
-                        var _a;
-                        const target = e.target;
-                        if (target.src.includes("parqet.com")) {
-                          target.src = `https://eodhd.com/img/logos/US/${item.ticker}.png`;
-                        } else {
-                          target.style.display = "none";
-                          const iconDiv = (_a = target.parentElement) == null ? void 0 : _a.querySelector(".fallback-icon");
-                          if (iconDiv) iconDiv.style.display = "flex";
-                        }
-                      }
-                    }
-                  ),
-                  /* @__PURE__ */ jsx("div", { className: "fallback-icon h-16 w-16 bg-muted rounded-lg hidden items-center justify-center", style: { display: "none" }, children: /* @__PURE__ */ jsx(Building2, { className: "h-8 w-8 text-muted-foreground" }) })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "min-w-0 flex-1", children: [
-                  /* @__PURE__ */ jsx("h3", { className: "text-base sm:text-xl font-semibold truncate", "data-testid": `text-ticker-${item.ticker.toLowerCase()}`, children: item.ticker }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground truncate", "data-testid": `text-company-${item.ticker.toLowerCase()}`, children: item.companyName }),
-                  item.patternSignals && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full", children: [
-                    "추천 이유: ",
-                    item.patternSignals
-                  ] }) }),
-                  !item.patternSignals && item.netBuying > 0 && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-green-100 text-green-700 border-green-200", children: [
-                    "추천 이유: 순매수 $",
-                    (item.netBuying / 1e6).toFixed(1),
-                    "M"
-                  ] }) })
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "flex items-center flex-shrink-0", children: /* @__PURE__ */ jsx(
-                Badge,
-                {
-                  className: `${getRecommendationColor(item.recommendation)} text-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-xs md:text-sm whitespace-nowrap`,
-                  "data-testid": `badge-recommendation-${item.ticker.toLowerCase()}`,
-                  children: getRecommendationText(item.recommendation)
-                }
-              ) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
-                /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium", children: item.totalTrades }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.tradesLast30Days") })
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                item.buyTrades > item.sellTrades ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }) : item.buyTrades < item.sellTrades ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" }) : /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" }),
-                /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ jsxs("p", { className: `text-xs sm:text-sm font-medium ${item.buyTrades > item.sellTrades ? "text-green-600" : item.buyTrades < item.sellTrades ? "text-red-600" : "text-gray-600"}`, children: [
-                    item.buyTrades,
-                    " / ",
-                    item.sellTrades
-                  ] }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: "Buy / Sell" })
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
-                /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.avgTradeValue) }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgTradeValue") })
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                /* @__PURE__ */ jsx("div", { className: "h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-blue-500 flex-shrink-0" }),
-                /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.netBuying) }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.netBuying") })
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx("div", { className: "mt-4 text-sm text-muted-foreground", children: /* @__PURE__ */ jsxs("span", { children: [
-              "최근 거래: ",
-              new Date(item.lastTradeDate).toLocaleDateString("ko-KR")
-            ] }) }),
-            item.insiders && item.insiders.length > 0 ? /* @__PURE__ */ jsxs("div", { className: "mt-4 border-t pt-4", children: [
-              /* @__PURE__ */ jsxs("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400", children: [
-                "동시 매수자 ",
-                item.insiders.length,
-                "명"
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "space-y-3", children: item.insiders.slice(0, 4).map((insider, index2) => /* @__PURE__ */ jsxs(
-                "div",
-                {
-                  className: "bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
                   onClick: (e) => {
                     e.stopPropagation();
-                    const currentPrice = insider.pricePerShare * (1 + Math.random() * 0.1 - 0.05);
-                    const priceTargets = {
-                      conservative: insider.pricePerShare * 1.05,
-                      realistic: insider.pricePerShare * 1.15,
-                      optimistic: insider.pricePerShare * 1.25
-                    };
-                    const insiderTradeData = {
-                      ticker: item.ticker,
-                      companyName: item.companyName,
-                      traderName: insider.name,
-                      traderTitle: insider.title,
-                      tradeType: insider.tradeType,
-                      shares: insider.shares,
-                      pricePerShare: insider.pricePerShare,
-                      totalValue: insider.totalValue,
-                      filedDate: insider.date,
-                      secFilingUrl: insider.secFilingUrl,
-                      currentPrice,
-                      predictionAccuracy: Math.floor(Math.random() * 20 + 75),
-                      impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
-                      aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
-                      comprehensiveAnalysis: {
-                        executiveSummary: `${insider.name} (${insider.title})이(가) ${item.companyName}의 주식 ${insider.shares.toLocaleString()}주를 $${insider.pricePerShare.toFixed(2)}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.`,
-                        priceTargets,
-                        riskAssessment: {
-                          level: "LOW",
-                          mitigation: "내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다."
-                        },
-                        actionableRecommendation: `${insider.title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. $${insider.pricePerShare.toFixed(2)} 근처에서 진입을 고려하세요.`,
-                        confidence: 85,
-                        timeHorizon: "3-6개월",
-                        marketContext: {
-                          sentiment: "BULLISH",
-                          keyFactors: [
-                            `${insider.title} 직책의 내부자 매수`,
-                            `총 거래액: $${(insider.totalValue / 1e3).toFixed(0)}K`,
-                            `동시 매수자 ${item.insiders.length}명`
-                          ]
-                        },
-                        catalysts: [
-                          "임원진의 직접 매수 활동",
-                          "내부자 신뢰도 증가",
-                          `${item.insiders.length}명의 동시 진입`
-                        ]
-                      }
-                    };
-                    setSelectedTradeData(insiderTradeData);
-                    setShowTradeModal(true);
+                    setLocation("/premium-checkout");
                   },
+                  className: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-6 py-2",
                   children: [
-                    /* @__PURE__ */ jsx("div", { className: "flex items-start justify-between mb-3", children: /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-1", children: [
-                        /* @__PURE__ */ jsx("span", { className: "font-semibold text-base", children: insider.name }),
-                        /* @__PURE__ */ jsx(
-                          Badge,
-                          {
-                            variant: "secondary",
-                            className: "text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                            children: "매수"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: insider.title })
-                    ] }) }),
-                    /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-3 text-xs", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "매수 가격" }),
-                        /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-blue-600 dark:text-blue-400", children: [
-                          "$",
-                          insider.pricePerShare.toFixed(2)
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "주식 수" }),
-                        /* @__PURE__ */ jsx("p", { className: "font-semibold text-sm", children: insider.shares.toLocaleString() })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "총액" }),
-                        /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-green-600 dark:text-green-400", children: [
-                          "$",
-                          (insider.totalValue / 1e3).toFixed(0),
-                          "K"
-                        ] })
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsx("div", { className: "mt-3 pt-2 border-t border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-xs text-muted-foreground", children: [
-                      /* @__PURE__ */ jsx(Calendar, { className: "h-3.5 w-3.5" }),
-                      /* @__PURE__ */ jsxs("span", { children: [
-                        "거래일: ",
-                        new Date(insider.date).toLocaleDateString("ko-KR")
-                      ] })
-                    ] }) })
+                    /* @__PURE__ */ jsx(Crown, { className: "w-4 h-4 mr-2" }),
+                    t("ranking.unlockButton") || "Unlock Top Rankings"
                   ]
+                }
+              )
+            ] }) }),
+            /* @__PURE__ */ jsx(
+              Button,
+              {
+                size: "icon",
+                variant: "ghost",
+                className: "absolute top-2 right-2 z-10 hover:bg-muted/50",
+                onClick: (e) => {
+                  e.stopPropagation();
+                  shareRankingCard(index);
                 },
-                `${insider.name}-${index2}`
-              )) })
-            ] }) : null
-          ] })
-        ]
-      },
-      item.ticker
-    )) }),
+                children: sharedCardIndex === index ? /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Share2, { className: "h-4 w-4" })
+              }
+            ),
+            /* @__PURE__ */ jsxs(CardContent, { className: `p-3 sm:p-6 relative ${isLocked ? "blur-sm" : ""}`, children: [
+              /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden", children: [
+                /* @__PURE__ */ jsx(
+                  "img",
+                  {
+                    src: logoLight$4,
+                    alt: "InsiderPulse",
+                    className: "w-48 sm:w-80 h-auto opacity-10 select-none dark:hidden"
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  "img",
+                  {
+                    src: logoDark$4,
+                    alt: "InsiderPulse",
+                    className: "w-48 sm:w-80 h-auto opacity-10 select-none hidden dark:block"
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between relative z-10 flex-wrap gap-2", children: [
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 sm:gap-4 min-w-0 flex-1", children: [
+                  /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg", children: /* @__PURE__ */ jsxs("span", { className: "text-lg font-bold text-primary", children: [
+                    "#",
+                    index + 1
+                  ] }) }),
+                  /* @__PURE__ */ jsxs("div", { className: "relative h-16 w-16 flex-shrink-0", children: [
+                    /* @__PURE__ */ jsx(
+                      "img",
+                      {
+                        src: `https://assets.parqet.com/logos/resolution/${item.ticker}.png`,
+                        alt: `${item.companyName} logo`,
+                        className: "h-16 w-16 rounded-lg object-contain",
+                        onError: (e) => {
+                          var _a;
+                          const target = e.target;
+                          if (target.src.includes("parqet.com")) {
+                            target.src = `https://eodhd.com/img/logos/US/${item.ticker}.png`;
+                          } else {
+                            target.style.display = "none";
+                            const iconDiv = (_a = target.parentElement) == null ? void 0 : _a.querySelector(".fallback-icon");
+                            if (iconDiv) iconDiv.style.display = "flex";
+                          }
+                        }
+                      }
+                    ),
+                    /* @__PURE__ */ jsx("div", { className: "fallback-icon h-16 w-16 bg-muted rounded-lg hidden items-center justify-center", style: { display: "none" }, children: /* @__PURE__ */ jsx(Building2, { className: "h-8 w-8 text-muted-foreground" }) })
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0 flex-1", children: [
+                    /* @__PURE__ */ jsx("h3", { className: "text-base sm:text-xl font-semibold truncate", "data-testid": `text-ticker-${item.ticker.toLowerCase()}`, children: item.ticker }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground truncate", "data-testid": `text-company-${item.ticker.toLowerCase()}`, children: item.companyName }),
+                    item.patternSignals && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full", children: [
+                      "추천 이유: ",
+                      item.patternSignals
+                    ] }) }),
+                    !item.patternSignals && item.netBuying > 0 && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-green-100 text-green-700 border-green-200", children: [
+                      "추천 이유: 순매수 $",
+                      (item.netBuying / 1e6).toFixed(1),
+                      "M"
+                    ] }) })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsx("div", { className: "flex items-center flex-shrink-0", children: /* @__PURE__ */ jsx(
+                  Badge,
+                  {
+                    className: `${getRecommendationColor(item.recommendation)} text-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-xs md:text-sm whitespace-nowrap`,
+                    "data-testid": `badge-recommendation-${item.ticker.toLowerCase()}`,
+                    children: getRecommendationText(item.recommendation)
+                  }
+                ) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10", children: [
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
+                  /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium", children: item.totalTrades }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.tradesLast30Days") })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
+                  item.buyTrades > item.sellTrades ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }) : item.buyTrades < item.sellTrades ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" }) : /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsxs("p", { className: `text-xs sm:text-sm font-medium ${item.buyTrades > item.sellTrades ? "text-green-600" : item.buyTrades < item.sellTrades ? "text-red-600" : "text-gray-600"}`, children: [
+                      item.buyTrades,
+                      " / ",
+                      item.sellTrades
+                    ] }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: "Buy / Sell" })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
+                  /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.avgTradeValue) }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgTradeValue") })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
+                  /* @__PURE__ */ jsx("div", { className: "h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-blue-500 flex-shrink-0" }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.netBuying) }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.netBuying") })
+                  ] })
+                ] })
+              ] }),
+              /* @__PURE__ */ jsx("div", { className: "mt-4 text-sm text-muted-foreground", children: /* @__PURE__ */ jsxs("span", { children: [
+                "최근 거래: ",
+                new Date(item.lastTradeDate).toLocaleDateString("ko-KR")
+              ] }) }),
+              item.insiders && item.insiders.length > 0 ? /* @__PURE__ */ jsxs("div", { className: "mt-4 border-t pt-4", children: [
+                /* @__PURE__ */ jsxs("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400", children: [
+                  "동시 매수자 ",
+                  item.insiders.length,
+                  "명"
+                ] }),
+                /* @__PURE__ */ jsx("div", { className: "space-y-3", children: item.insiders.slice(0, 4).map((insider, index2) => /* @__PURE__ */ jsxs(
+                  "div",
+                  {
+                    className: "bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      const currentPrice = insider.pricePerShare * (1 + Math.random() * 0.1 - 0.05);
+                      const priceTargets = {
+                        conservative: insider.pricePerShare * 1.05,
+                        realistic: insider.pricePerShare * 1.15,
+                        optimistic: insider.pricePerShare * 1.25
+                      };
+                      const insiderTradeData = {
+                        ticker: item.ticker,
+                        companyName: item.companyName,
+                        traderName: insider.name,
+                        traderTitle: insider.title,
+                        tradeType: insider.tradeType,
+                        shares: insider.shares,
+                        pricePerShare: insider.pricePerShare,
+                        totalValue: insider.totalValue,
+                        filedDate: insider.date,
+                        secFilingUrl: insider.secFilingUrl,
+                        currentPrice,
+                        predictionAccuracy: Math.floor(Math.random() * 20 + 75),
+                        impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
+                        aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
+                        comprehensiveAnalysis: {
+                          executiveSummary: `${insider.name} (${insider.title})이(가) ${item.companyName}의 주식 ${insider.shares.toLocaleString()}주를 $${insider.pricePerShare.toFixed(2)}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.`,
+                          priceTargets,
+                          riskAssessment: {
+                            level: "LOW",
+                            mitigation: "내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다."
+                          },
+                          actionableRecommendation: `${insider.title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. $${insider.pricePerShare.toFixed(2)} 근처에서 진입을 고려하세요.`,
+                          confidence: 85,
+                          timeHorizon: "3-6개월",
+                          marketContext: {
+                            sentiment: "BULLISH",
+                            keyFactors: [
+                              `${insider.title} 직책의 내부자 매수`,
+                              `총 거래액: $${(insider.totalValue / 1e3).toFixed(0)}K`,
+                              `동시 매수자 ${item.insiders.length}명`
+                            ]
+                          },
+                          catalysts: [
+                            "임원진의 직접 매수 활동",
+                            "내부자 신뢰도 증가",
+                            `${item.insiders.length}명의 동시 진입`
+                          ]
+                        }
+                      };
+                      setSelectedTradeData(insiderTradeData);
+                      setShowTradeModal(true);
+                    },
+                    children: [
+                      /* @__PURE__ */ jsx("div", { className: "flex items-start justify-between mb-3", children: /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
+                        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-1", children: [
+                          /* @__PURE__ */ jsx("span", { className: "font-semibold text-base", children: insider.name }),
+                          /* @__PURE__ */ jsx(
+                            Badge,
+                            {
+                              variant: "secondary",
+                              className: "text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                              children: "매수"
+                            }
+                          )
+                        ] }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: insider.title })
+                      ] }) }),
+                      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-3 text-xs", children: [
+                        /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "매수 가격" }),
+                          /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-blue-600 dark:text-blue-400", children: [
+                            "$",
+                            insider.pricePerShare.toFixed(2)
+                          ] })
+                        ] }),
+                        /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "주식 수" }),
+                          /* @__PURE__ */ jsx("p", { className: "font-semibold text-sm", children: insider.shares.toLocaleString() })
+                        ] }),
+                        /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "총액" }),
+                          /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-green-600 dark:text-green-400", children: [
+                            "$",
+                            (insider.totalValue / 1e3).toFixed(0),
+                            "K"
+                          ] })
+                        ] })
+                      ] }),
+                      /* @__PURE__ */ jsx("div", { className: "mt-3 pt-2 border-t border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-xs text-muted-foreground", children: [
+                        /* @__PURE__ */ jsx(Calendar, { className: "h-3.5 w-3.5" }),
+                        /* @__PURE__ */ jsxs("span", { children: [
+                          "거래일: ",
+                          new Date(insider.date).toLocaleDateString("ko-KR")
+                        ] })
+                      ] }) })
+                    ]
+                  },
+                  `${insider.name}-${index2}`
+                )) })
+              ] }) : null
+            ] })
+          ]
+        },
+        item.ticker
+      );
+    }) }),
     data && data.rankings.length === 0 && /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "p-12 text-center", children: [
       /* @__PURE__ */ jsx(Star, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
       /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: t("ranking.noData") }),
@@ -13011,6 +13109,11 @@ function PaymentSuccess() {
         return;
       }
       console.log("✅ Subscription checkout successful, session:", sessionId);
+      console.log("🔄 [PAYMENT SUCCESS] Clearing all localStorage caches to force fresh data load");
+      localStorage.getItem("authToken");
+      localStorage.removeItem("authUser");
+      localStorage.removeItem("pwa-installed");
+      localStorage.removeItem("pwa-prompt-dismissed");
       await new Promise((resolve) => setTimeout(resolve, 5e3));
       try {
         const token = localStorage.getItem("authToken");
@@ -13027,17 +13130,23 @@ function PaymentSuccess() {
           console.log(`🔄 Attempt ${retries + 1}/${maxRetries} to verify user subscription status`);
           const response = await apiClient.verifyToken();
           if (response.success && response.user) {
-            console.log("🔄 User data received:", {
+            console.log("🔄 [PAYMENT SUCCESS] User data received from server:", {
               tier: response.user.subscriptionTier,
-              status: response.user.subscriptionStatus
+              status: response.user.subscriptionStatus,
+              hasUsedTrial: response.user.hasUsedTrial
             });
-            if (response.user.subscriptionTier === "insider_pro") {
-              console.log("✅ User successfully upgraded to premium!");
+            const isPremium = response.user.subscriptionTier === "insider_pro" && (response.user.subscriptionStatus === "active" || response.user.subscriptionStatus === "trialing");
+            if (isPremium) {
+              console.log("✅ [PAYMENT SUCCESS] User successfully upgraded to premium!");
+              console.log("🔐 [PAYMENT SUCCESS] Logging in with fresh user data...");
               login(response.user, token);
               setPaymentStatus("success");
               userUpdated = true;
+              localStorage.setItem("card-registered", "true");
+              console.log("✅ [PAYMENT SUCCESS] Payment success process completed successfully");
             } else {
-              console.log(`⚠️ User still shows tier: ${response.user.subscriptionTier}, will retry...`);
+              console.log(`⚠️ [PAYMENT SUCCESS] User tier: ${response.user.subscriptionTier}, status: ${response.user.subscriptionStatus}`);
+              console.log(`⚠️ [PAYMENT SUCCESS] Premium check failed, will retry... (attempt ${retries + 1}/${maxRetries})`);
               retries++;
               if (retries < maxRetries) {
                 await new Promise((resolve) => setTimeout(resolve, 2e3));
@@ -13075,6 +13184,7 @@ function PaymentSuccess() {
     if (success && user && user.subscriptionTier === "insider_pro") {
       console.log("✅ Manual refresh successful, subscription activated!");
       setPaymentStatus("success");
+      localStorage.setItem("card-registered", "true");
     } else {
       console.log("❌ Manual refresh failed or subscription not active yet");
       alert("Subscription not activated yet. Please wait a moment and try again, or contact support.");
