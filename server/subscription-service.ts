@@ -54,11 +54,19 @@ export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
     user.trialExpiresAt &&
     now < user.trialExpiresAt;
 
-  // Check if subscription is active or trialing
+  // Check if subscription is active
+  // Allow access for any non-canceled Insider Pro subscription within its valid period
+  // This includes active, trialing, past_due, and other legitimate states
   const isSubscriptionActive =
-    (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") &&
+    user.subscriptionStatus !== "canceled" &&
+    user.subscriptionStatus !== "inactive" &&
     user.subscriptionTier === "insider_pro" &&
     (!user.subscriptionEndDate || now < user.subscriptionEndDate);
+
+  // Log unexpected subscription states for monitoring
+  if (isSubscriptionActive && user.subscriptionStatus !== "active" && user.subscriptionStatus !== "trialing") {
+    console.log(`[INFO] User ${userId} has Insider Pro access with status: ${user.subscriptionStatus}`);
+  }
 
   const canAccessRealtime = isTrialActive || isSubscriptionActive;
 

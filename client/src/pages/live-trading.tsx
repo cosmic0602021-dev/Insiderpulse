@@ -126,14 +126,8 @@ export default function LiveTrading() {
       return;
     }
 
-    // If user already used trial, go to premium checkout page
-    if (hasUsedTrial) {
-      navigate('/premium-checkout');
-      return;
-    }
-
-    // Navigate to start trial page with Stripe payment collection
-    navigate('/start-trial');
+    // Navigate directly to premium checkout page
+    navigate('/premium-checkout');
   };
 
   // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - SEC 파일링 날짜순 정렬 (filedDate)
