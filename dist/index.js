@@ -11546,12 +11546,16 @@ async function registerRoutes(app2) {
             where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
             columns: {
               ticker: true,
-              currentPrice: true
+              currentPrice: true,
+              lastUpdated: true
             }
           });
           prices.forEach((price) => {
             if (price.ticker && price.currentPrice) {
-              stockPriceMap.set(price.ticker, Number(price.currentPrice));
+              stockPriceMap.set(price.ticker, {
+                currentPrice: Number(price.currentPrice),
+                lastUpdated: price.lastUpdated
+              });
             }
           });
         } catch (error) {
@@ -11559,7 +11563,9 @@ async function registerRoutes(app2) {
         }
       }
       const enrichedTrades = rawTrades.map((trade) => {
-        const currentPrice = trade.ticker ? stockPriceMap.get(trade.ticker) : void 0;
+        const priceData = trade.ticker ? stockPriceMap.get(trade.ticker) : void 0;
+        const currentPrice = priceData?.currentPrice;
+        const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent = void 0;
         if (currentPrice && trade.pricePerShare) {
           priceChangePercent = (currentPrice - trade.pricePerShare) / trade.pricePerShare * 100;
@@ -11567,7 +11573,8 @@ async function registerRoutes(app2) {
         return {
           ...trade,
           currentPrice,
-          priceChangePercent: priceChangePercent !== void 0 ? Number(priceChangePercent.toFixed(2)) : void 0
+          priceChangePercent: priceChangePercent !== void 0 ? Number(priceChangePercent.toFixed(2)) : void 0,
+          priceLastUpdated: priceLastUpdated || null
         };
       });
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -12283,6 +12290,27 @@ async function registerRoutes(app2) {
         tradesByTicker.get(trade.ticker).push(trade);
       }
       const rankings = [];
+      const uniqueTickers = [...tradesByTicker.keys()];
+      const stockPriceMap = /* @__PURE__ */ new Map();
+      if (uniqueTickers.length > 0) {
+        const prices = await db4.query.stockPrices.findMany({
+          where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
+          columns: {
+            ticker: true,
+            currentPrice: true,
+            lastUpdated: true
+          }
+        });
+        prices.forEach((price) => {
+          if (price.ticker && price.currentPrice) {
+            stockPriceMap.set(price.ticker, {
+              price: Number(price.currentPrice),
+              lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date()
+            });
+          }
+        });
+        console.log(`\u{1F4CA} [RANKINGS] Loaded ${stockPriceMap.size} stock prices for ${uniqueTickers.length} tickers`);
+      }
       for (const [ticker, allTickerTrades] of tradesByTicker) {
         const tickerTrades = allTickerTrades.filter(
           (t) => t.tradeType === "BUY" || t.tradeType === "SELL" || t.tradeType === "PURCHASE" || t.tradeType === "SALE" || (t.transactionCode === "P" || t.transactionCode === "S")
@@ -12374,6 +12402,9 @@ async function registerRoutes(app2) {
           const hasValidName = !suspiciousPatterns.some((pattern) => pattern.test(name)) && name.length > 0;
           return isBuy && hasValidName;
         });
+        const stockPriceData = stockPriceMap.get(ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceUpdatedAt = stockPriceData?.lastUpdated;
         const insiders = buyTradesOnly.map((t) => ({
           name: t.traderName,
           title: t.traderTitle || "Insider",
@@ -12384,6 +12415,11 @@ async function registerRoutes(app2) {
           tradeType: t.tradeType,
           secFilingUrl: t.secFilingUrl
         })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const enhancedTrade = {
+          ...lastTrade,
+          currentPrice,
+          pricePerShare: lastTrade.pricePerShare
+        };
         rankings.push({
           ticker,
           companyName: lastTrade.companyName || ticker,
@@ -12402,7 +12438,13 @@ async function registerRoutes(app2) {
           insiders,
           // 🔥 동시 매수자 상세 정보 추가!
           detectedPatterns: tickerPatterns,
-          patternSignals
+          patternSignals,
+          currentPrice,
+          // 📊 현재 주가
+          priceUpdatedAt,
+          // 📊 가격 업데이트 시간
+          enhancedTrade
+          // 📊 Enhanced trade with current price
         });
       }
       const sortedRankings = rankings.filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).sort((a, b) => b.score - a.score).slice(0, limit);

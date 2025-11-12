@@ -871,6 +871,15 @@ export function TradeDetailModal({
                     : t('priceChart.basedOnInsiderTradePrice')
                   }
                 </p>
+                {/* 가격 수집 시간 표시 */}
+                {(trade as any).priceLastUpdated && (
+                  <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-300 dark:border-slate-600">
+                    <Clock className="h-3 w-3 text-slate-500" />
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {t('tradeDetail.priceUpdatedAt') || '수집 시간'}: {formatTimeAgo((trade as any).priceLastUpdated)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

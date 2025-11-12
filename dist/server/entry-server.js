@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, BarChart3, Building2, Activity, Users, PieChart, Sliders, Bookmark, Camera, Brain, Target, Calculator, Newspaper, Lock, Unlock, ArrowDown, Clock, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck } from "lucide-react";
+import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, BarChart3, Building2, Activity, Users, PieChart, Sliders, Bookmark, Camera, Brain, Target, Calculator, Newspaper, Lock, Unlock, ArrowDown, Clock as Clock$1, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -9069,7 +9069,15 @@ function TradeDetailModal({
                 "$",
                 (trade.currentPrice || trade.pricePerShare).toFixed(2)
               ] }),
-              /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400 mt-1", children: trade.currentPrice ? isMarketOpen() ? t("priceChart.realtimeMarketPrice") : t("priceChart.lastClosingPrice") : t("priceChart.basedOnInsiderTradePrice") })
+              /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400 mt-1", children: trade.currentPrice ? isMarketOpen() ? t("priceChart.realtimeMarketPrice") : t("priceChart.lastClosingPrice") : t("priceChart.basedOnInsiderTradePrice") }),
+              trade.priceLastUpdated && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 mt-2 pt-2 border-t border-slate-300 dark:border-slate-600", children: [
+                /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3 text-slate-500" }),
+                /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-slate-500 dark:text-slate-400", children: [
+                  t("tradeDetail.priceUpdatedAt") || "수집 시간",
+                  ": ",
+                  formatTimeAgo(trade.priceLastUpdated)
+                ] })
+              ] })
             ] })
           ] }),
           trade.currentPrice && trade.currentPrice !== trade.pricePerShare && /* @__PURE__ */ jsx("div", { className: "mt-4", children: (() => {
@@ -9480,7 +9488,7 @@ function FreeZoneBanner({ delayHours }) {
     return null;
   }
   return /* @__PURE__ */ jsx(Alert, { className: "border-amber-500/50 bg-amber-50 dark:bg-amber-900/20", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-    /* @__PURE__ */ jsx(Clock, { className: "h-4 w-4 text-amber-600 dark:text-amber-500 flex-shrink-0" }),
+    /* @__PURE__ */ jsx(Clock$1, { className: "h-4 w-4 text-amber-600 dark:text-amber-500 flex-shrink-0" }),
     /* @__PURE__ */ jsx(AlertDescription, { className: "text-amber-700 dark:text-amber-400 text-sm", children: t("freeZone.description", { hours: delayHours }) })
   ] }) });
 }
@@ -9550,7 +9558,7 @@ function TrialExpiredBanner({ onUpgrade }) {
   };
   return /* @__PURE__ */ jsx(Alert, { className: "border-red-500/50 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-4", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 flex-1", children: [
-      /* @__PURE__ */ jsx(Clock, { className: "h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0" }),
+      /* @__PURE__ */ jsx(Clock$1, { className: "h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0" }),
       /* @__PURE__ */ jsxs(AlertDescription, { className: "text-red-800 dark:text-red-300 text-sm", children: [
         /* @__PURE__ */ jsx("span", { className: "font-bold", children: t("trial.expiredNotice") }),
         " ",
@@ -9631,7 +9639,7 @@ function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }) 
     ),
     /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-4 pr-8", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 flex-1", children: [
-        /* @__PURE__ */ jsx(Clock, { className: "h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0" }),
+        /* @__PURE__ */ jsx(Clock$1, { className: "h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0" }),
         /* @__PURE__ */ jsxs(AlertDescription, { className: "text-red-800 dark:text-red-300 text-sm", children: [
           /* @__PURE__ */ jsx("span", { className: "font-bold", children: t("fomo.missedGains", { count: missedTrades, value: formatValue(totalValue) }) }),
           " ",
@@ -9959,7 +9967,7 @@ function LiveTrading() {
       maximumFractionDigits: 1
     }).format(value);
   };
-  const formatTimeAgo = (date) => {
+  const formatTimeAgo2 = (date) => {
     const dateLocale = language === "ko" ? ko : language === "ja" ? ja : language === "zh" ? zhCN : enUS;
     return formatDistanceToNow(new Date(date), {
       addSuffix: true,
@@ -10020,10 +10028,10 @@ function LiveTrading() {
           /* @__PURE__ */ jsx("h1", { className: "text-2xl sm:text-3xl font-bold", children: t("page.livetrading.title") }),
           /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mt-1", children: t("page.livetrading.subtitle") }),
           lastValidationTime && /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground mt-1 flex items-center gap-1", children: [
-            /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3" }),
+            /* @__PURE__ */ jsx(Clock$1, { className: "h-3 w-3" }),
             t("liveTrading.lastUpdated"),
             ": ",
-            formatTimeAgo(lastValidationTime)
+            formatTimeAgo2(lastValidationTime)
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 w-full sm:w-auto", children: [
@@ -10089,6 +10097,7 @@ function LiveTrading() {
           trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1e3;
           const priceChangePercent = trade.priceChangePercent;
           const hasPercentChange = priceChangePercent !== void 0 && priceChangePercent !== null;
+          const priceLastUpdated = trade.priceLastUpdated;
           return /* @__PURE__ */ jsx(
             "div",
             {
@@ -10123,24 +10132,31 @@ function LiveTrading() {
                     ] })
                   ] }),
                   /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 flex-shrink-0", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                      /* @__PURE__ */ jsx("div", { className: `text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`, children: formatCurrency(Math.abs(trade.totalValue)) }),
-                      hasPercentChange && /* @__PURE__ */ jsxs(
-                        Badge,
-                        {
-                          variant: "outline",
-                          className: `flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
-                          children: [
-                            priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
-                            priceChangePercent >= 0 ? "+" : "",
-                            priceChangePercent.toFixed(1),
-                            "%"
-                          ]
-                        }
-                      )
+                    /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5", children: [
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                        /* @__PURE__ */ jsx("div", { className: `text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`, children: formatCurrency(Math.abs(trade.totalValue)) }),
+                        hasPercentChange && /* @__PURE__ */ jsxs(
+                          Badge,
+                          {
+                            variant: "outline",
+                            className: `flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
+                            children: [
+                              priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
+                              priceChangePercent >= 0 ? "+" : "",
+                              priceChangePercent.toFixed(1),
+                              "%"
+                            ]
+                          }
+                        )
+                      ] }),
+                      hasPercentChange && priceLastUpdated && /* @__PURE__ */ jsxs("div", { className: "text-[10px] sm:text-xs text-muted-foreground", children: [
+                        t("liveTrading.priceAsOf") || "가격 기준",
+                        ": ",
+                        formatTimeAgo2(priceLastUpdated)
+                      ] })
                     ] }),
                     /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
-                      trade.createdAt && /* @__PURE__ */ jsx("div", { className: "text-xs sm:text-sm text-muted-foreground whitespace-nowrap", children: formatTimeAgo(trade.createdAt) }),
+                      trade.createdAt && /* @__PURE__ */ jsx("div", { className: "text-xs sm:text-sm text-muted-foreground whitespace-nowrap", children: formatTimeAgo2(trade.createdAt) }),
                       trade.secFilingUrl && /* @__PURE__ */ jsx("div", { className: "text-xs sm:text-sm text-blue-600", children: "SEC" })
                     ] })
                   ] })
@@ -10192,7 +10208,7 @@ function LiveTrading() {
 const logoLight$4 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
 const logoDark$4 = "/insiderpulse_logo1.png";
 function Ranking() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
@@ -10204,6 +10220,13 @@ function Ranking() {
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState(null);
   const [sharedCardIndex, setSharedCardIndex] = useState(null);
   const cardRefs = useRef([]);
+  const formatTimeAgo2 = (date) => {
+    const dateLocale = language === "ko" ? ko : language === "ja" ? ja : language === "zh" ? zhCN : enUS;
+    return formatDistanceToNow(new Date(date), {
+      addSuffix: true,
+      locale: dateLocale
+    });
+  };
   const isPremium = hasPremiumAccess(user);
   console.log("[RANKING] User premium status:", {
     isPremium,
@@ -10573,22 +10596,26 @@ function Ranking() {
                   new Date(item.lastTradeDate).toLocaleDateString("ko-KR")
                 ] }),
                 ((_a = item.enhancedTrade) == null ? void 0 : _a.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
+                  var _a2;
                   const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
                   const percentChange = priceChange / item.enhancedTrade.pricePerShare * 100;
                   const isGain = priceChange > 0;
-                  return /* @__PURE__ */ jsxs(
-                    Badge,
-                    {
-                      variant: "outline",
-                      className: `flex items-center gap-1 px-2 py-1 text-xs font-semibold ${isGain ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
-                      children: [
-                        isGain ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
-                        isGain ? "+" : "",
-                        percentChange.toFixed(1),
-                        "%"
-                      ]
-                    }
-                  );
+                  return /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5", children: [
+                    /* @__PURE__ */ jsxs(
+                      Badge,
+                      {
+                        variant: "outline",
+                        className: `flex items-center gap-1 px-2 py-1 text-xs font-semibold ${isGain ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
+                        children: [
+                          isGain ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
+                          isGain ? "+" : "",
+                          percentChange.toFixed(1),
+                          "%"
+                        ]
+                      }
+                    ),
+                    ((_a2 = item.enhancedTrade) == null ? void 0 : _a2.priceLastUpdated) && /* @__PURE__ */ jsx("span", { className: "text-[10px] text-muted-foreground", children: formatTimeAgo2(item.enhancedTrade.priceLastUpdated) })
+                  ] });
                 })()
               ] }),
               item.insiders && item.insiders.length > 0 ? /* @__PURE__ */ jsxs("div", { className: "mt-4 border-t pt-4", children: [
@@ -10677,14 +10704,18 @@ function Ranking() {
                               insider.pricePerShare.toFixed(2)
                             ] }),
                             ((_a2 = item.enhancedTrade) == null ? void 0 : _a2.currentPrice) && (() => {
+                              var _a3;
                               const priceChange = item.enhancedTrade.currentPrice - insider.pricePerShare;
                               const percentChange = priceChange / insider.pricePerShare * 100;
                               const isGain = priceChange > 0;
-                              return /* @__PURE__ */ jsxs("p", { className: `text-[10px] mt-1 font-medium flex items-center gap-0.5 ${isGain ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
-                                isGain ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-2.5 w-2.5" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-2.5 w-2.5" }),
-                                isGain ? "+" : "",
-                                percentChange.toFixed(1),
-                                "%"
+                              return /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-0.5", children: [
+                                /* @__PURE__ */ jsxs("p", { className: `text-[10px] mt-1 font-medium flex items-center gap-0.5 ${isGain ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
+                                  isGain ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-2.5 w-2.5" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-2.5 w-2.5" }),
+                                  isGain ? "+" : "",
+                                  percentChange.toFixed(1),
+                                  "%"
+                                ] }),
+                                ((_a3 = item.enhancedTrade) == null ? void 0 : _a3.priceLastUpdated) && /* @__PURE__ */ jsx("p", { className: "text-[9px] text-muted-foreground", children: formatTimeAgo2(item.enhancedTrade.priceLastUpdated) })
                               ] });
                             })()
                           ] }),
@@ -13087,7 +13118,7 @@ function PremiumCheckout() {
           ] }, index)) }) })
         ] }),
         /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
-          /* @__PURE__ */ jsx(Clock, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
+          /* @__PURE__ */ jsx(Clock$1, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsxs("h3", { className: "font-semibold text-sm text-white", children: [
               trialPeriodKo,
@@ -15752,7 +15783,7 @@ function LandingPage() {
           /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.secDataDesc") })
         ] }) }),
         /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Clock, { className: "h-10 w-10 text-primary mb-2" }),
+          /* @__PURE__ */ jsx(Clock$1, { className: "h-10 w-10 text-primary mb-2" }),
           /* @__PURE__ */ jsx(CardTitle, { children: t("landing.features.historical") }),
           /* @__PURE__ */ jsx(CardDescription, { children: t("landing.features.historicalDesc") })
         ] }) })

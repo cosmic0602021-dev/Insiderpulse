@@ -462,6 +462,7 @@ export default function LiveTrading() {
                 // Percentage change from trade price to current price
                 const priceChangePercent = (trade as any).priceChangePercent;
                 const hasPercentChange = priceChangePercent !== undefined && priceChangePercent !== null;
+                const priceLastUpdated = (trade as any).priceLastUpdated;
 
                 return (
                   <div
@@ -506,26 +507,34 @@ export default function LiveTrading() {
                         {/* 오른쪽: 금액 & 시간 */}
                         <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                           {/* 거래 금액 & 퍼센트 변화 */}
-                          <div className="flex items-center gap-2">
-                            <div className={`text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
-                              {formatCurrency(Math.abs(trade.totalValue))}
+                          <div className="flex flex-col items-end gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
+                                {formatCurrency(Math.abs(trade.totalValue))}
+                              </div>
+                              {hasPercentChange && (
+                                <Badge
+                                  variant="outline"
+                                  className={`flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${
+                                    priceChangePercent >= 0
+                                      ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
+                                      : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
+                                  }`}
+                                >
+                                  {priceChangePercent >= 0 ? (
+                                    <TrendingUp className="h-3 w-3" />
+                                  ) : (
+                                    <TrendingDown className="h-3 w-3" />
+                                  )}
+                                  {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
+                                </Badge>
+                              )}
                             </div>
-                            {hasPercentChange && (
-                              <Badge
-                                variant="outline"
-                                className={`flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${
-                                  priceChangePercent >= 0
-                                    ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
-                                    : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
-                                }`}
-                              >
-                                {priceChangePercent >= 0 ? (
-                                  <TrendingUp className="h-3 w-3" />
-                                ) : (
-                                  <TrendingDown className="h-3 w-3" />
-                                )}
-                                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
-                              </Badge>
+                            {/* 가격 수집 시간 표시 */}
+                            {hasPercentChange && priceLastUpdated && (
+                              <div className="text-[10px] sm:text-xs text-muted-foreground">
+                                {t('liveTrading.priceAsOf') || '가격 기준'}: {formatTimeAgo(priceLastUpdated)}
+                              </div>
                             )}
                           </div>
 

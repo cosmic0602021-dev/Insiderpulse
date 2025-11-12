@@ -12,6 +12,8 @@ import { apiClient } from '@/lib/api';
 import html2canvas from 'html2canvas';
 import { hasPremiumAccess } from '@/lib/subscription-utils';
 import { useLocation } from 'wouter';
+import { formatDistanceToNow } from 'date-fns';
+import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
 const logoDark = '/insiderpulse_logo1.png';
@@ -58,7 +60,7 @@ interface RankingsResponse {
 }
 
 export default function Ranking() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
@@ -70,6 +72,14 @@ export default function Ranking() {
   const [selectedTradeForAlert, setSelectedTradeForAlert] = useState<any | null>(null);
   const [sharedCardIndex, setSharedCardIndex] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const formatTimeAgo = (date: string | Date) => {
+    const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
+    return formatDistanceToNow(new Date(date), {
+      addSuffix: true,
+      locale: dateLocale
+    });
+  };
 
   // Check if user has premium access
   const isPremium = hasPremiumAccess(user);
@@ -541,21 +551,29 @@ export default function Ranking() {
                     const isGain = priceChange > 0;
 
                     return (
-                      <Badge
-                        variant="outline"
-                        className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold ${
-                          isGain
-                            ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
-                            : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
-                        }`}
-                      >
-                        {isGain ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
+                      <div className="flex flex-col items-end gap-0.5">
+                        <Badge
+                          variant="outline"
+                          className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold ${
+                            isGain
+                              ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
+                              : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
+                          }`}
+                        >
+                          {isGain ? (
+                            <TrendingUp className="h-3 w-3" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3" />
+                          )}
+                          {isGain ? '+' : ''}{percentChange.toFixed(1)}%
+                        </Badge>
+                        {/* 가격 수집 시간 표시 */}
+                        {(item.enhancedTrade as any)?.priceLastUpdated && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatTimeAgo((item.enhancedTrade as any).priceLastUpdated)}
+                          </span>
                         )}
-                        {isGain ? '+' : ''}{percentChange.toFixed(1)}%
-                      </Badge>
+                      </div>
                     );
                   })()
                 )}
@@ -657,18 +675,26 @@ export default function Ranking() {
                                 const isGain = priceChange > 0;
 
                                 return (
-                                  <p className={`text-[10px] mt-1 font-medium flex items-center gap-0.5 ${
-                                    isGain
-                                      ? 'text-green-600 dark:text-green-400'
-                                      : 'text-red-600 dark:text-red-400'
-                                  }`}>
-                                    {isGain ? (
-                                      <TrendingUp className="h-2.5 w-2.5" />
-                                    ) : (
-                                      <TrendingDown className="h-2.5 w-2.5" />
+                                  <div className="flex flex-col gap-0.5">
+                                    <p className={`text-[10px] mt-1 font-medium flex items-center gap-0.5 ${
+                                      isGain
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-red-600 dark:text-red-400'
+                                    }`}>
+                                      {isGain ? (
+                                        <TrendingUp className="h-2.5 w-2.5" />
+                                      ) : (
+                                        <TrendingDown className="h-2.5 w-2.5" />
+                                      )}
+                                      {isGain ? '+' : ''}{percentChange.toFixed(1)}%
+                                    </p>
+                                    {/* 가격 수집 시간 표시 */}
+                                    {(item.enhancedTrade as any)?.priceLastUpdated && (
+                                      <p className="text-[9px] text-muted-foreground">
+                                        {formatTimeAgo((item.enhancedTrade as any).priceLastUpdated)}
+                                      </p>
                                     )}
-                                    {isGain ? '+' : ''}{percentChange.toFixed(1)}%
-                                  </p>
+                                  </div>
                                 );
                               })()
                             )}

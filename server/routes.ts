@@ -1796,7 +1796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Enrich trades with current stock prices for percentage calculation
       const uniqueTickers = [...new Set(rawTrades.map(t => t.ticker).filter(Boolean))];
-      const stockPriceMap = new Map<string, number>();
+      const stockPriceMap = new Map<string, { currentPrice: number; lastUpdated: Date | null }>();
 
       if (uniqueTickers.length > 0) {
         try {
@@ -1805,12 +1805,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             columns: {
               ticker: true,
               currentPrice: true,
+              lastUpdated: true,
             }
           });
 
           prices.forEach(price => {
             if (price.ticker && price.currentPrice) {
-              stockPriceMap.set(price.ticker, Number(price.currentPrice));
+              stockPriceMap.set(price.ticker, {
+                currentPrice: Number(price.currentPrice),
+                lastUpdated: price.lastUpdated,
+              });
             }
           });
         } catch (error) {
@@ -1820,7 +1824,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add current price and percentage change to each trade
       const enrichedTrades = rawTrades.map(trade => {
-        const currentPrice = trade.ticker ? stockPriceMap.get(trade.ticker) : undefined;
+        const priceData = trade.ticker ? stockPriceMap.get(trade.ticker) : undefined;
+        const currentPrice = priceData?.currentPrice;
+        const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent: number | undefined = undefined;
 
         if (currentPrice && trade.pricePerShare) {
@@ -1831,6 +1837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...trade,
           currentPrice,
           priceChangePercent: priceChangePercent !== undefined ? Number(priceChangePercent.toFixed(2)) : undefined,
+          priceLastUpdated: priceLastUpdated || null,
         };
       });
 
@@ -2737,6 +2744,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 랭킹 계산 - 내부자 동시 진입 기반
       const rankings = [];
 
+      // 📊 Fetch current stock prices from database
+      const uniqueTickers = [...tradesByTicker.keys()];
+      const stockPriceMap = new Map<string, { price: number; lastUpdated: Date }>();
+
+      if (uniqueTickers.length > 0) {
+        const prices = await db.query.stockPrices.findMany({
+          where: (stockPrices, { inArray }) => inArray(stockPrices.ticker, uniqueTickers),
+          columns: {
+            ticker: true,
+            currentPrice: true,
+            lastUpdated: true,
+          }
+        });
+
+        prices.forEach(price => {
+          if (price.ticker && price.currentPrice) {
+            stockPriceMap.set(price.ticker, {
+              price: Number(price.currentPrice),
+              lastUpdated: price.lastUpdated || new Date()
+            });
+          }
+        });
+        console.log(`📊 [RANKINGS] Loaded ${stockPriceMap.size} stock prices for ${uniqueTickers.length} tickers`);
+      }
+
       for (const [ticker, allTickerTrades] of tradesByTicker) {
         // GRANT, OPTION_EXERCISE 등을 제외하고 실제 매수/매도만 필터링
         const tickerTrades = allTickerTrades.filter(t =>
@@ -2868,6 +2900,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           return isBuy && hasValidName;
         });
+        // 📊 Get current price for this ticker
+        const stockPriceData = stockPriceMap.get(ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceUpdatedAt = stockPriceData?.lastUpdated;
+
         const insiders = buyTradesOnly.map(t => ({
           name: t.traderName,
           title: t.traderTitle || 'Insider',
@@ -2878,6 +2915,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tradeType: t.tradeType,
           secFilingUrl: t.secFilingUrl
         })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
+
+        // 📊 Create enhanced trade with current price
+        const enhancedTrade = {
+          ...lastTrade,
+          currentPrice,
+          pricePerShare: lastTrade.pricePerShare,
+        };
 
         rankings.push({
           ticker,
@@ -2895,7 +2939,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           simultaneousEntries: maxSimultaneous, // 동시 진입 최대 인원
           insiders, // 🔥 동시 매수자 상세 정보 추가!
           detectedPatterns: tickerPatterns,
-          patternSignals
+          patternSignals,
+          currentPrice, // 📊 현재 주가
+          priceUpdatedAt, // 📊 가격 업데이트 시간
+          enhancedTrade, // 📊 Enhanced trade with current price
         });
       }
 
