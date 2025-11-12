@@ -18,7 +18,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as Tooltip$1, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, ReferenceArea, ReferenceLine, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as Tooltip$1, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, ReferenceArea, ReferenceLine, ReferenceDot, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
 import html2canvas from "html2canvas";
 import { formatDistanceToNow } from "date-fns";
 import { ko, ja, zhCN, enUS } from "date-fns/locale";
@@ -5186,15 +5186,24 @@ function AccessProvider({ children }) {
         canAccessRealtime: trialStatus.canAccessRealtime,
         tier: trialStatus.tier,
         status: trialStatus.status,
-        isTrialing: trialStatus.isTrialing
+        isTrialing: trialStatus.isTrialing,
+        hasUsedTrial: trialStatus.hasUsedTrial,
+        trialExpiresAt: trialStatus.trialExpiresAt
       });
       setAccessLevel({
         hasRealtimeAccess: trialStatus.canAccessRealtime,
         isDelayed: !trialStatus.canAccessRealtime,
-        delayHours: trialStatus.canAccessRealtime ? 0 : 48
+        delayHours: trialStatus.canAccessRealtime ? 0 : 48,
+        isTrialing: trialStatus.isTrialing,
+        trialExpiresAt: trialStatus.trialExpiresAt,
+        hasUsedTrial: trialStatus.hasUsedTrial,
+        tier: trialStatus.tier,
+        status: trialStatus.status
       });
       console.log("✅ [ACCESS CONTEXT] Access level updated:", {
-        hasRealtimeAccess: trialStatus.canAccessRealtime
+        hasRealtimeAccess: trialStatus.canAccessRealtime,
+        isTrialing: trialStatus.isTrialing,
+        hasUsedTrial: trialStatus.hasUsedTrial
       });
     } catch (error) {
       console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
@@ -8940,91 +8949,75 @@ function TradeDetailModal({
                     }
                   ),
                   /* @__PURE__ */ jsx(
+                    ReferenceDot,
+                    {
+                      x: new Date(trade.filedDate).toISOString().split("T")[0],
+                      y: trade.pricePerShare,
+                      r: 8,
+                      fill: "#f59e0b",
+                      stroke: "#fff",
+                      strokeWidth: 3,
+                      isFront: true
+                    }
+                  ),
+                  /* @__PURE__ */ jsx(
+                    ReferenceDot,
+                    {
+                      x: new Date(trade.filedDate).toISOString().split("T")[0],
+                      y: trade.pricePerShare,
+                      r: 14,
+                      fill: "#f59e0b",
+                      fillOpacity: 0.25,
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsx(
+                    ReferenceDot,
+                    {
+                      x: new Date(trade.filedDate).toISOString().split("T")[0],
+                      y: trade.pricePerShare,
+                      r: 11,
+                      fill: "#f59e0b",
+                      fillOpacity: 0.4,
+                      stroke: "none"
+                    }
+                  ),
+                  /* @__PURE__ */ jsx(
                     Line,
                     {
                       type: "monotone",
                       dataKey: "close",
                       stroke: "#10b981",
                       strokeWidth: 2,
-                      dot: (props) => {
-                        const { cx, cy, payload } = props;
-                        const tradeDateStr = new Date(trade.filedDate).toISOString().split("T")[0];
-                        const pointDateStr = payload.date;
-                        if (pointDateStr === tradeDateStr) {
-                          return /* @__PURE__ */ jsxs("g", { children: [
-                            /* @__PURE__ */ jsx(
-                              "circle",
-                              {
-                                cx,
-                                cy,
-                                r: 12,
-                                fill: "#f59e0b",
-                                fillOpacity: 0.25
-                              }
-                            ),
-                            /* @__PURE__ */ jsx(
-                              "circle",
-                              {
-                                cx,
-                                cy,
-                                r: 8,
-                                fill: "#f59e0b",
-                                fillOpacity: 0.5
-                              }
-                            ),
-                            /* @__PURE__ */ jsx(
-                              "circle",
-                              {
-                                cx,
-                                cy,
-                                r: 5,
-                                fill: "#f59e0b",
-                                stroke: "#fff",
-                                strokeWidth: 2
-                              }
-                            )
-                          ] });
-                        }
-                        return null;
-                      },
+                      dot: false,
                       name: t("priceChart.price") || "Price"
                     }
                   )
                 ]
               }
-            ) }) : /* @__PURE__ */ jsxs("div", { className: "text-center py-8 text-sm text-muted-foreground", children: [
+            ) }) : /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700", children: [
               priceHistoryError === "INVALID_TICKER" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsxs("p", { className: "text-amber-600 dark:text-amber-400 font-medium", children: [
-                  "⚠️ ",
-                  t("priceChart.invalidTicker") || "Invalid ticker symbol"
-                ] }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-2", children: t("priceChart.checkTickerFormat") || "Please check the ticker format" })
+                /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 티커 심볼" }),
+                /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "티커 형식을 확인해주세요" })
               ] }),
               priceHistoryError === "INVALID_DATE" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsxs("p", { className: "text-amber-600 dark:text-amber-400 font-medium", children: [
-                  "⚠️ ",
-                  t("priceChart.invalidDate") || "Invalid trade date"
-                ] }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-2", children: t("priceChart.cannotLoadData") || "Cannot load price data for this date" })
+                /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 거래 날짜" }),
+                /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "이 날짜의 가격 데이터를 불러올 수 없습니다" })
               ] }),
-              priceHistoryError === "NO_DATA" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsxs("p", { className: "text-slate-600 dark:text-slate-400", children: [
-                  "📊 ",
-                  t("priceChart.noHistoricalData") || "No historical data available"
+              (priceHistoryError === "NO_DATA" || !priceHistoryError) && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
+                  /* @__PURE__ */ jsx("p", { className: "text-blue-800 dark:text-blue-200 font-semibold text-base mb-1", children: "💡 실시간 주가 데이터를 수집하지 못했습니다" }),
+                  /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-700 dark:text-blue-300", children: priceHistoryError === "NO_DATA" ? "이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다" : "주가 데이터를 아직 수집하지 못했습니다" })
                 ] }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-2", children: t("priceChart.tickerMayBeDelisted") || "This ticker may be delisted or not traded on major exchanges" }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-1", children: t("priceChart.showingCurrentPrice") || "Showing current price information below" })
+                /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3", children: [
+                  /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-900 dark:text-blue-100 font-medium mb-2", children: "✅ 내부자 거래 가격 기준으로 분석을 제공합니다" }),
+                  /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다" })
+                ] })
               ] }),
-              (priceHistoryError === "API_ERROR" || priceHistoryError === "FETCH_ERROR") && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsxs("p", { className: "text-red-600 dark:text-red-400 font-medium", children: [
-                  "❌ ",
-                  t("priceChart.apiError") || "Failed to fetch price data"
-                ] }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-2", children: t("priceChart.tryAgainLater") || "Please try again later or check server logs" })
-              ] }),
-              !priceHistoryError && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsx("p", { children: t("priceChart.noHistoricalData") || "Historical price data not available" }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs mt-2", children: t("priceChart.showingCurrentPrice") || "Showing current price information below" })
+              (priceHistoryError === "API_ERROR" || priceHistoryError === "FETCH_ERROR") && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                /* @__PURE__ */ jsx("p", { className: "text-red-700 dark:text-red-300 font-medium mb-2", children: "❌ 가격 데이터를 불러오지 못했습니다" }),
+                /* @__PURE__ */ jsx("p", { className: "text-sm text-red-600 dark:text-red-400 mb-3", children: "일시적인 오류입니다. 잠시 후 다시 시도해주세요" }),
+                /* @__PURE__ */ jsx("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3", children: /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다" }) })
               ] })
             ] })
           ] }),
@@ -9805,9 +9798,6 @@ function LiveTrading() {
   const [lastValidationTime, setLastValidationTime] = useState(null);
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [trialExpiresAt, setTrialExpiresAt] = useState(null);
-  const [isTrialing, setIsTrialing] = useState(false);
-  const [hasUsedTrial, setHasUsedTrial] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadedCount, setLoadedCount] = useState(100);
   useState(false);
@@ -10006,9 +9996,9 @@ function LiveTrading() {
     /* @__PURE__ */ jsx(
       FOMOAlertManager,
       {
-        trialExpiresAt,
-        isTrialing,
-        hasTrial: hasUsedTrial,
+        trialExpiresAt: (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) || null,
+        isTrialing: (accessLevel == null ? void 0 : accessLevel.isTrialing) || false,
+        hasTrial: (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) || false,
         recentLockedTrades: validatedData.trades.slice(0, 5).map((t2) => ({
           companyName: t2.companyName,
           ticker: t2.ticker || "",
@@ -10019,9 +10009,9 @@ function LiveTrading() {
         onUnlock: handleUnlock
       }
     ),
-    isTrialing && trialExpiresAt && /* @__PURE__ */ jsx(TrialTimerBanner, { trialExpiresAt }),
-    hasUsedTrial && !isTrialing && accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(TrialExpiredBanner, { onUpgrade: handleUpgrade }),
-    accessLevel && !accessLevel.hasRealtimeAccess && !isTrialing && !hasUsedTrial && accessLevel.delayHours > 0 && /* @__PURE__ */ jsx(FreeZoneBanner, { delayHours: accessLevel.delayHours }),
+    (accessLevel == null ? void 0 : accessLevel.isTrialing) && (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) && /* @__PURE__ */ jsx(TrialTimerBanner, { trialExpiresAt: accessLevel.trialExpiresAt }),
+    (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) && !(accessLevel == null ? void 0 : accessLevel.isTrialing) && !(accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) && /* @__PURE__ */ jsx(TrialExpiredBanner, { onUpgrade: handleUpgrade }),
+    accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && /* @__PURE__ */ jsx(FreeZoneBanner, { delayHours: accessLevel.delayHours }),
     /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
@@ -10098,66 +10088,65 @@ function LiveTrading() {
           const priceChangePercent = trade.priceChangePercent;
           const hasPercentChange = priceChangePercent !== void 0 && priceChangePercent !== null;
           const priceLastUpdated = trade.priceLastUpdated;
+          if (filteredTrades.indexOf(trade) === 0) {
+            console.log("First trade data:", {
+              ticker: trade.ticker,
+              priceChangePercent,
+              priceLastUpdated,
+              currentPrice: trade.currentPrice
+            });
+          }
           return /* @__PURE__ */ jsx(
             "div",
             {
-              className: "border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 md:p-5 w-full",
+              className: "border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-4 w-full",
               onClick: () => handleTradeClick(trade),
               "data-testid": `trade-card-${trade.id}`,
-              children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-2 w-full min-w-0", children: [
-                /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2 w-full min-w-0", children: [
-                  /* @__PURE__ */ jsx("div", { className: `flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`, children: getTradeTypeIcon(trade.tradeType) }),
-                  /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0 overflow-hidden", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-1 mb-1 w-full min-w-0 flex-wrap", children: [
-                      /* @__PURE__ */ jsx("span", { className: "font-bold text-base sm:text-lg md:text-xl break-words max-w-full", children: trade.companyName }),
-                      /* @__PURE__ */ jsx("div", { className: "flex items-center gap-1 flex-shrink-0", children: /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "font-mono text-xs sm:text-sm md:text-base", children: trade.ticker }) })
+              children: /* @__PURE__ */ jsxs("div", { className: "flex gap-3 w-full", children: [
+                /* @__PURE__ */ jsx("div", { className: `flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full ${getTradeTypeColor(trade.tradeType)}`, children: getTradeTypeIcon(trade.tradeType) }),
+                /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
+                  /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between gap-2 mb-1", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 flex-wrap min-w-0", children: [
+                      /* @__PURE__ */ jsx("h3", { className: "font-bold text-lg leading-tight", children: trade.companyName }),
+                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "font-mono text-sm flex-shrink-0", children: trade.ticker })
                     ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "text-xs sm:text-sm text-muted-foreground break-words max-w-full", children: [
-                      trade.traderName,
-                      " • ",
-                      trade.traderTitle
-                    ] })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-2 w-full min-w-0", children: [
-                  /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-sm md:text-base flex-shrink-0", children: [
-                    /* @__PURE__ */ jsx("span", { className: "font-semibold", children: (_a = trade.shares) == null ? void 0 : _a.toLocaleString() }),
-                    /* @__PURE__ */ jsxs("span", { className: "text-muted-foreground", children: [
-                      t("liveTrading.shares"),
-                      " @"
-                    ] }),
-                    /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
-                      "$",
-                      pricePerShare.toFixed(2)
+                    hasPercentChange && /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 flex-shrink-0", children: [
+                      /* @__PURE__ */ jsx("span", { className: "text-[10px] text-muted-foreground", children: "내부자 거래 대비" }),
+                      /* @__PURE__ */ jsxs(
+                        Badge,
+                        {
+                          variant: "outline",
+                          className: `flex items-center gap-1 px-2 py-1 font-bold text-sm ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
+                          children: [
+                            priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
+                            priceChangePercent >= 0 ? "+" : "",
+                            priceChangePercent.toFixed(1),
+                            "%"
+                          ]
+                        }
+                      )
                     ] })
                   ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 flex-shrink-0", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                        /* @__PURE__ */ jsx("div", { className: `text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`, children: formatCurrency(Math.abs(trade.totalValue)) }),
-                        hasPercentChange && /* @__PURE__ */ jsxs(
-                          Badge,
-                          {
-                            variant: "outline",
-                            className: `flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
-                            children: [
-                              priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
-                              priceChangePercent >= 0 ? "+" : "",
-                              priceChangePercent.toFixed(1),
-                              "%"
-                            ]
-                          }
-                        )
-                      ] }),
-                      hasPercentChange && priceLastUpdated && /* @__PURE__ */ jsxs("div", { className: "text-[10px] sm:text-xs text-muted-foreground", children: [
-                        t("liveTrading.priceAsOf") || "가격 기준",
-                        ": ",
-                        formatTimeAgo2(priceLastUpdated)
+                  /* @__PURE__ */ jsxs("div", { className: "text-sm text-muted-foreground mb-2", children: [
+                    trade.traderName,
+                    " • ",
+                    trade.traderTitle
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 text-sm", children: [
+                      /* @__PURE__ */ jsx("span", { className: "font-semibold text-base", children: (_a = trade.shares) == null ? void 0 : _a.toLocaleString() }),
+                      /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "주 ×" }),
+                      /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
+                        "$",
+                        pricePerShare.toFixed(2)
                       ] })
                     ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
-                      trade.createdAt && /* @__PURE__ */ jsx("div", { className: "text-xs sm:text-sm text-muted-foreground whitespace-nowrap", children: formatTimeAgo2(trade.createdAt) }),
-                      trade.secFilingUrl && /* @__PURE__ */ jsx("div", { className: "text-xs sm:text-sm text-blue-600", children: "SEC" })
+                    /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5", children: [
+                      /* @__PURE__ */ jsx("div", { className: `text-xl font-bold ${getTradeTypeColor(trade.tradeType)}`, children: formatCurrency(Math.abs(trade.totalValue)) }),
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-xs text-muted-foreground", children: [
+                        trade.createdAt && /* @__PURE__ */ jsx("span", { children: formatTimeAgo2(trade.createdAt) }),
+                        trade.secFilingUrl && /* @__PURE__ */ jsx("span", { className: "text-blue-600 font-medium", children: "SEC" })
+                      ] })
                     ] })
                   ] })
                 ] })

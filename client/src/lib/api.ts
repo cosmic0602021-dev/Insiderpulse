@@ -6,6 +6,11 @@ export interface AccessLevel {
   hasRealtimeAccess: boolean;
   isDelayed: boolean;
   delayHours: number;
+  isTrialing?: boolean;
+  trialExpiresAt?: string;
+  hasUsedTrial?: boolean;
+  tier?: string;
+  status?: string;
 }
 
 export interface TradesResponse {

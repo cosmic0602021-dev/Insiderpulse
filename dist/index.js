@@ -1042,17 +1042,21 @@ var init_stock_price_service = __esm({
       // REMOVED: generateMockStockData - Only use real market data, no fake data allowed
       async updateStockPricesForTrades() {
         try {
-          const trades = await storage.getInsiderTrades(50, 0);
-          const uniqueCompanies = /* @__PURE__ */ new Set();
+          const trades = await storage.getInsiderTrades(2e3, 0);
+          console.log(`\u{1F4CA} Retrieved ${trades.length} trades for stock price updates`);
+          const uniqueTickers = /* @__PURE__ */ new Set();
           for (const trade of trades) {
-            if (trade.companyName) {
-              uniqueCompanies.add(trade.companyName);
+            if (trade.ticker) {
+              uniqueTickers.add(trade.ticker.toUpperCase());
             }
           }
-          console.log(`\u{1F504} Updating stock prices for ${uniqueCompanies.size} companies...`);
-          for (const companyName of Array.from(uniqueCompanies)) {
+          console.log(`\u{1F504} Updating stock prices for ${uniqueTickers.size} unique tickers...`);
+          let successCount = 0;
+          let failedCount = 0;
+          const failedTickers = [];
+          for (const ticker of Array.from(uniqueTickers)) {
             try {
-              const priceData = await this.getStockPriceByCompanyName(companyName);
+              const priceData = await this.getStockPrice(ticker);
               if (priceData) {
                 const stockPrice = {
                   ticker: priceData.ticker,
@@ -1064,15 +1068,29 @@ var init_stock_price_service = __esm({
                   marketCap: priceData.marketCap
                 };
                 await storage.upsertStockPrice(stockPrice);
-                console.log(`\u2705 Updated stock price for ${priceData.ticker}: $${priceData.currentPrice}`);
+                successCount++;
+                console.log(`\u2705 [${successCount}/${uniqueTickers.size}] Updated ${ticker}: $${priceData.currentPrice}`);
               } else {
-                console.log(`\u26A0\uFE0F No real price data available for ${companyName} - skipping`);
+                failedCount++;
+                failedTickers.push(ticker);
+                console.log(`\u26A0\uFE0F [${successCount + failedCount}/${uniqueTickers.size}] No price data for ${ticker} - may be delisted or invalid`);
               }
             } catch (error) {
-              console.error(`\u274C Failed to update price for ${companyName}:`, error?.message || error);
+              failedCount++;
+              failedTickers.push(ticker);
+              console.error(`\u274C [${successCount + failedCount}/${uniqueTickers.size}] Failed to update ${ticker}:`, error?.message || error);
               continue;
             }
             await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          console.log("\n\u{1F4C8} Stock Price Update Summary:");
+          console.log(`   \u2705 Successfully updated: ${successCount} tickers`);
+          console.log(`   \u274C Failed to update: ${failedCount} tickers`);
+          console.log(`   \u{1F4CA} Coverage: ${(successCount / uniqueTickers.size * 100).toFixed(1)}%`);
+          if (failedTickers.length > 0 && failedTickers.length <= 10) {
+            console.log(`   Failed tickers: ${failedTickers.join(", ")}`);
+          } else if (failedTickers.length > 10) {
+            console.log(`   Failed tickers (first 10): ${failedTickers.slice(0, 10).join(", ")}...`);
           }
           console.log("\u2705 Stock price update completed");
         } catch (error) {
@@ -2519,15 +2537,18 @@ var init_openinsider_collector_advanced = __esm({
             console.log(`\u{1F4C4} Processing incremental page ${page}...`);
             const { trades, hasNextPage } = await this.collectPage(page, perPage);
             const newTrades = await this.filterNewTrades(trades);
+            console.log(`\u{1F4CB} Page ${page} Summary: ${trades.length} total trades, ${newTrades.length} new trades, ${trades.length - newTrades.length} duplicates`);
             if (newTrades.length === 0) {
               duplicateCount++;
-              console.log(`\u23ED\uFE0F Page ${page}: All trades already processed (${duplicateCount} consecutive duplicate pages)`);
-              if (duplicateCount >= 5) {
-                console.log(`\u270B Stopping after ${duplicateCount} pages of duplicates`);
+              console.log(`\u23ED\uFE0F Page ${page}: All ${trades.length} trades already in database (${duplicateCount} consecutive duplicate pages)`);
+              if (duplicateCount >= 3) {
+                console.log(`\u270B Stopping after ${duplicateCount} consecutive pages with all duplicates`);
+                console.log(`\u{1F4A1} This is NORMAL if database is up-to-date. Latest trade date in database determines freshness.`);
                 break;
               }
             } else {
               duplicateCount = 0;
+              console.log(`\u2705 Processing ${newTrades.length} new trades from page ${page}...`);
               const processed = await this.processTrades(newTrades);
               totalProcessed += processed;
               console.log(`\u2705 Page ${page}: Processed ${processed} new trades`);
@@ -2536,7 +2557,12 @@ var init_openinsider_collector_advanced = __esm({
             page++;
             await this.sleep(2e3);
           }
-          console.log(`\u{1F389} Incremental collection completed: ${totalProcessed} total new trades across ${page - 1} pages`);
+          const pagesChecked = page - 1;
+          console.log(`
+\u{1F389} OpenInsider Incremental Collection Complete`);
+          console.log(`   \u{1F4C4} Pages checked: ${pagesChecked}`);
+          console.log(`   \u2705 New trades collected: ${totalProcessed}`);
+          console.log(`   \u{1F4A1} If 0 trades collected, database is likely up-to-date`);
           return totalProcessed;
         } catch (error) {
           console.error("\u274C Error in incremental collection:", error);
@@ -2577,10 +2603,53 @@ var init_openinsider_collector_advanced = __esm({
        */
       buildUrl(page = 1, maxResults = 100) {
         const params = new URLSearchParams({
-          "page": page.toString(),
-          "max": maxResults.toString()
+          "s": "",
+          // ticker (empty = all)
+          "o": "",
+          // other filters
+          "pl": "",
+          "ph": "",
+          // price low/high
+          "ll": "",
+          "lh": "",
+          // shares low/high
+          "fd": "0",
+          // filing date (0 = any)
+          "fdr": "",
+          "td": "0",
+          // trade date (0 = any)
+          "tdr": "",
+          "fdlyl": "",
+          "fdlyh": "",
+          "daysago": "",
+          "xp": "1",
+          // exclude non-purchase/sale
+          "xs": "1",
+          // exclude small trades
+          "vl": "",
+          "vh": "",
+          "ocl": "",
+          "och": "",
+          "sic1": "-1",
+          "sicl": "100",
+          "sich": "9999",
+          "grp": "0",
+          "nfl": "",
+          "nfh": "",
+          "nil": "",
+          "nih": "",
+          "nol": "",
+          "noh": "",
+          "v2l": "",
+          "v2h": "",
+          "oc2l": "",
+          "oc2h": "",
+          "sortcol": "0",
+          "cnt": maxResults.toString(),
+          // Results per page
+          "page": page.toString()
         });
-        return `${this.baseUrl}/?${params.toString()}`;
+        return `${this.baseUrl}/screener?${params.toString()}`;
       }
       /**
        * 🌐 FETCH WITH RETRY LOGIC
@@ -2940,16 +3009,16 @@ var init_openinsider_collector_advanced = __esm({
       /**
        * 🆕 FILTER NEW TRADES
        * Removes trades that have already been processed
+       * OPTIMIZED: Query once instead of N times
        */
       async filterNewTrades(trades) {
-        const newTrades = [];
-        for (const trade of trades) {
+        const recentTrades = await storage.getInsiderTrades(5e3);
+        const existingAccessions = new Set(recentTrades.map((t) => t.accessionNumber));
+        console.log(`\u{1F50D} Checking ${trades.length} trades against ${existingAccessions.size} existing trades...`);
+        const newTrades = trades.filter((trade) => {
           const accessionNumber = trade.realAccessionNumber || this.generateAccessionNumber(trade);
-          const existing = await this.findExistingTrade(accessionNumber);
-          if (!existing) {
-            newTrades.push(trade);
-          }
-        }
+          return !existingAccessions.has(accessionNumber);
+        });
         console.log(`\u{1F50D} Filtered ${newTrades.length} new trades out of ${trades.length} total`);
         return newTrades;
       }
@@ -3103,6 +3172,10 @@ var init_openinsider_collector_advanced = __esm({
         const match = deltaOwn.match(/([+-]?\d+(?:\.\d+)?)%/);
         return match ? Math.abs(parseFloat(match[1])) : 0;
       }
+      /**
+       * DEPRECATED: No longer used - filterNewTrades is now optimized
+       * This function was causing N × 5000 database queries
+       */
       async findExistingTrade(accessionNumber) {
         const recentTrades = await storage.getInsiderTrades(5e3);
         return recentTrades.find(
@@ -9419,10 +9492,13 @@ var init_sec_rss_scraper = __esm({
           allForms: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&CIK=&type=&company=&dateb=&owner=include&start=0&count=40&output=atom"
         };
         this.headers = {
-          "User-Agent": "InsiderPulse RSS Reader info@insiderpulse.com",
+          // SEC requires company info in User-Agent: https://www.sec.gov/developer
+          "User-Agent": "InsiderPulse Pro insider-pulse.pro info@insiderpulse.com",
           "Accept": "application/atom+xml, application/rss+xml, application/xml, text/xml",
           "Accept-Encoding": "gzip, deflate",
-          "Cache-Control": "no-cache"
+          "Cache-Control": "no-cache",
+          "From": "info@insiderpulse.com"
+          // Best practice for automated tools
         };
         console.log("\u{1F4E1} SEC RSS Feed Scraper \uCD08\uAE30\uD654\uB428");
       }
@@ -9889,8 +9965,17 @@ var init_auto_scheduler = __esm({
             completedAt: /* @__PURE__ */ new Date(),
             metadata: { totalTrades: trades.length }
           }).where(eq4(collectionRuns.id, runId));
-          console.log(`\u2705 [AUTO] SEC RSS collection completed in ${duration}ms`);
-          console.log(`   \u{1F4CA} Processed: ${processedCount} new trades from ${trades.length} total`);
+          console.log(`
+\u2705 [AUTO] SEC RSS Collection Complete`);
+          console.log(`   \u23F1\uFE0F Duration: ${duration}ms`);
+          console.log(`   \u{1F4CA} Total RSS items fetched: ${trades.length}`);
+          console.log(`   \u2705 New trades collected: ${processedCount}`);
+          console.log(`   \u{1F504} Duplicates skipped: ${trades.length - processedCount}`);
+          if (processedCount === 0 && trades.length === 0) {
+            console.log(`   \u26A0\uFE0F No RSS items found - check SEC.gov accessibility`);
+          } else if (processedCount === 0 && trades.length > 0) {
+            console.log(`   \u{1F4A1} All trades already in database (normal if up-to-date)`);
+          }
           this.logCollectionStats("SEC RSS", processedCount, duration);
         } catch (error) {
           console.error("\u274C [AUTO] SEC RSS collection failed:", error);

@@ -40,10 +40,12 @@ export class SecRssScraper {
   };
 
   private headers = {
-    'User-Agent': 'InsiderPulse RSS Reader info@insiderpulse.com',
+    // SEC requires company info in User-Agent: https://www.sec.gov/developer
+    'User-Agent': 'InsiderPulse Pro insider-pulse.pro info@insiderpulse.com',
     'Accept': 'application/atom+xml, application/rss+xml, application/xml, text/xml',
     'Accept-Encoding': 'gzip, deflate',
-    'Cache-Control': 'no-cache'
+    'Cache-Control': 'no-cache',
+    'From': 'info@insiderpulse.com'  // Best practice for automated tools
   };
 
   constructor() {

@@ -141,21 +141,30 @@ export class StockPriceService {
 
   async updateStockPricesForTrades(): Promise<void> {
     try {
-      // Get recent trades that need price updates
-      const trades = await storage.getInsiderTrades(50, 0);
-      const uniqueCompanies = new Set<string>();
-      
+      // Get ALL recent trades to ensure comprehensive price coverage
+      const trades = await storage.getInsiderTrades(2000, 0);
+      console.log(`📊 Retrieved ${trades.length} trades for stock price updates`);
+
+      // Extract unique tickers (more reliable than company names)
+      const uniqueTickers = new Set<string>();
+
       for (const trade of trades) {
-        if (trade.companyName) {
-          uniqueCompanies.add(trade.companyName);
+        if (trade.ticker) {
+          uniqueTickers.add(trade.ticker.toUpperCase());
         }
       }
 
-      console.log(`🔄 Updating stock prices for ${uniqueCompanies.size} companies...`);
+      console.log(`🔄 Updating stock prices for ${uniqueTickers.size} unique tickers...`);
 
-      for (const companyName of Array.from(uniqueCompanies)) {
+      let successCount = 0;
+      let failedCount = 0;
+      const failedTickers: string[] = [];
+
+      for (const ticker of Array.from(uniqueTickers)) {
         try {
-          const priceData = await this.getStockPriceByCompanyName(companyName);
+          // Use ticker directly instead of company name lookup
+          const priceData = await this.getStockPrice(ticker);
+
           if (priceData) {
             const stockPrice: InsertStockPrice = {
               ticker: priceData.ticker,
@@ -168,18 +177,34 @@ export class StockPriceService {
             };
 
             await storage.upsertStockPrice(stockPrice);
-            console.log(`✅ Updated stock price for ${priceData.ticker}: $${priceData.currentPrice}`);
+            successCount++;
+            console.log(`✅ [${successCount}/${uniqueTickers.size}] Updated ${ticker}: $${priceData.currentPrice}`);
           } else {
-            console.log(`⚠️ No real price data available for ${companyName} - skipping`);
+            failedCount++;
+            failedTickers.push(ticker);
+            console.log(`⚠️ [${successCount + failedCount}/${uniqueTickers.size}] No price data for ${ticker} - may be delisted or invalid`);
           }
         } catch (error) {
-          console.error(`❌ Failed to update price for ${companyName}:`, (error as Error)?.message || error);
-          // Continue with next company instead of crashing
+          failedCount++;
+          failedTickers.push(ticker);
+          console.error(`❌ [${successCount + failedCount}/${uniqueTickers.size}] Failed to update ${ticker}:`, (error as Error)?.message || error);
+          // Continue with next ticker instead of crashing
           continue;
         }
-        
-        // Rate limiting: wait 100ms between requests
+
+        // Rate limiting: wait 100ms between requests to avoid API limits
         await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      console.log('\n📈 Stock Price Update Summary:');
+      console.log(`   ✅ Successfully updated: ${successCount} tickers`);
+      console.log(`   ❌ Failed to update: ${failedCount} tickers`);
+      console.log(`   📊 Coverage: ${((successCount / uniqueTickers.size) * 100).toFixed(1)}%`);
+
+      if (failedTickers.length > 0 && failedTickers.length <= 10) {
+        console.log(`   Failed tickers: ${failedTickers.join(', ')}`);
+      } else if (failedTickers.length > 10) {
+        console.log(`   Failed tickers (first 10): ${failedTickers.slice(0, 10).join(', ')}...`);
       }
 
       console.log('✅ Stock price update completed');

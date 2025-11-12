@@ -46,9 +46,6 @@ export default function LiveTrading() {
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null);
-  const [isTrialing, setIsTrialing] = useState(false);
-  const [hasUsedTrial, setHasUsedTrial] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadedCount, setLoadedCount] = useState(100);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -331,9 +328,9 @@ export default function LiveTrading() {
       <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
       {/* FOMO Alert Manager - All FOMO alerts */}
       <FOMOAlertManager
-        trialExpiresAt={trialExpiresAt}
-        isTrialing={isTrialing}
-        hasTrial={hasUsedTrial}
+        trialExpiresAt={accessLevel?.trialExpiresAt || null}
+        isTrialing={accessLevel?.isTrialing || false}
+        hasTrial={accessLevel?.hasUsedTrial || false}
         recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
           companyName: t.companyName,
           ticker: t.ticker || '',
@@ -345,17 +342,17 @@ export default function LiveTrading() {
       />
 
       {/* Trial Timer Banner - Active trial countdown */}
-      {isTrialing && trialExpiresAt && (
-        <TrialTimerBanner trialExpiresAt={trialExpiresAt} />
+      {accessLevel?.isTrialing && accessLevel?.trialExpiresAt && (
+        <TrialTimerBanner trialExpiresAt={accessLevel.trialExpiresAt} />
       )}
 
       {/* Trial Expired Banner - Show after trial ends */}
-      {hasUsedTrial && !isTrialing && accessLevel && !accessLevel.hasRealtimeAccess && (
+      {accessLevel?.hasUsedTrial && !accessLevel?.isTrialing && !accessLevel?.hasRealtimeAccess && (
         <TrialExpiredBanner onUpgrade={handleUpgrade} />
       )}
 
       {/* Free Zone Banner - 48h delay notice (only for users who haven't used trial) */}
-      {accessLevel && !accessLevel.hasRealtimeAccess && !isTrialing && !hasUsedTrial && accessLevel.delayHours > 0 && (
+      {accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && (
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
       )}
 
@@ -464,92 +461,79 @@ export default function LiveTrading() {
                 const hasPercentChange = priceChangePercent !== undefined && priceChangePercent !== null;
                 const priceLastUpdated = (trade as any).priceLastUpdated;
 
+                // Debug: Log first trade's data to check API response
+                if (filteredTrades.indexOf(trade) === 0) {
+                  console.log('First trade data:', {
+                    ticker: trade.ticker,
+                    priceChangePercent,
+                    priceLastUpdated,
+                    currentPrice: (trade as any).currentPrice
+                  });
+                }
+
                 return (
                   <div
                     key={trade.id}
-                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 md:p-5 w-full"
+                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 w-full"
                     onClick={() => handleTradeClick(trade)}
                     data-testid={`trade-card-${trade.id}`}
                   >
-                    {/* 모바일 최적화: 반응형 레이아웃 */}
-                    <div className="flex flex-col gap-2 w-full min-w-0">
-                      {/* 상단: 회사 정보 */}
-                      <div className="flex items-start gap-2 w-full min-w-0">
-                        {/* 거래 타입 아이콘 */}
-                        <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-muted ${getTradeTypeColor(trade.tradeType)}`}>
-                          {getTradeTypeIcon(trade.tradeType)}
-                        </div>
-
-                        {/* 회사 & 트레이더 정보 */}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-start gap-1 mb-1 w-full min-w-0 flex-wrap">
-                            <span className="font-bold text-base sm:text-lg md:text-xl break-words max-w-full">{trade.companyName}</span>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Badge variant="outline" className="font-mono text-xs sm:text-sm md:text-base">{trade.ticker}</Badge>
-                            </div>
-                          </div>
-
-                          <div className="text-xs sm:text-sm text-muted-foreground break-words max-w-full">
-                            {trade.traderName} • {trade.traderTitle}
-                          </div>
-                        </div>
+                    <div className="flex gap-2 sm:gap-3 w-full">
+                      {/* 거래 타입 아이콘 */}
+                      <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full ${getTradeTypeColor(trade.tradeType)}`}>
+                        {getTradeTypeIcon(trade.tradeType)}
                       </div>
 
-                      {/* 하단: 거래 세부정보 */}
-                      <div className="flex items-center justify-between gap-2 w-full min-w-0">
-                        {/* 왼쪽: 주식 정보 */}
-                        <div className="flex items-center gap-1 text-sm md:text-base flex-shrink-0">
-                          <span className="font-semibold">{trade.shares?.toLocaleString()}</span>
-                          <span className="text-muted-foreground">{t('liveTrading.shares')} @</span>
-                          <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                      {/* 메인 콘텐츠 */}
+                      <div className="flex-1 min-w-0">
+                        {/* 1행: 회사명 & 가격 변화 */}
+                        <div className="flex items-start justify-between gap-2 mb-1.5 sm:mb-1">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                            <h3 className="font-bold text-base sm:text-lg leading-tight">{trade.companyName}</h3>
+                            <Badge variant="outline" className="font-mono text-xs sm:text-sm flex-shrink-0">{trade.ticker}</Badge>
+                          </div>
+                          {hasPercentChange && (
+                            <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                              <span className="text-xs text-muted-foreground hidden sm:inline">내부자 거래 대비</span>
+                              <Badge
+                                variant="outline"
+                                className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold text-xs sm:text-sm ${
+                                  priceChangePercent >= 0
+                                    ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
+                                    : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
+                                }`}
+                              >
+                                {priceChangePercent >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
+                              </Badge>
+                            </div>
+                          )}
                         </div>
 
-                        {/* 오른쪽: 금액 & 시간 */}
-                        <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                          {/* 거래 금액 & 퍼센트 변화 */}
-                          <div className="flex flex-col items-end gap-0.5">
-                            <div className="flex items-center gap-2">
-                              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${getTradeTypeColor(trade.tradeType)}`}>
-                                {formatCurrency(Math.abs(trade.totalValue))}
-                              </div>
-                              {hasPercentChange && (
-                                <Badge
-                                  variant="outline"
-                                  className={`flex items-center gap-1 px-2 py-1 text-xs sm:text-sm font-semibold ${
-                                    priceChangePercent >= 0
-                                      ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
-                                      : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
-                                  }`}
-                                >
-                                  {priceChangePercent >= 0 ? (
-                                    <TrendingUp className="h-3 w-3" />
-                                  ) : (
-                                    <TrendingDown className="h-3 w-3" />
-                                  )}
-                                  {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(1)}%
-                                </Badge>
+                        {/* 2행: 내부자 정보 */}
+                        <div className="text-xs sm:text-sm text-muted-foreground mb-2 truncate">
+                          {trade.traderName} • {trade.traderTitle}
+                        </div>
+
+                        {/* 3행: 거래 세부 정보 */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-baseline gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0">
+                            <span className="font-semibold text-sm sm:text-base">{trade.shares?.toLocaleString()}</span>
+                            <span className="text-muted-foreground">주 ×</span>
+                            <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                          </div>
+                          <div className="flex flex-col items-end gap-0.5 min-w-0">
+                            <div className={`text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)} truncate`}>
+                              {formatCurrency(Math.abs(trade.totalValue))}
+                            </div>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                              {trade.createdAt && (
+                                <span className="truncate">{formatTimeAgo(trade.createdAt)}</span>
+                              )}
+                              {trade.secFilingUrl && (
+                                <span className="text-blue-600 font-medium flex-shrink-0">SEC</span>
                               )}
                             </div>
-                            {/* 가격 수집 시간 표시 */}
-                            {hasPercentChange && priceLastUpdated && (
-                              <div className="text-[10px] sm:text-xs text-muted-foreground">
-                                {t('liveTrading.priceAsOf') || '가격 기준'}: {formatTimeAgo(priceLastUpdated)}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* 업데이트 시간 */}
-                          <div className="flex items-center gap-1">
-                            {trade.createdAt && (
-                              <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                                {formatTimeAgo(trade.createdAt)}
-                              </div>
-                            )}
-                            {trade.secFilingUrl && (
-                              <div className="text-xs sm:text-sm text-blue-600">
-                                SEC
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

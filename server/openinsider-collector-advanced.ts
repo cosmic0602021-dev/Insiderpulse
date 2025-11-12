@@ -194,18 +194,22 @@ class AdvancedOpenInsiderCollector {
         
         // Stop early if we encounter too many duplicates (trades already processed)
         const newTrades = await this.filterNewTrades(trades);
-        
+
+        console.log(`📋 Page ${page} Summary: ${trades.length} total trades, ${newTrades.length} new trades, ${trades.length - newTrades.length} duplicates`);
+
         if (newTrades.length === 0) {
           duplicateCount++;
-          console.log(`⏭️ Page ${page}: All trades already processed (${duplicateCount} consecutive duplicate pages)`);
+          console.log(`⏭️ Page ${page}: All ${trades.length} trades already in database (${duplicateCount} consecutive duplicate pages)`);
 
-          // If we get 5 consecutive pages of all duplicates, stop - more aggressive collection
-          if (duplicateCount >= 5) {
-            console.log(`✋ Stopping after ${duplicateCount} pages of duplicates`);
+          // If we get 3 consecutive pages of all duplicates, stop (reduced from 5)
+          if (duplicateCount >= 3) {
+            console.log(`✋ Stopping after ${duplicateCount} consecutive pages with all duplicates`);
+            console.log(`💡 This is NORMAL if database is up-to-date. Latest trade date in database determines freshness.`);
             break;
           }
         } else {
           duplicateCount = 0; // Reset counter when we find new trades
+          console.log(`✅ Processing ${newTrades.length} new trades from page ${page}...`);
           const processed = await this.processTrades(newTrades);
           totalProcessed += processed;
           console.log(`✅ Page ${page}: Processed ${processed} new trades`);
@@ -218,7 +222,12 @@ class AdvancedOpenInsiderCollector {
         await this.sleep(2000);
       }
       
-      console.log(`🎉 Incremental collection completed: ${totalProcessed} total new trades across ${page - 1} pages`);
+      const pagesChecked = page - 1;
+      console.log(`\n🎉 OpenInsider Incremental Collection Complete`);
+      console.log(`   📄 Pages checked: ${pagesChecked}`);
+      console.log(`   ✅ New trades collected: ${totalProcessed}`);
+      console.log(`   💡 If 0 trades collected, database is likely up-to-date`);
+
       return totalProcessed;
       
     } catch (error) {
@@ -277,13 +286,37 @@ class AdvancedOpenInsiderCollector {
    * Supports pagination, date filtering, and transaction type filtering
    */
   private buildUrl(page: number = 1, maxResults: number = 100): string {
-    // Simplified URL structure as recommended by architect
+    // OpenInsider uses /screener endpoint with specific parameters
+    // cnt = results per page, page = page number
     const params = new URLSearchParams({
-      'page': page.toString(),
-      'max': maxResults.toString()
+      's': '',  // ticker (empty = all)
+      'o': '',  // other filters
+      'pl': '', 'ph': '', // price low/high
+      'll': '', 'lh': '', // shares low/high
+      'fd': '0', // filing date (0 = any)
+      'fdr': '',
+      'td': '0', // trade date (0 = any)
+      'tdr': '',
+      'fdlyl': '', 'fdlyh': '',
+      'daysago': '',
+      'xp': '1', // exclude non-purchase/sale
+      'xs': '1', // exclude small trades
+      'vl': '', 'vh': '',
+      'ocl': '', 'och': '',
+      'sic1': '-1',
+      'sicl': '100', 'sich': '9999',
+      'grp': '0',
+      'nfl': '', 'nfh': '',
+      'nil': '', 'nih': '',
+      'nol': '', 'noh': '',
+      'v2l': '', 'v2h': '',
+      'oc2l': '', 'oc2h': '',
+      'sortcol': '0',
+      'cnt': maxResults.toString(), // Results per page
+      'page': page.toString()
     });
-    
-    return `${this.baseUrl}/?${params.toString()}`;
+
+    return `${this.baseUrl}/screener?${params.toString()}`;
   }
 
   /**
@@ -734,21 +767,20 @@ class AdvancedOpenInsiderCollector {
   /**
    * 🆕 FILTER NEW TRADES
    * Removes trades that have already been processed
+   * OPTIMIZED: Query once instead of N times
    */
   private async filterNewTrades(trades: OpenInsiderTrade[]): Promise<OpenInsiderTrade[]> {
-    const newTrades: OpenInsiderTrade[] = [];
-    
-    for (const trade of trades) {
-      // Use real accession number if available, otherwise use generated one
-      const accessionNumber = trade.realAccessionNumber || 
-                             this.generateAccessionNumber(trade);
-      
-      const existing = await this.findExistingTrade(accessionNumber);
-      if (!existing) {
-        newTrades.push(trade);
-      }
-    }
-    
+    // PERFORMANCE FIX: Query once and use Set for O(1) lookups
+    const recentTrades = await storage.getInsiderTrades(5000);
+    const existingAccessions = new Set(recentTrades.map(t => t.accessionNumber));
+
+    console.log(`🔍 Checking ${trades.length} trades against ${existingAccessions.size} existing trades...`);
+
+    const newTrades = trades.filter(trade => {
+      const accessionNumber = trade.realAccessionNumber || this.generateAccessionNumber(trade);
+      return !existingAccessions.has(accessionNumber);
+    });
+
     console.log(`🔍 Filtered ${newTrades.length} new trades out of ${trades.length} total`);
     return newTrades;
   }
@@ -951,9 +983,13 @@ class AdvancedOpenInsiderCollector {
     return match ? Math.abs(parseFloat(match[1])) : 0;
   }
 
+  /**
+   * DEPRECATED: No longer used - filterNewTrades is now optimized
+   * This function was causing N × 5000 database queries
+   */
   private async findExistingTrade(accessionNumber: string): Promise<any> {
     const recentTrades = await storage.getInsiderTrades(5000);
-    return recentTrades.find(existing => 
+    return recentTrades.find(existing =>
       existing.accessionNumber === accessionNumber
     );
   }

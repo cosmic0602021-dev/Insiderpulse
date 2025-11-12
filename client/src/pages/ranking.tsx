@@ -100,7 +100,9 @@ export default function Ranking() {
     setRefreshing(false);
   };
 
-  const handleStockClick = async (ticker: string, companyName: string, index: number) => {
+  const handleStockClick = async (item: RankingItem, index: number) => {
+    const { ticker, companyName } = item;
+
     // If user doesn't have premium and tries to access top 3, redirect to upgrade
     if (!isPremium && index < 3) {
       console.log('[RANKING] Free user trying to access top 3 ranking, redirecting to upgrade');
@@ -110,9 +112,55 @@ export default function Ranking() {
 
     try {
       setSelectedTicker(ticker);
-      // Get recent trade data for this ticker
-      const allTrades = await apiClient.getInsiderTrades(100, 0);
-      const tickerTrades = allTrades.filter(trade => trade.ticker === ticker);
+      console.log(`[RANKING] Fetching trades for ticker: ${ticker}`);
+
+      let tickerTrades: any[] = [];
+
+      // Try 1: Enhanced API with ticker filter
+      try {
+        const response = await fetch(`/api/enhanced/trades?ticker=${ticker}&limit=50`);
+        console.log(`[RANKING] Enhanced API response status: ${response.status}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`[RANKING] Enhanced API data:`, data);
+          tickerTrades = data.data || [];
+        }
+      } catch (enhancedError) {
+        console.warn('[RANKING] Enhanced API failed, trying fallback:', enhancedError);
+      }
+
+      // Try 2: If enhanced API didn't return data, try regular API with higher limit
+      if (tickerTrades.length === 0) {
+        console.log('[RANKING] Trying regular API as fallback...');
+        try {
+          const allTrades = await apiClient.getInsiderTrades(500, 0);
+          tickerTrades = allTrades.filter(trade => trade.ticker === ticker);
+          console.log(`[RANKING] Regular API found ${tickerTrades.length} trades for ${ticker}`);
+        } catch (apiError) {
+          console.warn('[RANKING] Regular API also failed:', apiError);
+        }
+      }
+
+      // Try 3: Use ranking item's insiders data directly if available
+      if (tickerTrades.length === 0 && item.insiders && item.insiders.length > 0) {
+        console.log('[RANKING] Using ranking item insiders data as final fallback');
+        // Convert insiders to trade format
+        tickerTrades = item.insiders.map((insider, idx) => ({
+          id: `${ticker}-${idx}`,
+          ticker,
+          companyName,
+          traderName: insider.name,
+          traderTitle: insider.title,
+          shares: insider.shares,
+          pricePerShare: insider.pricePerShare,
+          totalValue: insider.totalValue,
+          filedDate: insider.date,
+          tradeType: insider.tradeType,
+          secFilingUrl: insider.secFilingUrl,
+          createdAt: insider.date
+        }));
+      }
 
       if (tickerTrades && tickerTrades.length > 0) {
         // Sort by filedDate descending to get the most recent trade
@@ -366,7 +414,7 @@ export default function Ranking() {
             ref={el => cardRefs.current[index] = el}
             className={`hover-elevate cursor-pointer relative ${isLocked ? 'overflow-hidden' : ''}`}
             data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
-            onClick={() => handleStockClick(item.ticker, item.companyName, index)}
+            onClick={() => handleStockClick(item, index)}
           >
             {/* Lock Overlay for Top 3 (Free Users Only) */}
             {isLocked && (

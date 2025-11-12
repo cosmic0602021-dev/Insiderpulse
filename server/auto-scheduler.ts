@@ -304,8 +304,16 @@ class AutoScheduler {
         })
         .where(eq(collectionRuns.id, runId));
 
-      console.log(`✅ [AUTO] SEC RSS collection completed in ${duration}ms`);
-      console.log(`   📊 Processed: ${processedCount} new trades from ${trades.length} total`);
+      console.log(`\n✅ [AUTO] SEC RSS Collection Complete`);
+      console.log(`   ⏱️ Duration: ${duration}ms`);
+      console.log(`   📊 Total RSS items fetched: ${trades.length}`);
+      console.log(`   ✅ New trades collected: ${processedCount}`);
+      console.log(`   🔄 Duplicates skipped: ${trades.length - processedCount}`);
+      if (processedCount === 0 && trades.length === 0) {
+        console.log(`   ⚠️ No RSS items found - check SEC.gov accessibility`);
+      } else if (processedCount === 0 && trades.length > 0) {
+        console.log(`   💡 All trades already in database (normal if up-to-date)`);
+      }
 
       this.logCollectionStats('SEC RSS', processedCount, duration);
 

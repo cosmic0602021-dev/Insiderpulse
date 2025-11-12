@@ -42,17 +42,26 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         canAccessRealtime: trialStatus.canAccessRealtime,
         tier: trialStatus.tier,
         status: trialStatus.status,
-        isTrialing: trialStatus.isTrialing
+        isTrialing: trialStatus.isTrialing,
+        hasUsedTrial: trialStatus.hasUsedTrial,
+        trialExpiresAt: trialStatus.trialExpiresAt
       });
 
       setAccessLevel({
         hasRealtimeAccess: trialStatus.canAccessRealtime,
         isDelayed: !trialStatus.canAccessRealtime,
         delayHours: trialStatus.canAccessRealtime ? 0 : 48,
+        isTrialing: trialStatus.isTrialing,
+        trialExpiresAt: trialStatus.trialExpiresAt,
+        hasUsedTrial: trialStatus.hasUsedTrial,
+        tier: trialStatus.tier,
+        status: trialStatus.status,
       });
 
       console.log('✅ [ACCESS CONTEXT] Access level updated:',{
-        hasRealtimeAccess: trialStatus.canAccessRealtime
+        hasRealtimeAccess: trialStatus.canAccessRealtime,
+        isTrialing: trialStatus.isTrialing,
+        hasUsedTrial: trialStatus.hasUsedTrial
       });
     } catch (error) {
       console.error('❌ [ACCESS CONTEXT] Failed to fetch access level:', error);

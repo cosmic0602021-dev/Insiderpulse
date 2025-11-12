@@ -5,13 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import html2canvas from 'html2canvas';
 import {
   TrendingUp, TrendingDown, DollarSign, User, Calendar, BarChart3, Calculator,
-  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper, Zap
+  X, Bookmark, Brain, Check, Bell, Star, Lightbulb, Target, Loader2, Camera, Newspaper, Zap, Clock
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ReferenceArea, Dot } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ReferenceArea, Dot, ReferenceDot } from 'recharts';
 import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167.png';
 import logoDark from '@assets/inverted_with_green_1757888880166.png';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
+import { formatDistanceToNow } from 'date-fns';
+import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
 interface EnhancedTrade extends InsiderTrade {
   predictionAccuracy?: number;
@@ -96,6 +98,15 @@ export function TradeDetailModal({
         newSet.add(index);
       }
       return newSet;
+    });
+  };
+
+  // Format time ago
+  const formatTimeAgo = (date: string | Date) => {
+    const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
+    return formatDistanceToNow(new Date(date), {
+      addSuffix: true,
+      locale: dateLocale
     });
   };
 
@@ -453,21 +464,28 @@ export function TradeDetailModal({
   };
 
   return (
-    <div className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
       {/* InsiderPulse 워터마크 - 모달 중앙에 고정 */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-40 overflow-hidden">
-        <img 
-          src={logoLight} 
-          alt="InsiderPulse" 
+        <img
+          src={logoLight}
+          alt="InsiderPulse"
           className="w-80 h-auto opacity-10 select-none dark:hidden"
         />
-        <img 
-          src={logoDark} 
-          alt="InsiderPulse" 
+        <img
+          src={logoDark}
+          alt="InsiderPulse"
           className="w-80 h-auto opacity-10 select-none hidden dark:block"
         />
       </div>
-      <Card ref={modalRef} className="modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <Card
+        ref={modalRef}
+        className="modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader className="relative z-10 px-3 sm:px-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -729,85 +747,92 @@ export function TradeDetailModal({
                       }}
                     />
 
+                    {/* 내부자 거래가격을 나타내는 큰 노란색 동그라미 */}
+                    <ReferenceDot
+                      x={new Date(trade.filedDate).toISOString().split('T')[0]}
+                      y={trade.pricePerShare}
+                      r={8}
+                      fill="#f59e0b"
+                      stroke="#fff"
+                      strokeWidth={3}
+                      isFront={true}
+                    />
+                    {/* 펄싱 효과를 위한 외부 원들 */}
+                    <ReferenceDot
+                      x={new Date(trade.filedDate).toISOString().split('T')[0]}
+                      y={trade.pricePerShare}
+                      r={14}
+                      fill="#f59e0b"
+                      fillOpacity={0.25}
+                      stroke="none"
+                    />
+                    <ReferenceDot
+                      x={new Date(trade.filedDate).toISOString().split('T')[0]}
+                      y={trade.pricePerShare}
+                      r={11}
+                      fill="#f59e0b"
+                      fillOpacity={0.4}
+                      stroke="none"
+                    />
+
                     <Line
                       type="monotone"
                       dataKey="close"
                       stroke="#10b981"
                       strokeWidth={2}
-                      dot={(props: any) => {
-                        const { cx, cy, payload } = props;
-                        const tradeDateStr = new Date(trade.filedDate).toISOString().split('T')[0];
-                        const pointDateStr = payload.date;
-
-                        // Show a large dot on the trade date
-                        if (pointDateStr === tradeDateStr) {
-                          return (
-                            <g>
-                              {/* Pulsing outer circle */}
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={12}
-                                fill="#f59e0b"
-                                fillOpacity={0.25}
-                              />
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={8}
-                                fill="#f59e0b"
-                                fillOpacity={0.5}
-                              />
-                              {/* Inner solid circle */}
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={5}
-                                fill="#f59e0b"
-                                stroke="#fff"
-                                strokeWidth={2}
-                              />
-                            </g>
-                          );
-                        }
-                        return null;
-                      }}
+                      dot={false}
                       name={t('priceChart.price') || 'Price'}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="text-center py-8 text-sm text-muted-foreground">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
                   {priceHistoryError === 'INVALID_TICKER' && (
                     <>
-                      <p className="text-amber-600 dark:text-amber-400 font-medium">⚠️ {t('priceChart.invalidTicker') || 'Invalid ticker symbol'}</p>
-                      <p className="text-xs mt-2">{t('priceChart.checkTickerFormat') || 'Please check the ticker format'}</p>
+                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ 유효하지 않은 티커 심볼</p>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">티커 형식을 확인해주세요</p>
                     </>
                   )}
                   {priceHistoryError === 'INVALID_DATE' && (
                     <>
-                      <p className="text-amber-600 dark:text-amber-400 font-medium">⚠️ {t('priceChart.invalidDate') || 'Invalid trade date'}</p>
-                      <p className="text-xs mt-2">{t('priceChart.cannotLoadData') || 'Cannot load price data for this date'}</p>
+                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ 유효하지 않은 거래 날짜</p>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">이 날짜의 가격 데이터를 불러올 수 없습니다</p>
                     </>
                   )}
-                  {priceHistoryError === 'NO_DATA' && (
-                    <>
-                      <p className="text-slate-600 dark:text-slate-400">📊 {t('priceChart.noHistoricalData') || 'No historical data available'}</p>
-                      <p className="text-xs mt-2">{t('priceChart.tickerMayBeDelisted') || 'This ticker may be delisted or not traded on major exchanges'}</p>
-                      <p className="text-xs mt-1">{t('priceChart.showingCurrentPrice') || 'Showing current price information below'}</p>
-                    </>
+                  {(priceHistoryError === 'NO_DATA' || !priceHistoryError) && (
+                    <div className="text-center">
+                      <div className="mb-3">
+                        <p className="text-blue-800 dark:text-blue-200 font-semibold text-base mb-1">
+                          💡 실시간 주가 데이터를 수집하지 못했습니다
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          {priceHistoryError === 'NO_DATA'
+                            ? '이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다'
+                            : '주가 데이터를 아직 수집하지 못했습니다'}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3">
+                        <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
+                          ✅ 내부자 거래 가격 기준으로 분석을 제공합니다
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다
+                        </p>
+                      </div>
+                    </div>
                   )}
                   {(priceHistoryError === 'API_ERROR' || priceHistoryError === 'FETCH_ERROR') && (
-                    <>
-                      <p className="text-red-600 dark:text-red-400 font-medium">❌ {t('priceChart.apiError') || 'Failed to fetch price data'}</p>
-                      <p className="text-xs mt-2">{t('priceChart.tryAgainLater') || 'Please try again later or check server logs'}</p>
-                    </>
-                  )}
-                  {!priceHistoryError && (
-                    <>
-                      <p>{t('priceChart.noHistoricalData') || 'Historical price data not available'}</p>
-                      <p className="text-xs mt-2">{t('priceChart.showingCurrentPrice') || 'Showing current price information below'}</p>
-                    </>
+                    <div className="text-center">
+                      <p className="text-red-700 dark:text-red-300 font-medium mb-2">❌ 가격 데이터를 불러오지 못했습니다</p>
+                      <p className="text-sm text-red-600 dark:text-red-400 mb-3">
+                        일시적인 오류입니다. 잠시 후 다시 시도해주세요
+                      </p>
+                      <div className="bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

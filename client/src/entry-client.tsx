@@ -39,21 +39,51 @@ function displayError(title: string, errorContent: string, additionalMessage?: s
   document.body.appendChild(container);
 }
 
-// Add error handling
+// Add error handling - only crash on critical errors
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error);
-  displayError(
-    '⚠️ Global Error Detected',
-    event.error?.stack || String(event.error)
-  );
+
+  // Check if it's a critical error that should crash the app
+  const errorMessage = String(event.error?.message || event.error || '');
+  const isCritical =
+    errorMessage.includes('ChunkLoadError') ||
+    errorMessage.includes('Failed to fetch') ||
+    errorMessage.includes('NetworkError') ||
+    errorMessage.includes('Script error') ||
+    event.error?.name === 'ChunkLoadError';
+
+  if (isCritical) {
+    // Critical error - show error page
+    displayError(
+      '⚠️ Critical Error Detected',
+      event.error?.stack || String(event.error)
+    );
+  } else {
+    // Non-critical error - log but don't crash
+    console.warn('Non-critical error (app continues):', event.error);
+  }
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
-  displayError(
-    '⚠️ Unhandled Promise Rejection',
-    event.reason?.stack || String(event.reason)
-  );
+
+  // Check if it's a critical promise rejection
+  const reasonMessage = String(event.reason?.message || event.reason || '');
+  const isCritical =
+    reasonMessage.includes('ChunkLoadError') ||
+    reasonMessage.includes('Failed to fetch dynamically imported module') ||
+    reasonMessage.includes('Script error');
+
+  if (isCritical) {
+    // Critical rejection - show error page
+    displayError(
+      '⚠️ Critical Promise Rejection',
+      event.reason?.stack || String(event.reason)
+    );
+  } else {
+    // Non-critical rejection - log but don't crash
+    console.warn('Non-critical promise rejection (app continues):', event.reason);
+  }
 });
 
 console.log('🔍 Attempting to hydrate React app...');

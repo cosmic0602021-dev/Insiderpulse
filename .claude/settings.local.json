@@ -47,7 +47,10 @@
       "Bash(replit deployments list:*)",
       "Bash(chmod:*)",
       "Bash(tsc:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(sqlite3:*)",
+      "WebFetch(domain:www.sec.gov)",
+      "WebFetch(domain:openinsider.com)"
     ],
     "deny": [],
     "ask": []
