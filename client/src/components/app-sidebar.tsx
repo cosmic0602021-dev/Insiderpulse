@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
+import { hasPremiumAccess } from "@/lib/subscription-utils";
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
 const logoDark = '/insiderpulse_logo1.png';
 
@@ -273,8 +274,8 @@ export function AppSidebar() {
           </div>
         )}
 
-        {/* Only show upgrade button for free users (not Pro tier OR not active/trialing) */}
-        {user && !(user.subscriptionTier === 'insider_pro' && (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) && (
+        {/* Only show upgrade button for users without premium access */}
+        {user && !hasPremiumAccess(user) && (
           <Button
             className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
             asChild
@@ -283,7 +284,8 @@ export function AppSidebar() {
             <Link href="/premium-checkout" onClick={() => {
               console.log('[APP SIDEBAR] Upgrade button clicked. User:', {
                 tier: user.subscriptionTier,
-                status: user.subscriptionStatus
+                status: user.subscriptionStatus,
+                hasPremium: hasPremiumAccess(user)
               });
             }}>
               <Crown className="h-4 w-4 mr-2" />

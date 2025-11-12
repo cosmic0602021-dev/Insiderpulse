@@ -185,15 +185,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               subscriptionId: existingSub.id,
               status: existingSub.status
             });
-          } else if (existingSub.status === 'canceled' || existingSub.status === 'incomplete_expired' || existingSub.cancel_at_period_end) {
-            // Subscription is canceled, expired, or set to cancel - sync DB and allow new checkout
-            console.log(`✅ Subscription ${existingSub.id} is ${existingSub.status} (cancel_at_period_end: ${existingSub.cancel_at_period_end}), syncing DB and allowing new checkout`);
+          } else if (existingSub.status === 'canceled' || existingSub.status === 'incomplete_expired') {
+            // Only update DB to canceled/inactive if Stripe status is actually canceled or expired
+            console.log(`✅ Subscription ${existingSub.id} status is ${existingSub.status}, syncing DB and allowing new checkout`);
             await db.update(users)
               .set({
-                subscriptionStatus: 'canceled',
+                subscriptionStatus: existingSub.status === 'canceled' ? 'canceled' : 'inactive',
                 stripeSubscriptionId: null
               })
               .where(eq(users.id, userId));
+          } else if (existingSub.cancel_at_period_end && (existingSub.status === 'active' || existingSub.status === 'trialing')) {
+            // Subscription is set to cancel but still active - keep current status, just allow new checkout
+            console.log(`⚠️ Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
         } catch (error: any) {
           // Subscription doesn't exist in Stripe anymore, continue with checkout

@@ -10325,12 +10325,14 @@ async function registerRoutes(app2) {
               subscriptionId: existingSub.id,
               status: existingSub.status
             });
-          } else if (existingSub.status === "canceled" || existingSub.status === "incomplete_expired" || existingSub.cancel_at_period_end) {
-            console.log(`\u2705 Subscription ${existingSub.id} is ${existingSub.status} (cancel_at_period_end: ${existingSub.cancel_at_period_end}), syncing DB and allowing new checkout`);
+          } else if (existingSub.status === "canceled" || existingSub.status === "incomplete_expired") {
+            console.log(`\u2705 Subscription ${existingSub.id} status is ${existingSub.status}, syncing DB and allowing new checkout`);
             await db4.update(users).set({
-              subscriptionStatus: "canceled",
+              subscriptionStatus: existingSub.status === "canceled" ? "canceled" : "inactive",
               stripeSubscriptionId: null
             }).where(eq5(users.id, userId));
+          } else if (existingSub.cancel_at_period_end && (existingSub.status === "active" || existingSub.status === "trialing")) {
+            console.log(`\u26A0\uFE0F Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
         } catch (error) {
           console.log(`\u26A0\uFE0F Stored subscription ${user2.stripeSubscriptionId} not found in Stripe, allowing new checkout`);

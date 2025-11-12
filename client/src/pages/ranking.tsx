@@ -532,8 +532,33 @@ export default function Ranking() {
               </div>
 
               {/* Additional info */}
-              <div className="mt-4 text-sm text-muted-foreground">
-                <span>최근 거래: {new Date(item.lastTradeDate).toLocaleDateString('ko-KR')}</span>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">최근 거래: {new Date(item.lastTradeDate).toLocaleDateString('ko-KR')}</span>
+                {item.enhancedTrade?.currentPrice && item.enhancedTrade.pricePerShare && (
+                  (() => {
+                    const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
+                    const percentChange = ((priceChange / item.enhancedTrade.pricePerShare) * 100);
+                    const isGain = priceChange > 0;
+
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold ${
+                          isGain
+                            ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700'
+                            : 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
+                        }`}
+                      >
+                        {isGain ? (
+                          <TrendingUp className="h-3 w-3" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3" />
+                        )}
+                        {isGain ? '+' : ''}{percentChange.toFixed(1)}%
+                      </Badge>
+                    );
+                  })()
+                )}
               </div>
 
               {/* 내부자 상세 정보 섹션 */}
@@ -625,6 +650,28 @@ export default function Ranking() {
                             <p className="font-semibold text-sm text-blue-600 dark:text-blue-400">
                               ${insider.pricePerShare.toFixed(2)}
                             </p>
+                            {item.enhancedTrade?.currentPrice && (
+                              (() => {
+                                const priceChange = item.enhancedTrade.currentPrice - insider.pricePerShare;
+                                const percentChange = ((priceChange / insider.pricePerShare) * 100);
+                                const isGain = priceChange > 0;
+
+                                return (
+                                  <p className={`text-[10px] mt-1 font-medium flex items-center gap-0.5 ${
+                                    isGain
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {isGain ? (
+                                      <TrendingUp className="h-2.5 w-2.5" />
+                                    ) : (
+                                      <TrendingDown className="h-2.5 w-2.5" />
+                                    )}
+                                    {isGain ? '+' : ''}{percentChange.toFixed(1)}%
+                                  </p>
+                                );
+                              })()
+                            )}
                           </div>
                           <div className="bg-white dark:bg-gray-900 rounded p-2.5">
                             <p className="text-muted-foreground mb-1">주식 수</p>

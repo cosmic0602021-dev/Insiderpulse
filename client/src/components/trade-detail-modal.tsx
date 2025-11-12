@@ -874,6 +874,65 @@ export function TradeDetailModal({
               </div>
             </div>
 
+            {/* 가격 변동률 표시 */}
+            {trade.currentPrice && trade.currentPrice !== trade.pricePerShare && (
+              <div className="mt-4">
+                {(() => {
+                  const priceChange = trade.currentPrice - trade.pricePerShare;
+                  const percentChange = ((priceChange / trade.pricePerShare) * 100);
+                  const isGain = priceChange > 0;
+
+                  return (
+                    <div className={`rounded-lg p-4 border-2 ${
+                      isGain
+                        ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                        : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            isGain
+                              ? 'bg-green-500 dark:bg-green-600'
+                              : 'bg-red-500 dark:bg-red-600'
+                          }`}>
+                            {isGain ? (
+                              <TrendingUp className="h-5 w-5 text-white" />
+                            ) : (
+                              <TrendingDown className="h-5 w-5 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                              {t('tradeDetail.priceChangeSinceTrade')}
+                            </p>
+                            <p className={`text-xl font-bold ${
+                              isGain
+                                ? 'text-green-700 dark:text-green-400'
+                                : 'text-red-700 dark:text-red-400'
+                            }`}>
+                              {isGain ? '+' : ''}{percentChange.toFixed(2)}%
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            {t('tradeDetail.priceMovement')}
+                          </p>
+                          <p className={`text-lg font-semibold ${
+                            isGain
+                              ? 'text-green-700 dark:text-green-400'
+                              : 'text-red-700 dark:text-red-400'
+                          }`}>
+                            {isGain ? '+' : ''}${Math.abs(priceChange).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
           </div>
 
           {/* {t('tradeDetail.integratedAiAnalysis')} */}

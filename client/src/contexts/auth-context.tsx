@@ -147,6 +147,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Auto-refresh user data when tab becomes visible (to sync localStorage with server)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && user && token) {
+        console.log('👁️ Tab became visible, refreshing user data...');
+        await refreshUser();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, token]);
+
   const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthModalMode(mode);
     setShowAuthModal(true);
