@@ -839,7 +839,7 @@ export function TradeDetailModal({
             </div>
 
             {/* {t('tradeDetail.keyMetrics')} */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* 내부자 거래 가격 */}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2 mb-2">
@@ -857,45 +857,79 @@ export function TradeDetailModal({
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('tradeDetail.basedOnSecFiling')}</p>
               </div>
 
-              {/* {t('tradeDetail.insiderAvgTradePrice')} */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              {/* 현재 시장가 + 가격 변동 */}
+              <div className={`rounded-lg p-4 border-2 ${
+                trade.currentPrice && trade.currentPrice !== trade.pricePerShare
+                  ? (trade.currentPrice > trade.pricePerShare
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700')
+                  : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+              }`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-4 w-4 text-white" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    trade.currentPrice && trade.currentPrice !== trade.pricePerShare
+                      ? (trade.currentPrice > trade.pricePerShare
+                        ? 'bg-green-500 dark:bg-green-600'
+                        : 'bg-red-500 dark:bg-red-600')
+                      : 'bg-slate-600 dark:bg-slate-500'
+                  }`}>
+                    {trade.currentPrice && trade.currentPrice > trade.pricePerShare ? (
+                      <TrendingUp className="h-4 w-4 text-white" />
+                    ) : trade.currentPrice && trade.currentPrice < trade.pricePerShare ? (
+                      <TrendingDown className="h-4 w-4 text-white" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4 text-white" />
+                    )}
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('tradeDetail.insiderAvgPrice')}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('tradeDetail.last30DaysAvg')}</p>
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                  ${(trade.recommendedBuyPrice || trade.pricePerShare * 0.98).toFixed(2)}
-                </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('tradeDetail.sameTicker')}</p>
-              </div>
-
-              {/* 현재 시장가 */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('priceChart.referencePriceLabel')}</p>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('tradeDetail.currentMarketPrice')}</p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       {trade.currentPrice ? (isMarketOpen() ? t('tradeDetail.realtimeEstimate') : t('tradeDetail.lastClosePrice')) : t('priceChart.tradeTimeBase')}
                     </p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                  ${(trade.currentPrice || trade.pricePerShare).toFixed(2)}
-                </p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  {trade.currentPrice
-                    ? (isMarketOpen() ? t('priceChart.realtimeMarketPrice') : t('priceChart.lastClosingPrice'))
-                    : t('priceChart.basedOnInsiderTradePrice')
+
+                <div className="flex items-baseline justify-between mb-2">
+                  <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                    ${(trade.currentPrice || trade.pricePerShare).toFixed(2)}
+                  </p>
+
+                  {/* 가격 변동 표시 */}
+                  {trade.currentPrice && trade.currentPrice !== trade.pricePerShare && (() => {
+                    const priceChange = trade.currentPrice - trade.pricePerShare;
+                    const percentChange = ((priceChange / trade.pricePerShare) * 100);
+                    const isGain = priceChange > 0;
+
+                    return (
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${
+                          isGain
+                            ? 'text-green-700 dark:text-green-400'
+                            : 'text-red-700 dark:text-red-400'
+                        }`}>
+                          {isGain ? '+' : ''}{percentChange.toFixed(2)}%
+                        </p>
+                        <p className={`text-sm font-semibold ${
+                          isGain
+                            ? 'text-green-600 dark:text-green-500'
+                            : 'text-red-600 dark:text-red-500'
+                        }`}>
+                          {isGain ? '+' : ''}${Math.abs(priceChange).toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {trade.currentPrice && trade.currentPrice !== trade.pricePerShare
+                    ? t('tradeDetail.priceChangeSinceTrade')
+                    : (trade.currentPrice
+                      ? (isMarketOpen() ? t('priceChart.realtimeMarketPrice') : t('priceChart.lastClosingPrice'))
+                      : t('priceChart.basedOnInsiderTradePrice'))
                   }
                 </p>
+
                 {/* 가격 수집 시간 표시 */}
                 {(trade as any).priceLastUpdated && (
                   <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-300 dark:border-slate-600">
@@ -908,76 +942,17 @@ export function TradeDetailModal({
               </div>
             </div>
 
-            {/* 가격 변동률 표시 */}
-            {trade.currentPrice && trade.currentPrice !== trade.pricePerShare && (
-              <div className="mt-4">
-                {(() => {
-                  const priceChange = trade.currentPrice - trade.pricePerShare;
-                  const percentChange = ((priceChange / trade.pricePerShare) * 100);
-                  const isGain = priceChange > 0;
-
-                  return (
-                    <div className={`rounded-lg p-4 border-2 ${
-                      isGain
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            isGain
-                              ? 'bg-green-500 dark:bg-green-600'
-                              : 'bg-red-500 dark:bg-red-600'
-                          }`}>
-                            {isGain ? (
-                              <TrendingUp className="h-5 w-5 text-white" />
-                            ) : (
-                              <TrendingDown className="h-5 w-5 text-white" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                              {t('tradeDetail.priceChangeSinceTrade')}
-                            </p>
-                            <p className={`text-xl font-bold ${
-                              isGain
-                                ? 'text-green-700 dark:text-green-400'
-                                : 'text-red-700 dark:text-red-400'
-                            }`}>
-                              {isGain ? '+' : ''}{percentChange.toFixed(2)}%
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            {t('tradeDetail.priceMovement')}
-                          </p>
-                          <p className={`text-lg font-semibold ${
-                            isGain
-                              ? 'text-green-700 dark:text-green-400'
-                              : 'text-red-700 dark:text-red-400'
-                          }`}>
-                            {isGain ? '+' : ''}${Math.abs(priceChange).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
           </div>
 
           {/* {t('tradeDetail.integratedAiAnalysis')} */}
           <div className="border-t pt-4" data-testid="section-ai-analysis">
             <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-lg flex items-center justify-center mb-3">
                   <Brain className="h-4 w-4 text-white" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-3">{t('tradeDetail.aiAnalysisResults')}</h4>
+                <div className="w-full">
+                  <h4 className="font-semibold text-sm mb-3 text-center">{t('tradeDetail.aiAnalysisResults')}</h4>
 
                   <div className="space-y-3 text-sm leading-relaxed" data-testid="text-ai-analysis">
                     {isLoadingAnalysis ? (
@@ -1081,7 +1056,7 @@ export function TradeDetailModal({
                               analysis.marketContext.sentiment === 'BEARISH' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {analysis.marketContext.sentiment}
+                              {t(`tradeDetail.sentiment.${analysis.marketContext.sentiment.toLowerCase()}`)}
                             </Badge>
                           </div>
                         </div>

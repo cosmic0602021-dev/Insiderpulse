@@ -494,7 +494,7 @@ export default function LiveTrading() {
                           </div>
                           {hasPercentChange && (
                             <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                              <span className="text-xs text-muted-foreground hidden sm:inline">내부자 거래 대비</span>
+                              <span className="text-xs text-muted-foreground">{t('tradeDetail.priceChangeSinceTradeShort')}</span>
                               <Badge
                                 variant="outline"
                                 className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold text-xs sm:text-sm ${
