@@ -12276,6 +12276,17 @@ async function registerRoutes(app2) {
         confidence: analysis.significanceScore,
         newsAnalysis
       };
+      if (language !== "en" && comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
+        comprehensiveAnalysis.catalysts = await Promise.all(
+          comprehensiveAnalysis.catalysts.map((catalyst) => translateText(catalyst, language))
+        );
+      }
+      if (language !== "en" && comprehensiveAnalysis.marketContext.reasoning) {
+        comprehensiveAnalysis.marketContext.reasoning = await translateText(
+          comprehensiveAnalysis.marketContext.reasoning,
+          language
+        );
+      }
       res.json(comprehensiveAnalysis);
     } catch (error) {
       console.error("Error generating comprehensive analysis:", error);

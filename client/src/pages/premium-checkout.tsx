@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { GrainTexture } from "@/components/grain-texture";
+import { BrutalistGrid } from "@/components/brutalist-grid";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 
@@ -191,13 +193,24 @@ export default function PremiumCheckout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-white" data-testid="text-checkout-title">
+    <div className="min-h-screen bg-slate-950 p-4 relative">
+      {/* Grain Texture Overlay */}
+      <GrainTexture opacity={0.05} animate={true} />
+
+      {/* Brutalist Grid Overlay */}
+      <BrutalistGrid variant="data" opacity={0.08} />
+
+      <div className="max-w-5xl mx-auto relative z-10">
+        <div className="text-center mb-12 mt-8">
+          <Badge className="mb-6 px-4 py-1.5 text-xs font-bold uppercase tracking-widest
+                           bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/30">
+            Premium Subscription
+          </Badge>
+          <h1 className="text-5xl md:text-6xl font-black mb-6 text-white tracking-tighter uppercase
+                        [text-shadow:_0_0_40px_rgb(16_185_129_/_20%)]" data-testid="text-checkout-title">
             Upgrade to Insider Pro
           </h1>
-          <p className="text-slate-300 max-w-2xl mx-auto text-lg">
+          <p className="text-slate-300 max-w-2xl mx-auto text-xl font-medium">
             Get real-time insider trading alerts and never miss a profitable opportunity
           </p>
         </div>

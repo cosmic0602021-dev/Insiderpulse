@@ -50,7 +50,8 @@
       "Bash(npm install:*)",
       "Bash(sqlite3:*)",
       "WebFetch(domain:www.sec.gov)",
-      "WebFetch(domain:openinsider.com)"
+      "WebFetch(domain:openinsider.com)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
