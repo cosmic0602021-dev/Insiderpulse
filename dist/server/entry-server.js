@@ -4337,7 +4337,13 @@ class ApiClient {
     };
   }
   setToken(token) {
-    this.token = token;
+    if (token) {
+      console.log("🔑 [API CLIENT] Token set:", token.substring(0, 20) + "...");
+      this.token = token;
+    } else {
+      console.log("🔓 [API CLIENT] Token cleared");
+      this.token = null;
+    }
   }
   async request(endpoint, options) {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -4346,6 +4352,9 @@ class ApiClient {
     };
     if (this.token) {
       headers["Authorization"] = `Bearer ${this.token}`;
+      console.log("🔑 [API CLIENT] Adding Authorization header to request:", endpoint);
+    } else {
+      console.log("⚠️ [API CLIENT] No token available for request:", endpoint);
     }
     if (options == null ? void 0 : options.headers) {
       const headerObj = options.headers;
@@ -4435,12 +4444,17 @@ function AuthProvider({ children }) {
             apiClient.setToken(null);
           }
         } catch (error) {
-          console.error("Failed to verify token:", error);
+          console.error("❌ Failed to verify token:", error);
+          console.error("   Error details:", error instanceof Error ? error.message : String(error));
+          console.log("   🧹 Clearing invalid session data");
           localStorage.removeItem("authToken");
           localStorage.removeItem("authUser");
           apiClient.setToken(null);
         }
+      } else {
+        console.log("ℹ️ No saved session found in localStorage");
       }
+      console.log("✅ Auth initialization complete. Authenticated:", !!savedToken && !!savedUser);
       setIsLoading(false);
     };
     initAuth();
@@ -4458,6 +4472,8 @@ function AuthProvider({ children }) {
     localStorage.setItem("authUser", JSON.stringify(newUser));
     apiClient.setToken(newToken);
     console.log("✅ [AUTH CONTEXT] User logged in and state updated");
+    console.log("   💾 Token saved to localStorage");
+    console.log("   🔑 Token set in API client:", newToken.substring(0, 20) + "...");
   };
   const logout = () => {
     setUser(null);
@@ -5223,6 +5239,8 @@ function AccessProvider({ children }) {
       });
     } catch (error) {
       console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
+      console.error("   Error details:", error instanceof Error ? error.message : String(error));
+      console.log("   🔒 Defaulting to free access due to API error");
       setAccessLevel({
         hasRealtimeAccess: false,
         isDelayed: true,
@@ -9978,12 +9996,12 @@ function LiveTrading() {
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: "filedDate"
+      sortBy: "createdAt"
     }),
     queryFn: async () => {
       var _a;
       console.log("[LIVE TRADING] Fetching trades and access level...");
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, void 0, void 0, "filedDate");
+      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, void 0, void 0, "createdAt");
       console.log("[LIVE TRADING] Response received:", {
         tradesCount: ((_a = response.trades) == null ? void 0 : _a.length) || 0,
         hasAccessLevel: !!response.accessLevel,
@@ -10642,7 +10660,7 @@ function Ranking() {
                   {
                     src: logoLight$4,
                     alt: "InsiderPulse",
-                    className: "w-48 sm:w-80 h-auto opacity-10 select-none dark:hidden"
+                    className: "w-48 sm:w-80 h-auto opacity-20 select-none dark:hidden"
                   }
                 ),
                 /* @__PURE__ */ jsx(
@@ -10650,7 +10668,7 @@ function Ranking() {
                   {
                     src: logoDark$4,
                     alt: "InsiderPulse",
-                    className: "w-48 sm:w-80 h-auto opacity-10 select-none hidden dark:block"
+                    className: "w-48 sm:w-80 h-auto opacity-20 select-none hidden dark:block"
                   }
                 )
               ] }),

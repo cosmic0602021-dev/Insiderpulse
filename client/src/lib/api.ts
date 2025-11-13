@@ -53,7 +53,13 @@ class ApiClient {
   private token: string | null = null;
 
   setToken(token: string | null) {
-    this.token = token;
+    if (token) {
+      console.log('🔑 [API CLIENT] Token set:', token.substring(0, 20) + '...');
+      this.token = token;
+    } else {
+      console.log('🔓 [API CLIENT] Token cleared');
+      this.token = null;
+    }
   }
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -65,6 +71,9 @@ class ApiClient {
     // Add auth token if available FIRST
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
+      console.log('🔑 [API CLIENT] Adding Authorization header to request:', endpoint);
+    } else {
+      console.log('⚠️ [API CLIENT] No token available for request:', endpoint);
     }
 
     // Merge existing headers from options (won't override Authorization)

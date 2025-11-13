@@ -274,18 +274,22 @@ var init_db_storage = __esm({
         return result[0];
       }
       // Insider trading methods
-      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate") {
+      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy) {
         const conditions = [];
         if (verifiedOnly) {
           conditions.push(eq(insiderTrades.isVerified, true));
         }
+        const filterField = filterBy || sortBy;
         if (fromDate) {
-          const sortField2 = sortBy === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
-          conditions.push(gte(sortField2, new Date(fromDate)));
+          const dateField = filterField === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
+          conditions.push(gte(dateField, new Date(fromDate)));
         }
         if (toDate) {
-          const sortField2 = sortBy === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
-          conditions.push(lte(sortField2, new Date(toDate)));
+          const dateField = filterField === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
+          conditions.push(lte(dateField, new Date(toDate)));
+        }
+        if (transactionTypes && transactionTypes.length > 0) {
+          conditions.push(inArray(insiderTrades.transactionType, transactionTypes));
         }
         let query = db.select().from(insiderTrades);
         if (conditions.length > 0) {
@@ -599,7 +603,7 @@ var init_storage = __esm({
         return user2;
       }
       // Insider trading methods
-      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes = ["BUY", "SELL", "PURCHASE", "SALE"]) {
+      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes = ["BUY", "SELL", "PURCHASE", "SALE"], filterBy) {
         let trades = Array.from(this.insiderTrades.values());
         console.log(`\u{1F50D} [DEBUG] MemStorage has ${trades.length} total trades in memory`);
         if (verifiedOnly) {
@@ -614,9 +618,10 @@ var init_storage = __esm({
             );
           });
         }
+        const filterField = filterBy || sortBy;
         if (fromDate || toDate) {
           trades = trades.filter((trade) => {
-            const compareDate = new Date(sortBy === "filedDate" ? trade.filedDate : trade.createdAt);
+            const compareDate = new Date(filterField === "filedDate" ? trade.filedDate : trade.createdAt);
             const from = fromDate ? new Date(fromDate) : /* @__PURE__ */ new Date("1900-01-01");
             const to = toDate ? new Date(toDate) : /* @__PURE__ */ new Date("2100-12-31");
             return compareDate >= from && compareDate <= to;
@@ -10670,11 +10675,16 @@ async function registerRoutes(app2) {
   const SALT_ROUNDS = 10;
   const getUserIdFromToken = (req) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) return null;
+    if (!token) {
+      console.log("\u26A0\uFE0F [AUTH] No authorization token provided in request");
+      return null;
+    }
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
+      console.log("\u2705 [AUTH] Token verified for user:", decoded.email, "(ID:", decoded.userId + ")");
       return decoded.userId;
     } catch (error) {
+      console.error("\u274C [AUTH] Token verification failed:", error instanceof Error ? error.message : String(error));
       return null;
     }
   };
@@ -11605,15 +11615,18 @@ async function registerRoutes(app2) {
         console.log(`   \u{1F4CA} Tier: ${accessLevel.tier}, Status: ${accessLevel.status}, Trial: ${accessLevel.isTrialing}`);
       }
       let adjustedToDate = toDate;
+      let filterBy = void 0;
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1e3);
         adjustedToDate = fortyEightHoursAgo.toISOString().split("T")[0];
+        filterBy = "createdAt";
         console.log(`\u{1F512} Free user access - applying 48-hour delay filter`);
         console.log(`   Cutoff date: ${adjustedToDate}`);
-        console.log(`   Filter: trades with ${sortBy} <= ${adjustedToDate}`);
-        console.log(`   Request: limit=${limit}, offset=${offset}, sortBy=${sortBy}`);
+        console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Sort: ${sortBy}`);
+        console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy);
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
         if (rawTrades.length > 0) {

@@ -65,6 +65,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       console.error('❌ [ACCESS CONTEXT] Failed to fetch access level:', error);
+      console.error('   Error details:', error instanceof Error ? error.message : String(error));
+      console.log('   🔒 Defaulting to free access due to API error');
       setAccessLevel({
         hasRealtimeAccess: false,
         isDelayed: true,

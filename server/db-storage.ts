@@ -24,22 +24,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Insider trading methods
-  async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate?: string, toDate?: string, sortBy: 'createdAt' | 'filedDate' = 'filedDate'): Promise<InsiderTrade[]> {
+  async getInsiderTrades(
+    limit = 20,
+    offset = 0,
+    verifiedOnly = false,
+    fromDate?: string,
+    toDate?: string,
+    sortBy: 'createdAt' | 'filedDate' = 'filedDate',
+    transactionTypes?: string[],
+    filterBy?: 'createdAt' | 'filedDate'
+  ): Promise<InsiderTrade[]> {
     const conditions = [];
 
     if (verifiedOnly) {
       conditions.push(eq(insiderTrades.isVerified, true));
     }
 
+    // Use filterBy if provided, otherwise default to sortBy for backward compatibility
+    const filterField = filterBy || sortBy;
+
     // Apply date filtering
     if (fromDate) {
-      const sortField = sortBy === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
-      conditions.push(gte(sortField, new Date(fromDate)));
+      const dateField = filterField === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
+      conditions.push(gte(dateField, new Date(fromDate)));
     }
 
     if (toDate) {
-      const sortField = sortBy === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
-      conditions.push(lte(sortField, new Date(toDate)));
+      const dateField = filterField === 'filedDate' ? insiderTrades.filedDate : insiderTrades.createdAt;
+      conditions.push(lte(dateField, new Date(toDate)));
+    }
+
+    // Filter by transaction types if provided
+    if (transactionTypes && transactionTypes.length > 0) {
+      conditions.push(inArray(insiderTrades.transactionType, transactionTypes));
     }
 
     let query = db

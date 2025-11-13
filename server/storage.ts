@@ -17,7 +17,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Insider trading data with date filtering
-  getInsiderTrades(limit?: number, offset?: number, verifiedOnly?: boolean, fromDate?: string, toDate?: string, sortBy?: 'createdAt' | 'filedDate'): Promise<InsiderTrade[]>;
+  getInsiderTrades(limit?: number, offset?: number, verifiedOnly?: boolean, fromDate?: string, toDate?: string, sortBy?: 'createdAt' | 'filedDate', transactionTypes?: string[], filterBy?: 'createdAt' | 'filedDate'): Promise<InsiderTrade[]>;
   getVerifiedInsiderTrades(limit?: number, offset?: number): Promise<InsiderTrade[]>;
   getInsiderTradeById(id: string): Promise<InsiderTrade | undefined>;
   createInsiderTrade(trade: InsertInsiderTrade): Promise<InsiderTrade>;
@@ -107,7 +107,8 @@ export class MemStorage implements IStorage {
     fromDate?: string,
     toDate?: string,
     sortBy: 'createdAt' | 'filedDate' = 'filedDate',
-    transactionTypes: string[] = ['BUY', 'SELL', 'PURCHASE', 'SALE'] // Default to pure buy/sell only
+    transactionTypes: string[] = ['BUY', 'SELL', 'PURCHASE', 'SALE'], // Default to pure buy/sell only
+    filterBy?: 'createdAt' | 'filedDate' // New parameter for filtering separate from sorting
   ): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
     console.log(`🔍 [DEBUG] MemStorage has ${trades.length} total trades in memory`);
@@ -132,10 +133,13 @@ export class MemStorage implements IStorage {
       });
     }
 
+    // Use filterBy if provided, otherwise default to sortBy for backward compatibility
+    const filterField = filterBy || sortBy;
+
     // Apply date filtering
     if (fromDate || toDate) {
       trades = trades.filter(trade => {
-        const compareDate = new Date(sortBy === 'filedDate' ? trade.filedDate : trade.createdAt!);
+        const compareDate = new Date(filterField === 'filedDate' ? trade.filedDate : trade.createdAt!);
         const from = fromDate ? new Date(fromDate) : new Date('1900-01-01');
         const to = toDate ? new Date(toDate) : new Date('2100-12-31');
         return compareDate >= from && compareDate <= to;

@@ -535,12 +535,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract userId from JWT token
   const getUserIdFromToken = (req: any): string | null => {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) return null;
+    if (!token) {
+      console.log('⚠️ [AUTH] No authorization token provided in request');
+      return null;
+    }
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+      console.log('✅ [AUTH] Token verified for user:', decoded.email, '(ID:', decoded.userId + ')');
       return decoded.userId;
     } catch (error) {
+      console.error('❌ [AUTH] Token verification failed:', error instanceof Error ? error.message : String(error));
       return null;
     }
   };
@@ -1773,16 +1778,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If user doesn't have real-time access, filter to 48h+ old trades
       let adjustedToDate = toDate;
+      let filterBy: 'createdAt' | 'filedDate' | undefined = undefined;
+
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
         adjustedToDate = fortyEightHoursAgo.toISOString().split('T')[0];
+        filterBy = 'createdAt'; // Always filter by collection date for free users
         console.log(`🔒 Free user access - applying 48-hour delay filter`);
         console.log(`   Cutoff date: ${adjustedToDate}`);
-        console.log(`   Filter: trades with ${sortBy} <= ${adjustedToDate}`);
-        console.log(`   Request: limit=${limit}, offset=${offset}, sortBy=${sortBy}`);
+        console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Sort: ${sortBy}`);
+        console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
 
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy);
 
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);

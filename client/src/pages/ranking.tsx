@@ -465,12 +465,12 @@ export default function Ranking() {
                 <img
                   src={logoLight}
                   alt="InsiderPulse"
-                  className="w-48 sm:w-80 h-auto opacity-10 select-none dark:hidden"
+                  className="w-48 sm:w-80 h-auto opacity-20 select-none dark:hidden"
                 />
                 <img
                   src={logoDark}
                   alt="InsiderPulse"
-                  className="w-48 sm:w-80 h-auto opacity-10 select-none hidden dark:block"
+                  className="w-48 sm:w-80 h-auto opacity-20 select-none hidden dark:block"
                 />
               </div>
 

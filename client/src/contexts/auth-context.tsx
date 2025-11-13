@@ -59,14 +59,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             apiClient.setToken(null);
           }
         } catch (error) {
-          console.error('Failed to verify token:', error);
+          console.error('❌ Failed to verify token:', error);
+          console.error('   Error details:', error instanceof Error ? error.message : String(error));
+          console.log('   🧹 Clearing invalid session data');
           // Token verification failed, clear everything
           localStorage.removeItem('authToken');
           localStorage.removeItem('authUser');
           apiClient.setToken(null);
         }
+      } else {
+        console.log('ℹ️ No saved session found in localStorage');
       }
 
+      console.log('✅ Auth initialization complete. Authenticated:', !!savedToken && !!savedUser);
       setIsLoading(false);
     };
 
@@ -89,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiClient.setToken(newToken);
 
     console.log('✅ [AUTH CONTEXT] User logged in and state updated');
+    console.log('   💾 Token saved to localStorage');
+    console.log('   🔑 Token set in API client:', newToken.substring(0, 20) + '...');
   };
 
   const logout = () => {

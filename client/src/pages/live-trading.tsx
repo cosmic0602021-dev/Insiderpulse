@@ -129,16 +129,16 @@ export default function LiveTrading() {
     navigate('/premium-checkout');
   };
 
-  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - SEC 파일링 날짜순 정렬 (filedDate)
+  // 실제 데이터만 가져오기 - 가짜 데이터 완전 차단 - 수집 날짜순 정렬 (createdAt)
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: 'filedDate'
+      sortBy: 'createdAt'
     }),
     queryFn: async () => {
       console.log('[LIVE TRADING] Fetching trades and access level...');
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'filedDate');
+      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt');
       console.log('[LIVE TRADING] Response received:', {
         tradesCount: response.trades?.length || 0,
         hasAccessLevel: !!response.accessLevel,
