@@ -8446,6 +8446,106 @@ function SearchPage() {
     ] })
   ] });
 }
+function StripeMeshGradient({
+  variant = "default",
+  opacity = 0.6,
+  animate = true,
+  className = ""
+}) {
+  const gradientVariants = {
+    default: {
+      gradient1: "radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 1) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 1) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 1) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 1) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 1) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 1) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 1) 0px, transparent 50%)"
+    },
+    purple: {
+      gradient1: "radial-gradient(at 40% 20%, hsla(270, 80%, 65%, 0.8) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 80% 0%, hsla(189, 100%, 78%, 0.6) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.4) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 80% 80%, hsla(256, 96%, 67%, 0.7) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 0% 100%, hsla(45, 100%, 70%, 0.5) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 50% 50%, hsla(240, 70%, 50%, 0.3) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 100% 50%, hsla(280, 80%, 70%, 0.4) 0px, transparent 50%)"
+    },
+    blue: {
+      gradient1: "radial-gradient(at 30% 30%, hsla(210, 100%, 60%, 0.7) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 70% 70%, hsla(190, 100%, 70%, 0.6) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 50% 0%, hsla(220, 90%, 65%, 0.5) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 0% 80%, hsla(200, 100%, 75%, 0.4) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 100% 20%, hsla(230, 80%, 60%, 0.6) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 20% 100%, hsla(195, 100%, 80%, 0.5) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 80% 40%, hsla(215, 85%, 55%, 0.4) 0px, transparent 50%)"
+    },
+    warm: {
+      gradient1: "radial-gradient(at 50% 20%, hsla(45, 100%, 70%, 0.6) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 80% 80%, hsla(15, 90%, 65%, 0.5) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 20% 80%, hsla(355, 85%, 70%, 0.4) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 90% 30%, hsla(35, 100%, 75%, 0.7) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 10% 10%, hsla(25, 95%, 60%, 0.5) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 60% 90%, hsla(5, 80%, 65%, 0.4) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 40% 60%, hsla(40, 90%, 70%, 0.3) 0px, transparent 50%)"
+    }
+  };
+  const currentGradients = gradientVariants[variant];
+  const gradientString = Object.values(currentGradients).join(", ");
+  return /* @__PURE__ */ jsx(
+    "div",
+    {
+      className: `pointer-events-none fixed inset-0 z-0 ${animate ? "animate-mesh-gradient" : ""} ${className}`,
+      style: {
+        opacity,
+        background: gradientString,
+        filter: "blur(80px) saturate(150%)"
+      },
+      children: animate && /* @__PURE__ */ jsx("style", { dangerouslySetInnerHTML: { __html: `
+          @keyframes mesh-gradient {
+            0%, 100% {
+              transform: scale(1) translateY(0);
+            }
+            33% {
+              transform: scale(1.1) translateY(-10px);
+            }
+            66% {
+              transform: scale(0.95) translateY(10px);
+            }
+          }
+
+          .animate-mesh-gradient {
+            animation: mesh-gradient 20s ease-in-out infinite;
+          }
+        ` } })
+    }
+  );
+}
+function GlassCard({
+  children,
+  className = "",
+  variant = "default",
+  hover = true
+}) {
+  const baseStyles = "backdrop-blur-xl bg-white/5 border transition-all duration-300";
+  const variantStyles = {
+    default: "border-white/10 rounded-2xl shadow-lg shadow-black/10",
+    elevated: "border-white/20 rounded-3xl shadow-2xl shadow-black/20 bg-white/10",
+    bordered: "border-white/30 rounded-xl shadow-xl shadow-black/15 ring-1 ring-white/10",
+    premium: `
+      border-white/20 rounded-3xl
+      shadow-[0_50px_100px_-20px_rgba(50,50,93,.25),0_30px_60px_-30px_rgba(0,0,0,.3)]
+      bg-gradient-to-br from-white/10 to-white/5
+    `
+  };
+  const hoverStyles = hover ? "hover:bg-white/10 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-0.5" : "";
+  return /* @__PURE__ */ jsx("div", { className: cn(
+    baseStyles,
+    variantStyles[variant],
+    hoverStyles,
+    className
+  ), children });
+}
 const logoLight$5 = "/assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167-BnhrSNJc.png";
 const logoDark$5 = "/assets/inverted_with_green_1757888880166-D3vveTue.png";
 function TradeDetailModal({
@@ -10009,207 +10109,211 @@ function LiveTrading() {
       ] })
     ] }) });
   }
-  return /* @__PURE__ */ jsx("div", { className: "w-full max-w-full overflow-x-hidden", children: /* @__PURE__ */ jsxs("div", { className: "space-y-3 sm:space-y-6 p-3 sm:p-6", children: [
-    /* @__PURE__ */ jsx(
-      FOMOAlertManager,
-      {
-        trialExpiresAt: (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) || null,
-        isTrialing: (accessLevel == null ? void 0 : accessLevel.isTrialing) || false,
-        hasTrial: (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) || false,
-        recentLockedTrades: validatedData.trades.slice(0, 5).map((t2) => ({
-          companyName: t2.companyName,
-          ticker: t2.ticker || "",
-          totalValue: t2.totalValue,
-          traderTitle: t2.traderTitle || "Insider"
-        })),
-        onUpgrade: handleUpgrade,
-        onUnlock: handleUnlock
-      }
-    ),
-    (accessLevel == null ? void 0 : accessLevel.isTrialing) && (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) && /* @__PURE__ */ jsx(TrialTimerBanner, { trialExpiresAt: accessLevel.trialExpiresAt }),
-    (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) && !(accessLevel == null ? void 0 : accessLevel.isTrialing) && !(accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) && /* @__PURE__ */ jsx(TrialExpiredBanner, { onUpgrade: handleUpgrade }),
-    accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && /* @__PURE__ */ jsx(FreeZoneBanner, { delayHours: accessLevel.delayHours }),
-    /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3", children: [
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-          /* @__PURE__ */ jsx("h1", { className: "text-2xl sm:text-3xl font-bold", children: t("page.livetrading.title") }),
-          /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mt-1", children: t("page.livetrading.subtitle") }),
-          lastValidationTime && /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground mt-1 flex items-center gap-1", children: [
-            /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3" }),
-            t("liveTrading.lastUpdated"),
-            ": ",
-            formatTimeAgo(lastValidationTime)
+  return /* @__PURE__ */ jsxs("div", { className: "w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] relative", children: [
+    /* @__PURE__ */ jsx(StripeMeshGradient, { variant: "blue", opacity: 0.3, animate: true }),
+    /* @__PURE__ */ jsxs("div", { className: "space-y-3 sm:space-y-6 p-3 sm:p-6 relative z-10", children: [
+      /* @__PURE__ */ jsx(
+        FOMOAlertManager,
+        {
+          trialExpiresAt: (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) || null,
+          isTrialing: (accessLevel == null ? void 0 : accessLevel.isTrialing) || false,
+          hasTrial: (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) || false,
+          recentLockedTrades: validatedData.trades.slice(0, 5).map((t2) => ({
+            companyName: t2.companyName,
+            ticker: t2.ticker || "",
+            totalValue: t2.totalValue,
+            traderTitle: t2.traderTitle || "Insider"
+          })),
+          onUpgrade: handleUpgrade,
+          onUnlock: handleUnlock
+        }
+      ),
+      (accessLevel == null ? void 0 : accessLevel.isTrialing) && (accessLevel == null ? void 0 : accessLevel.trialExpiresAt) && /* @__PURE__ */ jsx(TrialTimerBanner, { trialExpiresAt: accessLevel.trialExpiresAt }),
+      (accessLevel == null ? void 0 : accessLevel.hasUsedTrial) && !(accessLevel == null ? void 0 : accessLevel.isTrialing) && !(accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) && /* @__PURE__ */ jsx(TrialExpiredBanner, { onUpgrade: handleUpgrade }),
+      accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && /* @__PURE__ */ jsx(FreeZoneBanner, { delayHours: accessLevel.delayHours }),
+      /* @__PURE__ */ jsx(GlassCard, { variant: "elevated", className: "p-4 sm:p-6", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-4", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
+            /* @__PURE__ */ jsx("h1", { className: "text-3xl sm:text-4xl font-bold text-white mb-2", children: t("page.livetrading.title") }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("page.livetrading.subtitle") }),
+            lastValidationTime && /* @__PURE__ */ jsxs("p", { className: "text-xs text-slate-500 mt-2 flex items-center gap-1", children: [
+              /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3" }),
+              t("liveTrading.lastUpdated"),
+              ": ",
+              formatTimeAgo(lastValidationTime)
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 w-full sm:w-auto", children: [
+            /* @__PURE__ */ jsx(ShareButton, { variant: "outline", size: "sm" }),
+            /* @__PURE__ */ jsxs(Button, { onClick: () => refetch(), variant: "outline", size: "sm", className: "flex-1 sm:flex-initial bg-white/5 border-white/10 hover:bg-white/10 text-white backdrop-blur-xl", children: [
+              /* @__PURE__ */ jsx(RefreshCw, { className: "h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" }),
+              /* @__PURE__ */ jsx("span", { className: "hidden sm:inline", children: t("general.refresh") })
+            ] }),
+            /* @__PURE__ */ jsxs(Badge, { className: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 backdrop-blur-xl flex items-center gap-1 text-xs", children: [
+              /* @__PURE__ */ jsx(Database, { className: "h-3 w-3" }),
+              /* @__PURE__ */ jsx("span", { className: "hidden sm:inline", children: t("liveTrading.realData") })
+            ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 w-full sm:w-auto", children: [
-          /* @__PURE__ */ jsx(ShareButton, { variant: "outline", size: "sm" }),
-          /* @__PURE__ */ jsxs(Button, { onClick: () => refetch(), variant: "outline", size: "sm", className: "flex-1 sm:flex-initial", children: [
-            /* @__PURE__ */ jsx(RefreshCw, { className: "h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" }),
-            /* @__PURE__ */ jsx("span", { className: "hidden sm:inline", children: t("general.refresh") })
-          ] }),
-          /* @__PURE__ */ jsxs(Badge, { variant: "outline", className: "flex items-center gap-1 text-xs", children: [
-            /* @__PURE__ */ jsx(Database, { className: "h-3 w-3" }),
-            /* @__PURE__ */ jsx("span", { className: "hidden sm:inline", children: t("liveTrading.realData") })
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "relative w-full", children: [
-        /* @__PURE__ */ jsx(Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
-        /* @__PURE__ */ jsx(
-          Input,
-          {
-            type: "text",
-            placeholder: t("page.search.placeholder"),
-            value: searchQuery,
-            onChange: (e) => setSearchQuery(e.target.value),
-            className: "pl-10 pr-10"
-          }
-        ),
-        searchQuery && /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => setSearchQuery(""),
-            className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground",
-            children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
-          }
-        )
-      ] }),
-      searchQuery && /* @__PURE__ */ jsxs("div", { className: "text-sm text-muted-foreground", children: [
-        filteredTrades.length,
-        t("search.tradesFound"),
-        filteredTrades.length !== validatedData.trades.length && /* @__PURE__ */ jsx("span", { className: "ml-1", children: t("search.outOfTotal").replace("{total}", validatedData.trades.length.toString()) })
-      ] })
-    ] }),
-    accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(
-      LockedTradesSection,
-      {
-        trades: validatedData.trades.slice(0, 5),
-        onUnlock: handleUnlock
-      }
-    ),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
-        t("liveTrading.verifiedTradesList"),
-        accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs", children: t("freeZone.delayedData") })
-      ] }) }),
-      /* @__PURE__ */ jsxs(CardContent$1, { children: [
-        filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8", children: [
-          /* @__PURE__ */ jsx(AlertTriangle, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
-          /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: searchQuery ? "검색 결과가 없습니다" : t("liveTrading.noValidatedTrades") }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground mt-2", children: searchQuery ? "다른 키워드로 검색해보세요" : t("liveTrading.collectorRunning") })
-        ] }) : /* @__PURE__ */ jsx("div", { className: "space-y-3", children: filteredTrades.map((trade) => {
-          var _a;
-          const pricePerShare = trade.pricePerShare || trade.totalValue / (trade.shares || 1);
-          trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1e3;
-          const priceChangePercent = trade.priceChangePercent;
-          const hasPercentChange = priceChangePercent !== void 0 && priceChangePercent !== null;
-          const priceLastUpdated = trade.priceLastUpdated;
-          if (filteredTrades.indexOf(trade) === 0) {
-            console.log("First trade data:", {
-              ticker: trade.ticker,
-              priceChangePercent,
-              priceLastUpdated,
-              currentPrice: trade.currentPrice
-            });
-          }
-          return /* @__PURE__ */ jsx(
-            "div",
+        /* @__PURE__ */ jsxs("div", { className: "relative w-full", children: [
+          /* @__PURE__ */ jsx(Search, { className: "absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" }),
+          /* @__PURE__ */ jsx(
+            Input,
             {
-              className: "border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 w-full",
-              onClick: () => handleTradeClick(trade),
-              "data-testid": `trade-card-${trade.id}`,
-              children: /* @__PURE__ */ jsxs("div", { className: "flex gap-2 sm:gap-3 w-full", children: [
-                /* @__PURE__ */ jsx("div", { className: `flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full ${getTradeTypeColor(trade.tradeType)}`, children: getTradeTypeIcon(trade.tradeType) }),
-                /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
-                  /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between gap-2 mb-1.5 sm:mb-1", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0", children: [
-                      /* @__PURE__ */ jsx("h3", { className: "font-bold text-base sm:text-lg leading-tight", children: trade.companyName }),
-                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "font-mono text-xs sm:text-sm flex-shrink-0", children: trade.ticker })
-                    ] }),
-                    hasPercentChange && /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 flex-shrink-0", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-xs text-muted-foreground", children: t("tradeDetail.priceChangeSinceTradeShort") }),
-                      /* @__PURE__ */ jsxs(
-                        Badge,
-                        {
-                          variant: "outline",
-                          className: `flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold text-xs sm:text-sm ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
-                          children: [
-                            priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
-                            priceChangePercent >= 0 ? "+" : "",
-                            priceChangePercent.toFixed(1),
-                            "%"
-                          ]
-                        }
-                      )
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "text-xs sm:text-sm text-muted-foreground mb-2 truncate", children: [
-                    trade.traderName,
-                    " • ",
-                    trade.traderTitle
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-2", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0", children: [
-                      /* @__PURE__ */ jsx("span", { className: "font-semibold text-sm sm:text-base", children: (_a = trade.shares) == null ? void 0 : _a.toLocaleString() }),
-                      /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "주 ×" }),
-                      /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
-                        "$",
-                        pricePerShare.toFixed(2)
+              type: "text",
+              placeholder: t("page.search.placeholder"),
+              value: searchQuery,
+              onChange: (e) => setSearchQuery(e.target.value),
+              className: "pl-12 pr-12 h-12 bg-white/5 border-white/10 text-white placeholder:text-slate-500 backdrop-blur-xl rounded-xl focus:bg-white/10 focus:border-purple-500/50"
+            }
+          ),
+          searchQuery && /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setSearchQuery(""),
+              className: "absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors",
+              children: /* @__PURE__ */ jsx(X, { className: "h-5 w-5" })
+            }
+          )
+        ] }),
+        searchQuery && /* @__PURE__ */ jsxs("div", { className: "text-sm text-slate-400", children: [
+          filteredTrades.length,
+          t("search.tradesFound"),
+          filteredTrades.length !== validatedData.trades.length && /* @__PURE__ */ jsx("span", { className: "ml-1", children: t("search.outOfTotal").replace("{total}", validatedData.trades.length.toString()) })
+        ] })
+      ] }) }),
+      accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(
+        LockedTradesSection,
+        {
+          trades: validatedData.trades.slice(0, 5),
+          onUnlock: handleUnlock
+        }
+      ),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
+          t("liveTrading.verifiedTradesList"),
+          accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs", children: t("freeZone.delayedData") })
+        ] }) }),
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+          filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8", children: [
+            /* @__PURE__ */ jsx(AlertTriangle, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
+            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: searchQuery ? "검색 결과가 없습니다" : t("liveTrading.noValidatedTrades") }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground mt-2", children: searchQuery ? "다른 키워드로 검색해보세요" : t("liveTrading.collectorRunning") })
+          ] }) : /* @__PURE__ */ jsx("div", { className: "space-y-3", children: filteredTrades.map((trade) => {
+            var _a;
+            const pricePerShare = trade.pricePerShare || trade.totalValue / (trade.shares || 1);
+            trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1e3;
+            const priceChangePercent = trade.priceChangePercent;
+            const hasPercentChange = priceChangePercent !== void 0 && priceChangePercent !== null;
+            const priceLastUpdated = trade.priceLastUpdated;
+            if (filteredTrades.indexOf(trade) === 0) {
+              console.log("First trade data:", {
+                ticker: trade.ticker,
+                priceChangePercent,
+                priceLastUpdated,
+                currentPrice: trade.currentPrice
+              });
+            }
+            return /* @__PURE__ */ jsx(
+              GlassCard,
+              {
+                variant: "default",
+                hover: true,
+                className: "p-4 sm:p-5 cursor-pointer",
+                onClick: () => handleTradeClick(trade),
+                children: /* @__PURE__ */ jsxs("div", { className: "flex gap-3 sm:gap-4 w-full", "data-testid": `trade-card-${trade.id}`, children: [
+                  /* @__PURE__ */ jsx("div", { className: `flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${getTradeTypeColor(trade.tradeType)} shadow-lg`, children: getTradeTypeIcon(trade.tradeType) }),
+                  /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between gap-2 mb-2", children: [
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 flex-wrap min-w-0", children: [
+                        /* @__PURE__ */ jsx("h3", { className: "font-bold text-lg sm:text-xl leading-tight text-white", children: trade.companyName }),
+                        /* @__PURE__ */ jsx(Badge, { className: "font-mono text-xs sm:text-sm bg-white/10 text-slate-300 border-white/20 backdrop-blur-xl", children: trade.ticker })
+                      ] }),
+                      hasPercentChange && /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 flex-shrink-0", children: [
+                        /* @__PURE__ */ jsx("span", { className: "text-xs text-muted-foreground", children: t("tradeDetail.priceChangeSinceTradeShort") }),
+                        /* @__PURE__ */ jsxs(
+                          Badge,
+                          {
+                            variant: "outline",
+                            className: `flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold text-xs sm:text-sm ${priceChangePercent >= 0 ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" : "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700"}`,
+                            children: [
+                              priceChangePercent >= 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
+                              priceChangePercent >= 0 ? "+" : "",
+                              priceChangePercent.toFixed(1),
+                              "%"
+                            ]
+                          }
+                        )
                       ] })
                     ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 min-w-0", children: [
-                      /* @__PURE__ */ jsx("div", { className: `text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)} truncate`, children: formatCurrency(Math.abs(trade.totalValue)) }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground", children: [
-                        trade.createdAt && /* @__PURE__ */ jsx("span", { className: "truncate", children: formatTimeAgo(trade.createdAt) }),
-                        trade.secFilingUrl && /* @__PURE__ */ jsx("span", { className: "text-blue-600 font-medium flex-shrink-0", children: "SEC" })
+                    /* @__PURE__ */ jsxs("div", { className: "text-xs sm:text-sm text-muted-foreground mb-2 truncate", children: [
+                      trade.traderName,
+                      " • ",
+                      trade.traderTitle
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-2", children: [
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0", children: [
+                        /* @__PURE__ */ jsx("span", { className: "font-semibold text-sm sm:text-base", children: (_a = trade.shares) == null ? void 0 : _a.toLocaleString() }),
+                        /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "주 ×" }),
+                        /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
+                          "$",
+                          pricePerShare.toFixed(2)
+                        ] })
+                      ] }),
+                      /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-end gap-0.5 min-w-0", children: [
+                        /* @__PURE__ */ jsx("div", { className: `text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)} truncate`, children: formatCurrency(Math.abs(trade.totalValue)) }),
+                        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground", children: [
+                          trade.createdAt && /* @__PURE__ */ jsx("span", { className: "truncate", children: formatTimeAgo(trade.createdAt) }),
+                          trade.secFilingUrl && /* @__PURE__ */ jsx("span", { className: "text-blue-600 font-medium flex-shrink-0", children: "SEC" })
+                        ] })
                       ] })
                     ] })
                   ] })
                 ] })
-              ] })
-            },
-            trade.id
-          );
-        }) }),
-        filteredTrades.length > 0 && filteredTrades.length >= loadedCount && !searchQuery && /* @__PURE__ */ jsx("div", { className: "flex justify-center pt-6 border-t mt-6", children: /* @__PURE__ */ jsxs(
-          Button,
-          {
-            onClick: () => {
-              setLoadedCount((prev) => prev + 100);
-            },
-            variant: "outline",
-            className: "w-full sm:w-auto",
-            disabled: isLoading,
-            children: [
-              /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 mr-2" }),
-              "더 많은 거래 내역 보기 (+100개)"
-            ]
-          }
-        ) }),
-        filteredTrades.length > 0 && /* @__PURE__ */ jsx("div", { className: "text-center text-sm text-muted-foreground pt-4", children: searchQuery ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-          "검색된 ",
-          filteredTrades.length,
-          "개의 거래 표시 중"
-        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-          "최근 ",
-          filteredTrades.length,
-          "개의 거래 표시 중"
-        ] }) })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx(
-      TradeDetailModal,
-      {
-        isOpen: isModalOpen,
-        onClose: handleCloseModal,
-        trade: selectedTrade,
-        onAddToWatchlist: handleAddToWatchlist,
-        isInWatchlist: (selectedTrade == null ? void 0 : selectedTrade.ticker) ? watchlist.includes(selectedTrade.ticker) : false,
-        "data-testid": "trade-detail-modal"
-      }
-    )
-  ] }) });
+              },
+              trade.id
+            );
+          }) }),
+          filteredTrades.length > 0 && filteredTrades.length >= loadedCount && !searchQuery && /* @__PURE__ */ jsx("div", { className: "flex justify-center pt-6 border-t mt-6", children: /* @__PURE__ */ jsxs(
+            Button,
+            {
+              onClick: () => {
+                setLoadedCount((prev) => prev + 100);
+              },
+              variant: "outline",
+              className: "w-full sm:w-auto",
+              disabled: isLoading,
+              children: [
+                /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 mr-2" }),
+                "더 많은 거래 내역 보기 (+100개)"
+              ]
+            }
+          ) }),
+          filteredTrades.length > 0 && /* @__PURE__ */ jsx("div", { className: "text-center text-sm text-muted-foreground pt-4", children: searchQuery ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+            "검색된 ",
+            filteredTrades.length,
+            "개의 거래 표시 중"
+          ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+            "최근 ",
+            filteredTrades.length,
+            "개의 거래 표시 중"
+          ] }) })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsx(
+        TradeDetailModal,
+        {
+          isOpen: isModalOpen,
+          onClose: handleCloseModal,
+          trade: selectedTrade,
+          onAddToWatchlist: handleAddToWatchlist,
+          isInWatchlist: (selectedTrade == null ? void 0 : selectedTrade.ticker) ? watchlist.includes(selectedTrade.ticker) : false,
+          "data-testid": "trade-detail-modal"
+        }
+      )
+    ] })
+  ] });
 }
 const logoLight$4 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
 const logoDark$4 = "/insiderpulse_logo1.png";
@@ -12943,81 +13047,6 @@ const EnhancedInsiderTradingDashboard = () => {
     ] }) }) })
   ] });
 };
-function StripeMeshGradient({
-  variant = "default",
-  opacity = 0.6,
-  animate = true,
-  className = ""
-}) {
-  const gradientVariants = {
-    default: {
-      gradient1: "radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 1) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 1) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 1) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 1) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 1) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 1) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 1) 0px, transparent 50%)"
-    },
-    purple: {
-      gradient1: "radial-gradient(at 40% 20%, hsla(270, 80%, 65%, 0.8) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 80% 0%, hsla(189, 100%, 78%, 0.6) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.4) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 80% 80%, hsla(256, 96%, 67%, 0.7) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 0% 100%, hsla(45, 100%, 70%, 0.5) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 50% 50%, hsla(240, 70%, 50%, 0.3) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 100% 50%, hsla(280, 80%, 70%, 0.4) 0px, transparent 50%)"
-    },
-    blue: {
-      gradient1: "radial-gradient(at 30% 30%, hsla(210, 100%, 60%, 0.7) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 70% 70%, hsla(190, 100%, 70%, 0.6) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 50% 0%, hsla(220, 90%, 65%, 0.5) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 0% 80%, hsla(200, 100%, 75%, 0.4) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 100% 20%, hsla(230, 80%, 60%, 0.6) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 20% 100%, hsla(195, 100%, 80%, 0.5) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 80% 40%, hsla(215, 85%, 55%, 0.4) 0px, transparent 50%)"
-    },
-    warm: {
-      gradient1: "radial-gradient(at 50% 20%, hsla(45, 100%, 70%, 0.6) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 80% 80%, hsla(15, 90%, 65%, 0.5) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 20% 80%, hsla(355, 85%, 70%, 0.4) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 90% 30%, hsla(35, 100%, 75%, 0.7) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 10% 10%, hsla(25, 95%, 60%, 0.5) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 60% 90%, hsla(5, 80%, 65%, 0.4) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 40% 60%, hsla(40, 90%, 70%, 0.3) 0px, transparent 50%)"
-    }
-  };
-  const currentGradients = gradientVariants[variant];
-  const gradientString = Object.values(currentGradients).join(", ");
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      className: `pointer-events-none fixed inset-0 z-0 ${animate ? "animate-mesh-gradient" : ""} ${className}`,
-      style: {
-        opacity,
-        background: gradientString,
-        filter: "blur(80px) saturate(150%)"
-      },
-      children: animate && /* @__PURE__ */ jsx("style", { dangerouslySetInnerHTML: { __html: `
-          @keyframes mesh-gradient {
-            0%, 100% {
-              transform: scale(1) translateY(0);
-            }
-            33% {
-              transform: scale(1.1) translateY(-10px);
-            }
-            66% {
-              transform: scale(0.95) translateY(10px);
-            }
-          }
-
-          .animate-mesh-gradient {
-            animation: mesh-gradient 20s ease-in-out infinite;
-          }
-        ` } })
-    }
-  );
-}
 function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState("monthly");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -15610,31 +15639,6 @@ function AdminDashboard() {
       formatDate(metrics.calculatedAt)
     ] })
   ] });
-}
-function GlassCard({
-  children,
-  className = "",
-  variant = "default",
-  hover = true
-}) {
-  const baseStyles = "backdrop-blur-xl bg-white/5 border transition-all duration-300";
-  const variantStyles = {
-    default: "border-white/10 rounded-2xl shadow-lg shadow-black/10",
-    elevated: "border-white/20 rounded-3xl shadow-2xl shadow-black/20 bg-white/10",
-    bordered: "border-white/30 rounded-xl shadow-xl shadow-black/15 ring-1 ring-white/10",
-    premium: `
-      border-white/20 rounded-3xl
-      shadow-[0_50px_100px_-20px_rgba(50,50,93,.25),0_30px_60px_-30px_rgba(0,0,0,.3)]
-      bg-gradient-to-br from-white/10 to-white/5
-    `
-  };
-  const hoverStyles = hover ? "hover:bg-white/10 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-0.5" : "";
-  return /* @__PURE__ */ jsx("div", { className: cn(
-    baseStyles,
-    variantStyles[variant],
-    hoverStyles,
-    className
-  ), children });
 }
 function LandingPage() {
   const [, navigate2] = useLocation();

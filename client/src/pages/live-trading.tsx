@@ -10,6 +10,8 @@ import {
   Wifi, WifiOff, AlertTriangle, CheckCircle, Clock,
   RefreshCw, Database, Shield, Info, Search, X
 } from 'lucide-react';
+import { StripeMeshGradient } from '@/components/stripe-mesh-gradient';
+import { GlassCard } from '@/components/glass-card';
 import { apiClient, queryKeys, type TradesResponse } from '@/lib/api';
 import { useAccess } from '@/contexts/access-context';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
@@ -324,8 +326,11 @@ export default function LiveTrading() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
-      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] relative">
+      {/* Stripe Mesh Gradient Background */}
+      <StripeMeshGradient variant="blue" opacity={0.3} animate={true} />
+
+      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6 relative z-10">
       {/* FOMO Alert Manager - All FOMO alerts */}
       <FOMOAlertManager
         trialExpiresAt={accessLevel?.trialExpiresAt || null}
@@ -356,67 +361,69 @@ export default function LiveTrading() {
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
       )}
 
-      {/* 헤더 */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold">{t('page.livetrading.title')}</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              {t('page.livetrading.subtitle')}
-            </p>
-            {/* 마지막 업데이트 시간 표시 */}
-            {lastValidationTime && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {t('liveTrading.lastUpdated')}: {formatTimeAgo(lastValidationTime)}
+      {/* Header - Glass morphism */}
+      <GlassCard variant="elevated" className="p-4 sm:p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex-1">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{t('page.livetrading.title')}</h1>
+              <p className="text-sm text-slate-400">
+                {t('page.livetrading.subtitle')}
               </p>
+              {/* 마지막 업데이트 시간 표시 */}
+              {lastValidationTime && (
+                <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {t('liveTrading.lastUpdated')}: {formatTimeAgo(lastValidationTime)}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <ShareButton variant="outline" size="sm" />
+              <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial bg-white/5 border-white/10 hover:bg-white/10 text-white backdrop-blur-xl">
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{t('general.refresh')}</span>
+              </Button>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 backdrop-blur-xl flex items-center gap-1 text-xs">
+                <Database className="h-3 w-3" />
+                <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
+              </Badge>
+            </div>
+          </div>
+
+          {/* Search Bar - Premium glass style */}
+          <div className="relative w-full">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder={t('page.search.placeholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-12 h-12 bg-white/5 border-white/10 text-white placeholder:text-slate-500 backdrop-blur-xl rounded-xl focus:bg-white/10 focus:border-purple-500/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
             )}
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <ShareButton variant="outline" size="sm" />
-            <Button onClick={() => refetch()} variant="outline" size="sm" className="flex-1 sm:flex-initial">
-              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-              <span className="hidden sm:inline">{t('general.refresh')}</span>
-            </Button>
-            <Badge variant="outline" className="flex items-center gap-1 text-xs">
-              <Database className="h-3 w-3" />
-              <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
-            </Badge>
-          </div>
-        </div>
 
-        {/* 검색 바 */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder={t('page.search.placeholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10"
-          />
+          {/* 검색 결과 카운트 */}
           {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="text-sm text-slate-400">
+              {filteredTrades.length}{t('search.tradesFound')}
+              {filteredTrades.length !== validatedData.trades.length && (
+                <span className="ml-1">
+                  {t('search.outOfTotal').replace('{total}', validatedData.trades.length.toString())}
+                </span>
+              )}
+            </div>
           )}
         </div>
-
-        {/* 검색 결과 카운트 */}
-        {searchQuery && (
-          <div className="text-sm text-muted-foreground">
-            {filteredTrades.length}{t('search.tradesFound')}
-            {filteredTrades.length !== validatedData.trades.length && (
-              <span className="ml-1">
-                {t('search.outOfTotal').replace('{total}', validatedData.trades.length.toString())}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      </GlassCard>
 
       {/* Locked Real-Time Trades Section - FOMO Zone */}
       {accessLevel && !accessLevel.hasRealtimeAccess && (
@@ -472,25 +479,26 @@ export default function LiveTrading() {
                 }
 
                 return (
-                  <div
+                  <GlassCard
                     key={trade.id}
-                    className="border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer hover-elevate p-3 sm:p-4 w-full"
+                    variant="default"
+                    hover={true}
+                    className="p-4 sm:p-5 cursor-pointer"
                     onClick={() => handleTradeClick(trade)}
-                    data-testid={`trade-card-${trade.id}`}
                   >
-                    <div className="flex gap-2 sm:gap-3 w-full">
-                      {/* 거래 타입 아이콘 */}
-                      <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full ${getTradeTypeColor(trade.tradeType)}`}>
+                    <div className="flex gap-3 sm:gap-4 w-full" data-testid={`trade-card-${trade.id}`}>
+                      {/* 거래 타입 아이콘 - Enhanced with gradient */}
+                      <div className={`flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${getTradeTypeColor(trade.tradeType)} shadow-lg`}>
                         {getTradeTypeIcon(trade.tradeType)}
                       </div>
 
                       {/* 메인 콘텐츠 */}
                       <div className="flex-1 min-w-0">
                         {/* 1행: 회사명 & 가격 변화 */}
-                        <div className="flex items-start justify-between gap-2 mb-1.5 sm:mb-1">
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-                            <h3 className="font-bold text-base sm:text-lg leading-tight">{trade.companyName}</h3>
-                            <Badge variant="outline" className="font-mono text-xs sm:text-sm flex-shrink-0">{trade.ticker}</Badge>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <h3 className="font-bold text-lg sm:text-xl leading-tight text-white">{trade.companyName}</h3>
+                            <Badge className="font-mono text-xs sm:text-sm bg-white/10 text-slate-300 border-white/20 backdrop-blur-xl">{trade.ticker}</Badge>
                           </div>
                           {hasPercentChange && (
                             <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
@@ -538,7 +546,7 @@ export default function LiveTrading() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </GlassCard>
                 );
               })}
             </div>
