@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, BarChart3, Building2, Activity, Users, PieChart, Sliders, Bookmark, Camera, Clock, Brain, Target, Calculator, Newspaper, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck } from "lucide-react";
+import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, BarChart3, Building2, Activity, Users, PieChart, Sliders, Bookmark, Camera, Clock, Brain, Target, Calculator, Newspaper, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -5769,7 +5769,7 @@ function LanguageSelection({ onLanguageSelected }) {
     ] })
   ] }) });
 }
-const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+const Card$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -5780,8 +5780,8 @@ const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ 
     ...props
   }
 ));
-Card.displayName = "Card";
-const CardHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+Card$1.displayName = "Card";
+const CardHeader$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -5789,8 +5789,8 @@ const CardHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE
     ...props
   }
 ));
-CardHeader.displayName = "CardHeader";
-const CardTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+CardHeader$1.displayName = "CardHeader";
+const CardTitle$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -5801,8 +5801,8 @@ const CardTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE_
     ...props
   }
 ));
-CardTitle.displayName = "CardTitle";
-const CardDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+CardTitle$1.displayName = "CardTitle";
+const CardDescription$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -5810,9 +5810,9 @@ const CardDescription = React.forwardRef(({ className, ...props }, ref) => /* @_
     ...props
   }
 ));
-CardDescription.displayName = "CardDescription";
-const CardContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn("p-6 pt-0", className), ...props }));
-CardContent.displayName = "CardContent";
+CardDescription$1.displayName = "CardDescription";
+const CardContent$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn("p-6 pt-0", className), ...props }));
+CardContent$1.displayName = "CardContent";
 const CardFooter = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
@@ -5850,12 +5850,12 @@ function DashboardStats({ stats }) {
   ];
   return /* @__PURE__ */ jsx("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: statCards.map((stat, index) => {
     const Icon = stat.icon;
-    return /* @__PURE__ */ jsxs(Card, { className: "hover-elevate", "data-testid": `stat-card-${index}`, children: [
-      /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-        /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium text-muted-foreground", children: stat.title }),
+    return /* @__PURE__ */ jsxs(Card$1, { className: "hover-elevate", "data-testid": `stat-card-${index}`, children: [
+      /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium text-muted-foreground", children: stat.title }),
         /* @__PURE__ */ jsx(Icon, { className: "h-4 w-4 text-muted-foreground" })
       ] }),
-      /* @__PURE__ */ jsxs(CardContent, { children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { children: [
         /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": `stat-value-${index}`, children: stat.value }),
         /* @__PURE__ */ jsxs("p", { className: `text-xs ${stat.positive ? "text-chart-2" : "text-destructive"}`, children: [
           stat.change,
@@ -6047,7 +6047,7 @@ function TradeCard({ trade, onViewDetails }) {
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
-  return /* @__PURE__ */ jsx(Card, { className: "hover-elevate", "data-testid": `trade-card-${trade.id}`, children: /* @__PURE__ */ jsxs(CardContent, { className: "p-4", children: [
+  return /* @__PURE__ */ jsx(Card$1, { className: "hover-elevate", "data-testid": `trade-card-${trade.id}`, children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-4", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between mb-3", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 flex-1", children: [
         /* @__PURE__ */ jsx(
@@ -6188,10 +6188,10 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
     console.log("Navigating to trade details:", trade.id);
     setLocation(`/trade/${trade.id}`);
   };
-  return /* @__PURE__ */ jsxs(Card, { "data-testid": "trade-list", children: [
-    /* @__PURE__ */ jsxs(CardHeader, { children: [
+  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "trade-list", children: [
+    /* @__PURE__ */ jsxs(CardHeader$1, { children: [
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4", children: [
-        /* @__PURE__ */ jsx(CardTitle, { className: "text-lg font-semibold", children: t("tradeList.recentTrades") }),
+        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-lg font-semibold", children: t("tradeList.recentTrades") }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsxs(
             Button,
@@ -6263,7 +6263,7 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
         ))
       ] }) })
     ] }),
-    /* @__PURE__ */ jsx(CardContent, { children: loading && filteredTrades.length === 0 ? /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center py-8", "data-testid": "loading-state", children: /* @__PURE__ */ jsxs("div", { className: "animate-pulse flex space-x-4", children: [
+    /* @__PURE__ */ jsx(CardContent$1, { children: loading && filteredTrades.length === 0 ? /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center py-8", "data-testid": "loading-state", children: /* @__PURE__ */ jsxs("div", { className: "animate-pulse flex space-x-4", children: [
       /* @__PURE__ */ jsx("div", { className: "rounded-md bg-muted h-4 w-4" }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 space-y-2 py-1", children: [
         /* @__PURE__ */ jsx("div", { className: "h-4 bg-muted rounded w-3/4" }),
@@ -6770,7 +6770,7 @@ function Dashboard() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
-      /* @__PURE__ */ jsx(Card, { className: "lg:col-span-2", children: tradesLoading ? /* @__PURE__ */ jsx("div", { className: "p-6", children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: [...Array(5)].map((_, i) => /* @__PURE__ */ jsx("div", { className: "h-24 bg-muted/50 rounded-md animate-pulse" }, i)) }) }) : /* @__PURE__ */ jsx(
+      /* @__PURE__ */ jsx(Card$1, { className: "lg:col-span-2", children: tradesLoading ? /* @__PURE__ */ jsx("div", { className: "p-6", children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: [...Array(5)].map((_, i) => /* @__PURE__ */ jsx("div", { className: "h-24 bg-muted/50 rounded-md animate-pulse" }, i)) }) }) : /* @__PURE__ */ jsx(
         TradeList,
         {
           trades: tradesData,
@@ -6783,12 +6783,12 @@ function Dashboard() {
         }
       ) }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs(Card, { "data-testid": "trading-summary", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "text-base flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "trading-summary", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "text-base flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4 text-primary" }),
             t("stats.tradingSummary")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs("div", { className: "p-3 bg-chart-2/10 rounded-md border border-chart-2/20", children: [
               /* @__PURE__ */ jsx("div", { className: "text-sm font-medium text-chart-2 mb-1", children: t("dashboardStats.recentActivity") }),
               /* @__PURE__ */ jsx("div", { className: "text-xs text-muted-foreground", children: t("dashboardStats.monitoring") })
@@ -6799,9 +6799,9 @@ function Dashboard() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { "data-testid": "top-stocks", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-base", children: t("dashboardStats.topStocks") }) }),
-          /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: topStocks.length === 0 ? /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground text-center py-4", children: t("dashboardStats.noData") }) : topStocks.map((stock) => /* @__PURE__ */ jsxs("div", { className: "border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-2", children: [
+        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "top-stocks", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-base", children: t("dashboardStats.topStocks") }) }),
+          /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: topStocks.length === 0 ? /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground text-center py-4", children: t("dashboardStats.noData") }) : topStocks.map((stock) => /* @__PURE__ */ jsxs("div", { className: "border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-2", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2", children: [
               /* @__PURE__ */ jsxs("div", { children: [
                 /* @__PURE__ */ jsx("div", { className: "font-mono text-sm font-semibold", children: stock.symbol }),
@@ -7160,12 +7160,12 @@ function Settings() {
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("settings.description") })
     ] }),
     /* @__PURE__ */ jsx(Separator, {}),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Languages, { className: "h-5 w-5" }),
         t("settings.language")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx(Label, { htmlFor: "language-select", children: t("placeholder.preferredLanguage") }),
         /* @__PURE__ */ jsxs(Select, { value: language, onValueChange: (value) => setLanguage(value), children: [
           /* @__PURE__ */ jsx(SelectTrigger, { id: "language-select", "data-testid": "select-language", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
@@ -7176,12 +7176,12 @@ function Settings() {
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Palette, { className: "h-5 w-5" }),
         t("settings.theme")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx(Label, { htmlFor: "theme-select", children: t("settings.themeDescription") }),
         /* @__PURE__ */ jsxs(Select, { value: theme, onValueChange: handleThemeChange, children: [
           /* @__PURE__ */ jsx(SelectTrigger, { id: "theme-select", "data-testid": "select-theme", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
@@ -7195,12 +7195,12 @@ function Settings() {
         ] })
       ] }) })
     ] }),
-    user && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    user && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5" }),
         "Subscription Management"
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("div", { className: "space-y-2", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
             /* @__PURE__ */ jsx(Label, { children: "Current Plan" }),
@@ -7241,12 +7241,12 @@ function Settings() {
         /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm", children: /* @__PURE__ */ jsx("p", { className: "text-blue-900 dark:text-blue-100 text-xs", children: "💡 Tip: If you cancel your subscription, you'll keep access until the end of your billing period." }) })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5" }),
         t("notification.settings.title")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: !isSupported ? /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: !isSupported ? /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
         /* @__PURE__ */ jsx(BellOff, { className: "h-4 w-4" }),
         /* @__PURE__ */ jsx("span", { children: "Push notifications are not supported on this device" })
       ] }) : /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -7359,12 +7359,12 @@ const PriceComparisonChart = memo(function PriceComparisonChart2({
     }
     return null;
   };
-  return /* @__PURE__ */ jsxs(Card, { "data-testid": "price-comparison-chart", children: [
-    /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "price-comparison-chart", children: [
+    /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
       isProfit ? /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-500" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "w-5 h-5 text-red-500" }),
       t("priceChart.title")
     ] }) }),
-    /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
       /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(LineChart, { data, margin: { top: 20, right: 30, left: 20, bottom: 20 }, children: [
         /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
         /* @__PURE__ */ jsx(
@@ -7549,21 +7549,21 @@ const StockHistoryChart = memo(function StockHistoryChart2({
     return null;
   };
   if (isLoading) {
-    return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart-loading", children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart-loading", children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History"
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx(Skeleton, { className: "h-80 w-full" }) })
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx(Skeleton, { className: "h-80 w-full" }) })
     ] });
   }
   if (error || !historyData.length) {
-    return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart-error", children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart-error", children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History"
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent, { className: "text-center py-8", children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { className: "text-center py-8", children: [
         /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: error ? "Failed to load price history" : "No historical data available" }),
         /* @__PURE__ */ jsxs("p", { className: "text-sm text-muted-foreground mt-2", children: [
           "Historical data from ",
@@ -7577,9 +7577,9 @@ const StockHistoryChart = memo(function StockHistoryChart2({
   const priceChange = currentPrice - tradePrice;
   const percentChange = priceChange / tradePrice * 100;
   const isGain = priceChange > 0;
-  return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart", children: [
-    /* @__PURE__ */ jsxs(CardHeader, { children: [
-      /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart", children: [
+    /* @__PURE__ */ jsxs(CardHeader$1, { children: [
+      /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History (",
         ticker,
@@ -7617,7 +7617,7 @@ const StockHistoryChart = memo(function StockHistoryChart2({
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(CardContent, { children: [
+    /* @__PURE__ */ jsxs(CardContent$1, { children: [
       /* @__PURE__ */ jsx("div", { className: "h-80", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(LineChart, { data: chartData, margin: { top: 20, right: 30, left: 20, bottom: 20 }, children: [
         /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
         /* @__PURE__ */ jsx(
@@ -7783,12 +7783,12 @@ function TradeDetail() {
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 lg:grid-cols-3", children: [
       /* @__PURE__ */ jsxs("div", { className: "lg:col-span-2 space-y-6", children: [
-        /* @__PURE__ */ jsxs(Card, { "data-testid": "card-trade-info", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-trade-info", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(Building2, { className: "w-5 h-5" }),
             t("tradeDetail.companyInfo")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
               /* @__PURE__ */ jsxs("div", { className: "w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-md", children: [
                 /* @__PURE__ */ jsx(
@@ -7860,12 +7860,12 @@ function TradeDetail() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { "data-testid": "card-transaction-details", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-transaction-details", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(DollarSign, { className: "w-5 h-5" }),
             t("tradeDetail.transactionDetails")
           ] }) }),
-          /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
+          /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
             /* @__PURE__ */ jsxs("div", { children: [
               /* @__PURE__ */ jsx("h4", { className: "font-medium text-sm text-muted-foreground mb-1", children: t("tradeDetail.sharesTraded") }),
               /* @__PURE__ */ jsx("p", { className: "text-xl font-bold", "data-testid": "text-shares", children: ((_b = trade.shares) == null ? void 0 : _b.toLocaleString()) || "N/A" })
@@ -7889,12 +7889,12 @@ function TradeDetail() {
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
-        stockPrice && /* @__PURE__ */ jsxs(Card, { "data-testid": "card-current-price", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        stockPrice && /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-current-price", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5" }),
             t("tradeDetail.currentPrice")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
               /* @__PURE__ */ jsx("p", { className: "text-3xl font-bold", "data-testid": "text-current-price", children: typeof stockPrice.currentPrice === "string" ? formatCurrency(parseFloat(stockPrice.currentPrice)) : formatCurrency(stockPrice.currentPrice) }),
               /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center gap-2 mt-2", children: stockPrice.changePercent && /* @__PURE__ */ jsxs(Fragment$1, { children: [
@@ -7937,12 +7937,12 @@ function TradeDetail() {
             "data-testid": "stock-history-chart"
           }
         ),
-        profitLoss && trade.pricePerShare && stockPrice && /* @__PURE__ */ jsxs(Card, { "data-testid": "card-profit-loss", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        profitLoss && trade.pricePerShare && stockPrice && /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-profit-loss", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
             profitLoss.isProfit ? /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-500" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "w-5 h-5 text-red-500" }),
             t("tradeDetail.analysis")
           ] }) }),
-          /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+          /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
             /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground mb-1", children: t("tradeDetail.priceComparison") }),
             /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center", children: [
@@ -8050,54 +8050,54 @@ function Analytics() {
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("analytics.subtitle") })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-4", children: [
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.totalTrades") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.totalTrades") }),
           /* @__PURE__ */ jsx(Activity, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-total-trades", children: analytics.totalTrades.toLocaleString() }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.transactionsRecorded") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.totalVolume") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.totalVolume") }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-total-volume", children: formatCurrency(analytics.totalVolume) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.combinedValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.avgTradeSize") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.avgTradeSize") }),
           /* @__PURE__ */ jsx(BarChart3, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-avg-trade", children: formatCurrency(analytics.avgTradeSize) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.averageValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.companies") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.companies") }),
           /* @__PURE__ */ jsx(Users, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-companies", children: analytics.topCompanies.length }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.uniqueTracked") })
         ] })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 md:grid-cols-2", children: [
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(PieChart, { className: "h-5 w-5" }),
           t("analytics.tradeDistribution")
         ] }) }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
             /* @__PURE__ */ jsx(
               Pie,
@@ -8141,12 +8141,12 @@ function Analytics() {
           ] }, entry.name)) })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5" }),
           t("analytics.monthlyActivity")
         ] }) }),
-        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(BarChart, { data: analytics.monthlyTrends, children: [
+        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(BarChart, { data: analytics.monthlyTrends, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
           /* @__PURE__ */ jsx(XAxis, { dataKey: "month", tick: { fontSize: 12 } }),
           /* @__PURE__ */ jsx(YAxis, { tick: { fontSize: 12 } }),
@@ -8164,12 +8164,12 @@ function Analytics() {
         ] }) }) }) })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(TrendingUp, { className: "h-5 w-5" }),
         t("analytics.topCompanies")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: analytics.topCompanies.slice(0, 10).map((company, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: analytics.topCompanies.slice(0, 10).map((company, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
           /* @__PURE__ */ jsx("div", { className: "w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold", children: index + 1 }),
           /* @__PURE__ */ jsxs("div", { children: [
@@ -8262,12 +8262,12 @@ function SearchPage() {
       /* @__PURE__ */ jsx("h1", { className: "text-3xl font-bold tracking-tight", "data-testid": "text-search-title", children: t("search.title") }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("search.subtitle") })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Search, { className: "h-5 w-5" }),
         t("search.title")
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
           /* @__PURE__ */ jsxs("div", { className: "relative flex-1", children: [
             /* @__PURE__ */ jsx(Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
@@ -8355,22 +8355,22 @@ function SearchPage() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-6", children: [
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.results") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.results") }),
           /* @__PURE__ */ jsx(Search, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "stat-total-results", children: searchStats.totalResults }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.totalFound") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.buyTrades") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.buyTrades") }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-green-600" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-green-600", children: searchStats.buyTrades }),
           /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
             searchStats.totalResults > 0 ? `${(searchStats.buyTrades / searchStats.totalResults * 100).toFixed(1)}%` : "0%",
@@ -8378,12 +8378,12 @@ function SearchPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.sellTrades") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.sellTrades") }),
           /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-red-600" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-red-600", children: searchStats.sellTrades }),
           /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
             searchStats.totalResults > 0 ? `${(searchStats.sellTrades / searchStats.totalResults * 100).toFixed(1)}%` : "0%",
@@ -8391,46 +8391,46 @@ function SearchPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.totalVolume") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.totalVolume") }),
           /* @__PURE__ */ jsx(DollarSign, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: formatCurrency(searchStats.totalVolume) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.combinedValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.companies") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.companies") }),
           /* @__PURE__ */ jsx(Building2, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: searchStats.uniqueCompanies }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.uniqueEntities") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.traders") }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.traders") }),
           /* @__PURE__ */ jsx(User, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: searchStats.uniqueTraders }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.uniqueInsiders") })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx("span", { children: t("search.searchResults") }),
         /* @__PURE__ */ jsxs(Badge, { variant: "outline", children: [
           searchStats.totalResults,
           " results"
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: isLoading ? /* @__PURE__ */ jsx("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-3", children: Array.from({ length: 6 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-48" }, i)) }) : filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { children: isLoading ? /* @__PURE__ */ jsx("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-3", children: Array.from({ length: 6 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-48" }, i)) }) : filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12", children: [
         /* @__PURE__ */ jsx(Search, { className: "h-12 w-12 mx-auto mb-4 text-muted-foreground/50" }),
         /* @__PURE__ */ jsx("h3", { className: "text-lg font-semibold mb-2", children: t("search.noTrades") }),
         /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-4", children: t("liveTrading.adjustFilters") }),
@@ -8718,14 +8718,14 @@ function TradeDetailModal({
           )
         ] }),
         /* @__PURE__ */ jsxs(
-          Card,
+          Card$1,
           {
             ref: modalRef,
             className: "modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsx(CardHeader, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
-                /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
+              /* @__PURE__ */ jsx(CardHeader$1, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
+                /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
                   trade.ticker ? /* @__PURE__ */ jsxs("div", { className: "relative w-10 h-10 flex-shrink-0", children: [
                     /* @__PURE__ */ jsx(
                       "img",
@@ -8793,7 +8793,7 @@ function TradeDetailModal({
                   )
                 ] })
               ] }) }),
-              /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
+              /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
                 /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-6 rounded-lg space-y-4", children: [
                   /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", children: [
                     /* @__PURE__ */ jsxs("div", { children: [
@@ -9327,12 +9327,12 @@ function TradeDetailModal({
             ]
           }
         ),
-        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card, { className: "max-w-md w-full", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "max-w-md w-full", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-blue-500" }),
             t("notification.settings.title")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4", children: [
               /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-2 text-blue-900 dark:text-blue-100", children: [
                 "📱 ",
@@ -9392,7 +9392,7 @@ function LockedTradeCard({ trade, onUnlock }) {
   const insiderCount = 1;
   const totalValue = trade.totalValue || trade.shares * trade.pricePerShare;
   const hasHighRankInsider = ((_a = trade.traderTitle) == null ? void 0 : _a.toLowerCase().includes("ceo")) || ((_b = trade.traderTitle) == null ? void 0 : _b.toLowerCase().includes("cfo")) || ((_c = trade.traderTitle) == null ? void 0 : _c.toLowerCase().includes("president"));
-  return /* @__PURE__ */ jsxs(Card, { className: "relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900", children: [
+  return /* @__PURE__ */ jsxs(Card$1, { className: "relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900", children: [
     /* @__PURE__ */ jsx("div", { className: "absolute inset-0 backdrop-blur-sm bg-slate-900/60 z-10 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "text-center space-y-4 p-6", children: [
       /* @__PURE__ */ jsx(Lock, { className: "h-12 w-12 text-amber-500 mx-auto" }),
       /* @__PURE__ */ jsx("p", { className: "text-white font-bold text-lg", children: t("lockedTrade.realtimeInsider") })
@@ -10087,13 +10087,13 @@ function LiveTrading() {
         onUnlock: handleUnlock
       }
     ),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
         t("liveTrading.verifiedTradesList"),
         accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs", children: t("freeZone.delayedData") })
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent, { children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { children: [
         filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8", children: [
           /* @__PURE__ */ jsx(AlertTriangle, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
           /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: searchQuery ? "검색 결과가 없습니다" : t("liveTrading.noValidatedTrades") }),
@@ -10430,7 +10430,7 @@ function Ranking() {
         ] }),
         /* @__PURE__ */ jsx(Skeleton, { className: "h-10 w-32" })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsx(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsx(CardContent$1, { className: "p-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
           /* @__PURE__ */ jsx(Skeleton, { className: "h-12 w-12 rounded" }),
           /* @__PURE__ */ jsx(Skeleton, { className: "h-16 w-16 rounded-lg" }),
@@ -10444,7 +10444,7 @@ function Ranking() {
     ] });
   }
   if (error) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-6", children: /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "p-6 text-center", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-6", children: /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-6 text-center", children: [
       /* @__PURE__ */ jsx("p", { className: "text-destructive mb-4", children: t("ranking.noData") }),
       /* @__PURE__ */ jsxs(Button, { onClick: handleRefresh, variant: "outline", children: [
         /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 mr-2" }),
@@ -10492,7 +10492,7 @@ function Ranking() {
       var _a;
       const isLocked = !isPremium && index < 3;
       return /* @__PURE__ */ jsxs(
-        Card,
+        Card$1,
         {
           ref: (el) => cardRefs.current[index] = el,
           className: `hover-elevate cursor-pointer relative ${isLocked ? "overflow-hidden" : ""}`,
@@ -10531,7 +10531,7 @@ function Ranking() {
                 children: sharedCardIndex === index ? /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Share2, { className: "h-4 w-4" })
               }
             ),
-            /* @__PURE__ */ jsxs(CardContent, { className: `p-3 sm:p-6 relative ${isLocked ? "blur-sm" : ""}`, children: [
+            /* @__PURE__ */ jsxs(CardContent$1, { className: `p-3 sm:p-6 relative ${isLocked ? "blur-sm" : ""}`, children: [
               /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden", children: [
                 /* @__PURE__ */ jsx(
                   "img",
@@ -10796,7 +10796,7 @@ function Ranking() {
         item.ticker
       );
     }) }),
-    data && data.rankings.length === 0 && /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "p-12 text-center", children: [
+    data && data.rankings.length === 0 && /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-12 text-center", children: [
       /* @__PURE__ */ jsx(Star, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
       /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: t("ranking.noData") }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-4", children: "No ranking data available for the current period." }),
@@ -10822,7 +10822,7 @@ function Ranking() {
         isInWatchlist: (selectedTradeData == null ? void 0 : selectedTradeData.ticker) ? watchlist.includes(selectedTradeData.ticker) : false
       }
     ),
-    showWatchlistModal && selectedTradeForAlert && /* @__PURE__ */ jsx("div", { className: "modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsx("div", { className: "bg-gradient-to-br from-emerald-900/95 to-teal-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl", children: /* @__PURE__ */ jsx(Card, { className: "bg-transparent border-none shadow-none", children: /* @__PURE__ */ jsxs(CardContent, { className: "p-0", children: [
+    showWatchlistModal && selectedTradeForAlert && /* @__PURE__ */ jsx("div", { className: "modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsx("div", { className: "bg-gradient-to-br from-emerald-900/95 to-teal-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl", children: /* @__PURE__ */ jsx(Card$1, { className: "bg-transparent border-none shadow-none", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-0", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-3 mb-4", children: [
           /* @__PURE__ */ jsxs("div", { className: "relative", children: [
@@ -12943,147 +12943,78 @@ const EnhancedInsiderTradingDashboard = () => {
     ] }) }) })
   ] });
 };
-function GrainTexture({
-  opacity = 0.03,
+function StripeMeshGradient({
+  variant = "default",
+  opacity = 0.6,
   animate = true,
   className = ""
 }) {
-  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
-    /* @__PURE__ */ jsx(
-      "div",
-      {
-        className: `pointer-events-none fixed inset-0 z-50 ${className}`,
-        style: {
-          opacity,
-          mixBlendMode: "overlay",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='6.5' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          ...animate && {
-            animation: "grain 8s steps(10) infinite"
-          }
-        }
-      }
-    ),
-    animate && /* @__PURE__ */ jsx("style", { dangerouslySetInnerHTML: { __html: `
-          @keyframes grain {
-            0%, 100% { transform: translate(0, 0); }
-            10% { transform: translate(-5%, -10%); }
-            20% { transform: translate(-15%, 5%); }
-            30% { transform: translate(7%, -25%); }
-            40% { transform: translate(-5%, 25%); }
-            50% { transform: translate(-15%, 10%); }
-            60% { transform: translate(15%, 0%); }
-            70% { transform: translate(0%, 15%); }
-            80% { transform: translate(3%, 35%); }
-            90% { transform: translate(-10%, 10%); }
-          }
-        ` } })
-  ] });
-}
-function BrutalistGrid({
-  variant = "lines",
-  opacity = 0.15,
-  className = "",
-  animate = false
-}) {
-  const renderGrid = () => {
-    switch (variant) {
-      case "dots":
-        return /* @__PURE__ */ jsx(
-          "div",
-          {
-            className: "absolute inset-0",
-            style: {
-              backgroundImage: `radial-gradient(circle, currentColor 1px, transparent 1px)`,
-              backgroundSize: "32px 32px",
-              opacity
-            }
-          }
-        );
-      case "lines":
-        return /* @__PURE__ */ jsx(
-          "div",
-          {
-            className: "absolute inset-0",
-            style: {
-              backgroundImage: `
-                linear-gradient(to right, currentColor 1px, transparent 1px),
-                linear-gradient(to bottom, currentColor 1px, transparent 1px)
-              `,
-              backgroundSize: "48px 48px",
-              opacity
-            }
-          }
-        );
-      case "mesh":
-        return /* @__PURE__ */ jsx(
-          "div",
-          {
-            className: "absolute inset-0",
-            style: {
-              backgroundImage: `
-                linear-gradient(to right, currentColor 1px, transparent 1px),
-                linear-gradient(to bottom, currentColor 1px, transparent 1px),
-                linear-gradient(to right, currentColor 1px, transparent 1px),
-                linear-gradient(to bottom, currentColor 1px, transparent 1px)
-              `,
-              backgroundSize: "96px 96px, 96px 96px, 24px 24px, 24px 24px",
-              backgroundPosition: "0 0, 0 0, 0 0, 0 0",
-              opacity
-            }
-          }
-        );
-      case "data":
-        return /* @__PURE__ */ jsxs(
-          "svg",
-          {
-            className: "absolute inset-0 w-full h-full",
-            xmlns: "http://www.w3.org/2000/svg",
-            style: { opacity },
-            children: [
-              /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs(
-                "pattern",
-                {
-                  id: "data-grid",
-                  width: "80",
-                  height: "80",
-                  patternUnits: "userSpaceOnUse",
-                  children: [
-                    /* @__PURE__ */ jsx(
-                      "path",
-                      {
-                        d: "M 80 0 L 0 0 0 80",
-                        fill: "none",
-                        stroke: "currentColor",
-                        strokeWidth: "1",
-                        opacity: "0.3"
-                      }
-                    ),
-                    /* @__PURE__ */ jsx(
-                      "path",
-                      {
-                        d: "M 40 0 L 40 80 M 0 40 L 80 40",
-                        fill: "none",
-                        stroke: "currentColor",
-                        strokeWidth: "0.5",
-                        opacity: "0.2"
-                      }
-                    )
-                  ]
-                }
-              ) }),
-              /* @__PURE__ */ jsx("rect", { width: "100%", height: "100%", fill: "url(#data-grid)" })
-            ]
-          }
-        );
-      default:
-        return null;
+  const gradientVariants = {
+    default: {
+      gradient1: "radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 1) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 1) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 1) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 1) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 1) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 1) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 1) 0px, transparent 50%)"
+    },
+    purple: {
+      gradient1: "radial-gradient(at 40% 20%, hsla(270, 80%, 65%, 0.8) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 80% 0%, hsla(189, 100%, 78%, 0.6) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.4) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 80% 80%, hsla(256, 96%, 67%, 0.7) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 0% 100%, hsla(45, 100%, 70%, 0.5) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 50% 50%, hsla(240, 70%, 50%, 0.3) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 100% 50%, hsla(280, 80%, 70%, 0.4) 0px, transparent 50%)"
+    },
+    blue: {
+      gradient1: "radial-gradient(at 30% 30%, hsla(210, 100%, 60%, 0.7) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 70% 70%, hsla(190, 100%, 70%, 0.6) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 50% 0%, hsla(220, 90%, 65%, 0.5) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 0% 80%, hsla(200, 100%, 75%, 0.4) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 100% 20%, hsla(230, 80%, 60%, 0.6) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 20% 100%, hsla(195, 100%, 80%, 0.5) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 80% 40%, hsla(215, 85%, 55%, 0.4) 0px, transparent 50%)"
+    },
+    warm: {
+      gradient1: "radial-gradient(at 50% 20%, hsla(45, 100%, 70%, 0.6) 0px, transparent 50%)",
+      gradient2: "radial-gradient(at 80% 80%, hsla(15, 90%, 65%, 0.5) 0px, transparent 50%)",
+      gradient3: "radial-gradient(at 20% 80%, hsla(355, 85%, 70%, 0.4) 0px, transparent 50%)",
+      gradient4: "radial-gradient(at 90% 30%, hsla(35, 100%, 75%, 0.7) 0px, transparent 50%)",
+      gradient5: "radial-gradient(at 10% 10%, hsla(25, 95%, 60%, 0.5) 0px, transparent 50%)",
+      gradient6: "radial-gradient(at 60% 90%, hsla(5, 80%, 65%, 0.4) 0px, transparent 50%)",
+      gradient7: "radial-gradient(at 40% 60%, hsla(40, 90%, 70%, 0.3) 0px, transparent 50%)"
     }
   };
+  const currentGradients = gradientVariants[variant];
+  const gradientString = Object.values(currentGradients).join(", ");
   return /* @__PURE__ */ jsx(
     "div",
     {
-      className: `pointer-events-none absolute inset-0 text-foreground/20 ${animate ? "animate-pulse-slow" : ""} ${className}`,
-      children: renderGrid()
+      className: `pointer-events-none fixed inset-0 z-0 ${animate ? "animate-mesh-gradient" : ""} ${className}`,
+      style: {
+        opacity,
+        background: gradientString,
+        filter: "blur(80px) saturate(150%)"
+      },
+      children: animate && /* @__PURE__ */ jsx("style", { dangerouslySetInnerHTML: { __html: `
+          @keyframes mesh-gradient {
+            0%, 100% {
+              transform: scale(1) translateY(0);
+            }
+            33% {
+              transform: scale(1.1) translateY(-10px);
+            }
+            66% {
+              transform: scale(0.95) translateY(10px);
+            }
+          }
+
+          .animate-mesh-gradient {
+            animation: mesh-gradient 20s ease-in-out infinite;
+          }
+        ` } })
     }
   );
 }
@@ -13235,14 +13166,16 @@ function PremiumCheckout() {
       ) })
     ] }) });
   }
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-slate-950 p-4 relative", children: [
-    /* @__PURE__ */ jsx(GrainTexture, { opacity: 0.05, animate: true }),
-    /* @__PURE__ */ jsx(BrutalistGrid, { variant: "data", opacity: 0.08 }),
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-[#0a0a0f] p-4 relative overflow-hidden", children: [
+    /* @__PURE__ */ jsx(StripeMeshGradient, { variant: "purple", opacity: 0.4, animate: true }),
     /* @__PURE__ */ jsxs("div", { className: "max-w-5xl mx-auto relative z-10", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-12 mt-8", children: [
-        /* @__PURE__ */ jsx(Badge, { className: "mb-6 px-4 py-1.5 text-xs font-bold uppercase tracking-widest\n                           bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/30", children: "Premium Subscription" }),
-        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl font-black mb-6 text-white tracking-tighter uppercase\n                        [text-shadow:_0_0_40px_rgb(16_185_129_/_20%)]", "data-testid": "text-checkout-title", children: "Upgrade to Insider Pro" }),
-        /* @__PURE__ */ jsx("p", { className: "text-slate-300 max-w-2xl mx-auto text-xl font-medium", children: "Get real-time insider trading alerts and never miss a profitable opportunity" })
+      /* @__PURE__ */ jsxs("div", { className: "text-center mb-16 mt-8", children: [
+        /* @__PURE__ */ jsxs(Badge, { className: "mb-8 px-4 py-2 text-xs font-medium\n                           bg-white/10 text-white border border-white/20\n                           backdrop-blur-xl rounded-full shadow-lg shadow-purple-500/10", children: [
+          /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-2" }),
+          "Premium Subscription"
+        ] }),
+        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: "Upgrade to Insider Pro" }),
+        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: "Get real-time insider trading alerts and never miss a profitable opportunity" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8 items-start", children: [
         /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -13515,12 +13448,12 @@ function PaymentSuccess() {
     setIsRefreshing(false);
   };
   if (paymentStatus === "error") {
-    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-background flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-md text-center", children: [
-      /* @__PURE__ */ jsxs(CardHeader, { children: [
-        /* @__PURE__ */ jsx(CardTitle, { className: "text-destructive", children: "Subscription Activation Delayed" }),
-        /* @__PURE__ */ jsx(CardDescription, { children: "Your payment was successful, but we're still activating your subscription. This can take a few moments." })
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-background flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "w-full max-w-md text-center", children: [
+      /* @__PURE__ */ jsxs(CardHeader$1, { children: [
+        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-destructive", children: "Subscription Activation Delayed" }),
+        /* @__PURE__ */ jsx(CardDescription$1, { children: "Your payment was successful, but we're still activating your subscription. This can take a few moments." })
       ] }),
-      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
         /* @__PURE__ */ jsx(
           Button,
           {
@@ -13541,15 +13474,15 @@ function PaymentSuccess() {
       /* @__PURE__ */ jsx("h1", { className: "text-4xl font-bold text-white", "data-testid": "text-success-title", children: "🎉 Welcome to Insider Pro!" }),
       /* @__PURE__ */ jsx("p", { className: "text-green-300 text-xl", children: "Your subscription is now active. Start tracking insider trades in real-time!" })
     ] }),
-    /* @__PURE__ */ jsxs(Card, { className: "text-left bg-slate-800 border-green-500 border-2", children: [
-      /* @__PURE__ */ jsxs(CardHeader, { children: [
-        /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-white text-2xl", children: [
+    /* @__PURE__ */ jsxs(Card$1, { className: "text-left bg-slate-800 border-green-500 border-2", children: [
+      /* @__PURE__ */ jsxs(CardHeader$1, { children: [
+        /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 text-white text-2xl", children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-6 w-6 text-green-400" }),
           "All Premium Features Unlocked"
         ] }),
-        /* @__PURE__ */ jsx(CardDescription, { className: "text-slate-300", children: "You now have full access to real-time insider trading intelligence" })
+        /* @__PURE__ */ jsx(CardDescription$1, { className: "text-slate-300", children: "You now have full access to real-time insider trading intelligence" })
       ] }),
-      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "grid gap-3", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "grid gap-3", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
           /* @__PURE__ */ jsx(CheckCircle, { className: "w-5 h-5 text-green-400" }),
           /* @__PURE__ */ jsx("span", { className: "text-sm text-slate-200", children: "✨ Real-time insider trade alerts (no 48h delay)" })
@@ -14460,26 +14393,26 @@ function VerifyEmail() {
   const handleGoToLogin = () => {
     navigate2("/");
   };
-  return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-background p-4", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-md", "data-testid": "card-verify-email", children: [
-    /* @__PURE__ */ jsxs(CardHeader, { className: "text-center", children: [
+  return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-background p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "w-full max-w-md", "data-testid": "card-verify-email", children: [
+    /* @__PURE__ */ jsxs(CardHeader$1, { className: "text-center", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex justify-center mb-4", children: [
         status === "loading" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-primary/10", "data-testid": "icon-loading", children: /* @__PURE__ */ jsx(Loader2, { className: "h-12 w-12 text-primary animate-spin" }) }),
         status === "success" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-green-500/10", "data-testid": "icon-success", children: /* @__PURE__ */ jsx(CheckCircle2, { className: "h-12 w-12 text-green-500" }) }),
         status === "already-verified" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-blue-500/10", "data-testid": "icon-already-verified", children: /* @__PURE__ */ jsx(Mail, { className: "h-12 w-12 text-blue-500" }) }),
         status === "error" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-destructive/10", "data-testid": "icon-error", children: /* @__PURE__ */ jsx(XCircle, { className: "h-12 w-12 text-destructive" }) })
       ] }),
-      /* @__PURE__ */ jsxs(CardTitle, { className: "text-2xl", "data-testid": "text-title", children: [
+      /* @__PURE__ */ jsxs(CardTitle$1, { className: "text-2xl", "data-testid": "text-title", children: [
         status === "loading" && t("auth.verify.verifying"),
         status === "success" && t("auth.verify.success"),
         status === "already-verified" && t("auth.verify.alreadyVerified"),
         status === "error" && t("auth.verify.error")
       ] }),
-      /* @__PURE__ */ jsxs(CardDescription, { "data-testid": "text-message", children: [
+      /* @__PURE__ */ jsxs(CardDescription$1, { "data-testid": "text-message", children: [
         status === "loading" && t("auth.verify.loading"),
         (status === "success" || status === "already-verified" || status === "error") && message
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
       (status === "success" || status === "already-verified") && /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("div", { className: "p-4 rounded-lg bg-green-500/10 border border-green-500/20", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground text-center", children: t("auth.verify.successDesc") }) }),
         /* @__PURE__ */ jsx(
@@ -15023,7 +14956,7 @@ function StartTrialPage() {
     setSubmitError(errorMessage);
   };
   if (isSuccess) {
-    return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4", children: /* @__PURE__ */ jsx(Card, { className: "max-w-md w-full border-emerald-500/30 bg-gradient-to-br from-card to-slate-900/50 backdrop-blur-sm shadow-2xl shadow-emerald-500/10", children: /* @__PURE__ */ jsxs(CardContent, { className: "pt-6 text-center", children: [
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4", children: /* @__PURE__ */ jsx(Card$1, { className: "max-w-md w-full border-emerald-500/30 bg-gradient-to-br from-card to-slate-900/50 backdrop-blur-sm shadow-2xl shadow-emerald-500/10", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "pt-6 text-center", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative", children: [
         /* @__PURE__ */ jsx("div", { className: "absolute inset-0 flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-20 h-20 bg-emerald-500/20 rounded-full blur-xl" }) }),
         /* @__PURE__ */ jsx(CheckCircle2, { className: "relative w-16 h-16 text-emerald-500 mx-auto mb-4" })
@@ -15040,12 +14973,12 @@ function StartTrialPage() {
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8", children: [
       /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
-        /* @__PURE__ */ jsxs(Card, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-foreground", children: [
+        /* @__PURE__ */ jsxs(Card$1, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 text-foreground", children: [
             /* @__PURE__ */ jsx(Sparkles, { className: "w-5 h-5 text-amber-400" }),
             t("trial.benefits.title")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx("div", { className: "p-2 rounded-lg bg-blue-500/10 border border-blue-500/20", children: /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-blue-400 flex-shrink-0" }) }),
               /* @__PURE__ */ jsxs("div", { children: [
@@ -15076,9 +15009,9 @@ function StartTrialPage() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { className: "border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm shadow-lg shadow-emerald-500/10", children: [
-          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-emerald-400", children: t("trial.terms.title") }) }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
+        /* @__PURE__ */ jsxs(Card$1, { className: "border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm shadow-lg shadow-emerald-500/10", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-emerald-400", children: t("trial.terms.title") }) }),
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2", children: [
               /* @__PURE__ */ jsx(CheckCircle2, { className: "w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" }),
               /* @__PURE__ */ jsx("p", { className: "text-sm text-foreground font-medium", children: t("trial.terms.instant") })
@@ -15098,12 +15031,12 @@ function StartTrialPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs(Card, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
-        /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-foreground", children: t("trial.form.title") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-muted-foreground", children: t("trial.form.description") })
+      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs(Card$1, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-foreground", children: t("trial.form.title") }),
+          /* @__PURE__ */ jsx(CardDescription$1, { className: "text-muted-foreground", children: t("trial.form.description") })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent, { className: "space-y-6", children: [
+        /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-6", children: [
           /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
             /* @__PURE__ */ jsx("label", { className: "text-sm font-medium text-foreground", children: t("trial.form.selectPlan") }),
             /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-3", children: [
@@ -15188,7 +15121,7 @@ function StartTrialPage() {
 }
 function NotFound() {
   const { t } = useLanguage();
-  return /* @__PURE__ */ jsx("div", { className: "min-h-screen w-full flex items-center justify-center bg-gray-50", children: /* @__PURE__ */ jsx(Card, { className: "w-full max-w-md mx-4", children: /* @__PURE__ */ jsxs(CardContent, { className: "pt-6", children: [
+  return /* @__PURE__ */ jsx("div", { className: "min-h-screen w-full flex items-center justify-center bg-gray-50", children: /* @__PURE__ */ jsx(Card$1, { className: "w-full max-w-md mx-4", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "pt-6", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex mb-4 gap-2", children: [
       /* @__PURE__ */ jsx(AlertCircle, { className: "h-8 w-8 text-red-500" }),
       /* @__PURE__ */ jsx("h1", { className: "text-2xl font-bold text-gray-900", children: t("notFound.title") })
@@ -15313,9 +15246,9 @@ function AdminDashboard() {
     return /* @__PURE__ */ jsx(Badge, { variant: variants[status] || "outline", children: labels[status] || status });
   };
   if (showKeyInput) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Admin Access" }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Admin Access" }) }),
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("label", { className: "text-sm font-medium", children: "Admin API Key" }),
           /* @__PURE__ */ jsx(
@@ -15336,15 +15269,15 @@ function AdminDashboard() {
     ] }) });
   }
   if (loading) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8", children: /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "flex items-center justify-center py-12", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8", children: /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "flex items-center justify-center py-12", children: [
       /* @__PURE__ */ jsx(RefreshCw, { className: "h-8 w-8 animate-spin text-primary" }),
       /* @__PURE__ */ jsx("span", { className: "ml-3", children: "Loading admin dashboard..." })
     ] }) }) });
   }
   if (error) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card, { className: "border-destructive", children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-destructive", children: "Error" }) }),
-      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card$1, { className: "border-destructive", children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-destructive", children: "Error" }) }),
+      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("p", { className: "text-sm", children: error }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
           /* @__PURE__ */ jsx(Button, { onClick: () => loadAdminData(adminKey), variant: "outline", children: "Retry" }),
@@ -15377,39 +15310,39 @@ function AdminDashboard() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Total Users" }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Total Users" }),
           /* @__PURE__ */ jsx(Users, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.totalUsers }) })
+        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.totalUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Free Trial" }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Free Trial" }),
           /* @__PURE__ */ jsx(UserCheck, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.trialUsers }) })
+        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.trialUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Paid Users" }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Paid Users" }),
           /* @__PURE__ */ jsx(CreditCard, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.paidUsers }) })
+        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.paidUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Today's Signups" }),
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Today's Signups" }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.todaySignups }) })
+        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.todaySignups }) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Signup Growth (Last 30 Days)" }) }),
-        /* @__PURE__ */ jsx(CardContent, { children: growthData.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: growthData, children: [
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Signup Growth (Last 30 Days)" }) }),
+        /* @__PURE__ */ jsx(CardContent$1, { children: growthData.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: growthData, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3" }),
           /* @__PURE__ */ jsx(
             XAxis,
@@ -15442,9 +15375,9 @@ function AdminDashboard() {
           )
         ] }) }) : /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-[300px] text-muted-foreground", children: "No signup data available" }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "User Composition" }) }),
-        /* @__PURE__ */ jsx(CardContent, { children: metrics && /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "User Composition" }) }),
+        /* @__PURE__ */ jsx(CardContent$1, { children: metrics && /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
           /* @__PURE__ */ jsx(
             Pie,
             {
@@ -15472,9 +15405,9 @@ function AdminDashboard() {
         ] }) }) })
       ] })
     ] }),
-    conversionData && /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Conversion Funnel" }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+    conversionData && /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Conversion Funnel" }) }),
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-6", children: [
           /* @__PURE__ */ jsxs("div", { className: "p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg", children: [
             /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground", children: "Signup → Trial" }),
@@ -15519,12 +15452,12 @@ function AdminDashboard() {
     ] }),
     revenueData && /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ jsxs(Card, { children: [
-          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "MRR" }),
+        /* @__PURE__ */ jsxs(Card$1, { children: [
+          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "MRR" }),
             /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.mrr.toLocaleString()
@@ -15532,12 +15465,12 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Monthly Recurring Revenue" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { children: [
-          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "ARR" }),
+        /* @__PURE__ */ jsxs(Card$1, { children: [
+          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "ARR" }),
             /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.arr.toLocaleString()
@@ -15545,12 +15478,12 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Annual Recurring Revenue" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { children: [
-          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "ARPU" }),
+        /* @__PURE__ */ jsxs(Card$1, { children: [
+          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "ARPU" }),
             /* @__PURE__ */ jsx(CreditCard, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.arpu.toFixed(2)
@@ -15558,20 +15491,20 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Average Revenue Per User" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { children: [
-          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "New Subs (30d)" }),
+        /* @__PURE__ */ jsxs(Card$1, { children: [
+          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "New Subs (30d)" }),
             /* @__PURE__ */ jsx(UserCheck, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { children: [
+          /* @__PURE__ */ jsxs(CardContent$1, { children: [
             /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: revenueData.newSubscriptionsLast30Days }),
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Last 30 days" })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Revenue Trend (Last 30 Days)" }) }),
-        /* @__PURE__ */ jsx(CardContent, { children: revenueData.revenueTrend.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: revenueData.revenueTrend, children: [
+      /* @__PURE__ */ jsxs(Card$1, { children: [
+        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Revenue Trend (Last 30 Days)" }) }),
+        /* @__PURE__ */ jsx(CardContent$1, { children: revenueData.revenueTrend.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: revenueData.revenueTrend, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3" }),
           /* @__PURE__ */ jsx(
             XAxis,
@@ -15619,9 +15552,9 @@ function AdminDashboard() {
         ] }) }) : /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-[300px] text-muted-foreground", children: "No revenue data available" }) })
       ] })
     ] }),
-    geographyData && /* @__PURE__ */ jsx("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Geographic Distribution" }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    geographyData && /* @__PURE__ */ jsx("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Geographic Distribution" }) }),
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("h4", { className: "text-sm font-medium mb-4", children: "Sessions by Country" }),
           geographyData.countries.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(BarChart, { data: geographyData.countries.slice(0, 10), layout: "vertical", children: [
@@ -15648,13 +15581,13 @@ function AdminDashboard() {
         ] })
       ] }) })
     ] }) }),
-    /* @__PURE__ */ jsxs(Card, { children: [
-      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { children: [
+    /* @__PURE__ */ jsxs(Card$1, { children: [
+      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { children: [
         "Recent Users (",
         users.length,
         ")"
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "overflow-x-auto", children: /* @__PURE__ */ jsxs("table", { className: "w-full", children: [
+      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "overflow-x-auto", children: /* @__PURE__ */ jsxs("table", { className: "w-full", children: [
         /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { className: "border-b", children: [
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Email" }),
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Status" }),
@@ -15678,227 +15611,30 @@ function AdminDashboard() {
     ] })
   ] });
 }
-function AuroraBackground() {
-  const [isReducedMotion, setIsReducedMotion] = useState(false);
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setIsReducedMotion(mediaQuery.matches);
-    const handleChange = (e) => {
-      setIsReducedMotion(e.matches);
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
-    /* @__PURE__ */ jsx("style", { children: `
-        @keyframes aurora-1 {
-          0%, 100% {
-            transform: translate(0%, 0%) rotate(0deg) scale(1);
-            opacity: 0.6;
-          }
-          33% {
-            transform: translate(30%, -20%) rotate(120deg) scale(1.1);
-            opacity: 0.8;
-          }
-          66% {
-            transform: translate(-20%, 30%) rotate(240deg) scale(0.95);
-            opacity: 0.7;
-          }
-        }
-
-        @keyframes aurora-2 {
-          0%, 100% {
-            transform: translate(0%, 0%) rotate(0deg) scale(1);
-            opacity: 0.5;
-          }
-          33% {
-            transform: translate(-30%, 30%) rotate(-120deg) scale(1.15);
-            opacity: 0.7;
-          }
-          66% {
-            transform: translate(25%, -25%) rotate(-240deg) scale(0.9);
-            opacity: 0.6;
-          }
-        }
-
-        @keyframes aurora-3 {
-          0%, 100% {
-            transform: translate(0%, 0%) rotate(0deg) scale(1);
-            opacity: 0.7;
-          }
-          50% {
-            transform: translate(15%, 20%) rotate(180deg) scale(1.2);
-            opacity: 0.9;
-          }
-        }
-
-        @keyframes aurora-border {
-          0%, 100% {
-            border-radius: 50% 60% 70% 40%;
-          }
-          25% {
-            border-radius: 60% 40% 50% 70%;
-          }
-          50% {
-            border-radius: 70% 50% 60% 40%;
-          }
-          75% {
-            border-radius: 40% 70% 50% 60%;
-          }
-        }
-
-        .aurora-container {
-          position: fixed;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          z-index: 1;
-          overflow: hidden;
-          background: #0f172a;
-          pointer-events: none;
-        }
-
-        .aurora-gradient {
-          position: absolute;
-          width: 200%;
-          height: 200%;
-          top: -50%;
-          left: -50%;
-        }
-
-        .aurora-blob {
-          position: absolute;
-          filter: blur(80px);
-          mix-blend-mode: normal;
-          will-change: transform, opacity;
-          animation: aurora-border 20s ease-in-out infinite;
-        }
-
-        .aurora-blob-1 {
-          width: 70%;
-          height: 70%;
-          top: -5%;
-          left: 10%;
-          background: radial-gradient(circle at center,
-            rgba(59, 130, 246, 0.25) 0%,
-            rgba(59, 130, 246, 0.20) 25%,
-            rgba(59, 130, 246, 0.12) 50%,
-            transparent 70%
-          );
-          animation: aurora-1 25s ease-in-out infinite, aurora-border 20s ease-in-out infinite;
-        }
-
-        .aurora-blob-2 {
-          width: 80%;
-          height: 80%;
-          top: 25%;
-          right: -5%;
-          background: radial-gradient(circle at center,
-            rgba(79, 70, 229, 0.20) 0%,
-            rgba(79, 70, 229, 0.15) 25%,
-            rgba(79, 70, 229, 0.10) 50%,
-            transparent 70%
-          );
-          animation: aurora-2 30s ease-in-out infinite, aurora-border 25s ease-in-out infinite reverse;
-        }
-
-        .aurora-blob-3 {
-          width: 75%;
-          height: 75%;
-          bottom: 5%;
-          left: 15%;
-          background: radial-gradient(circle at center,
-            rgba(99, 102, 241, 0.22) 0%,
-            rgba(99, 102, 241, 0.17) 25%,
-            rgba(99, 102, 241, 0.10) 50%,
-            transparent 70%
-          );
-          animation: aurora-3 28s ease-in-out infinite, aurora-border 22s ease-in-out infinite;
-        }
-
-        .aurora-blob-4 {
-          width: 65%;
-          height: 65%;
-          top: 35%;
-          left: 35%;
-          background: radial-gradient(circle at center,
-            rgba(37, 99, 235, 0.18) 0%,
-            rgba(37, 99, 235, 0.14) 25%,
-            rgba(37, 99, 235, 0.08) 50%,
-            transparent 70%
-          );
-          animation: aurora-1 32s ease-in-out infinite reverse, aurora-border 18s ease-in-out infinite reverse;
-        }
-
-        .aurora-blob-5 {
-          width: 60%;
-          height: 60%;
-          bottom: 15%;
-          right: 10%;
-          background: radial-gradient(circle at center,
-            rgba(67, 56, 202, 0.20) 0%,
-            rgba(67, 56, 202, 0.15) 25%,
-            rgba(67, 56, 202, 0.09) 50%,
-            transparent 70%
-          );
-          animation: aurora-2 27s ease-in-out infinite reverse, aurora-border 23s ease-in-out infinite;
-        }
-
-        /* Accent gradient layers for more depth */
-        .aurora-blob-6 {
-          width: 55%;
-          height: 55%;
-          top: 55%;
-          left: 45%;
-          background: radial-gradient(circle at center,
-            rgba(30, 64, 175, 0.15) 0%,
-            rgba(30, 64, 175, 0.12) 25%,
-            transparent 60%
-          );
-          animation: aurora-3 24s ease-in-out infinite reverse, aurora-border 20s ease-in-out infinite reverse;
-        }
-
-        /* Reduced motion support - disabled to ensure animation always shows */
-        /* @media (prefers-reduced-motion: reduce) {
-          .aurora-blob {
-            animation: none !important;
-          }
-        } */
-
-        /* Noise texture overlay for added depth */
-        .aurora-gradient::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-          opacity: 0.4;
-          mix-blend-mode: overlay;
-          pointer-events: none;
-        }
-
-        /* Vignette effect for better content readability */
-        .aurora-container::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            ellipse at center,
-            transparent 0%,
-            rgba(15, 23, 42, 0.3) 70%,
-            rgba(15, 23, 42, 0.6) 100%
-          );
-          pointer-events: none;
-        }
-      ` }),
-    /* @__PURE__ */ jsx("div", { className: "aurora-container", children: /* @__PURE__ */ jsxs("div", { className: "aurora-gradient", children: [
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-1" }),
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-2" }),
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-3" }),
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-4" }),
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-5" }),
-      /* @__PURE__ */ jsx("div", { className: "aurora-blob aurora-blob-6" })
-    ] }) })
-  ] });
+function GlassCard({
+  children,
+  className = "",
+  variant = "default",
+  hover = true
+}) {
+  const baseStyles = "backdrop-blur-xl bg-white/5 border transition-all duration-300";
+  const variantStyles = {
+    default: "border-white/10 rounded-2xl shadow-lg shadow-black/10",
+    elevated: "border-white/20 rounded-3xl shadow-2xl shadow-black/20 bg-white/10",
+    bordered: "border-white/30 rounded-xl shadow-xl shadow-black/15 ring-1 ring-white/10",
+    premium: `
+      border-white/20 rounded-3xl
+      shadow-[0_50px_100px_-20px_rgba(50,50,93,.25),0_30px_60px_-30px_rgba(0,0,0,.3)]
+      bg-gradient-to-br from-white/10 to-white/5
+    `
+  };
+  const hoverStyles = hover ? "hover:bg-white/10 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-0.5" : "";
+  return /* @__PURE__ */ jsx("div", { className: cn(
+    baseStyles,
+    variantStyles[variant],
+    hoverStyles,
+    className
+  ), children });
 }
 function LandingPage() {
   const [, navigate2] = useLocation();
@@ -15924,294 +15660,246 @@ function LandingPage() {
       }
     );
   }
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen relative bg-slate-950", children: [
-    /* @__PURE__ */ jsx(AuroraBackground, {}),
-    /* @__PURE__ */ jsx(GrainTexture, { opacity: 0.05, animate: true }),
-    /* @__PURE__ */ jsx(BrutalistGrid, { variant: "data", opacity: 0.08 }),
-    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-slate-800/50 bg-slate-950/95 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-950/80", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between px-6", children: [
+  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen relative bg-[#0a0a0f] overflow-hidden", children: [
+    /* @__PURE__ */ jsx(StripeMeshGradient, { variant: "purple", opacity: 0.4, animate: true }),
+    /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-2xl", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-emerald-500" }),
-        /* @__PURE__ */ jsx("span", { className: "text-xl font-bold tracking-tight text-white", children: "InsiderPulse" })
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-5 w-5 text-white" }) }),
+        /* @__PURE__ */ jsx("span", { className: "text-lg font-semibold text-white tracking-tight", children: "InsiderPulse" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(
-          Button,
-          {
-            variant: "ghost",
-            className: "hidden sm:inline-flex text-slate-300 hover:text-white",
-            children: "Pricing"
-          }
-        ) }),
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(
+        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("button", { className: "hidden sm:inline-flex text-sm font-medium text-slate-300 hover:text-white transition-colors", children: "Pricing" }) }),
+        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(
           Button,
           {
             size: "sm",
-            className: "font-bold uppercase tracking-wider text-xs\n                           bg-emerald-500 hover:bg-emerald-400\n                           text-slate-950\n                           shadow-[0_0_20px_rgba(16,185,129,0.3)]\n                           hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]\n                           transition-all duration-200\n                           border-2 border-emerald-400/20",
-            children: "Start Free Trial"
+            className: "text-sm font-medium px-4 py-2\n                           bg-white text-black\n                           hover:bg-slate-100\n                           rounded-full\n                           shadow-lg shadow-white/20\n                           hover:shadow-xl hover:shadow-white/30\n                           transition-all duration-200",
+            children: [
+              "Start Free Trial",
+              /* @__PURE__ */ jsx(ArrowRight, { className: "ml-1.5 h-4 w-4" })
+            ]
           }
         ) })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-40 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl text-center", children: [
-      /* @__PURE__ */ jsx(Badge, { className: "mb-6 px-4 py-1.5 text-xs font-bold uppercase tracking-widest\n                           bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/30\n                           hover:bg-emerald-500/20", variant: "outline", children: t("landing.tagline") }),
-      /* @__PURE__ */ jsx("h1", { className: "mb-8 text-5xl font-black tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl\n                        text-white leading-[0.9]\n                        [text-shadow:_0_0_40px_rgb(16_185_129_/_20%)]", children: t("landing.title") }),
-      /* @__PURE__ */ jsx("p", { className: "mb-12 text-xl sm:text-2xl font-medium text-slate-400 max-w-3xl mx-auto leading-relaxed", children: t("landing.description") }),
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-center gap-4 items-center", children: [
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-32 md:py-48 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl text-center", children: [
+      /* @__PURE__ */ jsxs(Badge, { className: "mb-8 px-4 py-2 text-xs font-medium\n                           bg-white/10 text-white border border-white/20\n                           backdrop-blur-xl rounded-full\n                           shadow-lg shadow-purple-500/10", children: [
+        /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-2" }),
+        t("landing.tagline")
+      ] }),
+      /* @__PURE__ */ jsx("h1", { className: "mb-8 text-5xl sm:text-6xl md:text-7xl lg:text-8xl\n                        font-bold tracking-tight\n                        text-white leading-[1.1]\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40\n                        [text-shadow:_0_1px_2px_rgb(0_0_0_/_20%)]", children: t("landing.title") }),
+      /* @__PURE__ */ jsx("p", { className: "mb-12 text-lg sm:text-xl md:text-2xl\n                        text-slate-400 max-w-3xl mx-auto\n                        leading-relaxed font-normal", children: t("landing.description") }),
+      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-center gap-4 items-center mb-8", children: [
         /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(
           Button,
           {
             size: "lg",
-            className: "w-full sm:w-auto text-base font-bold uppercase tracking-wider px-10 py-7\n                           bg-white text-slate-950\n                           hover:bg-slate-100\n                           border-4 border-slate-800\n                           shadow-[8px_8px_0px_0px_rgba(16,185,129,0.4)]\n                           hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,0.6)]\n                           transition-all duration-200 ease-out\n                           hover:translate-x-[-2px] hover:translate-y-[-2px]\n                           active:shadow-[4px_4px_0px_0px_rgba(16,185,129,0.4)]\n                           active:translate-x-[2px] active:translate-y-[2px]",
+            className: "w-full sm:w-auto text-base font-medium px-8 py-6\n                           bg-white text-black\n                           hover:bg-slate-100\n                           rounded-full\n                           shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)]\n                           hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)]\n                           transition-all duration-200\n                           border border-white/20",
             "data-testid": "button-hero-browse",
             children: [
               t("landing.browse"),
-              /* @__PURE__ */ jsx(ArrowRight, { className: "ml-3 h-5 w-5" })
+              /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
             ]
           }
         ) }),
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(
+        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(
           Button,
           {
             size: "lg",
             variant: "outline",
-            className: "w-full sm:w-auto text-base font-bold uppercase tracking-wider px-10 py-7\n                           bg-emerald-500/10 text-emerald-400\n                           border-4 border-emerald-500/50\n                           hover:bg-emerald-500/20 hover:border-emerald-400\n                           shadow-[8px_8px_0px_0px_rgba(16,185,129,0.2)]\n                           hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,0.3)]\n                           transition-all duration-200\n                           hover:translate-x-[-2px] hover:translate-y-[-2px]",
-            children: "Start 7-Day Trial"
+            className: "w-full sm:w-auto text-base font-medium px-8 py-6\n                           bg-white/5 text-white\n                           border border-white/20\n                           hover:bg-white/10\n                           backdrop-blur-xl\n                           rounded-full\n                           shadow-lg shadow-purple-500/10\n                           hover:shadow-xl hover:shadow-purple-500/20\n                           transition-all duration-200",
+            children: [
+              "Start 7-Day Trial",
+              /* @__PURE__ */ jsx(Zap, { className: "ml-2 h-5 w-5" })
+            ]
           }
         ) })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "mt-6 text-sm font-mono text-slate-500 uppercase tracking-wider", children: t("landing.noCreditCard") })
+      /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 font-medium", children: t("landing.noCreditCard") })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-16", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase", children: t("landing.features.title") }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl font-medium text-slate-400", children: t("landing.features.subtitle") })
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
+      /* @__PURE__ */ jsxs("div", { className: "text-center mb-20", children: [
+        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight leading-tight", children: t("landing.features.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl text-slate-400 font-normal max-w-2xl mx-auto", children: t("landing.features.subtitle") })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Brain, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.aiAnalysis") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.aiAnalysisDesc") })
-        ] }) }),
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Zap, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.realtime") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.realtimeDesc") })
-        ] }) }),
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(BarChart3, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.filtering") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.filteringDesc") })
-        ] }) }),
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Bell, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.alerts") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.alertsDesc") })
-        ] }) }),
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Shield, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.secData") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.secDataDesc") })
-        ] }) }),
-        /* @__PURE__ */ jsx(Card, { className: "border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors", children: /* @__PURE__ */ jsxs(CardHeader, { children: [
-          /* @__PURE__ */ jsx(Clock, { className: "h-12 w-12 text-emerald-500 mb-3" }),
-          /* @__PURE__ */ jsx(CardTitle, { className: "text-xl font-bold", children: t("landing.features.historical") }),
-          /* @__PURE__ */ jsx(CardDescription, { className: "text-base text-slate-400", children: t("landing.features.historicalDesc") })
-        ] }) })
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 mb-6", children: /* @__PURE__ */ jsx(Brain, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.aiAnalysis") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.aiAnalysisDesc") })
+        ] }),
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 mb-6", children: /* @__PURE__ */ jsx(Zap, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.realtime") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.realtimeDesc") })
+        ] }),
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-6", children: /* @__PURE__ */ jsx(BarChart3, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.filtering") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.filteringDesc") })
+        ] }),
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 mb-6", children: /* @__PURE__ */ jsx(Bell, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.alerts") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.alertsDesc") })
+        ] }),
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-6", children: /* @__PURE__ */ jsx(Shield, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.secData") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.secDataDesc") })
+        ] }),
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "default", className: "p-8", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 mb-6", children: /* @__PURE__ */ jsx(Clock, { className: "h-6 w-6 text-white" }) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-3 text-white", children: t("landing.features.historical") }),
+          /* @__PURE__ */ jsx("p", { className: "text-base text-slate-400 leading-relaxed", children: t("landing.features.historicalDesc") })
+        ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-16", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase", children: "Simple, Transparent Pricing" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl font-medium text-slate-400", children: "Start with a free trial. No credit card required." })
+    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
+      /* @__PURE__ */ jsxs("div", { className: "text-center mb-20", children: [
+        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight", children: "Simple, Transparent Pricing" }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl text-slate-400 font-normal", children: "Start with a free trial. No credit card required." })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-3 gap-8 max-w-5xl mx-auto", children: [
-        /* @__PURE__ */ jsxs(Card, { className: "border-2 border-slate-700 bg-slate-900/70 backdrop-blur-sm relative", children: [
-          /* @__PURE__ */ jsxs(CardHeader, { className: "pb-8", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-2xl font-black uppercase tracking-tight", children: "Free" }),
-            /* @__PURE__ */ jsx("div", { className: "mt-4", children: /* @__PURE__ */ jsx("span", { className: "text-5xl font-black text-white", children: "$0" }) }),
-            /* @__PURE__ */ jsx(CardDescription, { className: "mt-2 text-base font-medium text-slate-400", children: "48-hour delayed data" })
+      /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 gap-8 max-w-4xl mx-auto", children: [
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "premium", className: "p-10 relative", children: [
+          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsxs(Badge, { className: "bg-gradient-to-r from-purple-500 to-cyan-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg", children: [
+            /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-1" }),
+            "Most Popular"
+          ] }) }),
+          /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
+            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: "Monthly" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 mb-4", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: "$14" }),
+              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: "/month" })
+            ] }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-emerald-400 font-medium", children: "3-day free trial" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx(Button, { className: "w-full bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider border-2 border-slate-700", children: "Browse Trades" }) }),
-            /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm", children: [
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-slate-400", children: "48-hour delayed insider trades" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-slate-400", children: "Basic filtering & search" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-slate-400", children: "Historical data access" })
-              ] })
+          /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(Button, { className: "w-full mb-8 bg-white text-black hover:bg-slate-100 rounded-full py-6 text-base font-medium shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)] transition-all", children: [
+            "Start Free Trial",
+            /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
+          ] }) }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-4", children: [
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Real-time insider trades (no delay)" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "AI-powered analysis & predictions" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Advanced pattern detection" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Live push notifications" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Executive trade tracking" })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card, { className: "border-4 border-emerald-500 bg-slate-900/90 backdrop-blur-sm relative shadow-[0_0_40px_rgba(16,185,129,0.3)]", children: [
-          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-emerald-500 text-slate-950 font-black uppercase tracking-wider px-4 py-1 border-2 border-emerald-400", children: "Popular" }) }),
-          /* @__PURE__ */ jsxs(CardHeader, { className: "pb-8 pt-8", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-2xl font-black uppercase tracking-tight", children: "Monthly" }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-4 flex items-baseline gap-2", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-5xl font-black text-white", children: "$14" }),
-              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-bold", children: "/month" })
+        /* @__PURE__ */ jsxs(GlassCard, { variant: "elevated", className: "p-10 relative", children: [
+          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg", children: "Save 33%" }) }),
+          /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
+            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: "Yearly" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 mb-4", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: "$112" }),
+              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: "/year" })
             ] }),
-            /* @__PURE__ */ jsx(CardDescription, { className: "mt-2 text-base font-bold text-emerald-400", children: "3-day free trial" })
-          ] }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(Button, { className: "w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-base py-6 shadow-[4px_4px_0px_0px_rgba(16,185,129,0.4)] hover:shadow-[6px_6px_0px_0px_rgba(16,185,129,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all", children: "Start Free Trial" }) }),
-            /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm", children: [
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Real-time insider trades (no delay)" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "AI-powered analysis & predictions" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Advanced pattern detection" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Live push notifications" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Executive trade tracking" })
-              ] })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs(Card, { className: "border-2 border-slate-700 bg-slate-900/70 backdrop-blur-sm relative", children: [
-          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-amber-500 text-slate-950 font-black uppercase tracking-wider px-4 py-1 border-2 border-amber-400", children: "33% OFF" }) }),
-          /* @__PURE__ */ jsxs(CardHeader, { className: "pb-8 pt-8", children: [
-            /* @__PURE__ */ jsx(CardTitle, { className: "text-2xl font-black uppercase tracking-tight", children: "Yearly" }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-4 flex items-baseline gap-2", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-5xl font-black text-white", children: "$112" }),
-              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-bold", children: "/year" })
-            ] }),
-            /* @__PURE__ */ jsxs(CardDescription, { className: "mt-2 text-base font-medium text-slate-400", children: [
+            /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-400", children: [
               /* @__PURE__ */ jsx("span", { className: "line-through", children: "$168" }),
               " • 7-day free trial"
             ] })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx(Button, { className: "w-full bg-slate-700 hover:bg-slate-600 text-white font-bold uppercase tracking-wider border-2 border-slate-600", children: "Start Free Trial" }) }),
-            /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm", children: [
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Everything in Monthly" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Save $56 per year" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Extended 7-day trial" })
-              ] }),
-              /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-2", children: [
-                /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" }),
-                /* @__PURE__ */ jsx("span", { className: "text-white font-medium", children: "Best value for serious traders" })
-              ] })
+          /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(Button, { variant: "outline", className: "w-full mb-8 bg-white/5 text-white border-white/20 hover:bg-white/10 backdrop-blur-xl rounded-full py-6 text-base font-medium shadow-lg shadow-purple-500/10 hover:shadow-xl hover:shadow-purple-500/20 transition-all", children: [
+            "Start Free Trial",
+            /* @__PURE__ */ jsx(Zap, { className: "ml-2 h-5 w-5" })
+          ] }) }),
+          /* @__PURE__ */ jsxs("ul", { className: "space-y-4", children: [
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Everything in Monthly" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Save $56 per year" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Extended 7-day trial" })
+            ] }),
+            /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
+              /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Best value for serious traders" })
             ] })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "mt-16 flex flex-wrap justify-center items-center gap-8 text-sm text-slate-500 font-mono uppercase tracking-wider", children: [
+      /* @__PURE__ */ jsxs("div", { className: "mt-12 text-center", children: [
+        /* @__PURE__ */ jsx("p", { className: "text-slate-400 mb-4", children: "Not ready yet? Start for free." }),
+        /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(Button, { variant: "ghost", className: "text-white hover:bg-white/5 rounded-full", children: [
+          "Browse with 48-hour delay",
+          /* @__PURE__ */ jsx(LineChart$1, { className: "ml-2 h-4 w-4" })
+        ] }) })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "mt-16 flex flex-wrap justify-center items-center gap-12 text-sm text-slate-500", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { children: "Cancel Anytime" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "Cancel Anytime" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Lock, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { children: "Secure Payment" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "Secure Payment" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { children: "No Hidden Fees" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "No Hidden Fees" })
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-4xl", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-16", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase", children: t("landing.howItWorks.title") }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl font-medium text-slate-400", children: t("landing.howItWorks.subtitle") })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400", children: "1" }) }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-black mb-3 text-white uppercase tracking-tight", children: t("landing.howItWorks.step1") }),
-            /* @__PURE__ */ jsx("p", { className: "text-base text-slate-300 leading-relaxed", children: t("landing.howItWorks.step1Desc") })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400", children: "2" }) }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-black mb-3 text-white uppercase tracking-tight", children: t("landing.howItWorks.step2") }),
-            /* @__PURE__ */ jsx("p", { className: "text-base text-slate-300 leading-relaxed", children: t("landing.howItWorks.step2Desc") })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400", children: "3" }) }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-black mb-3 text-white uppercase tracking-tight", children: t("landing.howItWorks.step3") }),
-            /* @__PURE__ */ jsx("p", { className: "text-base text-slate-300 leading-relaxed", children: t("landing.howItWorks.step3Desc") })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex-shrink-0", children: /* @__PURE__ */ jsx("div", { className: "flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400", children: "4" }) }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-black mb-3 text-white uppercase tracking-tight", children: t("landing.howItWorks.step4") }),
-            /* @__PURE__ */ jsx("p", { className: "text-base text-slate-300 leading-relaxed", children: t("landing.howItWorks.step4Desc") })
-          ] })
-        ] })
-      ] })
-    ] }) }),
-    /* @__PURE__ */ jsx("footer", { className: "border-t-4 border-slate-800 relative z-10 bg-slate-950/80", children: /* @__PURE__ */ jsxs("div", { className: "container px-4 lg:px-6 py-16", children: [
-      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-8 mb-12", children: [
+    /* @__PURE__ */ jsx("footer", { className: "border-t border-white/5 relative z-10 bg-black/40 backdrop-blur-xl mt-32", children: /* @__PURE__ */ jsxs("div", { className: "container px-4 lg:px-6 py-16 max-w-7xl mx-auto", children: [
+      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-12 mb-12", children: [
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-black text-sm mb-4 text-white uppercase tracking-wider", children: "Product" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Product" }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-emerald-400 transition-colors font-medium", children: "Pricing" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-emerald-400 transition-colors font-medium", children: "Browse Trades" }) }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: "Pricing" }) }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: "Browse Trades" }) }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-black text-sm mb-4 text-white uppercase tracking-wider", children: "Company" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Company" }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "About" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "Blog" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "Contact" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "About" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Blog" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Contact" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-black text-sm mb-4 text-white uppercase tracking-wider", children: "Legal" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Legal" }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "Privacy" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "Terms" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-emerald-400 transition-colors font-medium", children: "Sitemap" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Privacy" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Terms" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-white transition-colors", children: "Sitemap" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "font-black text-sm mb-4 text-white uppercase tracking-wider", children: "Connect" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Connect" }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "Twitter" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "LinkedIn" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-emerald-400 transition-colors font-medium", children: "GitHub" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Twitter" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "LinkedIn" }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "GitHub" }) })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "pt-8 border-t-2 border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4", children: [
+      /* @__PURE__ */ jsxs("div", { className: "pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx(TrendingUp, { className: "h-5 w-5 text-emerald-500" }),
-          /* @__PURE__ */ jsx("span", { className: "font-black text-lg tracking-tight text-white", children: "InsiderPulse" })
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) }),
+          /* @__PURE__ */ jsx("span", { className: "text-base font-semibold tracking-tight text-white", children: "InsiderPulse" })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 font-mono uppercase tracking-wider", children: "© 2025 All rights reserved" })
+        /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500", children: "© 2025 All rights reserved" })
       ] })
     ] }) })
   ] });

@@ -2,11 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw } from "lucide-react";
-import { GrainTexture } from "@/components/grain-texture";
-import { BrutalistGrid } from "@/components/brutalist-grid";
+import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw, ArrowRight, Check, Sparkles } from "lucide-react";
+import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
+import { GlassCard } from "@/components/glass-card";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 
@@ -193,24 +192,23 @@ export default function PremiumCheckout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 relative">
-      {/* Grain Texture Overlay */}
-      <GrainTexture opacity={0.05} animate={true} />
-
-      {/* Brutalist Grid Overlay */}
-      <BrutalistGrid variant="data" opacity={0.08} />
+    <div className="min-h-screen bg-[#0a0a0f] p-4 relative overflow-hidden">
+      {/* Stripe Mesh Gradient */}
+      <StripeMeshGradient variant="purple" opacity={0.4} animate={true} />
 
       <div className="max-w-5xl mx-auto relative z-10">
-        <div className="text-center mb-12 mt-8">
-          <Badge className="mb-6 px-4 py-1.5 text-xs font-bold uppercase tracking-widest
-                           bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/30">
+        <div className="text-center mb-16 mt-8">
+          <Badge className="mb-8 px-4 py-2 text-xs font-medium
+                           bg-white/10 text-white border border-white/20
+                           backdrop-blur-xl rounded-full shadow-lg shadow-purple-500/10">
+            <Sparkles className="inline-block w-3 h-3 mr-2" />
             Premium Subscription
           </Badge>
-          <h1 className="text-5xl md:text-6xl font-black mb-6 text-white tracking-tighter uppercase
-                        [text-shadow:_0_0_40px_rgb(16_185_129_/_20%)]" data-testid="text-checkout-title">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight
+                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40" data-testid="text-checkout-title">
             Upgrade to Insider Pro
           </h1>
-          <p className="text-slate-300 max-w-2xl mx-auto text-xl font-medium">
+          <p className="text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
             Get real-time insider trading alerts and never miss a profitable opportunity
           </p>
         </div>

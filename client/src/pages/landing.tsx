@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AuroraBackground } from "@/components/aurora-background";
-import { GrainTexture } from "@/components/grain-texture";
-import { BrutalistGrid } from "@/components/brutalist-grid";
+import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
+import { GlassCard } from "@/components/glass-card";
 import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import LanguageSelection from "@/pages/language-selection";
@@ -20,7 +18,9 @@ import {
   BarChart3,
   Clock,
   Lock,
-  Check
+  Check,
+  Sparkles,
+  LineChart
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -54,459 +54,365 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen relative bg-slate-950">
-      {/* Aurora Gradient Background Effect */}
-      <AuroraBackground />
+    <div className="min-h-screen relative bg-[#0a0a0f] overflow-hidden">
+      {/* Stripe-style Mesh Gradient Background */}
+      <StripeMeshGradient variant="purple" opacity={0.4} animate={true} />
 
-      {/* Grain Texture Overlay */}
-      <GrainTexture opacity={0.05} animate={true} />
-
-      {/* Brutalist Grid Overlay */}
-      <BrutalistGrid variant="data" opacity={0.08} />
-
-      {/* Header/Navigation - Enhanced with CTA */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-800/50 bg-slate-950/95 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-950/80">
-        <div className="container flex h-16 items-center justify-between px-6">
+      {/* Header/Navigation - Glass morphism */}
+      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-2xl">
+        <div className="container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-emerald-500" />
-            <span className="text-xl font-bold tracking-tight text-white">InsiderPulse</span>
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500">
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-lg font-semibold text-white tracking-tight">InsiderPulse</span>
           </div>
 
-          {/* Navigation with prominent CTA */}
+          {/* Navigation with Stripe-style CTA */}
           <div className="flex items-center gap-4">
             <Link href="/premium-checkout">
-              <Button
-                variant="ghost"
-                className="hidden sm:inline-flex text-slate-300 hover:text-white"
-              >
+              <button className="hidden sm:inline-flex text-sm font-medium text-slate-300 hover:text-white transition-colors">
                 Pricing
-              </Button>
+              </button>
             </Link>
             <Link href="/premium-checkout">
               <Button
                 size="sm"
-                className="font-bold uppercase tracking-wider text-xs
-                           bg-emerald-500 hover:bg-emerald-400
-                           text-slate-950
-                           shadow-[0_0_20px_rgba(16,185,129,0.3)]
-                           hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]
-                           transition-all duration-200
-                           border-2 border-emerald-400/20"
+                className="text-sm font-medium px-4 py-2
+                           bg-white text-black
+                           hover:bg-slate-100
+                           rounded-full
+                           shadow-lg shadow-white/20
+                           hover:shadow-xl hover:shadow-white/30
+                           transition-all duration-200"
               >
                 Start Free Trial
+                <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section - Brutalist Enhanced */}
-      <section className="container px-4 lg:px-6 py-24 md:py-40 relative z-10">
+      {/* Hero Section - Stripe + Linear Premium */}
+      <section className="container px-4 lg:px-6 py-32 md:py-48 relative z-10 max-w-7xl mx-auto">
         <div className="mx-auto max-w-5xl text-center">
-          <Badge className="mb-6 px-4 py-1.5 text-xs font-bold uppercase tracking-widest
-                           bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/30
-                           hover:bg-emerald-500/20" variant="outline">
+          <Badge className="mb-8 px-4 py-2 text-xs font-medium
+                           bg-white/10 text-white border border-white/20
+                           backdrop-blur-xl rounded-full
+                           shadow-lg shadow-purple-500/10">
+            <Sparkles className="inline-block w-3 h-3 mr-2" />
             {t('landing.tagline')}
           </Badge>
-          <h1 className="mb-8 text-5xl font-black tracking-tighter sm:text-6xl md:text-7xl lg:text-8xl
-                        text-white leading-[0.9]
-                        [text-shadow:_0_0_40px_rgb(16_185_129_/_20%)]">
+
+          <h1 className="mb-8 text-5xl sm:text-6xl md:text-7xl lg:text-8xl
+                        font-bold tracking-tight
+                        text-white leading-[1.1]
+                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40
+                        [text-shadow:_0_1px_2px_rgb(0_0_0_/_20%)]">
             {t('landing.title')}
           </h1>
-          <p className="mb-12 text-xl sm:text-2xl font-medium text-slate-400 max-w-3xl mx-auto leading-relaxed">
+
+          <p className="mb-12 text-lg sm:text-xl md:text-2xl
+                        text-slate-400 max-w-3xl mx-auto
+                        leading-relaxed font-normal">
             {t('landing.description')}
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center mb-8">
             <Link href="/trades">
               <Button
                 size="lg"
-                className="w-full sm:w-auto text-base font-bold uppercase tracking-wider px-10 py-7
-                           bg-white text-slate-950
+                className="w-full sm:w-auto text-base font-medium px-8 py-6
+                           bg-white text-black
                            hover:bg-slate-100
-                           border-4 border-slate-800
-                           shadow-[8px_8px_0px_0px_rgba(16,185,129,0.4)]
-                           hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,0.6)]
-                           transition-all duration-200 ease-out
-                           hover:translate-x-[-2px] hover:translate-y-[-2px]
-                           active:shadow-[4px_4px_0px_0px_rgba(16,185,129,0.4)]
-                           active:translate-x-[2px] active:translate-y-[2px]"
+                           rounded-full
+                           shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)]
+                           hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)]
+                           transition-all duration-200
+                           border border-white/20"
                 data-testid="button-hero-browse"
               >
                 {t('landing.browse')}
-                <ArrowRight className="ml-3 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link href="/premium-checkout">
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto text-base font-bold uppercase tracking-wider px-10 py-7
-                           bg-emerald-500/10 text-emerald-400
-                           border-4 border-emerald-500/50
-                           hover:bg-emerald-500/20 hover:border-emerald-400
-                           shadow-[8px_8px_0px_0px_rgba(16,185,129,0.2)]
-                           hover:shadow-[12px_12px_0px_0px_rgba(16,185,129,0.3)]
-                           transition-all duration-200
-                           hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                className="w-full sm:w-auto text-base font-medium px-8 py-6
+                           bg-white/5 text-white
+                           border border-white/20
+                           hover:bg-white/10
+                           backdrop-blur-xl
+                           rounded-full
+                           shadow-lg shadow-purple-500/10
+                           hover:shadow-xl hover:shadow-purple-500/20
+                           transition-all duration-200"
               >
                 Start 7-Day Trial
+                <Zap className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
-          <p className="mt-6 text-sm font-mono text-slate-500 uppercase tracking-wider">
+
+          <p className="text-sm text-slate-500 font-medium">
             {t('landing.noCreditCard')}
           </p>
         </div>
       </section>
 
-      {/* Features Section - Brutalist Enhanced */}
-      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10">
+      {/* Features Section - Glassmorphism Premium */}
+      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight leading-tight">
               {t('landing.features.title')}
             </h2>
-            <p className="text-lg md:text-xl font-medium text-slate-400">
+            <p className="text-lg md:text-xl text-slate-400 font-normal max-w-2xl mx-auto">
               {t('landing.features.subtitle')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <Brain className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.aiAnalysis')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.aiAnalysisDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 mb-6">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.aiAnalysis')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.aiAnalysisDesc')}
+              </p>
+            </GlassCard>
 
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <Zap className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.realtime')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.realtimeDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 mb-6">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.realtime')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.realtimeDesc')}
+              </p>
+            </GlassCard>
 
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <BarChart3 className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.filtering')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.filteringDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-6">
+                <BarChart3 className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.filtering')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.filteringDesc')}
+              </p>
+            </GlassCard>
 
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <Bell className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.alerts')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.alertsDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 mb-6">
+                <Bell className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.alerts')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.alertsDesc')}
+              </p>
+            </GlassCard>
 
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <Shield className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.secData')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.secDataDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 mb-6">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.secData')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.secDataDesc')}
+              </p>
+            </GlassCard>
 
-            <Card className="border-2 border-slate-800 bg-slate-900/50 backdrop-blur-sm hover:border-emerald-500/50 transition-colors">
-              <CardHeader>
-                <Clock className="h-12 w-12 text-emerald-500 mb-3" />
-                <CardTitle className="text-xl font-bold">{t('landing.features.historical')}</CardTitle>
-                <CardDescription className="text-base text-slate-400">
-                  {t('landing.features.historicalDesc')}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <GlassCard variant="default" className="p-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 mb-6">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-white">{t('landing.features.historical')}</h3>
+              <p className="text-base text-slate-400 leading-relaxed">
+                {t('landing.features.historicalDesc')}
+              </p>
+            </GlassCard>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section - Brutalist Trading Platform Style */}
-      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10">
+      {/* Pricing Section - Premium Glass Design */}
+      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-lg md:text-xl font-medium text-slate-400">
+            <p className="text-lg md:text-xl text-slate-400 font-normal">
               Start with a free trial. No credit card required.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Free Plan */}
-            <Card className="border-2 border-slate-700 bg-slate-900/70 backdrop-blur-sm relative">
-              <CardHeader className="pb-8">
-                <CardTitle className="text-2xl font-black uppercase tracking-tight">Free</CardTitle>
-                <div className="mt-4">
-                  <span className="text-5xl font-black text-white">$0</span>
-                </div>
-                <CardDescription className="mt-2 text-base font-medium text-slate-400">
-                  48-hour delayed data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Link href="/trades">
-                  <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-wider border-2 border-slate-700">
-                    Browse Trades
-                  </Button>
-                </Link>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-400">48-hour delayed insider trades</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-400">Basic filtering & search</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-400">Historical data access</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Monthly Plan */}
-            <Card className="border-4 border-emerald-500 bg-slate-900/90 backdrop-blur-sm relative shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+            <GlassCard variant="premium" className="p-10 relative">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-emerald-500 text-slate-950 font-black uppercase tracking-wider px-4 py-1 border-2 border-emerald-400">
-                  Popular
+                <Badge className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg">
+                  <Sparkles className="inline-block w-3 h-3 mr-1" />
+                  Most Popular
                 </Badge>
               </div>
-              <CardHeader className="pb-8 pt-8">
-                <CardTitle className="text-2xl font-black uppercase tracking-tight">Monthly</CardTitle>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-white">$14</span>
-                  <span className="text-slate-400 font-bold">/month</span>
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">Monthly</h3>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-6xl font-bold text-white">$14</span>
+                  <span className="text-slate-400 font-medium">/month</span>
                 </div>
-                <CardDescription className="mt-2 text-base font-bold text-emerald-400">
-                  3-day free trial
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Link href="/premium-checkout">
-                  <Button className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-wider text-base py-6 shadow-[4px_4px_0px_0px_rgba(16,185,129,0.4)] hover:shadow-[6px_6px_0px_0px_rgba(16,185,129,0.6)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all">
-                    Start Free Trial
-                  </Button>
-                </Link>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Real-time insider trades (no delay)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">AI-powered analysis & predictions</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Advanced pattern detection</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Live push notifications</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Executive trade tracking</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-emerald-400 font-medium">3-day free trial</p>
+              </div>
+              <Link href="/premium-checkout">
+                <Button className="w-full mb-8 bg-white text-black hover:bg-slate-100 rounded-full py-6 text-base font-medium shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)] transition-all">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Real-time insider trades (no delay)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">AI-powered analysis & predictions</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Advanced pattern detection</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Live push notifications</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Executive trade tracking</span>
+                </li>
+              </ul>
+            </GlassCard>
 
             {/* Yearly Plan */}
-            <Card className="border-2 border-slate-700 bg-slate-900/70 backdrop-blur-sm relative">
+            <GlassCard variant="elevated" className="p-10 relative">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-amber-500 text-slate-950 font-black uppercase tracking-wider px-4 py-1 border-2 border-amber-400">
-                  33% OFF
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg">
+                  Save 33%
                 </Badge>
               </div>
-              <CardHeader className="pb-8 pt-8">
-                <CardTitle className="text-2xl font-black uppercase tracking-tight">Yearly</CardTitle>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-white">$112</span>
-                  <span className="text-slate-400 font-bold">/year</span>
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">Yearly</h3>
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-6xl font-bold text-white">$112</span>
+                  <span className="text-slate-400 font-medium">/year</span>
                 </div>
-                <CardDescription className="mt-2 text-base font-medium text-slate-400">
-                  <span className="line-through">$168</span> • 7-day free trial
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Link href="/premium-checkout">
-                  <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold uppercase tracking-wider border-2 border-slate-600">
-                    Start Free Trial
-                  </Button>
-                </Link>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Everything in Monthly</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Save $56 per year</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Extended 7-day trial</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">Best value for serious traders</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-slate-400"><span className="line-through">$168</span> • 7-day free trial</p>
+              </div>
+              <Link href="/premium-checkout">
+                <Button variant="outline" className="w-full mb-8 bg-white/5 text-white border-white/20 hover:bg-white/10 backdrop-blur-xl rounded-full py-6 text-base font-medium shadow-lg shadow-purple-500/10 hover:shadow-xl hover:shadow-purple-500/20 transition-all">
+                  Start Free Trial
+                  <Zap className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Everything in Monthly</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Save $56 per year</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Extended 7-day trial</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">Best value for serious traders</span>
+                </li>
+              </ul>
+            </GlassCard>
+          </div>
+
+          {/* Free tier callout */}
+          <div className="mt-12 text-center">
+            <p className="text-slate-400 mb-4">Not ready yet? Start for free.</p>
+            <Link href="/trades">
+              <Button variant="ghost" className="text-white hover:bg-white/5 rounded-full">
+                Browse with 48-hour delay
+                <LineChart className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
 
           {/* Trust badges */}
-          <div className="mt-16 flex flex-wrap justify-center items-center gap-8 text-sm text-slate-500 font-mono uppercase tracking-wider">
+          <div className="mt-16 flex flex-wrap justify-center items-center gap-12 text-sm text-slate-500">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              <span>Cancel Anytime</span>
+              <span className="font-medium">Cancel Anytime</span>
             </div>
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
-              <span>Secure Payment</span>
+              <span className="font-medium">Secure Payment</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              <span>No Hidden Fees</span>
+              <span className="font-medium">No Hidden Fees</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works - Brutalist Enhanced */}
-      <section className="container px-4 lg:px-6 py-24 md:py-32 relative z-10">
-        <div className="mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black mb-4 text-white tracking-tight uppercase">
-              {t('landing.howItWorks.title')}
-            </h2>
-            <p className="text-lg md:text-xl font-medium text-slate-400">
-              {t('landing.howItWorks.subtitle')}
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors">
-              <div className="flex-shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400">
-                  1
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">{t('landing.howItWorks.step1')}</h3>
-                <p className="text-base text-slate-300 leading-relaxed">
-                  {t('landing.howItWorks.step1Desc')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors">
-              <div className="flex-shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400">
-                  2
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">{t('landing.howItWorks.step2')}</h3>
-                <p className="text-base text-slate-300 leading-relaxed">
-                  {t('landing.howItWorks.step2Desc')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors">
-              <div className="flex-shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400">
-                  3
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">{t('landing.howItWorks.step3')}</h3>
-                <p className="text-base text-slate-300 leading-relaxed">
-                  {t('landing.howItWorks.step3Desc')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 p-6 border-2 border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 transition-colors">
-              <div className="flex-shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center bg-emerald-500 text-slate-950 font-black text-2xl border-2 border-emerald-400">
-                  4
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-3 text-white uppercase tracking-tight">{t('landing.howItWorks.step4')}</h3>
-                <p className="text-base text-slate-300 leading-relaxed">
-                  {t('landing.howItWorks.step4Desc')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer - Brutalist Enhanced */}
-      <footer className="border-t-4 border-slate-800 relative z-10 bg-slate-950/80">
-        <div className="container px-4 lg:px-6 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      {/* Footer - Minimal Premium */}
+      <footer className="border-t border-white/5 relative z-10 bg-black/40 backdrop-blur-xl mt-32">
+        <div className="container px-4 lg:px-6 py-16 max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
             <div>
-              <h3 className="font-black text-sm mb-4 text-white uppercase tracking-wider">Product</h3>
+              <h3 className="text-xs font-semibold mb-4 text-white uppercase tracking-wider">Product</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><Link href="/premium-checkout"><a className="hover:text-emerald-400 transition-colors font-medium">Pricing</a></Link></li>
-                <li><Link href="/trades"><a className="hover:text-emerald-400 transition-colors font-medium">Browse Trades</a></Link></li>
+                <li><Link href="/premium-checkout"><a className="hover:text-white transition-colors">Pricing</a></Link></li>
+                <li><Link href="/trades"><a className="hover:text-white transition-colors">Browse Trades</a></Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-black text-sm mb-4 text-white uppercase tracking-wider">Company</h3>
+              <h3 className="text-xs font-semibold mb-4 text-white uppercase tracking-wider">Company</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">About</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">Blog</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">Contact</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-black text-sm mb-4 text-white uppercase tracking-wider">Legal</h3>
+              <h3 className="text-xs font-semibold mb-4 text-white uppercase tracking-wider">Legal</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">Privacy</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">Terms</a></li>
-                <li><a href="/sitemap.xml" className="hover:text-emerald-400 transition-colors font-medium">Sitemap</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+                <li><a href="/sitemap.xml" className="hover:text-white transition-colors">Sitemap</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-black text-sm mb-4 text-white uppercase tracking-wider">Connect</h3>
+              <h3 className="text-xs font-semibold mb-4 text-white uppercase tracking-wider">Connect</h3>
               <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">Twitter</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors font-medium">GitHub</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">GitHub</a></li>
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t-2 border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-500" />
-              <span className="font-black text-lg tracking-tight text-white">InsiderPulse</span>
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500">
+                <TrendingUp className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-base font-semibold tracking-tight text-white">InsiderPulse</span>
             </div>
-            <p className="text-sm text-slate-500 font-mono uppercase tracking-wider">
+            <p className="text-sm text-slate-500">
               &copy; 2025 All rights reserved
             </p>
           </div>

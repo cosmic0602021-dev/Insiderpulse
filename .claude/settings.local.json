@@ -51,7 +51,8 @@
       "Bash(sqlite3:*)",
       "WebFetch(domain:www.sec.gov)",
       "WebFetch(domain:openinsider.com)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "WebFetch(domain:robinhood.com)"
     ],
     "deny": [],
     "ask": []
