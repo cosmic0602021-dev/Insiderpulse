@@ -175,9 +175,9 @@ class NewsCorrelationService {
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, 50); // 최대 50개 뉴스
 
-      // 캐시에 저장 (30분간)
+      // 캐시에 저장 (24시간) - Cost optimization
       this.newsCache.set(cacheKey, relevantNews);
-      setTimeout(() => this.newsCache.delete(cacheKey), 30 * 60 * 1000);
+      setTimeout(() => this.newsCache.delete(cacheKey), 24 * 60 * 60 * 1000);
 
       return relevantNews;
 

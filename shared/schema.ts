@@ -55,6 +55,9 @@ export const insiderTrades = pgTable("insider_trades", {
   ownershipPercentage: real("ownership_percentage").default(0), // Percentage of total shares
   filedDate: timestamp("filed_date").notNull(),
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
+  comprehensiveAnalysis: json("comprehensive_analysis"), // AI analysis with caching (new)
+  analysisGeneratedAt: timestamp("analysis_generated_at"), // When AI analysis was generated
+  newsLastFetchedAt: timestamp("news_last_fetched_at"), // When news was last fetched
   significanceScore: integer("significance_score").notNull().default(50), // Default neutral score
   signalType: text("signal_type").notNull().default('BUY'), // Default buy signal
   // Data verification fields for accuracy control

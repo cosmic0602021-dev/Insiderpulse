@@ -449,4 +449,53 @@ body {
   .animate-shimmer {
     animation: shimmer 2s infinite;
   }
+
+  /* Multi-language text layout improvements */
+  /* Korean and Japanese: prevent awkward mid-word breaks */
+  [lang="ko"], [lang="ja"] {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+  }
+
+  /* Chinese: proper text breaking */
+  [lang="zh"] {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+  }
+
+  /* All CJK languages: better spacing */
+  [lang="ko"] *, [lang="ja"] *, [lang="zh"] * {
+    letter-spacing: 0.02em;
+  }
+
+  /* Ensure buttons can expand for longer text */
+  button, .btn {
+    min-width: fit-content;
+    white-space: normal;
+    hyphens: none;
+  }
+
+  /* Better heading text wrapping for all languages */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+
+  /* Prevent navigation items from breaking awkwardly */
+  nav a, nav button {
+    white-space: nowrap;
+  }
+
+  /* Better wrapping for card titles and descriptions */
+  .card-title, .card-description {
+    overflow-wrap: break-word;
+    hyphens: none;
+  }
+
+  /* Ensure select dropdowns can accommodate longer text */
+  select, .select-trigger {
+    min-width: max-content;
+  }
 }

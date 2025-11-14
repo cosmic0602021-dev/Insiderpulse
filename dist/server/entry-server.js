@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, BarChart3, Building2, Activity, Users, PieChart, Sliders, Bookmark, Camera, Clock, Brain, Target, Calculator, Newspaper, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
+import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -17,11 +17,11 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import * as SwitchPrimitives from "@radix-ui/react-switch";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as Tooltip$1, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, ReferenceArea, ReferenceLine, ReferenceDot, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
 import html2canvas from "html2canvas";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as Tooltip$1, ReferenceArea, ReferenceLine, ReferenceDot, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { ko, ja, zhCN, enUS } from "date-fns/locale";
+import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 const useBuiltinInsertionEffect = React["useInsertionEffect"];
@@ -2243,8 +2243,58 @@ const translations = {
     "landing.pricing.signupFree": "Get Started Free",
     "landing.pricing.upgradePremium": "Upgrade to Premium",
     "landing.pricing.allPlans": "All plans include AI-powered analysis • Cancel anytime • No hidden fees",
+    "landing.pricing.monthly": "Monthly",
+    "landing.pricing.yearly": "Yearly",
+    "landing.pricing.monthlyPrice": "$14",
+    "landing.pricing.yearlyPrice": "$112",
+    "landing.pricing.monthlyPeriod": "/month",
+    "landing.pricing.yearlyPeriod": "/year",
+    "landing.pricing.monthlyTrial": "3-day free trial",
+    "landing.pricing.yearlyTrial": "7-day free trial",
+    "landing.pricing.yearlySaveOriginal": "$168",
+    "landing.pricing.savePercent": "Save 33%",
+    "landing.pricing.monthlyFeature1": "Real-time insider trades (no delay)",
+    "landing.pricing.monthlyFeature2": "AI-powered analysis & predictions",
+    "landing.pricing.monthlyFeature3": "Advanced pattern detection",
+    "landing.pricing.monthlyFeature4": "Live push notifications",
+    "landing.pricing.monthlyFeature5": "Executive trade tracking",
+    "landing.pricing.yearlyFeature1": "Everything in Monthly",
+    "landing.pricing.yearlyFeature2": "Save $56 per year",
+    "landing.pricing.yearlyFeature3": "Extended 7-day trial",
+    "landing.pricing.yearlyFeature4": "Best value for serious traders",
+    "landing.pricing.notReady": "Not ready yet? Start for free.",
+    "landing.pricing.browseDelayed": "Browse with 48-hour delay",
+    "landing.pricing.cancelAnytime": "Cancel Anytime",
+    "landing.pricing.securePayment": "Secure Payment",
+    "landing.pricing.noHiddenFees": "No Hidden Fees",
+    "landing.footer.product": "Product",
+    "landing.footer.pricing": "Pricing",
+    "landing.footer.browseTrades": "Browse Trades",
+    "landing.footer.company": "Company",
+    "landing.footer.about": "About",
+    "landing.footer.blog": "Blog",
+    "landing.footer.contact": "Contact",
+    "landing.footer.legal": "Legal",
+    "landing.footer.privacy": "Privacy",
+    "landing.footer.terms": "Terms",
+    "landing.footer.sitemap": "Sitemap",
+    "landing.footer.connect": "Connect",
+    "landing.footer.twitter": "Twitter",
+    "landing.footer.linkedin": "LinkedIn",
+    "landing.footer.github": "GitHub",
+    "landing.footer.copyright": "© 2025 All rights reserved",
     "landing.cta.title": "Start Tracking Insider Trades Today",
-    "landing.cta.subtitle": "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity."
+    "landing.cta.subtitle": "Join thousands of investors who use InsiderPulse to make informed trading decisions based on insider activity.",
+    // Trade List Date Filters
+    "tradeList.filters": "Filters",
+    "tradeList.dateRange": "Date Range",
+    "tradeList.dateRange.all": "All Time",
+    "tradeList.dateRange.today": "Today",
+    "tradeList.dateRange.week": "Last Week",
+    "tradeList.dateRange.month": "Last Month",
+    "tradeList.dateRange.threeMonths": "Last 3 Months",
+    "tradeList.dateRange.sixMonths": "Last 6 Months",
+    "tradeList.showingTrades": "Showing {count} trades"
   },
   ko: {
     // Navigation
@@ -2979,8 +3029,58 @@ const translations = {
     "landing.pricing.signupFree": "무료로 시작하기",
     "landing.pricing.upgradePremium": "프리미엄으로 업그레이드",
     "landing.pricing.allPlans": "모든 플랜에 AI 기반 분석 포함 • 언제든 취소 • 숨겨진 비용 없음",
+    "landing.pricing.monthly": "월간",
+    "landing.pricing.yearly": "연간",
+    "landing.pricing.monthlyPrice": "$14",
+    "landing.pricing.yearlyPrice": "$112",
+    "landing.pricing.monthlyPeriod": "/월",
+    "landing.pricing.yearlyPeriod": "/년",
+    "landing.pricing.monthlyTrial": "3일 무료 체험",
+    "landing.pricing.yearlyTrial": "7일 무료 체험",
+    "landing.pricing.yearlySaveOriginal": "$168",
+    "landing.pricing.savePercent": "33% 절약",
+    "landing.pricing.monthlyFeature1": "실시간 내부자 거래 (지연 없음)",
+    "landing.pricing.monthlyFeature2": "AI 기반 분석 및 예측",
+    "landing.pricing.monthlyFeature3": "고급 패턴 감지",
+    "landing.pricing.monthlyFeature4": "실시간 푸시 알림",
+    "landing.pricing.monthlyFeature5": "임원 거래 추적",
+    "landing.pricing.yearlyFeature1": "월간 플랜의 모든 기능",
+    "landing.pricing.yearlyFeature2": "연간 $56 절약",
+    "landing.pricing.yearlyFeature3": "연장된 7일 체험",
+    "landing.pricing.yearlyFeature4": "진지한 트레이더를 위한 최고의 가치",
+    "landing.pricing.notReady": "아직 준비가 안 되셨나요? 무료로 시작하세요.",
+    "landing.pricing.browseDelayed": "48시간 지연 데이터로 둘러보기",
+    "landing.pricing.cancelAnytime": "언제든 취소 가능",
+    "landing.pricing.securePayment": "안전한 결제",
+    "landing.pricing.noHiddenFees": "숨겨진 비용 없음",
+    "landing.footer.product": "제품",
+    "landing.footer.pricing": "가격",
+    "landing.footer.browseTrades": "거래 둘러보기",
+    "landing.footer.company": "회사",
+    "landing.footer.about": "소개",
+    "landing.footer.blog": "블로그",
+    "landing.footer.contact": "문의",
+    "landing.footer.legal": "법적 고지",
+    "landing.footer.privacy": "개인정보처리방침",
+    "landing.footer.terms": "이용약관",
+    "landing.footer.sitemap": "사이트맵",
+    "landing.footer.connect": "소셜",
+    "landing.footer.twitter": "트위터",
+    "landing.footer.linkedin": "링크드인",
+    "landing.footer.github": "깃허브",
+    "landing.footer.copyright": "© 2025 All rights reserved",
     "landing.cta.title": "오늘부터 내부자 거래 추적 시작",
-    "landing.cta.subtitle": "InsiderPulse를 사용하여 내부자 활동을 기반으로 정보에 입각한 거래 결정을 내리는 수천 명의 투자자와 함께하세요."
+    "landing.cta.subtitle": "InsiderPulse를 사용하여 내부자 활동을 기반으로 정보에 입각한 거래 결정을 내리는 수천 명의 투자자와 함께하세요.",
+    // Trade List Date Filters
+    "tradeList.filters": "필터",
+    "tradeList.dateRange": "기간",
+    "tradeList.dateRange.all": "전체 기간",
+    "tradeList.dateRange.today": "오늘",
+    "tradeList.dateRange.week": "지난 주",
+    "tradeList.dateRange.month": "지난 달",
+    "tradeList.dateRange.threeMonths": "최근 3개월",
+    "tradeList.dateRange.sixMonths": "최근 6개월",
+    "tradeList.showingTrades": "{count}개 거래 표시 중"
   },
   ja: {
     // Navigation
@@ -3571,7 +3671,80 @@ const translations = {
     "auth.verifyCode.backToSignup": "新規登録に戻る",
     "auth.verifyCode.successTitle": "認証完了！",
     "auth.verifyCode.successDesc": "メール認証が完了しました。\nログインページへ移動中...",
-    "auth.verifyCode.errorResend": "コードの再送信に失敗しました"
+    "auth.verifyCode.errorResend": "コードの再送信に失敗しました",
+    // Landing Page
+    "landing.browse": "閲覧",
+    "landing.tagline": "AI搭載SEC申告分析",
+    "landing.title": "InsiderPulse: インサイダー取引をリアルタイムで追跡",
+    "landing.description": "SEC Form 4申告からAI分析による即時アラートとインサイトを取得。企業内部者の動向に基づいて情報に基づいた投資判断を行います。",
+    "landing.noCreditCard": "クレジットカード不要 • 無料48時間遅延データ • いつでもアップグレード",
+    "landing.features.title": "インサイダー活動追跡に必要なすべて",
+    "landing.features.subtitle": "真剣な投資家のための強力な機能",
+    "landing.features.aiAnalysis": "AI搭載分析",
+    "landing.features.aiAnalysisDesc": "高度なGPT分析により、すべての取引から買い/売りシグナルと重要度スコア（1-100）を抽出",
+    "landing.features.realtime": "リアルタイム更新",
+    "landing.features.realtimeDesc": "WebSocket搭載のライブ更新により、SECに提出された瞬間に新しいインサイダー取引を配信",
+    "landing.features.filtering": "スマートフィルタリング",
+    "landing.features.filteringDesc": "ティッカー、シグナルタイプ、重要度スコア、取引タイプでフィルタリングして重要な取引を見つける",
+    "landing.features.alerts": "カスタムアラート",
+    "landing.features.alertsDesc": "特定の企業や取引パターンに対するパーソナライズされた通知を設定",
+    "landing.features.secData": "SEC直接データ",
+    "landing.features.secDataDesc": "公式SEC EDGAR申告からの自動収集により精度とコンプライアンスを保証",
+    "landing.features.historical": "過去分析",
+    "landing.features.historicalDesc": "完全な取引履歴とパターン分析にアクセスしてインサイダー購入トレンドを特定",
+    "landing.pricing.title": "シンプルで透明な価格設定",
+    "landing.pricing.subtitle": "あなたに最適なプランを選択",
+    "landing.pricing.mostPopular": "最も人気",
+    "landing.pricing.monthly": "月額",
+    "landing.pricing.yearly": "年額",
+    "landing.pricing.monthlyPrice": "$14",
+    "landing.pricing.yearlyPrice": "$112",
+    "landing.pricing.monthlyPeriod": "/月",
+    "landing.pricing.yearlyPeriod": "/年",
+    "landing.pricing.monthlyTrial": "3日間無料トライアル",
+    "landing.pricing.yearlyTrial": "7日間無料トライアル",
+    "landing.pricing.yearlySaveOriginal": "$168",
+    "landing.pricing.savePercent": "33%節約",
+    "landing.pricing.monthlyFeature1": "リアルタイムインサイダー取引（遅延なし）",
+    "landing.pricing.monthlyFeature2": "AI搭載分析と予測",
+    "landing.pricing.monthlyFeature3": "高度なパターン検出",
+    "landing.pricing.monthlyFeature4": "ライブプッシュ通知",
+    "landing.pricing.monthlyFeature5": "役員取引追跡",
+    "landing.pricing.yearlyFeature1": "月額プランのすべて",
+    "landing.pricing.yearlyFeature2": "年間$56節約",
+    "landing.pricing.yearlyFeature3": "延長7日間トライアル",
+    "landing.pricing.yearlyFeature4": "本格的なトレーダーに最適",
+    "landing.pricing.notReady": "まだ準備ができていませんか？無料で始めましょう。",
+    "landing.pricing.browseDelayed": "48時間遅延で閲覧",
+    "landing.pricing.cancelAnytime": "いつでもキャンセル可能",
+    "landing.pricing.securePayment": "安全な決済",
+    "landing.pricing.noHiddenFees": "隠れた料金なし",
+    "landing.footer.product": "製品",
+    "landing.footer.pricing": "料金",
+    "landing.footer.browseTrades": "取引を閲覧",
+    "landing.footer.company": "会社",
+    "landing.footer.about": "概要",
+    "landing.footer.blog": "ブログ",
+    "landing.footer.contact": "お問い合わせ",
+    "landing.footer.legal": "法的事項",
+    "landing.footer.privacy": "プライバシー",
+    "landing.footer.terms": "利用規約",
+    "landing.footer.sitemap": "サイトマップ",
+    "landing.footer.connect": "ソーシャル",
+    "landing.footer.twitter": "Twitter",
+    "landing.footer.linkedin": "LinkedIn",
+    "landing.footer.github": "GitHub",
+    "landing.footer.copyright": "© 2025 All rights reserved",
+    // Trade List Date Filters
+    "tradeList.filters": "フィルター",
+    "tradeList.dateRange": "期間",
+    "tradeList.dateRange.all": "全期間",
+    "tradeList.dateRange.today": "今日",
+    "tradeList.dateRange.week": "先週",
+    "tradeList.dateRange.month": "先月",
+    "tradeList.dateRange.threeMonths": "過去3ヶ月",
+    "tradeList.dateRange.sixMonths": "過去6ヶ月",
+    "tradeList.showingTrades": "{count}件の取引を表示中"
   },
   zh: {
     // Navigation
@@ -4162,7 +4335,80 @@ const translations = {
     "auth.verifyCode.backToSignup": "返回注册",
     "auth.verifyCode.successTitle": "验证完成！",
     "auth.verifyCode.successDesc": "电子邮件验证已完成。\n正在跳转到登录页面...",
-    "auth.verifyCode.errorResend": "重新发送验证码失败"
+    "auth.verifyCode.errorResend": "重新发送验证码失败",
+    // Landing Page
+    "landing.browse": "浏览",
+    "landing.tagline": "AI驱动的SEC申报分析",
+    "landing.title": "InsiderPulse: 实时追踪内幕交易",
+    "landing.description": "从SEC Form 4申报中获取AI驱动的即时警报和洞察。基于企业内部人士的行为做出明智的投资决策。",
+    "landing.noCreditCard": "无需信用卡 • 免费48小时延迟数据 • 随时升级",
+    "landing.features.title": "追踪内幕活动所需的一切",
+    "landing.features.subtitle": "为认真的投资者设计的强大功能",
+    "landing.features.aiAnalysis": "AI驱动分析",
+    "landing.features.aiAnalysisDesc": "高级GPT分析从每笔交易中提取买/卖信号和重要性评分（1-100）",
+    "landing.features.realtime": "实时更新",
+    "landing.features.realtimeDesc": "WebSocket驱动的实时更新，在向SEC提交的瞬间提供新的内幕交易",
+    "landing.features.filtering": "智能过滤",
+    "landing.features.filteringDesc": "按股票代码、信号类型、重要性评分和交易类型过滤，找到重要的交易",
+    "landing.features.alerts": "自定义警报",
+    "landing.features.alertsDesc": "为特定公司或交易模式设置个性化通知",
+    "landing.features.secData": "SEC直接数据",
+    "landing.features.secDataDesc": "从官方SEC EDGAR申报自动收集，确保准确性和合规性",
+    "landing.features.historical": "历史分析",
+    "landing.features.historicalDesc": "访问完整的交易历史和模式分析，识别内幕购买趋势",
+    "landing.pricing.title": "简单透明的定价",
+    "landing.pricing.subtitle": "选择适合您的计划",
+    "landing.pricing.mostPopular": "最受欢迎",
+    "landing.pricing.monthly": "月付",
+    "landing.pricing.yearly": "年付",
+    "landing.pricing.monthlyPrice": "$14",
+    "landing.pricing.yearlyPrice": "$112",
+    "landing.pricing.monthlyPeriod": "/月",
+    "landing.pricing.yearlyPeriod": "/年",
+    "landing.pricing.monthlyTrial": "3天免费试用",
+    "landing.pricing.yearlyTrial": "7天免费试用",
+    "landing.pricing.yearlySaveOriginal": "$168",
+    "landing.pricing.savePercent": "节省33%",
+    "landing.pricing.monthlyFeature1": "实时内幕交易（无延迟）",
+    "landing.pricing.monthlyFeature2": "AI驱动分析与预测",
+    "landing.pricing.monthlyFeature3": "高级模式检测",
+    "landing.pricing.monthlyFeature4": "实时推送通知",
+    "landing.pricing.monthlyFeature5": "高管交易追踪",
+    "landing.pricing.yearlyFeature1": "月付计划的所有功能",
+    "landing.pricing.yearlyFeature2": "每年节省$56",
+    "landing.pricing.yearlyFeature3": "延长7天试用",
+    "landing.pricing.yearlyFeature4": "认真交易者的最佳价值",
+    "landing.pricing.notReady": "还没准备好？免费开始。",
+    "landing.pricing.browseDelayed": "以48小时延迟浏览",
+    "landing.pricing.cancelAnytime": "随时取消",
+    "landing.pricing.securePayment": "安全支付",
+    "landing.pricing.noHiddenFees": "无隐藏费用",
+    "landing.footer.product": "产品",
+    "landing.footer.pricing": "定价",
+    "landing.footer.browseTrades": "浏览交易",
+    "landing.footer.company": "公司",
+    "landing.footer.about": "关于",
+    "landing.footer.blog": "博客",
+    "landing.footer.contact": "联系",
+    "landing.footer.legal": "法律",
+    "landing.footer.privacy": "隐私",
+    "landing.footer.terms": "条款",
+    "landing.footer.sitemap": "网站地图",
+    "landing.footer.connect": "社交",
+    "landing.footer.twitter": "Twitter",
+    "landing.footer.linkedin": "LinkedIn",
+    "landing.footer.github": "GitHub",
+    "landing.footer.copyright": "© 2025 All rights reserved",
+    // Trade List Date Filters
+    "tradeList.filters": "筛选",
+    "tradeList.dateRange": "日期范围",
+    "tradeList.dateRange.all": "全部时间",
+    "tradeList.dateRange.today": "今天",
+    "tradeList.dateRange.week": "上周",
+    "tradeList.dateRange.month": "上月",
+    "tradeList.dateRange.threeMonths": "最近3个月",
+    "tradeList.dateRange.sixMonths": "最近6个月",
+    "tradeList.showingTrades": "显示{count}笔交易"
   }
 };
 const LanguageContext = createContext(void 0);
@@ -4198,6 +4444,11 @@ const LanguageProvider = ({ children }) => {
       localStorage.setItem("language", lang);
     }
   };
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
   const t = (key, variables) => {
     const currentTranslations = translations[language];
     const fallbackTranslations = translations.en;
@@ -6220,7 +6471,7 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
               "data-testid": "button-toggle-filters",
               children: [
                 /* @__PURE__ */ jsx(Filter, { className: "h-4 w-4 mr-2" }),
-                "Filters"
+                t("tradeList.filters")
               ]
             }
           ),
@@ -6242,25 +6493,23 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
       showFilters && /* @__PURE__ */ jsxs("div", { className: "flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-md", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Calendar, { className: "h-4 w-4 text-muted-foreground" }),
-          /* @__PURE__ */ jsx("span", { className: "text-sm text-muted-foreground", children: "Date Range:" }),
+          /* @__PURE__ */ jsxs("span", { className: "text-sm text-muted-foreground", children: [
+            t("tradeList.dateRange"),
+            ":"
+          ] }),
           /* @__PURE__ */ jsxs(Select, { value: dateFilter, onValueChange: handleDateFilterChange, children: [
             /* @__PURE__ */ jsx(SelectTrigger, { className: "w-[140px]", "data-testid": "select-date-filter", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
             /* @__PURE__ */ jsxs(SelectContent, { children: [
-              /* @__PURE__ */ jsx(SelectItem, { value: "all", children: "All Time" }),
-              /* @__PURE__ */ jsx(SelectItem, { value: "today", children: "Today" }),
-              /* @__PURE__ */ jsx(SelectItem, { value: "week", children: "Last Week" }),
-              /* @__PURE__ */ jsx(SelectItem, { value: "month", children: "Last Month" }),
-              /* @__PURE__ */ jsx(SelectItem, { value: "3months", children: "Last 3 Months" }),
-              /* @__PURE__ */ jsx(SelectItem, { value: "6months", children: "Last 6 Months" })
+              /* @__PURE__ */ jsx(SelectItem, { value: "all", children: t("tradeList.dateRange.all") }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "today", children: t("tradeList.dateRange.today") }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "week", children: t("tradeList.dateRange.week") }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "month", children: t("tradeList.dateRange.month") }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "3months", children: t("tradeList.dateRange.threeMonths") }),
+              /* @__PURE__ */ jsx(SelectItem, { value: "6months", children: t("tradeList.dateRange.sixMonths") })
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "text-sm text-muted-foreground", children: [
-          "Showing ",
-          filteredTrades.length,
-          " trade",
-          filteredTrades.length !== 1 ? "s" : ""
-        ] })
+        /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground", children: t("tradeList.showingTrades", { count: filteredTrades.length }) })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "flex flex-wrap items-center gap-2", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
         /* @__PURE__ */ jsx(SortDesc, { className: "h-4 w-4 text-muted-foreground" }),
@@ -6308,6 +6557,961 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
       ) })
     ] }) })
   ] });
+}
+const logoLight$5 = "/assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167-BnhrSNJc.png";
+const logoDark$5 = "/assets/inverted_with_green_1757888880166-D3vveTue.png";
+function TradeDetailModal({
+  isOpen,
+  onClose,
+  trade,
+  onAddToWatchlist,
+  isInWatchlist = false
+}) {
+  var _a;
+  const { t, language } = useLanguage();
+  const [showPWAGuide, setShowPWAGuide] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  useState(false);
+  const [isPWAInstalled, setIsPWAInstalled] = useState(false);
+  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [isHistoricalTrade, setIsHistoricalTrade] = useState(false);
+  const [tradeAge, setTradeAge] = useState(0);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [isLoadingPriceHistory, setIsLoadingPriceHistory] = useState(false);
+  const [priceHistoryError, setPriceHistoryError] = useState(null);
+  const [expandedNews, setExpandedNews] = useState(/* @__PURE__ */ new Set());
+  const modalRef = useRef(null);
+  const toggleNewsExpansion = (index) => {
+    setExpandedNews((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+  const formatTimeAgo = (date) => {
+    const dateLocale = language === "ko" ? ko : language === "ja" ? ja : language === "zh" ? zhCN : enUS;
+    return formatDistanceToNow(new Date(date), {
+      addSuffix: true,
+      locale: dateLocale
+    });
+  };
+  useEffect(() => {
+    const checkPWAInstalled = () => {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone || document.referrer.includes("android-app://");
+      setIsPWAInstalled(isStandalone);
+    };
+    checkPWAInstalled();
+  }, []);
+  useEffect(() => {
+    if (isOpen && trade && !trade.comprehensiveAnalysis) {
+      loadComprehensiveAnalysis();
+    }
+  }, [isOpen, trade]);
+  useEffect(() => {
+    if (isOpen && trade && trade.ticker && !isHistoricalTrade) {
+      loadPriceHistory();
+    }
+  }, [isOpen, trade == null ? void 0 : trade.id, isHistoricalTrade]);
+  const loadComprehensiveAnalysis = async () => {
+    if (!trade) return;
+    try {
+      setIsLoadingAnalysis(true);
+      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis?language=${language}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.isHistorical) {
+          console.log(`📦 Historical trade detected (${data.tradeAge} days old) - showing basic info only`);
+          setIsHistoricalTrade(true);
+          setTradeAge(data.tradeAge);
+          setComprehensiveAnalysis(null);
+        } else {
+          setIsHistoricalTrade(false);
+          setComprehensiveAnalysis(data);
+        }
+      } else {
+        console.error("Failed to load AI analysis:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error loading AI analysis:", error);
+    } finally {
+      setIsLoadingAnalysis(false);
+    }
+  };
+  const loadPriceHistory = async () => {
+    if (!trade || !trade.ticker) {
+      console.warn("Cannot load price history: missing trade or ticker");
+      return;
+    }
+    const ticker = trade.ticker.trim();
+    if (!ticker || ticker.length === 0) {
+      console.error("Invalid ticker:", trade.ticker);
+      setPriceHistoryError("INVALID_TICKER");
+      setIsLoadingPriceHistory(false);
+      return;
+    }
+    try {
+      setIsLoadingPriceHistory(true);
+      setPriceHistoryError(null);
+      const tradeDate = new Date(trade.filedDate);
+      if (isNaN(tradeDate.getTime())) {
+        console.error("Invalid trade date:", trade.filedDate);
+        setPriceHistoryError("INVALID_DATE");
+        setPriceHistory([]);
+        return;
+      }
+      const startDate = new Date(tradeDate);
+      startDate.setDate(startDate.getDate() - 7);
+      const potentialEndDate = new Date(tradeDate);
+      potentialEndDate.setDate(potentialEndDate.getDate() + 7);
+      const today = /* @__PURE__ */ new Date();
+      const endDate = potentialEndDate > today ? today : potentialEndDate;
+      const fromDate = startDate.toISOString().split("T")[0];
+      const toDate = endDate.toISOString().split("T")[0];
+      console.log(`📊 Loading price history for ${ticker}: ${fromDate} to ${toDate}`);
+      const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (!data || data.length === 0) {
+          console.warn(`⚠️ No price data returned for ${ticker} in range ${fromDate} to ${toDate}`);
+          setPriceHistoryError("NO_DATA");
+          setPriceHistory([]);
+          return;
+        }
+        const transformedData = data.map((item) => ({
+          date: item.date,
+          close: parseFloat(item.close)
+        }));
+        console.log(`✅ Loaded ${transformedData.length} price data points for ${ticker}`);
+        setPriceHistory(transformedData);
+        setPriceHistoryError(null);
+      } else {
+        console.error(`Failed to load price history for ${ticker}: HTTP ${response.status}`);
+        setPriceHistoryError("API_ERROR");
+        setPriceHistory([]);
+      }
+    } catch (error) {
+      console.error("Error loading price history:", error);
+      setPriceHistoryError("FETCH_ERROR");
+      setPriceHistory([]);
+    } finally {
+      setIsLoadingPriceHistory(false);
+    }
+  };
+  const handleScreenshot = async () => {
+    if (!modalRef.current) return;
+    try {
+      setIsCapturing(true);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const canvas = await html2canvas(modalRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff"
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      if (navigator.share) {
+        const blob = await (await fetch(dataUrl)).blob();
+        await navigator.share({
+          title: `InsiderPulse: ${trade.ticker}`,
+          text: t("tradeDetail.shareText").replace("{company}", trade.companyName),
+          files: [
+            new File([blob], `insider_trade_${trade.ticker}.png`, {
+              type: "image/png"
+            })
+          ]
+        });
+      } else {
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = `insider_trade_${trade.ticker}_${(/* @__PURE__ */ new Date()).getTime()}.png`;
+        link.click();
+      }
+    } catch (error) {
+      console.error("스크린샷 공유 중 오류 발생:", error);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+  if (!isOpen || !trade) return null;
+  const isMarketOpen = () => {
+    const now = /* @__PURE__ */ new Date();
+    const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const day = easternTime.getDay();
+    const hour = easternTime.getHours();
+    const minute = easternTime.getMinutes();
+    const currentTime = hour * 60 + minute;
+    if (day === 0 || day === 6) return false;
+    const marketOpen = 9 * 60 + 30;
+    const marketClose = 16 * 60;
+    return currentTime >= marketOpen && currentTime <= marketClose;
+  };
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+  const getLocale = () => {
+    const localeMap = {
+      en: "en-US",
+      ko: "ko-KR",
+      ja: "ja-JP",
+      zh: "zh-CN"
+    };
+    return localeMap[language] || "en-US";
+  };
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString(getLocale(), {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+  };
+  const getCompanyInitials = (name) => {
+    const words = name.split(" ").filter((w) => w.length > 1);
+    return words.slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  };
+  const getTradeTypeIcon = (tradeType) => {
+    const iconClass = `h-4 w-4 ${getTradeTypeIconColor(tradeType)}`;
+    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
+      case "BUY":
+      case "PURCHASE":
+        return /* @__PURE__ */ jsx(TrendingUp, { className: iconClass });
+      case "SELL":
+      case "SALE":
+        return /* @__PURE__ */ jsx(TrendingDown, { className: iconClass });
+      default:
+        return /* @__PURE__ */ jsx(DollarSign, { className: iconClass });
+    }
+  };
+  const getTradeTypeIconColor = (tradeType) => {
+    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
+      case "BUY":
+      case "PURCHASE":
+        return "text-green-600";
+      case "SELL":
+      case "SALE":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+  const getTradeTypeColor = (tradeType) => {
+    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
+      case "BUY":
+      case "PURCHASE":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "SELL":
+      case "SALE":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+  return /* @__PURE__ */ jsxs(
+    "div",
+    {
+      className: "modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4",
+      onClick: onClose,
+      children: [
+        /* @__PURE__ */ jsxs("div", { className: "fixed inset-0 flex items-center justify-center pointer-events-none z-40 overflow-hidden", children: [
+          /* @__PURE__ */ jsx(
+            "img",
+            {
+              src: logoLight$5,
+              alt: "InsiderPulse",
+              className: "w-80 h-auto opacity-10 select-none dark:hidden"
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "img",
+            {
+              src: logoDark$5,
+              alt: "InsiderPulse",
+              className: "w-80 h-auto opacity-10 select-none hidden dark:block"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxs(
+          Card$1,
+          {
+            ref: modalRef,
+            className: "modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative",
+            onClick: (e) => e.stopPropagation(),
+            children: [
+              /* @__PURE__ */ jsx(CardHeader$1, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
+                /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
+                  trade.ticker ? /* @__PURE__ */ jsxs("div", { className: "relative w-10 h-10 flex-shrink-0", children: [
+                    /* @__PURE__ */ jsx(
+                      "img",
+                      {
+                        src: `https://assets.parqet.com/logos/resolution/${trade.ticker}.png`,
+                        alt: `${trade.companyName} logo`,
+                        className: "w-10 h-10 rounded-lg object-contain",
+                        onError: (e) => {
+                          var _a2;
+                          const target = e.target;
+                          if (target.src.includes("parqet.com")) {
+                            target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
+                          } else {
+                            target.style.display = "none";
+                            const fallbackDiv = (_a2 = target.parentElement) == null ? void 0 : _a2.querySelector(".fallback-logo");
+                            if (fallbackDiv) fallbackDiv.style.display = "flex";
+                          }
+                        }
+                      }
+                    ),
+                    /* @__PURE__ */ jsx("div", { className: "fallback-logo w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold hidden", style: { display: "none" }, children: getCompanyInitials(trade.companyName) })
+                  ] }) : /* @__PURE__ */ jsx("div", { className: "w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold", children: getCompanyInitials(trade.companyName) }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0 flex-1", children: [
+                    /* @__PURE__ */ jsx("h3", { className: "text-sm sm:text-lg font-bold truncate", children: trade.companyName }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground", children: trade.ticker })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2 flex-shrink-0", children: [
+                  onAddToWatchlist && /* @__PURE__ */ jsxs(
+                    Button,
+                    {
+                      size: "sm",
+                      variant: isInWatchlist ? "default" : "outline",
+                      onClick: () => onAddToWatchlist(trade),
+                      className: "btn-professional px-2 sm:px-3",
+                      title: isInWatchlist ? t("watchlist.remove") : t("liveTrading.watchlist"),
+                      "data-testid": isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist",
+                      children: [
+                        /* @__PURE__ */ jsx(Bookmark, { className: `h-4 w-4 ${isInWatchlist ? "fill-current" : ""}` }),
+                        /* @__PURE__ */ jsx("span", { className: "hidden sm:inline ml-1", children: isInWatchlist ? t("watchlist.remove") : t("liveTrading.watchlist") })
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsx(
+                    Button,
+                    {
+                      variant: "ghost",
+                      size: "sm",
+                      onClick: handleScreenshot,
+                      disabled: isCapturing,
+                      className: "btn-professional",
+                      title: t("tradeDetail.shareScreenshot"),
+                      children: isCapturing ? /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Camera, { className: "h-4 w-4" })
+                    }
+                  ),
+                  /* @__PURE__ */ jsx(
+                    Button,
+                    {
+                      variant: "ghost",
+                      size: "sm",
+                      onClick: onClose,
+                      className: "btn-professional",
+                      children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
+                    }
+                  )
+                ] })
+              ] }) }),
+              /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
+                /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-6 rounded-lg space-y-4", children: [
+                  /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", children: [
+                    /* @__PURE__ */ jsxs("div", { children: [
+                      /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mb-1", children: t("tradeDetail.tradeType") }),
+                      /* @__PURE__ */ jsxs(Badge, { className: `btn-professional font-bold text-sm sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`, children: [
+                        getTradeTypeIcon(trade.tradeType),
+                        trade.tradeType
+                      ] })
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: "sm:text-right", children: [
+                      /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mb-1", children: t("tradeDetail.totalTransactionAmount") }),
+                      /* @__PURE__ */ jsx("p", { className: `text-2xl sm:text-3xl font-black ${((_a = trade.tradeType) == null ? void 0 : _a.toUpperCase()) === "BUY" ? "text-green-600" : "text-red-600"}`, children: formatCurrency(trade.totalValue) })
+                    ] })
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-4 pt-4 border-t border-white/50 dark:border-gray-700", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg", children: [
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.sharesCount") }),
+                      /* @__PURE__ */ jsx("p", { className: "text-2xl font-bold", children: trade.shares.toLocaleString() }),
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: t("tradeDetail.shares") })
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg", children: [
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.pricePerShare") }),
+                      /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold", children: [
+                        "$",
+                        trade.pricePerShare.toFixed(2)
+                      ] }),
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: t("tradeDetail.perShare") })
+                    ] })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800", children: [
+                  /* @__PURE__ */ jsxs("h4", { className: "font-bold mb-3 flex items-center gap-2 text-base", children: [
+                    /* @__PURE__ */ jsx(User, { className: "h-5 w-5 text-slate-600 dark:text-slate-400" }),
+                    t("tradeDetail.insiderInfo")
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "bg-white dark:bg-gray-800", children: t("tradeDetail.name") }),
+                      /* @__PURE__ */ jsx("p", { className: "font-bold text-lg", children: trade.traderName })
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "bg-white dark:bg-gray-800", children: t("tradeDetail.titlePosition") }),
+                      /* @__PURE__ */ jsx("p", { className: "font-semibold text-slate-700 dark:text-slate-300", children: trade.traderTitle })
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t", children: [
+                      /* @__PURE__ */ jsx(Calendar, { className: "h-5 w-5 text-amber-600" }),
+                      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:gap-2", children: [
+                        /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground font-medium", children: [
+                          t("tradeDetail.transactionDate") || "Transaction Date",
+                          ":"
+                        ] }),
+                        /* @__PURE__ */ jsx("p", { className: "font-bold text-base text-slate-900 dark:text-white", children: formatDate(trade.filedDate) })
+                      ] })
+                    ] })
+                  ] })
+                ] }),
+                trade.secFilingUrl && /* @__PURE__ */ jsxs("div", { className: "border-t pt-4", children: [
+                  /* @__PURE__ */ jsxs(
+                    "a",
+                    {
+                      href: trade.secFilingUrl,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      className: "flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold hover:underline",
+                      children: [
+                        /* @__PURE__ */ jsx("svg", { className: "h-5 w-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" }) }),
+                        t("tradeDetail.viewSecFiling")
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground mt-1", children: [
+                    "✓ ",
+                    t("tradeDetail.verifiedBySec")
+                  ] })
+                ] }),
+                !isHistoricalTrade && /* @__PURE__ */ jsxs("div", { className: "border-t pt-4", children: [
+                  /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-4 flex items-center gap-2 text-base", children: [
+                    /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5 text-slate-600 dark:text-slate-400" }),
+                    t("tradeDetail.priceAnalysis")
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "mb-6 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700", children: [
+                    /* @__PURE__ */ jsx("h5", { className: "text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300", children: t("priceChart.title") }),
+                    isLoadingPriceHistory ? /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center h-[200px]", children: [
+                      /* @__PURE__ */ jsx(Loader2, { className: "h-8 w-8 animate-spin text-primary" }),
+                      /* @__PURE__ */ jsx("span", { className: "ml-3 text-sm", children: t("priceChart.loadingHistory") || "Loading price history..." })
+                    ] }) : priceHistory.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 240, children: /* @__PURE__ */ jsxs(
+                      LineChart,
+                      {
+                        data: priceHistory,
+                        margin: { top: 5, right: 20, left: 0, bottom: 5 },
+                        children: [
+                          /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", stroke: "#e5e7eb" }),
+                          /* @__PURE__ */ jsx(
+                            XAxis,
+                            {
+                              dataKey: "date",
+                              stroke: "#6b7280",
+                              style: { fontSize: "11px" },
+                              tickFormatter: (value) => {
+                                const date = new Date(value);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                              }
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            YAxis,
+                            {
+                              stroke: "#6b7280",
+                              style: { fontSize: "12px" },
+                              tickFormatter: (value) => `$${value.toFixed(2)}`,
+                              domain: ["auto", "auto"]
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            Tooltip$1,
+                            {
+                              contentStyle: {
+                                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: "6px",
+                                fontSize: "12px"
+                              },
+                              formatter: (value) => [`$${value.toFixed(2)}`, t("priceChart.price") || "Price"],
+                              labelFormatter: (label) => {
+                                const date = new Date(label);
+                                return date.toLocaleDateString(getLocale(), { month: "short", day: "numeric", year: "numeric" });
+                              }
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceArea,
+                            {
+                              x1: (() => {
+                                const tradeDate = new Date(trade.filedDate);
+                                const dayBefore = new Date(tradeDate);
+                                dayBefore.setDate(dayBefore.getDate() - 1);
+                                return dayBefore.toISOString().split("T")[0];
+                              })(),
+                              x2: (() => {
+                                const tradeDate = new Date(trade.filedDate);
+                                const dayAfter = new Date(tradeDate);
+                                dayAfter.setDate(dayAfter.getDate() + 1);
+                                return dayAfter.toISOString().split("T")[0];
+                              })(),
+                              fill: "#f59e0b",
+                              fillOpacity: 0.1
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceLine,
+                            {
+                              x: new Date(trade.filedDate).toISOString().split("T")[0],
+                              stroke: "#f59e0b",
+                              strokeWidth: 3,
+                              strokeDasharray: "5 5",
+                              label: {
+                                value: `📊 ${t("tradeDetail.tradeDate") || "Trade Date"}`,
+                                position: "top",
+                                fill: "#f59e0b",
+                                fontSize: 13,
+                                fontWeight: "bold",
+                                style: {
+                                  textShadow: "0 0 3px white, 0 0 5px white"
+                                }
+                              }
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceLine,
+                            {
+                              y: trade.pricePerShare,
+                              stroke: "#f59e0b",
+                              strokeWidth: 3,
+                              label: {
+                                value: `Trade Price: $${trade.pricePerShare.toFixed(2)}`,
+                                position: "insideTopRight",
+                                fill: "#f59e0b",
+                                fontSize: 13,
+                                fontWeight: "bold",
+                                style: {
+                                  backgroundColor: "rgba(251, 146, 60, 0.9)",
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  color: "white"
+                                }
+                              }
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceDot,
+                            {
+                              x: new Date(trade.filedDate).toISOString().split("T")[0],
+                              y: trade.pricePerShare,
+                              r: 8,
+                              fill: "#f59e0b",
+                              stroke: "#fff",
+                              strokeWidth: 3,
+                              isFront: true
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceDot,
+                            {
+                              x: new Date(trade.filedDate).toISOString().split("T")[0],
+                              y: trade.pricePerShare,
+                              r: 14,
+                              fill: "#f59e0b",
+                              fillOpacity: 0.25,
+                              stroke: "none"
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            ReferenceDot,
+                            {
+                              x: new Date(trade.filedDate).toISOString().split("T")[0],
+                              y: trade.pricePerShare,
+                              r: 11,
+                              fill: "#f59e0b",
+                              fillOpacity: 0.4,
+                              stroke: "none"
+                            }
+                          ),
+                          /* @__PURE__ */ jsx(
+                            Line,
+                            {
+                              type: "monotone",
+                              dataKey: "close",
+                              stroke: "#10b981",
+                              strokeWidth: 2,
+                              dot: false,
+                              name: t("priceChart.price") || "Price"
+                            }
+                          )
+                        ]
+                      }
+                    ) }) : /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700", children: [
+                      priceHistoryError === "INVALID_TICKER" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 티커 심볼" }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "티커 형식을 확인해주세요" })
+                      ] }),
+                      priceHistoryError === "INVALID_DATE" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 거래 날짜" }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "이 날짜의 가격 데이터를 불러올 수 없습니다" })
+                      ] }),
+                      (priceHistoryError === "NO_DATA" || !priceHistoryError) && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                        /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-blue-800 dark:text-blue-200 font-semibold text-base mb-1", children: "💡 실시간 주가 데이터를 수집하지 못했습니다" }),
+                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-700 dark:text-blue-300", children: priceHistoryError === "NO_DATA" ? "이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다" : "주가 데이터를 아직 수집하지 못했습니다" })
+                        ] }),
+                        /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-900 dark:text-blue-100 font-medium mb-2", children: "✅ 내부자 거래 가격 기준으로 분석을 제공합니다" }),
+                          /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다" })
+                        ] })
+                      ] }),
+                      (priceHistoryError === "API_ERROR" || priceHistoryError === "FETCH_ERROR") && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                        /* @__PURE__ */ jsx("p", { className: "text-red-700 dark:text-red-300 font-medium mb-2", children: "❌ 가격 데이터를 불러오지 못했습니다" }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-red-600 dark:text-red-400 mb-3", children: "일시적인 오류입니다. 잠시 후 다시 시도해주세요" }),
+                        /* @__PURE__ */ jsx("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3", children: /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다" }) })
+                      ] })
+                    ] })
+                  ] }),
+                  /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6", children: [
+                    /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700", children: [
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
+                        /* @__PURE__ */ jsx("div", { className: "w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx(DollarSign, { className: "h-4 w-4 text-white" }) }),
+                        /* @__PURE__ */ jsxs("div", { children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-xs font-medium text-slate-700 dark:text-slate-300", children: t("tradeDetail.insiderTradePrice") }),
+                          /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 dark:text-slate-400", children: formatDate(trade.filedDate) })
+                        ] })
+                      ] }),
+                      /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold text-slate-800 dark:text-slate-200 value-change-up", children: [
+                        "$",
+                        trade.pricePerShare.toFixed(2)
+                      ] }),
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400 mt-1", children: t("tradeDetail.basedOnSecFiling") })
+                    ] }),
+                    /* @__PURE__ */ jsxs("div", { className: `rounded-lg p-4 border-2 ${trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? trade.currentPrice > trade.pricePerShare ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700" : "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`, children: [
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
+                        /* @__PURE__ */ jsx("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center ${trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? trade.currentPrice > trade.pricePerShare ? "bg-green-500 dark:bg-green-600" : "bg-red-500 dark:bg-red-600" : "bg-slate-600 dark:bg-slate-500"}`, children: trade.currentPrice && trade.currentPrice > trade.pricePerShare ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) : trade.currentPrice && trade.currentPrice < trade.pricePerShare ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-white" }) : /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) }),
+                        /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
+                          /* @__PURE__ */ jsx("p", { className: "text-xs font-medium text-slate-700 dark:text-slate-300", children: t("tradeDetail.currentMarketPrice") }),
+                          /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 dark:text-slate-400", children: trade.currentPrice ? isMarketOpen() ? t("tradeDetail.realtimeEstimate") : t("tradeDetail.lastClosePrice") : t("priceChart.tradeTimeBase") })
+                        ] })
+                      ] }),
+                      /* @__PURE__ */ jsxs("div", { className: "flex items-baseline justify-between mb-2", children: [
+                        /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold text-slate-800 dark:text-slate-200", children: [
+                          "$",
+                          (trade.currentPrice || trade.pricePerShare).toFixed(2)
+                        ] }),
+                        trade.currentPrice && trade.currentPrice !== trade.pricePerShare && (() => {
+                          const priceChange = trade.currentPrice - trade.pricePerShare;
+                          const percentChange = priceChange / trade.pricePerShare * 100;
+                          const isGain = priceChange > 0;
+                          return /* @__PURE__ */ jsxs("div", { className: "text-right", children: [
+                            /* @__PURE__ */ jsxs("p", { className: `text-xl font-bold ${isGain ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`, children: [
+                              isGain ? "+" : "",
+                              percentChange.toFixed(2),
+                              "%"
+                            ] }),
+                            /* @__PURE__ */ jsxs("p", { className: `text-sm font-semibold ${isGain ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"}`, children: [
+                              isGain ? "+" : "",
+                              "$",
+                              Math.abs(priceChange).toFixed(2)
+                            ] })
+                          ] });
+                        })()
+                      ] }),
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400", children: trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? t("tradeDetail.priceChangeSinceTrade") : trade.currentPrice ? isMarketOpen() ? t("priceChart.realtimeMarketPrice") : t("priceChart.lastClosingPrice") : t("priceChart.basedOnInsiderTradePrice") }),
+                      trade.priceLastUpdated && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 mt-2 pt-2 border-t border-slate-300 dark:border-slate-600", children: [
+                        /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3 text-slate-500" }),
+                        /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-slate-500 dark:text-slate-400", children: [
+                          t("tradeDetail.priceUpdatedAt") || "수집 시간",
+                          ": ",
+                          formatTimeAgo(trade.priceLastUpdated)
+                        ] })
+                      ] })
+                    ] })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsx("div", { className: "border-t pt-4", "data-testid": "section-ai-analysis", children: /* @__PURE__ */ jsx("div", { className: "bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center", children: [
+                  /* @__PURE__ */ jsx("div", { className: "w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-lg flex items-center justify-center mb-3", children: /* @__PURE__ */ jsx(Brain, { className: "h-4 w-4 text-white" }) }),
+                  /* @__PURE__ */ jsxs("div", { className: "w-full", children: [
+                    /* @__PURE__ */ jsx("h4", { className: "font-semibold text-sm mb-3 text-center", children: t("tradeDetail.aiAnalysisResults") }),
+                    /* @__PURE__ */ jsx("div", { className: "space-y-3 text-sm leading-relaxed", "data-testid": "text-ai-analysis", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center p-8", children: [
+                      /* @__PURE__ */ jsx(Loader2, { className: "h-8 w-8 animate-spin text-primary" }),
+                      /* @__PURE__ */ jsx("span", { className: "ml-3", children: t("tradeDetail.aiAnalysisGenerating") })
+                    ] }) : isHistoricalTrade ? /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center justify-center p-8 text-center bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700", children: [
+                      /* @__PURE__ */ jsx(Clock, { className: "h-12 w-12 text-slate-400 mb-4" }),
+                      /* @__PURE__ */ jsx("p", { className: "text-base font-semibold text-slate-700 dark:text-slate-300 mb-2", children: language === "ko" ? "과거 거래 기록" : language === "ja" ? "過去の取引記録" : language === "zh" ? "历史交易记录" : "Historical Trade Record" }),
+                      /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-600 dark:text-slate-400 mb-1", children: language === "ko" ? `이 거래는 ${tradeAge}일 이상 경과했습니다.` : language === "ja" ? `この取引は${tradeAge}日以上経過しています。` : language === "zh" ? `此交易已超过${tradeAge}天。` : `This trade is over ${tradeAge} days old.` }),
+                      /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-500 dark:text-slate-500 max-w-md mt-2", children: language === "ko" ? "비용 최적화를 위해 오래된 거래에는 AI 분석 및 뉴스를 제공하지 않습니다. 기본 거래 정보만 확인하실 수 있습니다." : language === "ja" ? "コスト最適化のため、古い取引にはAI分析とニュースを提供していません。基本的な取引情報のみご確認いただけます。" : language === "zh" ? "为优化成本，旧交易不提供AI分析和新闻。仅可查看基本交易信息。" : "To optimize costs, AI analysis and news are not provided for old trades. Only basic trade information is available." })
+                    ] }) : trade.comprehensiveAnalysis || comprehensiveAnalysis ? (
+                      // 실제 AI 분석 결과 표시 (통합된 종합의견 포함)
+                      (() => {
+                        var _a2, _b;
+                        const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis;
+                        const sentiment = ((_a2 = analysis.marketContext) == null ? void 0 : _a2.sentiment) || "NEUTRAL";
+                        const isBullish = sentiment === "BULLISH";
+                        const isBearish = sentiment === "BEARISH";
+                        return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                          /* @__PURE__ */ jsxs("div", { className: `mb-4 p-4 rounded-lg border-2 ${isBullish ? "bg-green-50 dark:bg-green-900/20 border-green-500" : isBearish ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-gray-50 dark:bg-gray-900/20 border-gray-500"}`, children: [
+                            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-3", children: [
+                              /* @__PURE__ */ jsxs("h5", { className: "font-bold text-base flex items-center gap-2", children: [
+                                /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5" }),
+                                t("tradeDetail.aiComprehensiveAnalysis")
+                              ] }),
+                              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                                /* @__PURE__ */ jsx(Badge, { className: `text-sm px-3 py-1 font-bold ${isBullish ? "bg-green-600 text-white" : isBearish ? "bg-red-600 text-white" : "bg-gray-600 text-white"}`, children: isBullish ? t("tradeDetail.buyRecommendation") : isBearish ? t("tradeDetail.sellRecommendation") : t("tradeDetail.holdRecommendation") }),
+                                /* @__PURE__ */ jsxs("div", { className: "text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border", children: [
+                                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("tradeDetail.confidenceLevel") }),
+                                  /* @__PURE__ */ jsxs("p", { className: "text-lg font-bold text-blue-600", children: [
+                                    analysis.confidence,
+                                    "%"
+                                  ] })
+                                ] })
+                              ] })
+                            ] }),
+                            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground leading-relaxed", children: analysis.executiveSummary })
+                          ] }),
+                          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-4", children: [
+                            /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3", children: [
+                              /* @__PURE__ */ jsxs("h6", { className: "font-medium mb-2 flex items-center gap-1", children: [
+                                /* @__PURE__ */ jsx(Target, { className: "h-3 w-3" }),
+                                t("tradeDetail.targetPriceAnalysis")
+                              ] }),
+                              /* @__PURE__ */ jsxs("div", { className: "space-y-1 text-xs", children: [
+                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
+                                  /* @__PURE__ */ jsxs("span", { children: [
+                                    t("tradeDetail.conservative"),
+                                    ":"
+                                  ] }),
+                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
+                                    "$",
+                                    analysis.priceTargets.conservative.toFixed(2)
+                                  ] })
+                                ] }),
+                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
+                                  /* @__PURE__ */ jsxs("span", { children: [
+                                    t("tradeDetail.realistic"),
+                                    ":"
+                                  ] }),
+                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
+                                    "$",
+                                    analysis.priceTargets.realistic.toFixed(2)
+                                  ] })
+                                ] }),
+                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
+                                  /* @__PURE__ */ jsxs("span", { children: [
+                                    t("tradeDetail.optimistic"),
+                                    ":"
+                                  ] }),
+                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
+                                    "$",
+                                    analysis.priceTargets.optimistic.toFixed(2)
+                                  ] })
+                                ] })
+                              ] })
+                            ] }),
+                            /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3", children: [
+                              /* @__PURE__ */ jsxs("h6", { className: "font-medium mb-2 flex items-center gap-1", children: [
+                                /* @__PURE__ */ jsx(Calculator, { className: "h-3 w-3" }),
+                                t("tradeDetail.riskAssessment")
+                              ] }),
+                              /* @__PURE__ */ jsxs("div", { className: "space-y-1 text-xs", children: [
+                                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                                  /* @__PURE__ */ jsxs("span", { children: [
+                                    t("tradeDetail.riskLevel"),
+                                    ":"
+                                  ] }),
+                                  /* @__PURE__ */ jsx(Badge, { className: `text-xs px-2 py-0.5 ${analysis.riskAssessment.level === "LOW" ? "bg-green-100 text-green-800" : analysis.riskAssessment.level === "MEDIUM" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}`, children: analysis.riskAssessment.level })
+                                ] }),
+                                /* @__PURE__ */ jsx("p", { className: "text-xs", children: analysis.riskAssessment.mitigation })
+                              ] })
+                            ] })
+                          ] }),
+                          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700", children: [
+                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                              /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.aiConfidence") }),
+                              /* @__PURE__ */ jsxs("p", { className: "text-lg font-bold text-green-600 dark:text-green-500", children: [
+                                analysis.confidence,
+                                "%"
+                              ] })
+                            ] }),
+                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                              /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.analysisTimeHorizon") }),
+                              /* @__PURE__ */ jsx("p", { className: "text-sm font-medium", children: analysis.timeHorizon })
+                            ] }),
+                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+                              /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-600/80 mb-1", children: t("tradeDetail.marketSentiment") }),
+                              /* @__PURE__ */ jsx(Badge, { className: `text-xs px-2 py-1 ${analysis.marketContext.sentiment === "BULLISH" ? "bg-green-100 text-green-800" : analysis.marketContext.sentiment === "BEARISH" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"}`, children: t(`tradeDetail.sentiment.${analysis.marketContext.sentiment.toLowerCase()}`) })
+                            ] })
+                          ] }),
+                          ((_b = analysis.catalysts) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ jsxs("div", { className: "mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50", children: [
+                            /* @__PURE__ */ jsxs("p", { className: "text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1", children: [
+                              /* @__PURE__ */ jsx(Zap, { className: "h-4 w-4" }),
+                              t("tradeDetail.keyCatalysts")
+                            ] }),
+                            /* @__PURE__ */ jsx("ul", { className: "text-xs list-disc list-inside space-y-1", children: analysis.catalysts.map((catalyst, index) => /* @__PURE__ */ jsx("li", { children: catalyst }, index)) })
+                          ] }),
+                          analysis.newsAnalysis && /* @__PURE__ */ jsxs("div", { className: "mt-4 p-4 bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/20 dark:to-red-950/20 rounded-lg border border-gray-200 dark:border-gray-700", children: [
+                            /* @__PURE__ */ jsxs("h6", { className: "font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2", children: [
+                              /* @__PURE__ */ jsx(Newspaper, { className: "h-4 w-4 text-blue-600" }),
+                              t("tradeDetail.latestNewsAnalysis"),
+                              " (",
+                              analysis.newsAnalysis.totalNews,
+                              ")"
+                            ] }),
+                            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-2 mb-4", children: [
+                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-green-100 dark:bg-green-900/30 rounded", children: [
+                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-green-700 dark:text-green-300", children: analysis.newsAnalysis.positiveCount }),
+                                /* @__PURE__ */ jsx("div", { className: "text-xs text-green-600 dark:text-green-400", children: t("tradeDetail.positive") })
+                              ] }),
+                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-red-100 dark:bg-red-900/30 rounded", children: [
+                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-red-700 dark:text-red-300", children: analysis.newsAnalysis.negativeCount }),
+                                /* @__PURE__ */ jsx("div", { className: "text-xs text-red-600 dark:text-red-400", children: t("tradeDetail.negative") })
+                              ] }),
+                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-gray-100 dark:bg-gray-800 rounded", children: [
+                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-gray-700 dark:text-gray-300", children: analysis.newsAnalysis.totalNews - analysis.newsAnalysis.positiveCount - analysis.newsAnalysis.negativeCount }),
+                                /* @__PURE__ */ jsx("div", { className: "text-xs text-gray-600 dark:text-gray-400", children: t("tradeDetail.neutral") })
+                              ] })
+                            ] }),
+                            analysis.newsAnalysis.majorNews.length > 0 && /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
+                              /* @__PURE__ */ jsxs("p", { className: "text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2", children: [
+                                /* @__PURE__ */ jsx(Star, { className: "h-4 w-4" }),
+                                t("tradeDetail.majorNews")
+                              ] }),
+                              analysis.newsAnalysis.majorNews.map((news, index) => {
+                                const sentimentLower = news.sentiment.toLowerCase();
+                                const isPositive = sentimentLower.includes("positive") || sentimentLower.includes("bullish");
+                                const isNegative = sentimentLower.includes("negative") || sentimentLower.includes("bearish");
+                                const isExpanded = expandedNews.has(index);
+                                return /* @__PURE__ */ jsxs(
+                                  "div",
+                                  {
+                                    className: "p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:shadow-md transition-all",
+                                    onClick: () => toggleNewsExpansion(index),
+                                    children: [
+                                      /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between", children: [
+                                        /* @__PURE__ */ jsx("h7", { className: "text-sm font-bold text-gray-800 dark:text-gray-200 flex-1", children: news.title }),
+                                        /* @__PURE__ */ jsx(Badge, { className: `ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${isPositive ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : isNegative ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`, children: isPositive ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                                          /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }),
+                                          " ",
+                                          t("tradeDetail.positive")
+                                        ] }) : isNegative ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                                          /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
+                                          " ",
+                                          t("tradeDetail.negative")
+                                        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                                          /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3" }),
+                                          " ",
+                                          t("tradeDetail.neutral")
+                                        ] }) })
+                                      ] }),
+                                      isExpanded && /* @__PURE__ */ jsxs("div", { className: "mt-3 pt-3 border-t border-gray-200 dark:border-gray-700", children: [
+                                        /* @__PURE__ */ jsx("p", { className: "text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed", children: news.summary }),
+                                        /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400", children: [
+                                          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                                            /* @__PURE__ */ jsx(Calendar, { className: "h-4 w-4" }),
+                                            /* @__PURE__ */ jsx("span", { className: "font-medium", children: new Date(news.published).toLocaleDateString(
+                                              language === "ko" ? "ko-KR" : "en-US",
+                                              { year: "numeric", month: "short", day: "numeric" }
+                                            ) })
+                                          ] }),
+                                          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+                                            /* @__PURE__ */ jsxs("span", { children: [
+                                              t("tradeDetail.relevance"),
+                                              ": ",
+                                              Math.round(news.relevanceScore * 100),
+                                              "%"
+                                            ] }),
+                                            /* @__PURE__ */ jsx("span", { children: news.source || t("tradeDetail.marketAnalysis") })
+                                          ] })
+                                        ] })
+                                      ] }),
+                                      /* @__PURE__ */ jsx("div", { className: "text-center mt-2 text-xs text-gray-400 dark:text-gray-500", children: isExpanded ? t("tradeDetail.clickToCollapse") : t("tradeDetail.clickToExpand") })
+                                    ]
+                                  },
+                                  index
+                                );
+                              })
+                            ] })
+                          ] })
+                        ] });
+                      })()
+                    ) : (
+                      // AI 분석이 없을 때 기본 메시지
+                      /* @__PURE__ */ jsxs("div", { className: "text-center py-4", children: [
+                        /* @__PURE__ */ jsx(Loader2, { className: "h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-600", children: t("tradeDetail.aiAnalysisInProgress") }),
+                        /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-500 mt-1", children: t("tradeDetail.preparingAdvancedAnalysis") })
+                      ] })
+                    ) })
+                  ] })
+                ] }) }) })
+              ] })
+            ]
+          }
+        ),
+        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "max-w-md w-full", children: [
+          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-blue-500" }),
+            t("notification.settings.title")
+          ] }) }),
+          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+            /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4", children: [
+              /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-2 text-blue-900 dark:text-blue-100", children: [
+                "📱 ",
+                t("pwa.prompt.addToHomeScreen")
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-800 dark:text-blue-200 mb-3", children: t("pwa.notification.requirement").replace("{company}", trade.companyName) }),
+              /* @__PURE__ */ jsxs("div", { className: "space-y-3 text-sm", children: [
+                /* @__PURE__ */ jsxs("div", { children: [
+                  /* @__PURE__ */ jsx("p", { className: "font-medium mb-1", children: "iOS (Safari):" }),
+                  /* @__PURE__ */ jsxs("ol", { className: "list-decimal list-inside text-xs space-y-1 text-muted-foreground", children: [
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step1") }),
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step2") }),
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step3") })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { children: [
+                  /* @__PURE__ */ jsx("p", { className: "font-medium mb-1", children: "Android (Chrome):" }),
+                  /* @__PURE__ */ jsxs("ol", { className: "list-decimal list-inside text-xs space-y-1 text-muted-foreground", children: [
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step1") }),
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step2") }),
+                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step3") })
+                  ] })
+                ] })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsx("div", { className: "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-green-800 dark:text-green-200", dangerouslySetInnerHTML: {
+              __html: "✓ " + t("pwa.afterInstall").replace("{ticker}", trade.ticker)
+            } }) }),
+            /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
+              /* @__PURE__ */ jsx(
+                Button,
+                {
+                  variant: "outline",
+                  onClick: () => setShowPWAGuide(false),
+                  className: "flex-1",
+                  children: t("general.close")
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                Button,
+                {
+                  onClick: () => setShowPWAGuide(false),
+                  className: "flex-1",
+                  children: t("pwa.button.understood")
+                }
+              )
+            ] })
+          ] })
+        ] }) })
+      ]
+    }
+  );
 }
 function useWebSocket(url) {
   const [isConnected, setIsConnected] = useState(false);
@@ -6614,6 +7818,9 @@ function Dashboard() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [dateRange, setDateRange] = useState({});
   const [sortBy, setSortBy] = useState("filedDate");
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [watchlist, setWatchlist] = useState([]);
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
@@ -6720,7 +7927,51 @@ function Dashboard() {
     setAllTrades([]);
     setHasMoreData(true);
   };
-  const tradesData = allTrades.length > 0 ? allTrades.slice(0, 20) : trades.slice(0, 20);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("watchlist");
+      if (saved) {
+        const items = JSON.parse(saved);
+        setWatchlist(items.map((item) => item.ticker));
+      }
+    } catch (error) {
+      console.error("Failed to load watchlist:", error);
+    }
+  }, []);
+  const handleTradeClick = (trade) => {
+    setSelectedTrade(trade);
+    setIsModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTrade(null);
+  };
+  const handleAddToWatchlist = (trade) => {
+    try {
+      const saved = localStorage.getItem("watchlist");
+      const existing = saved ? JSON.parse(saved) : [];
+      const alreadyExists = existing.some((item) => item.ticker === trade.ticker);
+      let updated;
+      if (alreadyExists) {
+        updated = existing.filter((item) => item.ticker !== trade.ticker);
+        setWatchlist(updated.map((item) => item.ticker));
+      } else {
+        const newItem = {
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          addedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          notificationsEnabled: true
+        };
+        updated = [...existing, newItem];
+        setWatchlist(updated.map((item) => item.ticker));
+      }
+      localStorage.setItem("watchlist", JSON.stringify(updated));
+      window.dispatchEvent(new Event("watchlistUpdate"));
+    } catch (error) {
+      console.error("Failed to toggle watchlist:", error);
+    }
+  };
+  const tradesData = allTrades.length > 0 ? allTrades : trades;
   const topStocks = useMemo(() => {
     console.log("🔍 Top Stocks - Using", trades.length, "trades for calculation");
     if (!trades || trades.length === 0) {
@@ -6797,7 +8048,8 @@ function Dashboard() {
           hasMoreData,
           onLoadMore: handleLoadMore,
           onDateRangeChange: handleDateRangeChange,
-          onSortChange: handleSortChange
+          onSortChange: handleSortChange,
+          onViewDetails: handleTradeClick
         }
       ) }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -6874,7 +8126,18 @@ function Dashboard() {
           ] }, stock.symbol)) }) })
         ] })
       ] })
-    ] })
+    ] }),
+    /* @__PURE__ */ jsx(
+      TradeDetailModal,
+      {
+        isOpen: isModalOpen,
+        onClose: handleCloseModal,
+        trade: selectedTrade,
+        onAddToWatchlist: handleAddToWatchlist,
+        isInWatchlist: (selectedTrade == null ? void 0 : selectedTrade.tickerSymbol) ? watchlist.includes(selectedTrade.tickerSymbol) : false,
+        "data-testid": "trade-detail-modal"
+      }
+    )
   ] }) });
 }
 const Switch = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
@@ -8563,946 +9826,6 @@ function GlassCard({
     hoverStyles,
     className
   ), children });
-}
-const logoLight$5 = "/assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom_1757888880167-BnhrSNJc.png";
-const logoDark$5 = "/assets/inverted_with_green_1757888880166-D3vveTue.png";
-function TradeDetailModal({
-  isOpen,
-  onClose,
-  trade,
-  onAddToWatchlist,
-  isInWatchlist = false
-}) {
-  var _a;
-  const { t, language } = useLanguage();
-  const [showPWAGuide, setShowPWAGuide] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  useState(false);
-  const [isPWAInstalled, setIsPWAInstalled] = useState(false);
-  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null);
-  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-  const [priceHistory, setPriceHistory] = useState([]);
-  const [isLoadingPriceHistory, setIsLoadingPriceHistory] = useState(false);
-  const [priceHistoryError, setPriceHistoryError] = useState(null);
-  const [expandedNews, setExpandedNews] = useState(/* @__PURE__ */ new Set());
-  const modalRef = useRef(null);
-  const toggleNewsExpansion = (index) => {
-    setExpandedNews((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  };
-  const formatTimeAgo = (date) => {
-    const dateLocale = language === "ko" ? ko : language === "ja" ? ja : language === "zh" ? zhCN : enUS;
-    return formatDistanceToNow(new Date(date), {
-      addSuffix: true,
-      locale: dateLocale
-    });
-  };
-  useEffect(() => {
-    const checkPWAInstalled = () => {
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone || document.referrer.includes("android-app://");
-      setIsPWAInstalled(isStandalone);
-    };
-    checkPWAInstalled();
-  }, []);
-  useEffect(() => {
-    if (isOpen && trade && !trade.comprehensiveAnalysis) {
-      loadComprehensiveAnalysis();
-    }
-  }, [isOpen, trade]);
-  useEffect(() => {
-    if (isOpen && trade && trade.ticker) {
-      loadPriceHistory();
-    }
-  }, [isOpen, trade == null ? void 0 : trade.id]);
-  const loadComprehensiveAnalysis = async () => {
-    if (!trade) return;
-    try {
-      setIsLoadingAnalysis(true);
-      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis?language=${language}`);
-      if (response.ok) {
-        const data = await response.json();
-        setComprehensiveAnalysis(data);
-      } else {
-        console.error("Failed to load AI analysis:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error loading AI analysis:", error);
-    } finally {
-      setIsLoadingAnalysis(false);
-    }
-  };
-  const loadPriceHistory = async () => {
-    if (!trade || !trade.ticker) {
-      console.warn("Cannot load price history: missing trade or ticker");
-      return;
-    }
-    const ticker = trade.ticker.trim();
-    if (!ticker || ticker.length === 0) {
-      console.error("Invalid ticker:", trade.ticker);
-      setPriceHistoryError("INVALID_TICKER");
-      setIsLoadingPriceHistory(false);
-      return;
-    }
-    try {
-      setIsLoadingPriceHistory(true);
-      setPriceHistoryError(null);
-      const tradeDate = new Date(trade.filedDate);
-      if (isNaN(tradeDate.getTime())) {
-        console.error("Invalid trade date:", trade.filedDate);
-        setPriceHistoryError("INVALID_DATE");
-        setPriceHistory([]);
-        return;
-      }
-      const startDate = new Date(tradeDate);
-      startDate.setDate(startDate.getDate() - 7);
-      const potentialEndDate = new Date(tradeDate);
-      potentialEndDate.setDate(potentialEndDate.getDate() + 7);
-      const today = /* @__PURE__ */ new Date();
-      const endDate = potentialEndDate > today ? today : potentialEndDate;
-      const fromDate = startDate.toISOString().split("T")[0];
-      const toDate = endDate.toISOString().split("T")[0];
-      console.log(`📊 Loading price history for ${ticker}: ${fromDate} to ${toDate}`);
-      const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (!data || data.length === 0) {
-          console.warn(`⚠️ No price data returned for ${ticker} in range ${fromDate} to ${toDate}`);
-          setPriceHistoryError("NO_DATA");
-          setPriceHistory([]);
-          return;
-        }
-        const transformedData = data.map((item) => ({
-          date: item.date,
-          close: parseFloat(item.close)
-        }));
-        console.log(`✅ Loaded ${transformedData.length} price data points for ${ticker}`);
-        setPriceHistory(transformedData);
-        setPriceHistoryError(null);
-      } else {
-        console.error(`Failed to load price history for ${ticker}: HTTP ${response.status}`);
-        setPriceHistoryError("API_ERROR");
-        setPriceHistory([]);
-      }
-    } catch (error) {
-      console.error("Error loading price history:", error);
-      setPriceHistoryError("FETCH_ERROR");
-      setPriceHistory([]);
-    } finally {
-      setIsLoadingPriceHistory(false);
-    }
-  };
-  const handleScreenshot = async () => {
-    if (!modalRef.current) return;
-    try {
-      setIsCapturing(true);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      const canvas = await html2canvas(modalRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff"
-      });
-      const dataUrl = canvas.toDataURL("image/png");
-      if (navigator.share) {
-        const blob = await (await fetch(dataUrl)).blob();
-        await navigator.share({
-          title: `InsiderPulse: ${trade.ticker}`,
-          text: t("tradeDetail.shareText").replace("{company}", trade.companyName),
-          files: [
-            new File([blob], `insider_trade_${trade.ticker}.png`, {
-              type: "image/png"
-            })
-          ]
-        });
-      } else {
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = `insider_trade_${trade.ticker}_${(/* @__PURE__ */ new Date()).getTime()}.png`;
-        link.click();
-      }
-    } catch (error) {
-      console.error("스크린샷 공유 중 오류 발생:", error);
-    } finally {
-      setIsCapturing(false);
-    }
-  };
-  if (!isOpen || !trade) return null;
-  const isMarketOpen = () => {
-    const now = /* @__PURE__ */ new Date();
-    const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-    const day = easternTime.getDay();
-    const hour = easternTime.getHours();
-    const minute = easternTime.getMinutes();
-    const currentTime = hour * 60 + minute;
-    if (day === 0 || day === 6) return false;
-    const marketOpen = 9 * 60 + 30;
-    const marketClose = 16 * 60;
-    return currentTime >= marketOpen && currentTime <= marketClose;
-  };
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  };
-  const getLocale = () => {
-    const localeMap = {
-      en: "en-US",
-      ko: "ko-KR",
-      ja: "ja-JP",
-      zh: "zh-CN"
-    };
-    return localeMap[language] || "en-US";
-  };
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString(getLocale(), {
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
-  };
-  const getCompanyInitials = (name) => {
-    const words = name.split(" ").filter((w) => w.length > 1);
-    return words.slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  };
-  const getTradeTypeIcon = (tradeType) => {
-    const iconClass = `h-4 w-4 ${getTradeTypeIconColor(tradeType)}`;
-    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
-      case "BUY":
-      case "PURCHASE":
-        return /* @__PURE__ */ jsx(TrendingUp, { className: iconClass });
-      case "SELL":
-      case "SALE":
-        return /* @__PURE__ */ jsx(TrendingDown, { className: iconClass });
-      default:
-        return /* @__PURE__ */ jsx(DollarSign, { className: iconClass });
-    }
-  };
-  const getTradeTypeIconColor = (tradeType) => {
-    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
-      case "BUY":
-      case "PURCHASE":
-        return "text-green-600";
-      case "SELL":
-      case "SALE":
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-  const getTradeTypeColor = (tradeType) => {
-    switch (tradeType == null ? void 0 : tradeType.toUpperCase()) {
-      case "BUY":
-      case "PURCHASE":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "SELL":
-      case "SALE":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-  return /* @__PURE__ */ jsxs(
-    "div",
-    {
-      className: "modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4",
-      onClick: onClose,
-      children: [
-        /* @__PURE__ */ jsxs("div", { className: "fixed inset-0 flex items-center justify-center pointer-events-none z-40 overflow-hidden", children: [
-          /* @__PURE__ */ jsx(
-            "img",
-            {
-              src: logoLight$5,
-              alt: "InsiderPulse",
-              className: "w-80 h-auto opacity-10 select-none dark:hidden"
-            }
-          ),
-          /* @__PURE__ */ jsx(
-            "img",
-            {
-              src: logoDark$5,
-              alt: "InsiderPulse",
-              className: "w-80 h-auto opacity-10 select-none hidden dark:block"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs(
-          Card$1,
-          {
-            ref: modalRef,
-            className: "modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative",
-            onClick: (e) => e.stopPropagation(),
-            children: [
-              /* @__PURE__ */ jsx(CardHeader$1, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
-                /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
-                  trade.ticker ? /* @__PURE__ */ jsxs("div", { className: "relative w-10 h-10 flex-shrink-0", children: [
-                    /* @__PURE__ */ jsx(
-                      "img",
-                      {
-                        src: `https://assets.parqet.com/logos/resolution/${trade.ticker}.png`,
-                        alt: `${trade.companyName} logo`,
-                        className: "w-10 h-10 rounded-lg object-contain",
-                        onError: (e) => {
-                          var _a2;
-                          const target = e.target;
-                          if (target.src.includes("parqet.com")) {
-                            target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
-                          } else {
-                            target.style.display = "none";
-                            const fallbackDiv = (_a2 = target.parentElement) == null ? void 0 : _a2.querySelector(".fallback-logo");
-                            if (fallbackDiv) fallbackDiv.style.display = "flex";
-                          }
-                        }
-                      }
-                    ),
-                    /* @__PURE__ */ jsx("div", { className: "fallback-logo w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold hidden", style: { display: "none" }, children: getCompanyInitials(trade.companyName) })
-                  ] }) : /* @__PURE__ */ jsx("div", { className: "w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold", children: getCompanyInitials(trade.companyName) }),
-                  /* @__PURE__ */ jsxs("div", { className: "min-w-0 flex-1", children: [
-                    /* @__PURE__ */ jsx("h3", { className: "text-sm sm:text-lg font-bold truncate", children: trade.companyName }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground", children: trade.ticker })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2 flex-shrink-0", children: [
-                  onAddToWatchlist && /* @__PURE__ */ jsxs(
-                    Button,
-                    {
-                      size: "sm",
-                      variant: isInWatchlist ? "default" : "outline",
-                      onClick: () => onAddToWatchlist(trade),
-                      className: "btn-professional px-2 sm:px-3",
-                      title: isInWatchlist ? t("watchlist.remove") : t("liveTrading.watchlist"),
-                      "data-testid": isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist",
-                      children: [
-                        /* @__PURE__ */ jsx(Bookmark, { className: `h-4 w-4 ${isInWatchlist ? "fill-current" : ""}` }),
-                        /* @__PURE__ */ jsx("span", { className: "hidden sm:inline ml-1", children: isInWatchlist ? t("watchlist.remove") : t("liveTrading.watchlist") })
-                      ]
-                    }
-                  ),
-                  /* @__PURE__ */ jsx(
-                    Button,
-                    {
-                      variant: "ghost",
-                      size: "sm",
-                      onClick: handleScreenshot,
-                      disabled: isCapturing,
-                      className: "btn-professional",
-                      title: t("tradeDetail.shareScreenshot"),
-                      children: isCapturing ? /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Camera, { className: "h-4 w-4" })
-                    }
-                  ),
-                  /* @__PURE__ */ jsx(
-                    Button,
-                    {
-                      variant: "ghost",
-                      size: "sm",
-                      onClick: onClose,
-                      className: "btn-professional",
-                      children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
-                    }
-                  )
-                ] })
-              ] }) }),
-              /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
-                /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-6 rounded-lg space-y-4", children: [
-                  /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", children: [
-                    /* @__PURE__ */ jsxs("div", { children: [
-                      /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mb-1", children: t("tradeDetail.tradeType") }),
-                      /* @__PURE__ */ jsxs(Badge, { className: `btn-professional font-bold text-sm sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 w-fit ${getTradeTypeColor(trade.tradeType)}`, children: [
-                        getTradeTypeIcon(trade.tradeType),
-                        trade.tradeType
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "sm:text-right", children: [
-                      /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground mb-1", children: t("tradeDetail.totalTransactionAmount") }),
-                      /* @__PURE__ */ jsx("p", { className: `text-2xl sm:text-3xl font-black ${((_a = trade.tradeType) == null ? void 0 : _a.toUpperCase()) === "BUY" ? "text-green-600" : "text-red-600"}`, children: formatCurrency(trade.totalValue) })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-4 pt-4 border-t border-white/50 dark:border-gray-700", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg", children: [
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.sharesCount") }),
-                      /* @__PURE__ */ jsx("p", { className: "text-2xl font-bold", children: trade.shares.toLocaleString() }),
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: t("tradeDetail.shares") })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-gray-900/50 p-3 rounded-lg", children: [
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.pricePerShare") }),
-                      /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold", children: [
-                        "$",
-                        trade.pricePerShare.toFixed(2)
-                      ] }),
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: t("tradeDetail.perShare") })
-                    ] })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800", children: [
-                  /* @__PURE__ */ jsxs("h4", { className: "font-bold mb-3 flex items-center gap-2 text-base", children: [
-                    /* @__PURE__ */ jsx(User, { className: "h-5 w-5 text-slate-600 dark:text-slate-400" }),
-                    t("tradeDetail.insiderInfo")
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "bg-white dark:bg-gray-800", children: t("tradeDetail.name") }),
-                      /* @__PURE__ */ jsx("p", { className: "font-bold text-lg", children: trade.traderName })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                      /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "bg-white dark:bg-gray-800", children: t("tradeDetail.titlePosition") }),
-                      /* @__PURE__ */ jsx("p", { className: "font-semibold text-slate-700 dark:text-slate-300", children: trade.traderTitle })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mt-3 pt-3 border-t", children: [
-                      /* @__PURE__ */ jsx(Calendar, { className: "h-5 w-5 text-amber-600" }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:gap-2", children: [
-                        /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground font-medium", children: [
-                          t("tradeDetail.transactionDate") || "Transaction Date",
-                          ":"
-                        ] }),
-                        /* @__PURE__ */ jsx("p", { className: "font-bold text-base text-slate-900 dark:text-white", children: formatDate(trade.filedDate) })
-                      ] })
-                    ] })
-                  ] })
-                ] }),
-                trade.secFilingUrl && /* @__PURE__ */ jsxs("div", { className: "border-t pt-4", children: [
-                  /* @__PURE__ */ jsxs(
-                    "a",
-                    {
-                      href: trade.secFilingUrl,
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                      className: "flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold hover:underline",
-                      children: [
-                        /* @__PURE__ */ jsx("svg", { className: "h-5 w-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: /* @__PURE__ */ jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" }) }),
-                        t("tradeDetail.viewSecFiling")
-                      ]
-                    }
-                  ),
-                  /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground mt-1", children: [
-                    "✓ ",
-                    t("tradeDetail.verifiedBySec")
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "border-t pt-4", children: [
-                  /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-4 flex items-center gap-2 text-base", children: [
-                    /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5 text-slate-600 dark:text-slate-400" }),
-                    t("tradeDetail.priceAnalysis")
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "mb-6 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700", children: [
-                    /* @__PURE__ */ jsx("h5", { className: "text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300", children: t("priceChart.title") }),
-                    isLoadingPriceHistory ? /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center h-[200px]", children: [
-                      /* @__PURE__ */ jsx(Loader2, { className: "h-8 w-8 animate-spin text-primary" }),
-                      /* @__PURE__ */ jsx("span", { className: "ml-3 text-sm", children: t("priceChart.loadingHistory") || "Loading price history..." })
-                    ] }) : priceHistory.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 240, children: /* @__PURE__ */ jsxs(
-                      LineChart,
-                      {
-                        data: priceHistory,
-                        margin: { top: 5, right: 20, left: 0, bottom: 5 },
-                        children: [
-                          /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", stroke: "#e5e7eb" }),
-                          /* @__PURE__ */ jsx(
-                            XAxis,
-                            {
-                              dataKey: "date",
-                              stroke: "#6b7280",
-                              style: { fontSize: "11px" },
-                              tickFormatter: (value) => {
-                                const date = new Date(value);
-                                return `${date.getMonth() + 1}/${date.getDate()}`;
-                              }
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            YAxis,
-                            {
-                              stroke: "#6b7280",
-                              style: { fontSize: "12px" },
-                              tickFormatter: (value) => `$${value.toFixed(2)}`,
-                              domain: ["auto", "auto"]
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            Tooltip$1,
-                            {
-                              contentStyle: {
-                                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "6px",
-                                fontSize: "12px"
-                              },
-                              formatter: (value) => [`$${value.toFixed(2)}`, t("priceChart.price") || "Price"],
-                              labelFormatter: (label) => {
-                                const date = new Date(label);
-                                return date.toLocaleDateString(getLocale(), { month: "short", day: "numeric", year: "numeric" });
-                              }
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceArea,
-                            {
-                              x1: (() => {
-                                const tradeDate = new Date(trade.filedDate);
-                                const dayBefore = new Date(tradeDate);
-                                dayBefore.setDate(dayBefore.getDate() - 1);
-                                return dayBefore.toISOString().split("T")[0];
-                              })(),
-                              x2: (() => {
-                                const tradeDate = new Date(trade.filedDate);
-                                const dayAfter = new Date(tradeDate);
-                                dayAfter.setDate(dayAfter.getDate() + 1);
-                                return dayAfter.toISOString().split("T")[0];
-                              })(),
-                              fill: "#f59e0b",
-                              fillOpacity: 0.1
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceLine,
-                            {
-                              x: new Date(trade.filedDate).toISOString().split("T")[0],
-                              stroke: "#f59e0b",
-                              strokeWidth: 3,
-                              strokeDasharray: "5 5",
-                              label: {
-                                value: `📊 ${t("tradeDetail.tradeDate") || "Trade Date"}`,
-                                position: "top",
-                                fill: "#f59e0b",
-                                fontSize: 13,
-                                fontWeight: "bold",
-                                style: {
-                                  textShadow: "0 0 3px white, 0 0 5px white"
-                                }
-                              }
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceLine,
-                            {
-                              y: trade.pricePerShare,
-                              stroke: "#f59e0b",
-                              strokeWidth: 3,
-                              label: {
-                                value: `Trade Price: $${trade.pricePerShare.toFixed(2)}`,
-                                position: "insideTopRight",
-                                fill: "#f59e0b",
-                                fontSize: 13,
-                                fontWeight: "bold",
-                                style: {
-                                  backgroundColor: "rgba(251, 146, 60, 0.9)",
-                                  padding: "4px 8px",
-                                  borderRadius: "4px",
-                                  color: "white"
-                                }
-                              }
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceDot,
-                            {
-                              x: new Date(trade.filedDate).toISOString().split("T")[0],
-                              y: trade.pricePerShare,
-                              r: 8,
-                              fill: "#f59e0b",
-                              stroke: "#fff",
-                              strokeWidth: 3,
-                              isFront: true
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceDot,
-                            {
-                              x: new Date(trade.filedDate).toISOString().split("T")[0],
-                              y: trade.pricePerShare,
-                              r: 14,
-                              fill: "#f59e0b",
-                              fillOpacity: 0.25,
-                              stroke: "none"
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            ReferenceDot,
-                            {
-                              x: new Date(trade.filedDate).toISOString().split("T")[0],
-                              y: trade.pricePerShare,
-                              r: 11,
-                              fill: "#f59e0b",
-                              fillOpacity: 0.4,
-                              stroke: "none"
-                            }
-                          ),
-                          /* @__PURE__ */ jsx(
-                            Line,
-                            {
-                              type: "monotone",
-                              dataKey: "close",
-                              stroke: "#10b981",
-                              strokeWidth: 2,
-                              dot: false,
-                              name: t("priceChart.price") || "Price"
-                            }
-                          )
-                        ]
-                      }
-                    ) }) : /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700", children: [
-                      priceHistoryError === "INVALID_TICKER" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 티커 심볼" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "티커 형식을 확인해주세요" })
-                      ] }),
-                      priceHistoryError === "INVALID_DATE" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 거래 날짜" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "이 날짜의 가격 데이터를 불러올 수 없습니다" })
-                      ] }),
-                      (priceHistoryError === "NO_DATA" || !priceHistoryError) && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                        /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-blue-800 dark:text-blue-200 font-semibold text-base mb-1", children: "💡 실시간 주가 데이터를 수집하지 못했습니다" }),
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-700 dark:text-blue-300", children: priceHistoryError === "NO_DATA" ? "이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다" : "주가 데이터를 아직 수집하지 못했습니다" })
-                        ] }),
-                        /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3", children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-900 dark:text-blue-100 font-medium mb-2", children: "✅ 내부자 거래 가격 기준으로 분석을 제공합니다" }),
-                          /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다" })
-                        ] })
-                      ] }),
-                      (priceHistoryError === "API_ERROR" || priceHistoryError === "FETCH_ERROR") && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-red-700 dark:text-red-300 font-medium mb-2", children: "❌ 가격 데이터를 불러오지 못했습니다" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-red-600 dark:text-red-400 mb-3", children: "일시적인 오류입니다. 잠시 후 다시 시도해주세요" }),
-                        /* @__PURE__ */ jsx("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3", children: /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다" }) })
-                      ] })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-6", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
-                        /* @__PURE__ */ jsx("div", { className: "w-8 h-8 bg-slate-600 dark:bg-slate-500 rounded-lg flex items-center justify-center", children: /* @__PURE__ */ jsx(DollarSign, { className: "h-4 w-4 text-white" }) }),
-                        /* @__PURE__ */ jsxs("div", { children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-xs font-medium text-slate-700 dark:text-slate-300", children: t("tradeDetail.insiderTradePrice") }),
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 dark:text-slate-400", children: formatDate(trade.filedDate) })
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold text-slate-800 dark:text-slate-200 value-change-up", children: [
-                        "$",
-                        trade.pricePerShare.toFixed(2)
-                      ] }),
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400 mt-1", children: t("tradeDetail.basedOnSecFiling") })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: `rounded-lg p-4 border-2 ${trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? trade.currentPrice > trade.pricePerShare ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700" : "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"}`, children: [
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
-                        /* @__PURE__ */ jsx("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center ${trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? trade.currentPrice > trade.pricePerShare ? "bg-green-500 dark:bg-green-600" : "bg-red-500 dark:bg-red-600" : "bg-slate-600 dark:bg-slate-500"}`, children: trade.currentPrice && trade.currentPrice > trade.pricePerShare ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) : trade.currentPrice && trade.currentPrice < trade.pricePerShare ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-white" }) : /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) }),
-                        /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-xs font-medium text-slate-700 dark:text-slate-300", children: t("tradeDetail.currentMarketPrice") }),
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 dark:text-slate-400", children: trade.currentPrice ? isMarketOpen() ? t("tradeDetail.realtimeEstimate") : t("tradeDetail.lastClosePrice") : t("priceChart.tradeTimeBase") })
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-baseline justify-between mb-2", children: [
-                        /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold text-slate-800 dark:text-slate-200", children: [
-                          "$",
-                          (trade.currentPrice || trade.pricePerShare).toFixed(2)
-                        ] }),
-                        trade.currentPrice && trade.currentPrice !== trade.pricePerShare && (() => {
-                          const priceChange = trade.currentPrice - trade.pricePerShare;
-                          const percentChange = priceChange / trade.pricePerShare * 100;
-                          const isGain = priceChange > 0;
-                          return /* @__PURE__ */ jsxs("div", { className: "text-right", children: [
-                            /* @__PURE__ */ jsxs("p", { className: `text-xl font-bold ${isGain ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`, children: [
-                              isGain ? "+" : "",
-                              percentChange.toFixed(2),
-                              "%"
-                            ] }),
-                            /* @__PURE__ */ jsxs("p", { className: `text-sm font-semibold ${isGain ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"}`, children: [
-                              isGain ? "+" : "",
-                              "$",
-                              Math.abs(priceChange).toFixed(2)
-                            ] })
-                          ] });
-                        })()
-                      ] }),
-                      /* @__PURE__ */ jsx("p", { className: "text-xs text-slate-600 dark:text-slate-400", children: trade.currentPrice && trade.currentPrice !== trade.pricePerShare ? t("tradeDetail.priceChangeSinceTrade") : trade.currentPrice ? isMarketOpen() ? t("priceChart.realtimeMarketPrice") : t("priceChart.lastClosingPrice") : t("priceChart.basedOnInsiderTradePrice") }),
-                      trade.priceLastUpdated && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 mt-2 pt-2 border-t border-slate-300 dark:border-slate-600", children: [
-                        /* @__PURE__ */ jsx(Clock, { className: "h-3 w-3 text-slate-500" }),
-                        /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-slate-500 dark:text-slate-400", children: [
-                          t("tradeDetail.priceUpdatedAt") || "수집 시간",
-                          ": ",
-                          formatTimeAgo(trade.priceLastUpdated)
-                        ] })
-                      ] })
-                    ] })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "border-t pt-4", "data-testid": "section-ai-analysis", children: /* @__PURE__ */ jsx("div", { className: "bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center", children: [
-                  /* @__PURE__ */ jsx("div", { className: "w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-lg flex items-center justify-center mb-3", children: /* @__PURE__ */ jsx(Brain, { className: "h-4 w-4 text-white" }) }),
-                  /* @__PURE__ */ jsxs("div", { className: "w-full", children: [
-                    /* @__PURE__ */ jsx("h4", { className: "font-semibold text-sm mb-3 text-center", children: t("tradeDetail.aiAnalysisResults") }),
-                    /* @__PURE__ */ jsx("div", { className: "space-y-3 text-sm leading-relaxed", "data-testid": "text-ai-analysis", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center p-8", children: [
-                      /* @__PURE__ */ jsx(Loader2, { className: "h-8 w-8 animate-spin text-primary" }),
-                      /* @__PURE__ */ jsx("span", { className: "ml-3", children: t("tradeDetail.aiAnalysisGenerating") })
-                    ] }) : trade.comprehensiveAnalysis || comprehensiveAnalysis ? (
-                      // 실제 AI 분석 결과 표시 (통합된 종합의견 포함)
-                      (() => {
-                        var _a2, _b;
-                        const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis;
-                        const sentiment = ((_a2 = analysis.marketContext) == null ? void 0 : _a2.sentiment) || "NEUTRAL";
-                        const isBullish = sentiment === "BULLISH";
-                        const isBearish = sentiment === "BEARISH";
-                        return /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                          /* @__PURE__ */ jsxs("div", { className: `mb-4 p-4 rounded-lg border-2 ${isBullish ? "bg-green-50 dark:bg-green-900/20 border-green-500" : isBearish ? "bg-red-50 dark:bg-red-900/20 border-red-500" : "bg-gray-50 dark:bg-gray-900/20 border-gray-500"}`, children: [
-                            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-3", children: [
-                              /* @__PURE__ */ jsxs("h5", { className: "font-bold text-base flex items-center gap-2", children: [
-                                /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5" }),
-                                t("tradeDetail.aiComprehensiveAnalysis")
-                              ] }),
-                              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                                /* @__PURE__ */ jsx(Badge, { className: `text-sm px-3 py-1 font-bold ${isBullish ? "bg-green-600 text-white" : isBearish ? "bg-red-600 text-white" : "bg-gray-600 text-white"}`, children: isBullish ? t("tradeDetail.buyRecommendation") : isBearish ? t("tradeDetail.sellRecommendation") : t("tradeDetail.holdRecommendation") }),
-                                /* @__PURE__ */ jsxs("div", { className: "text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border", children: [
-                                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("tradeDetail.confidenceLevel") }),
-                                  /* @__PURE__ */ jsxs("p", { className: "text-lg font-bold text-blue-600", children: [
-                                    analysis.confidence,
-                                    "%"
-                                  ] })
-                                ] })
-                              ] })
-                            ] }),
-                            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground leading-relaxed", children: analysis.executiveSummary })
-                          ] }),
-                          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4 mb-4", children: [
-                            /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3", children: [
-                              /* @__PURE__ */ jsxs("h6", { className: "font-medium mb-2 flex items-center gap-1", children: [
-                                /* @__PURE__ */ jsx(Target, { className: "h-3 w-3" }),
-                                t("tradeDetail.targetPriceAnalysis")
-                              ] }),
-                              /* @__PURE__ */ jsxs("div", { className: "space-y-1 text-xs", children: [
-                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
-                                  /* @__PURE__ */ jsxs("span", { children: [
-                                    t("tradeDetail.conservative"),
-                                    ":"
-                                  ] }),
-                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
-                                    "$",
-                                    analysis.priceTargets.conservative.toFixed(2)
-                                  ] })
-                                ] }),
-                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
-                                  /* @__PURE__ */ jsxs("span", { children: [
-                                    t("tradeDetail.realistic"),
-                                    ":"
-                                  ] }),
-                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
-                                    "$",
-                                    analysis.priceTargets.realistic.toFixed(2)
-                                  ] })
-                                ] }),
-                                /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
-                                  /* @__PURE__ */ jsxs("span", { children: [
-                                    t("tradeDetail.optimistic"),
-                                    ":"
-                                  ] }),
-                                  /* @__PURE__ */ jsxs("span", { className: "font-medium", children: [
-                                    "$",
-                                    analysis.priceTargets.optimistic.toFixed(2)
-                                  ] })
-                                ] })
-                              ] })
-                            ] }),
-                            /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3", children: [
-                              /* @__PURE__ */ jsxs("h6", { className: "font-medium mb-2 flex items-center gap-1", children: [
-                                /* @__PURE__ */ jsx(Calculator, { className: "h-3 w-3" }),
-                                t("tradeDetail.riskAssessment")
-                              ] }),
-                              /* @__PURE__ */ jsxs("div", { className: "space-y-1 text-xs", children: [
-                                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                                  /* @__PURE__ */ jsxs("span", { children: [
-                                    t("tradeDetail.riskLevel"),
-                                    ":"
-                                  ] }),
-                                  /* @__PURE__ */ jsx(Badge, { className: `text-xs px-2 py-0.5 ${analysis.riskAssessment.level === "LOW" ? "bg-green-100 text-green-800" : analysis.riskAssessment.level === "MEDIUM" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}`, children: analysis.riskAssessment.level })
-                                ] }),
-                                /* @__PURE__ */ jsx("p", { className: "text-xs", children: analysis.riskAssessment.mitigation })
-                              ] })
-                            ] })
-                          ] }),
-                          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700", children: [
-                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                              /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.aiConfidence") }),
-                              /* @__PURE__ */ jsxs("p", { className: "text-lg font-bold text-green-600 dark:text-green-500", children: [
-                                analysis.confidence,
-                                "%"
-                              ] })
-                            ] }),
-                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                              /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mb-1", children: t("tradeDetail.analysisTimeHorizon") }),
-                              /* @__PURE__ */ jsx("p", { className: "text-sm font-medium", children: analysis.timeHorizon })
-                            ] }),
-                            /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                              /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-600/80 mb-1", children: t("tradeDetail.marketSentiment") }),
-                              /* @__PURE__ */ jsx(Badge, { className: `text-xs px-2 py-1 ${analysis.marketContext.sentiment === "BULLISH" ? "bg-green-100 text-green-800" : analysis.marketContext.sentiment === "BEARISH" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"}`, children: t(`tradeDetail.sentiment.${analysis.marketContext.sentiment.toLowerCase()}`) })
-                            ] })
-                          ] }),
-                          ((_b = analysis.catalysts) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ jsxs("div", { className: "mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50", children: [
-                            /* @__PURE__ */ jsxs("p", { className: "text-xs font-medium text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1", children: [
-                              /* @__PURE__ */ jsx(Zap, { className: "h-4 w-4" }),
-                              t("tradeDetail.keyCatalysts")
-                            ] }),
-                            /* @__PURE__ */ jsx("ul", { className: "text-xs list-disc list-inside space-y-1", children: analysis.catalysts.map((catalyst, index) => /* @__PURE__ */ jsx("li", { children: catalyst }, index)) })
-                          ] }),
-                          analysis.newsAnalysis && /* @__PURE__ */ jsxs("div", { className: "mt-4 p-4 bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/20 dark:to-red-950/20 rounded-lg border border-gray-200 dark:border-gray-700", children: [
-                            /* @__PURE__ */ jsxs("h6", { className: "font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2", children: [
-                              /* @__PURE__ */ jsx(Newspaper, { className: "h-4 w-4 text-blue-600" }),
-                              t("tradeDetail.latestNewsAnalysis"),
-                              " (",
-                              analysis.newsAnalysis.totalNews,
-                              ")"
-                            ] }),
-                            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-2 mb-4", children: [
-                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-green-100 dark:bg-green-900/30 rounded", children: [
-                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-green-700 dark:text-green-300", children: analysis.newsAnalysis.positiveCount }),
-                                /* @__PURE__ */ jsx("div", { className: "text-xs text-green-600 dark:text-green-400", children: t("tradeDetail.positive") })
-                              ] }),
-                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-red-100 dark:bg-red-900/30 rounded", children: [
-                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-red-700 dark:text-red-300", children: analysis.newsAnalysis.negativeCount }),
-                                /* @__PURE__ */ jsx("div", { className: "text-xs text-red-600 dark:text-red-400", children: t("tradeDetail.negative") })
-                              ] }),
-                              /* @__PURE__ */ jsxs("div", { className: "text-center p-2 bg-gray-100 dark:bg-gray-800 rounded", children: [
-                                /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-gray-700 dark:text-gray-300", children: analysis.newsAnalysis.totalNews - analysis.newsAnalysis.positiveCount - analysis.newsAnalysis.negativeCount }),
-                                /* @__PURE__ */ jsx("div", { className: "text-xs text-gray-600 dark:text-gray-400", children: t("tradeDetail.neutral") })
-                              ] })
-                            ] }),
-                            analysis.newsAnalysis.majorNews.length > 0 && /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
-                              /* @__PURE__ */ jsxs("p", { className: "text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2", children: [
-                                /* @__PURE__ */ jsx(Star, { className: "h-4 w-4" }),
-                                t("tradeDetail.majorNews")
-                              ] }),
-                              analysis.newsAnalysis.majorNews.map((news, index) => {
-                                const sentimentLower = news.sentiment.toLowerCase();
-                                const isPositive = sentimentLower.includes("positive") || sentimentLower.includes("bullish");
-                                const isNegative = sentimentLower.includes("negative") || sentimentLower.includes("bearish");
-                                const isExpanded = expandedNews.has(index);
-                                return /* @__PURE__ */ jsxs(
-                                  "div",
-                                  {
-                                    className: "p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:shadow-md transition-all",
-                                    onClick: () => toggleNewsExpansion(index),
-                                    children: [
-                                      /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between", children: [
-                                        /* @__PURE__ */ jsx("h7", { className: "text-sm font-bold text-gray-800 dark:text-gray-200 flex-1", children: news.title }),
-                                        /* @__PURE__ */ jsx(Badge, { className: `ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${isPositive ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : isNegative ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`, children: isPositive ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                                          /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3" }),
-                                          " ",
-                                          t("tradeDetail.positive")
-                                        ] }) : isNegative ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                                          /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3" }),
-                                          " ",
-                                          t("tradeDetail.negative")
-                                        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                                          /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3" }),
-                                          " ",
-                                          t("tradeDetail.neutral")
-                                        ] }) })
-                                      ] }),
-                                      isExpanded && /* @__PURE__ */ jsxs("div", { className: "mt-3 pt-3 border-t border-gray-200 dark:border-gray-700", children: [
-                                        /* @__PURE__ */ jsx("p", { className: "text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed", children: news.summary }),
-                                        /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400", children: [
-                                          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                                            /* @__PURE__ */ jsx(Calendar, { className: "h-4 w-4" }),
-                                            /* @__PURE__ */ jsx("span", { className: "font-medium", children: new Date(news.published).toLocaleDateString(
-                                              language === "ko" ? "ko-KR" : "en-US",
-                                              { year: "numeric", month: "short", day: "numeric" }
-                                            ) })
-                                          ] }),
-                                          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                                            /* @__PURE__ */ jsxs("span", { children: [
-                                              t("tradeDetail.relevance"),
-                                              ": ",
-                                              Math.round(news.relevanceScore * 100),
-                                              "%"
-                                            ] }),
-                                            /* @__PURE__ */ jsx("span", { children: news.source || t("tradeDetail.marketAnalysis") })
-                                          ] })
-                                        ] })
-                                      ] }),
-                                      /* @__PURE__ */ jsx("div", { className: "text-center mt-2 text-xs text-gray-400 dark:text-gray-500", children: isExpanded ? t("tradeDetail.clickToCollapse") : t("tradeDetail.clickToExpand") })
-                                    ]
-                                  },
-                                  index
-                                );
-                              })
-                            ] })
-                          ] })
-                        ] });
-                      })()
-                    ) : (
-                      // AI 분석이 없을 때 기본 메시지
-                      /* @__PURE__ */ jsxs("div", { className: "text-center py-4", children: [
-                        /* @__PURE__ */ jsx(Loader2, { className: "h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-600", children: t("tradeDetail.aiAnalysisInProgress") }),
-                        /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-500 mt-1", children: t("tradeDetail.preparingAdvancedAnalysis") })
-                      ] })
-                    ) })
-                  ] })
-                ] }) }) })
-              ] })
-            ]
-          }
-        ),
-        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "max-w-md w-full", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-blue-500" }),
-            t("notification.settings.title")
-          ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4", children: [
-              /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-2 text-blue-900 dark:text-blue-100", children: [
-                "📱 ",
-                t("pwa.prompt.addToHomeScreen")
-              ] }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-800 dark:text-blue-200 mb-3", children: t("pwa.notification.requirement").replace("{company}", trade.companyName) }),
-              /* @__PURE__ */ jsxs("div", { className: "space-y-3 text-sm", children: [
-                /* @__PURE__ */ jsxs("div", { children: [
-                  /* @__PURE__ */ jsx("p", { className: "font-medium mb-1", children: "iOS (Safari):" }),
-                  /* @__PURE__ */ jsxs("ol", { className: "list-decimal list-inside text-xs space-y-1 text-muted-foreground", children: [
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step1") }),
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step2") }),
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.ios.step3") })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { children: [
-                  /* @__PURE__ */ jsx("p", { className: "font-medium mb-1", children: "Android (Chrome):" }),
-                  /* @__PURE__ */ jsxs("ol", { className: "list-decimal list-inside text-xs space-y-1 text-muted-foreground", children: [
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step1") }),
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step2") }),
-                    /* @__PURE__ */ jsx("li", { children: t("pwa.android.step3") })
-                  ] })
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx("div", { className: "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-green-800 dark:text-green-200", dangerouslySetInnerHTML: {
-              __html: "✓ " + t("pwa.afterInstall").replace("{ticker}", trade.ticker)
-            } }) }),
-            /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
-              /* @__PURE__ */ jsx(
-                Button,
-                {
-                  variant: "outline",
-                  onClick: () => setShowPWAGuide(false),
-                  className: "flex-1",
-                  children: t("general.close")
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                Button,
-                {
-                  onClick: () => setShowPWAGuide(false),
-                  className: "flex-1",
-                  children: t("pwa.button.understood")
-                }
-              )
-            ] })
-          ] })
-        ] }) })
-      ]
-    }
-  );
 }
 function LockedTradeCard({ trade, onUnlock }) {
   var _a, _b, _c;
@@ -15658,6 +15981,139 @@ function AdminDashboard() {
     ] })
   ] });
 }
+const Dialog = SheetPrimitive.Root;
+const DialogPortal = SheetPrimitive.Portal;
+const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SheetPrimitive.Overlay,
+  {
+    ref,
+    className: cn(
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    ),
+    ...props
+  }
+));
+DialogOverlay.displayName = SheetPrimitive.Overlay.displayName;
+const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(DialogPortal, { children: [
+  /* @__PURE__ */ jsx(DialogOverlay, {}),
+  /* @__PURE__ */ jsxs(
+    SheetPrimitive.Content,
+    {
+      ref,
+      className: cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      ),
+      ...props,
+      children: [
+        children,
+        /* @__PURE__ */ jsxs(SheetPrimitive.Close, { className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground", children: [
+          /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
+          /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Close" })
+        ] })
+      ]
+    }
+  )
+] }));
+DialogContent.displayName = SheetPrimitive.Content.displayName;
+const DialogHeader = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    ),
+    ...props
+  }
+);
+DialogHeader.displayName = "DialogHeader";
+const DialogTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SheetPrimitive.Title,
+  {
+    ref,
+    className: cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className
+    ),
+    ...props
+  }
+));
+DialogTitle.displayName = SheetPrimitive.Title.displayName;
+const DialogDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  SheetPrimitive.Description,
+  {
+    ref,
+    className: cn("text-sm text-muted-foreground", className),
+    ...props
+  }
+));
+DialogDescription.displayName = SheetPrimitive.Description.displayName;
+function LanguageSelectionModal({ open, onClose }) {
+  const { setLanguage } = useLanguage();
+  const [selectedLang, setSelectedLang] = useState(null);
+  const languages = [
+    {
+      code: "en",
+      name: "English",
+      nativeName: "English",
+      flag: "🇺🇸"
+    },
+    {
+      code: "ko",
+      name: "Korean",
+      nativeName: "한국어",
+      flag: "🇰🇷"
+    },
+    {
+      code: "ja",
+      name: "Japanese",
+      nativeName: "日本語",
+      flag: "🇯🇵"
+    },
+    {
+      code: "zh",
+      name: "Chinese",
+      nativeName: "中文",
+      flag: "🇨🇳"
+    }
+  ];
+  const handleLanguageSelect = (lang) => {
+    setSelectedLang(lang);
+    setLanguage(lang);
+    localStorage.setItem("language-selected", "true");
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+  return /* @__PURE__ */ jsx(Dialog, { open, onOpenChange: (isOpen) => !isOpen && onClose(), children: /* @__PURE__ */ jsxs(DialogContent, { className: "sm:max-w-md bg-[#0a0a0f]/95 backdrop-blur-2xl border-white/10", children: [
+    /* @__PURE__ */ jsxs(DialogHeader, { children: [
+      /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center mb-4", children: /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-white" }) }) }),
+      /* @__PURE__ */ jsx(DialogTitle, { className: "text-2xl font-bold text-center text-white", children: "Select Your Language" }),
+      /* @__PURE__ */ jsx(DialogDescription, { className: "text-center text-slate-400", children: "Choose your preferred language for the best experience" })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "space-y-3 mt-4", children: languages.map((lang) => /* @__PURE__ */ jsxs(
+      "button",
+      {
+        onClick: () => handleLanguageSelect(lang.code),
+        className: `w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${selectedLang === lang.code ? "border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/20" : "border-white/10 hover:border-emerald-500/50 hover:bg-white/5"}`,
+        children: [
+          /* @__PURE__ */ jsx("div", { className: "text-4xl", children: lang.flag }),
+          /* @__PURE__ */ jsxs("div", { className: "flex-1 text-left", children: [
+            /* @__PURE__ */ jsx("div", { className: "font-semibold text-white text-lg", children: lang.nativeName }),
+            /* @__PURE__ */ jsx("div", { className: "text-sm text-slate-400", children: lang.name })
+          ] }),
+          selectedLang === lang.code && /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500", children: /* @__PURE__ */ jsx(Check, { className: "w-4 h-4 text-white" }) })
+        ]
+      },
+      lang.code
+    )) }),
+    /* @__PURE__ */ jsx("div", { className: "mt-6 text-center text-xs text-slate-500", children: "You can change this anytime in settings" })
+  ] }) });
+}
 function LandingPage() {
   const [, navigate2] = useLocation();
   const { isAuthenticated } = useAuth();
@@ -15674,35 +16130,21 @@ function LandingPage() {
       navigate2("/trades");
     }
   }, [isAuthenticated, navigate2]);
-  if (showLanguageSelection) {
-    return /* @__PURE__ */ jsx(
-      LanguageSelection,
-      {
-        onLanguageSelected: () => setShowLanguageSelection(false)
-      }
-    );
-  }
   return /* @__PURE__ */ jsxs("div", { className: "min-h-screen relative bg-[#0a0a0f] overflow-hidden", children: [
+    /* @__PURE__ */ jsx(
+      LanguageSelectionModal,
+      {
+        open: showLanguageSelection,
+        onClose: () => setShowLanguageSelection(false)
+      }
+    ),
     /* @__PURE__ */ jsx(StripeMeshGradient, { variant: "purple", opacity: 0.4, animate: true }),
     /* @__PURE__ */ jsx("header", { className: "sticky top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-2xl", children: /* @__PURE__ */ jsxs("div", { className: "container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-5 w-5 text-white" }) }),
         /* @__PURE__ */ jsx("span", { className: "text-lg font-semibold text-white tracking-tight", children: "InsiderPulse" })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("button", { className: "hidden sm:inline-flex text-sm font-medium text-slate-300 hover:text-white transition-colors", children: "Pricing" }) }),
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(
-          Button,
-          {
-            size: "sm",
-            className: "text-sm font-medium px-4 py-2\n                           bg-white text-black\n                           hover:bg-slate-100\n                           rounded-full\n                           shadow-lg shadow-white/20\n                           hover:shadow-xl hover:shadow-white/30\n                           transition-all duration-200",
-            children: [
-              "Start Free Trial",
-              /* @__PURE__ */ jsx(ArrowRight, { className: "ml-1.5 h-4 w-4" })
-            ]
-          }
-        ) })
-      ] })
+      /* @__PURE__ */ jsx("div", { className: "flex items-center gap-4" })
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-32 md:py-48 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-5xl text-center", children: [
       /* @__PURE__ */ jsxs(Badge, { className: "mb-8 px-4 py-2 text-xs font-medium\n                           bg-white/10 text-white border border-white/20\n                           backdrop-blur-xl rounded-full\n                           shadow-lg shadow-purple-500/10", children: [
@@ -15711,32 +16153,18 @@ function LandingPage() {
       ] }),
       /* @__PURE__ */ jsx("h1", { className: "mb-8 text-5xl sm:text-6xl md:text-7xl lg:text-8xl\n                        font-bold tracking-tight\n                        text-white leading-[1.1]\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40\n                        [text-shadow:_0_1px_2px_rgb(0_0_0_/_20%)]", children: t("landing.title") }),
       /* @__PURE__ */ jsx("p", { className: "mb-12 text-lg sm:text-xl md:text-2xl\n                        text-slate-400 max-w-3xl mx-auto\n                        leading-relaxed font-normal", children: t("landing.description") }),
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row justify-center gap-4 items-center mb-8", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(
-          Button,
-          {
-            size: "lg",
-            className: "w-full sm:w-auto text-base font-medium px-8 py-6\n                           bg-white text-black\n                           hover:bg-slate-100\n                           rounded-full\n                           shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)]\n                           hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)]\n                           transition-all duration-200\n                           border border-white/20",
-            "data-testid": "button-hero-browse",
-            children: [
-              t("landing.browse"),
-              /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
-            ]
-          }
-        ) }),
-        /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(
-          Button,
-          {
-            size: "lg",
-            variant: "outline",
-            className: "w-full sm:w-auto text-base font-medium px-8 py-6\n                           bg-white/5 text-white\n                           border border-white/20\n                           hover:bg-white/10\n                           backdrop-blur-xl\n                           rounded-full\n                           shadow-lg shadow-purple-500/10\n                           hover:shadow-xl hover:shadow-purple-500/20\n                           transition-all duration-200",
-            children: [
-              "Start 7-Day Trial",
-              /* @__PURE__ */ jsx(Zap, { className: "ml-2 h-5 w-5" })
-            ]
-          }
-        ) })
-      ] }),
+      /* @__PURE__ */ jsx("div", { className: "flex flex-col sm:flex-row justify-center gap-4 items-center mb-8", children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(
+        Button,
+        {
+          size: "lg",
+          className: "w-full sm:w-auto text-base font-medium px-8 py-6\n                           bg-white text-black\n                           hover:bg-slate-100\n                           rounded-full\n                           shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)]\n                           hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)]\n                           transition-all duration-200\n                           border border-white/20",
+          "data-testid": "button-hero-browse",
+          children: [
+            t("landing.browse"),
+            /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
+          ]
+        }
+      ) }) }),
       /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500 font-medium", children: t("landing.noCreditCard") })
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
@@ -15779,140 +16207,133 @@ function LandingPage() {
     ] }) }),
     /* @__PURE__ */ jsx("section", { className: "container px-4 lg:px-6 py-24 md:py-32 relative z-10 max-w-7xl mx-auto", children: /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-6xl", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center mb-20", children: [
-        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight", children: "Simple, Transparent Pricing" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl text-slate-400 font-normal", children: "Start with a free trial. No credit card required." })
+        /* @__PURE__ */ jsx("h2", { className: "text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white tracking-tight", children: t("landing.pricing.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-lg md:text-xl text-slate-400 font-normal", children: t("landing.pricing.subtitle") })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid md:grid-cols-2 gap-8 max-w-4xl mx-auto", children: [
         /* @__PURE__ */ jsxs(GlassCard, { variant: "premium", className: "p-10 relative", children: [
           /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsxs(Badge, { className: "bg-gradient-to-r from-purple-500 to-cyan-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg", children: [
             /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-1" }),
-            "Most Popular"
+            t("landing.pricing.mostPopular")
           ] }) }),
           /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: "Monthly" }),
+            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: t("landing.pricing.monthly") }),
             /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 mb-4", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: "$14" }),
-              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: "/month" })
+              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: t("landing.pricing.monthlyPrice") }),
+              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: t("landing.pricing.monthlyPeriod") })
             ] }),
-            /* @__PURE__ */ jsx("p", { className: "text-sm text-emerald-400 font-medium", children: "3-day free trial" })
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-emerald-400 font-medium", children: t("landing.pricing.monthlyTrial") })
           ] }),
-          /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(Button, { className: "w-full mb-8 bg-white text-black hover:bg-slate-100 rounded-full py-6 text-base font-medium shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] hover:shadow-[0_25px_80px_-15px_rgba(255,255,255,0.4)] transition-all", children: [
-            "Start Free Trial",
-            /* @__PURE__ */ jsx(ArrowRight, { className: "ml-2 h-5 w-5" })
-          ] }) }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Real-time insider trades (no delay)" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.monthlyFeature1") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "AI-powered analysis & predictions" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.monthlyFeature2") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Advanced pattern detection" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.monthlyFeature3") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Live push notifications" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.monthlyFeature4") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Executive trade tracking" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.monthlyFeature5") })
             ] })
           ] })
         ] }),
         /* @__PURE__ */ jsxs(GlassCard, { variant: "elevated", className: "p-10 relative", children: [
-          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg", children: "Save 33%" }) }),
+          /* @__PURE__ */ jsx("div", { className: "absolute -top-4 left-1/2 -translate-x-1/2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none px-4 py-1.5 rounded-full shadow-lg", children: t("landing.pricing.savePercent") }) }),
           /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
-            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: "Yearly" }),
+            /* @__PURE__ */ jsx("h3", { className: "text-2xl font-bold text-white mb-2", children: t("landing.pricing.yearly") }),
             /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 mb-4", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: "$112" }),
-              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: "/year" })
+              /* @__PURE__ */ jsx("span", { className: "text-6xl font-bold text-white", children: t("landing.pricing.yearlyPrice") }),
+              /* @__PURE__ */ jsx("span", { className: "text-slate-400 font-medium", children: t("landing.pricing.yearlyPeriod") })
             ] }),
             /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-400", children: [
-              /* @__PURE__ */ jsx("span", { className: "line-through", children: "$168" }),
-              " • 7-day free trial"
+              /* @__PURE__ */ jsx("span", { className: "line-through", children: t("landing.pricing.yearlySaveOriginal") }),
+              " • ",
+              t("landing.pricing.yearlyTrial")
             ] })
           ] }),
-          /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsxs(Button, { variant: "outline", className: "w-full mb-8 bg-white/5 text-white border-white/20 hover:bg-white/10 backdrop-blur-xl rounded-full py-6 text-base font-medium shadow-lg shadow-purple-500/10 hover:shadow-xl hover:shadow-purple-500/20 transition-all", children: [
-            "Start Free Trial",
-            /* @__PURE__ */ jsx(Zap, { className: "ml-2 h-5 w-5" })
-          ] }) }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Everything in Monthly" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.yearlyFeature1") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Save $56 per year" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.yearlyFeature2") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Extended 7-day trial" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.yearlyFeature3") })
             ] }),
             /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx(Check, { className: "h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { className: "text-white", children: "Best value for serious traders" })
+              /* @__PURE__ */ jsx("span", { className: "text-white", children: t("landing.pricing.yearlyFeature4") })
             ] })
           ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "mt-12 text-center", children: [
-        /* @__PURE__ */ jsx("p", { className: "text-slate-400 mb-4", children: "Not ready yet? Start for free." }),
+        /* @__PURE__ */ jsx("p", { className: "text-slate-400 mb-4", children: t("landing.pricing.notReady") }),
         /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsxs(Button, { variant: "ghost", className: "text-white hover:bg-white/5 rounded-full", children: [
-          "Browse with 48-hour delay",
+          t("landing.pricing.browseDelayed"),
           /* @__PURE__ */ jsx(LineChart$1, { className: "ml-2 h-4 w-4" })
         ] }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "mt-16 flex flex-wrap justify-center items-center gap-12 text-sm text-slate-500", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "Cancel Anytime" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: t("landing.pricing.cancelAnytime") })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Lock, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "Secure Payment" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: t("landing.pricing.securePayment") })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5" }),
-          /* @__PURE__ */ jsx("span", { className: "font-medium", children: "No Hidden Fees" })
+          /* @__PURE__ */ jsx("span", { className: "font-medium", children: t("landing.pricing.noHiddenFees") })
         ] })
       ] })
     ] }) }),
     /* @__PURE__ */ jsx("footer", { className: "border-t border-white/5 relative z-10 bg-black/40 backdrop-blur-xl mt-32", children: /* @__PURE__ */ jsxs("div", { className: "container px-4 lg:px-6 py-16 max-w-7xl mx-auto", children: [
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-12 mb-12", children: [
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Product" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: t("landing.footer.product") }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: "Pricing" }) }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: "Browse Trades" }) }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/premium-checkout", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: t("landing.footer.pricing") }) }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(Link, { href: "/trades", children: /* @__PURE__ */ jsx("a", { className: "hover:text-white transition-colors", children: t("landing.footer.browseTrades") }) }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Company" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: t("landing.footer.company") }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "About" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Blog" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Contact" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.about") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.blog") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.contact") }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Legal" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: t("landing.footer.legal") }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Privacy" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Terms" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-white transition-colors", children: "Sitemap" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.privacy") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.terms") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "/sitemap.xml", className: "hover:text-white transition-colors", children: t("landing.footer.sitemap") }) })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: "Connect" }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xs font-semibold mb-4 text-white uppercase tracking-wider", children: t("landing.footer.connect") }),
           /* @__PURE__ */ jsxs("ul", { className: "space-y-3 text-sm text-slate-400", children: [
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "Twitter" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "LinkedIn" }) }),
-            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: "GitHub" }) })
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.twitter") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.linkedin") }) }),
+            /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { href: "#", className: "hover:text-white transition-colors", children: t("landing.footer.github") }) })
           ] })
         ] })
       ] }),
@@ -15921,7 +16342,7 @@ function LandingPage() {
           /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-white" }) }),
           /* @__PURE__ */ jsx("span", { className: "text-base font-semibold tracking-tight text-white", children: "InsiderPulse" })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500", children: "© 2025 All rights reserved" })
+        /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-500", children: t("landing.footer.copyright") })
       ] })
     ] }) })
   ] });

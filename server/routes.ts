@@ -2393,6 +2393,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Trade not found' });
       }
 
+      // Cost optimization: Block API calls for trades older than 7 days
+      const tradeAge = Date.now() - new Date(trade.filedDate).getTime();
+      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+      if (tradeAge > ONE_WEEK) {
+        console.log(`📦 Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days old) - returning basic info only`);
+        return res.json({
+          isHistorical: true,
+          tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1000)),
+          basicInfo: {
+            traderName: trade.traderName,
+            traderTitle: trade.traderTitle || 'Unknown',
+            companyName: trade.companyName,
+            ticker: trade.ticker || 'N/A',
+            shares: trade.shares,
+            pricePerShare: trade.pricePerShare,
+            totalValue: trade.totalValue,
+            tradeType: trade.tradeType,
+            filedDate: trade.filedDate,
+            secFilingUrl: trade.secFilingUrl,
+            ownershipPercentage: trade.ownershipPercentage || 0
+          }
+        });
+      }
+
+      console.log(`🔄 Recent trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days old) - performing full analysis`);
+
       // Fetch recent news for context (once for both AI analysis and newsAnalysis section)
       let recentNews: any[] = [];
       let newsCorrelationResult: any = null;

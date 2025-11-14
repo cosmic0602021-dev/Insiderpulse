@@ -5,7 +5,7 @@ import { shouldUpdateStockPrices } from './utils/market-hours';
 
 export class StockPriceService {
   private cache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours (was 5 min) - OPTIMAL for cost/freshness balance
+  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - Cost optimization (was 2 hours)
 
   // Company name to ticker mapping for common companies
   private readonly companyToTicker: { [key: string]: string } = {

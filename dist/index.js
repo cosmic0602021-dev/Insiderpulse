@@ -101,6 +101,12 @@ var init_schema = __esm({
       filedDate: timestamp("filed_date").notNull(),
       aiAnalysis: json("ai_analysis"),
       // deprecated - no longer used
+      comprehensiveAnalysis: json("comprehensive_analysis"),
+      // AI analysis with caching (new)
+      analysisGeneratedAt: timestamp("analysis_generated_at"),
+      // When AI analysis was generated
+      newsLastFetchedAt: timestamp("news_last_fetched_at"),
+      // When news was last fetched
       significanceScore: integer("significance_score").notNull().default(50),
       // Default neutral score
       signalType: text("signal_type").notNull().default("BUY"),
@@ -938,8 +944,8 @@ var init_stock_price_service = __esm({
     StockPriceService = class {
       constructor() {
         this.cache = /* @__PURE__ */ new Map();
-        this.CACHE_TTL = 2 * 60 * 60 * 1e3;
-        // 2 hours (was 5 min) - OPTIMAL for cost/freshness balance
+        this.CACHE_TTL = 24 * 60 * 60 * 1e3;
+        // 24 hours - Cost optimization (was 2 hours)
         // Company name to ticker mapping for common companies
         this.companyToTicker = {
           "APPLE": "AAPL",
@@ -7871,7 +7877,7 @@ var init_news_correlation_service = __esm({
           const uniqueNews = this.deduplicateNews(allNews);
           const relevantNews = uniqueNews.filter((article) => article.relevanceScore >= 30).sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 50);
           this.newsCache.set(cacheKey, relevantNews);
-          setTimeout(() => this.newsCache.delete(cacheKey), 30 * 60 * 1e3);
+          setTimeout(() => this.newsCache.delete(cacheKey), 24 * 60 * 60 * 1e3);
           return relevantNews;
         } catch (error) {
           console.error(`\uB274\uC2A4 \uC218\uC9D1 \uC2E4\uD328 for ${ticker}:`, error);
@@ -12094,6 +12100,29 @@ async function registerRoutes(app2) {
       if (!trade) {
         return res.status(404).json({ error: "Trade not found" });
       }
+      const tradeAge = Date.now() - new Date(trade.filedDate).getTime();
+      const ONE_WEEK = 7 * 24 * 60 * 60 * 1e3;
+      if (tradeAge > ONE_WEEK) {
+        console.log(`\u{1F4E6} Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days old) - returning basic info only`);
+        return res.json({
+          isHistorical: true,
+          tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1e3)),
+          basicInfo: {
+            traderName: trade.traderName,
+            traderTitle: trade.traderTitle || "Unknown",
+            companyName: trade.companyName,
+            ticker: trade.ticker || "N/A",
+            shares: trade.shares,
+            pricePerShare: trade.pricePerShare,
+            totalValue: trade.totalValue,
+            tradeType: trade.tradeType,
+            filedDate: trade.filedDate,
+            secFilingUrl: trade.secFilingUrl,
+            ownershipPercentage: trade.ownershipPercentage || 0
+          }
+        });
+      }
+      console.log(`\u{1F504} Recent trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days old) - performing full analysis`);
       let recentNews = [];
       let newsCorrelationResult = null;
       try {

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DashboardStats from '@/components/dashboard-stats';
 import TradeList from '@/components/trade-list';
+import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Wifi, WifiOff, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -20,6 +21,11 @@ export default function Dashboard() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [dateRange, setDateRange] = useState<{ fromDate?: Date; toDate?: Date }>({});
   const [sortBy, setSortBy] = useState<string>('filedDate');
+
+  // Modal state for trade details
+  const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
   
   // Real API data queries
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -156,10 +162,63 @@ export default function Dashboard() {
     setAllTrades([]);
     setHasMoreData(true);
   };
-  
+
+  // Load watchlist from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('watchlist');
+      if (saved) {
+        const items = JSON.parse(saved);
+        setWatchlist(items.map((item: any) => item.ticker));
+      }
+    } catch (error) {
+      console.error('Failed to load watchlist:', error);
+    }
+  }, []);
+
+  // Modal handlers
+  const handleTradeClick = (trade: InsiderTrade) => {
+    setSelectedTrade(trade);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTrade(null);
+  };
+
+  const handleAddToWatchlist = (trade: any) => {
+    try {
+      const saved = localStorage.getItem('watchlist');
+      const existing = saved ? JSON.parse(saved) : [];
+
+      const alreadyExists = existing.some((item: any) => item.ticker === trade.ticker);
+
+      let updated;
+      if (alreadyExists) {
+        updated = existing.filter((item: any) => item.ticker !== trade.ticker);
+        setWatchlist(updated.map((item: any) => item.ticker));
+      } else {
+        const newItem = {
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          addedAt: new Date().toISOString(),
+          notificationsEnabled: true,
+        };
+        updated = [...existing, newItem];
+        setWatchlist(updated.map((item: any) => item.ticker));
+      }
+
+      localStorage.setItem('watchlist', JSON.stringify(updated));
+      window.dispatchEvent(new Event('watchlistUpdate'));
+    } catch (error) {
+      console.error('Failed to toggle watchlist:', error);
+    }
+  };
+
   // No AI analysis - just pass trades directly
-  // For TradeList display, limit to 20 initially (will load more with button)
-  const tradesData = allTrades.length > 0 ? allTrades.slice(0, 20) : trades.slice(0, 20);
+  // FIXED: Don't slice allTrades - show all loaded trades
+  const tradesData = allTrades.length > 0 ? allTrades : trades;
 
   // Calculate top stocks by grouping trades by ticker symbol
   const topStocks = useMemo(() => {
@@ -283,7 +342,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <TradeList 
+            <TradeList
               trades={tradesData}
               loading={false}
               loadingMore={loadingMore}
@@ -291,6 +350,7 @@ export default function Dashboard() {
               onLoadMore={handleLoadMore}
               onDateRangeChange={handleDateRangeChange}
               onSortChange={handleSortChange}
+              onViewDetails={handleTradeClick}
             />
           )}
         </Card>
@@ -395,6 +455,16 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Trade Detail Modal */}
+      <TradeDetailModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        trade={selectedTrade}
+        onAddToWatchlist={handleAddToWatchlist}
+        isInWatchlist={selectedTrade?.tickerSymbol ? watchlist.includes(selectedTrade.tickerSymbol) : false}
+        data-testid="trade-detail-modal"
+      />
       </div>
     </div>
   );

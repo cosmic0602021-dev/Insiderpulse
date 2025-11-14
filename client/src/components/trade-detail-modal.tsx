@@ -82,6 +82,8 @@ export function TradeDetailModal({
   const [isPWAInstalled, setIsPWAInstalled] = useState(false);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<EnhancedTrade['comprehensiveAnalysis'] | null>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [isHistoricalTrade, setIsHistoricalTrade] = useState(false);
+  const [tradeAge, setTradeAge] = useState<number>(0);
   const [priceHistory, setPriceHistory] = useState<Array<{ date: string; close: number; }>>([]);
   const [isLoadingPriceHistory, setIsLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState<string | null>(null);
@@ -130,12 +132,12 @@ export function TradeDetailModal({
     }
   }, [isOpen, trade]);
 
-  // Load historical price data when modal opens
+  // Load historical price data when modal opens (skip for old trades)
   useEffect(() => {
-    if (isOpen && trade && trade.ticker) {
+    if (isOpen && trade && trade.ticker && !isHistoricalTrade) {
       loadPriceHistory();
     }
-  }, [isOpen, trade?.id]);
+  }, [isOpen, trade?.id, isHistoricalTrade]);
 
   const loadComprehensiveAnalysis = async () => {
     if (!trade) return;
@@ -146,7 +148,17 @@ export function TradeDetailModal({
 
       if (response.ok) {
         const data = await response.json();
-        setComprehensiveAnalysis(data);
+
+        // Check if this is a historical trade (>7 days old)
+        if (data.isHistorical) {
+          console.log(`📦 Historical trade detected (${data.tradeAge} days old) - showing basic info only`);
+          setIsHistoricalTrade(true);
+          setTradeAge(data.tradeAge);
+          setComprehensiveAnalysis(null); // No AI analysis for old trades
+        } else {
+          setIsHistoricalTrade(false);
+          setComprehensiveAnalysis(data);
+        }
       } else {
         console.error('Failed to load AI analysis:', response.statusText);
       }
@@ -639,7 +651,8 @@ export function TradeDetailModal({
             </div>
           )}
 
-          {/* {t('tradeDetail.priceAnalysisDashboard')} */}
+          {/* {t('tradeDetail.priceAnalysisDashboard')} - Hide for historical trades */}
+          {!isHistoricalTrade && (
           <div className="border-t pt-4">
             <h4 className="font-semibold mb-4 flex items-center gap-2 text-base">
               <BarChart3 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
@@ -943,6 +956,7 @@ export function TradeDetailModal({
             </div>
 
           </div>
+          )}
 
           {/* {t('tradeDetail.integratedAiAnalysis')} */}
           <div className="border-t pt-4" data-testid="section-ai-analysis">
@@ -959,6 +973,28 @@ export function TradeDetailModal({
                       <div className="flex items-center justify-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         <span className="ml-3">{t('tradeDetail.aiAnalysisGenerating')}</span>
+                      </div>
+                    ) : isHistoricalTrade ? (
+                      <div className="flex flex-col items-center justify-center p-8 text-center bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700">
+                        <Clock className="h-12 w-12 text-slate-400 mb-4" />
+                        <p className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                          {language === 'ko' ? '과거 거래 기록' :
+                           language === 'ja' ? '過去の取引記録' :
+                           language === 'zh' ? '历史交易记录' :
+                           'Historical Trade Record'}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                          {language === 'ko' ? `이 거래는 ${tradeAge}일 이상 경과했습니다.` :
+                           language === 'ja' ? `この取引は${tradeAge}日以上経過しています。` :
+                           language === 'zh' ? `此交易已超过${tradeAge}天。` :
+                           `This trade is over ${tradeAge} days old.`}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500 max-w-md mt-2">
+                          {language === 'ko' ? '비용 최적화를 위해 오래된 거래에는 AI 분석 및 뉴스를 제공하지 않습니다. 기본 거래 정보만 확인하실 수 있습니다.' :
+                           language === 'ja' ? 'コスト最適化のため、古い取引にはAI分析とニュースを提供していません。基本的な取引情報のみご確認いただけます。' :
+                           language === 'zh' ? '为优化成本，旧交易不提供AI分析和新闻。仅可查看基本交易信息。' :
+                           'To optimize costs, AI analysis and news are not provided for old trades. Only basic trade information is available.'}
+                        </p>
                       </div>
                     ) : (trade.comprehensiveAnalysis || comprehensiveAnalysis) ? (
                       // 실제 AI 분석 결과 표시 (통합된 종합의견 포함)

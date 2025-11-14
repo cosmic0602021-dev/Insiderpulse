@@ -117,7 +117,7 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
               data-testid="button-toggle-filters"
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filters
+              {t('tradeList.filters')}
             </Button>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -136,24 +136,24 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
           <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-md">
             <div className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Date Range:</span>
+              <span className="text-sm text-muted-foreground">{t('tradeList.dateRange')}:</span>
               <Select value={dateFilter} onValueChange={handleDateFilterChange}>
                 <SelectTrigger className="w-[140px]" data-testid="select-date-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">Last Week</SelectItem>
-                  <SelectItem value="month">Last Month</SelectItem>
-                  <SelectItem value="3months">Last 3 Months</SelectItem>
-                  <SelectItem value="6months">Last 6 Months</SelectItem>
+                  <SelectItem value="all">{t('tradeList.dateRange.all')}</SelectItem>
+                  <SelectItem value="today">{t('tradeList.dateRange.today')}</SelectItem>
+                  <SelectItem value="week">{t('tradeList.dateRange.week')}</SelectItem>
+                  <SelectItem value="month">{t('tradeList.dateRange.month')}</SelectItem>
+                  <SelectItem value="3months">{t('tradeList.dateRange.threeMonths')}</SelectItem>
+                  <SelectItem value="6months">{t('tradeList.dateRange.sixMonths')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="text-sm text-muted-foreground">
-              Showing {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''}
+              {t('tradeList.showingTrades', { count: filteredTrades.length })}
             </div>
           </div>
         )}
