@@ -1777,7 +1777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If user doesn't have real-time access, filter to 48h+ old trades
-      let adjustedToDate = toDate;
+      let adjustedToDate: string | undefined = undefined;
       let filterBy: 'createdAt' | 'filedDate' | undefined = undefined;
 
       if (!hasRealtimeAccess) {
@@ -1787,6 +1787,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`🔒 Free user access - applying 48-hour delay filter`);
         console.log(`   Cutoff date: ${adjustedToDate}`);
         console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Sort: ${sortBy}`);
+        console.log(`   Request: limit=${limit}, offset=${offset}`);
+      } else {
+        // Premium users: NO delay filter - they see all real-time trades
+        adjustedToDate = undefined;
+        filterBy = undefined;
+        console.log(`✅ Premium user access - NO delay filter applied`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
@@ -2393,12 +2400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Trade not found' });
       }
 
-      // Cost optimization: Block API calls for trades older than 7 days
-      const tradeAge = Date.now() - new Date(trade.filedDate).getTime();
+      // Cost optimization: Block API calls for trades older than 7 days (based on when uploaded to app)
+      const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
       if (tradeAge > ONE_WEEK) {
-        console.log(`📦 Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days old) - returning basic info only`);
+        console.log(`📦 Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days since upload) - returning basic info only`);
         return res.json({
           isHistorical: true,
           tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1000)),

@@ -11620,7 +11620,7 @@ async function registerRoutes(app2) {
         console.log(`\u{1F511} [/api/trades] User ${userId.substring(0, 20)}... - hasRealtimeAccess: ${hasRealtimeAccess}`);
         console.log(`   \u{1F4CA} Tier: ${accessLevel.tier}, Status: ${accessLevel.status}, Trial: ${accessLevel.isTrialing}`);
       }
-      let adjustedToDate = toDate;
+      let adjustedToDate = void 0;
       let filterBy = void 0;
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1e3);
@@ -11629,6 +11629,12 @@ async function registerRoutes(app2) {
         console.log(`\u{1F512} Free user access - applying 48-hour delay filter`);
         console.log(`   Cutoff date: ${adjustedToDate}`);
         console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Sort: ${sortBy}`);
+        console.log(`   Request: limit=${limit}, offset=${offset}`);
+      } else {
+        adjustedToDate = void 0;
+        filterBy = void 0;
+        console.log(`\u2705 Premium user access - NO delay filter applied`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
@@ -12100,10 +12106,10 @@ async function registerRoutes(app2) {
       if (!trade) {
         return res.status(404).json({ error: "Trade not found" });
       }
-      const tradeAge = Date.now() - new Date(trade.filedDate).getTime();
+      const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1e3;
       if (tradeAge > ONE_WEEK) {
-        console.log(`\u{1F4E6} Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days old) - returning basic info only`);
+        console.log(`\u{1F4E6} Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days since upload) - returning basic info only`);
         return res.json({
           isHistorical: true,
           tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1e3)),

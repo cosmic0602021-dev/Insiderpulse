@@ -10327,7 +10327,9 @@ function LiveTrading() {
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: "createdAt"
+      sortBy: "createdAt",
+      hasRealtimeAccess: (accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) || false
+      // Separate cache for premium/free users
     }),
     queryFn: async () => {
       var _a;

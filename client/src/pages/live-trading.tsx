@@ -134,7 +134,8 @@ export default function LiveTrading() {
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: 'createdAt'
+      sortBy: 'createdAt',
+      hasRealtimeAccess: accessLevel?.hasRealtimeAccess || false // Separate cache for premium/free users
     }),
     queryFn: async () => {
       console.log('[LIVE TRADING] Fetching trades and access level...');
