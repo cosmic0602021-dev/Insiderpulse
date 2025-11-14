@@ -1777,10 +1777,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If user doesn't have real-time access, filter to 48h+ old trades
-      let adjustedToDate: string | undefined = undefined;
+      let adjustedToDate: string | undefined = toDate; // Start with original toDate from request
       let filterBy: 'createdAt' | 'filedDate' | undefined = undefined;
 
       if (!hasRealtimeAccess) {
+        // Free users: Force 48-hour delay filter regardless of request
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
         adjustedToDate = fortyEightHoursAgo.toISOString().split('T')[0];
         filterBy = 'createdAt'; // Always filter by collection date for free users
@@ -1790,10 +1791,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       } else {
-        // Premium users: NO delay filter - they see all real-time trades
-        adjustedToDate = undefined;
+        // Premium users: NO delay filter - use original toDate if provided, otherwise no filter
         filterBy = undefined;
         console.log(`✅ Premium user access - NO delay filter applied`);
+        console.log(`   Original toDate from request: ${adjustedToDate || 'none'}`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }

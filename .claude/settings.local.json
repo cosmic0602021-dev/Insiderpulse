@@ -52,7 +52,9 @@
       "WebFetch(domain:www.sec.gov)",
       "WebFetch(domain:openinsider.com)",
       "Bash(git checkout:*)",
-      "WebFetch(domain:robinhood.com)"
+      "WebFetch(domain:robinhood.com)",
+      "Bash(node /home/runner/workspace/test-stripe-sync.js:*)",
+      "Bash(node /home/runner/workspace/test-stripe-sync.cjs:*)"
     ],
     "deny": [],
     "ask": []

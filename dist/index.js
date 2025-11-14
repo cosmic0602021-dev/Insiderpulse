@@ -8904,27 +8904,34 @@ async function syncSubscriptionFromStripe(user2) {
       console.log(`[Stripe Sync] No subscription found in Stripe for ${user2.stripeSubscriptionId}`);
       return false;
     }
-    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${new Date(subscription.current_period_end * 1e3)}`);
-    const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
-    const stripePeriodEnd = new Date(subscription.current_period_end * 1e3);
+    const periodEnd = subscription.current_period_end || subscription.items?.data?.[0]?.current_period_end;
+    const stripePeriodEnd = periodEnd ? new Date(periodEnd * 1e3) : null;
+    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${stripePeriodEnd || "N/A"}`);
+    if (!stripePeriodEnd || isNaN(stripePeriodEnd.getTime())) {
+      console.log(`[Stripe Sync] \u26A0\uFE0F Invalid or missing period end date, keeping DB data unchanged`);
+      return false;
+    }
     const now = /* @__PURE__ */ new Date();
+    const isStripeActive = subscription.status === "active" || subscription.status === "trialing" || subscription.status === "canceled" && stripePeriodEnd > now;
     if (isStripeActive && stripePeriodEnd > now) {
-      console.log(`[Stripe Sync] \u2705 Stripe shows active subscription, updating DB for user ${user2.id}`);
+      console.log(`[Stripe Sync] \u2705 Stripe shows active subscription (status: ${subscription.status}), updating DB for user ${user2.id}`);
       await db3.update(users).set({
-        subscriptionStatus: subscription.status,
+        subscriptionStatus: "active",
+        // Keep as active even if Stripe says "canceled" but still valid
         subscriptionEndDate: stripePeriodEnd,
         subscriptionTier: "insider_pro"
       }).where(eq3(users.id, user2.id));
       return true;
     }
-    if (!isStripeActive || stripePeriodEnd <= now) {
-      console.log(`[Stripe Sync] \u274C Stripe shows inactive/expired subscription for user ${user2.id}`);
+    if (stripePeriodEnd <= now) {
+      console.log(`[Stripe Sync] \u274C Stripe shows expired subscription for user ${user2.id} (ended: ${stripePeriodEnd})`);
       await db3.update(users).set({
-        subscriptionStatus: subscription.status === "canceled" ? "canceled" : "inactive",
+        subscriptionStatus: "inactive",
         subscriptionEndDate: stripePeriodEnd
       }).where(eq3(users.id, user2.id));
       return false;
     }
+    console.log(`[Stripe Sync] \u26A0\uFE0F Unexpected Stripe status "${subscription.status}" for user ${user2.id}, keeping DB unchanged`);
     return false;
   } catch (error) {
     console.error(`[Stripe Sync] Error syncing subscription for user ${user2.id}:`, error);
@@ -11620,7 +11627,7 @@ async function registerRoutes(app2) {
         console.log(`\u{1F511} [/api/trades] User ${userId.substring(0, 20)}... - hasRealtimeAccess: ${hasRealtimeAccess}`);
         console.log(`   \u{1F4CA} Tier: ${accessLevel.tier}, Status: ${accessLevel.status}, Trial: ${accessLevel.isTrialing}`);
       }
-      let adjustedToDate = void 0;
+      let adjustedToDate = toDate;
       let filterBy = void 0;
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1e3);
@@ -11632,9 +11639,9 @@ async function registerRoutes(app2) {
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       } else {
-        adjustedToDate = void 0;
         filterBy = void 0;
         console.log(`\u2705 Premium user access - NO delay filter applied`);
+        console.log(`   Original toDate from request: ${adjustedToDate || "none"}`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }

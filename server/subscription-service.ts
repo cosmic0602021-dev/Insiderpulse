@@ -53,20 +53,32 @@ async function syncSubscriptionFromStripe(user: any): Promise<boolean> {
       return false;
     }
 
-    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${new Date(subscription.current_period_end * 1000)}`);
+    // Stripe API: current_period_end can be at subscription level or items level
+    const periodEnd = subscription.current_period_end || subscription.items?.data?.[0]?.current_period_end;
+    const stripePeriodEnd = periodEnd ? new Date(periodEnd * 1000) : null;
 
-    // Check if Stripe says subscription is active
-    const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
-    const stripePeriodEnd = new Date(subscription.current_period_end * 1000);
+    console.log(`[Stripe Sync] Stripe status: ${subscription.status}, current_period_end: ${stripePeriodEnd || 'N/A'}`);
+
+    if (!stripePeriodEnd || isNaN(stripePeriodEnd.getTime())) {
+      console.log(`[Stripe Sync] ⚠️ Invalid or missing period end date, keeping DB data unchanged`);
+      return false;
+    }
+
     const now = new Date();
 
-    // If Stripe shows active but DB shows expired, sync the DB
+    // Check if Stripe says subscription is active (including "canceled" if still in valid period)
+    const isStripeActive =
+      subscription.status === "active" ||
+      subscription.status === "trialing" ||
+      (subscription.status === "canceled" && stripePeriodEnd > now);
+
+    // If Stripe shows active (including canceled with future end date), sync the DB
     if (isStripeActive && stripePeriodEnd > now) {
-      console.log(`[Stripe Sync] ✅ Stripe shows active subscription, updating DB for user ${user.id}`);
+      console.log(`[Stripe Sync] ✅ Stripe shows active subscription (status: ${subscription.status}), updating DB for user ${user.id}`);
 
       await db.update(users)
         .set({
-          subscriptionStatus: subscription.status as any,
+          subscriptionStatus: "active", // Keep as active even if Stripe says "canceled" but still valid
           subscriptionEndDate: stripePeriodEnd,
           subscriptionTier: "insider_pro",
         })
@@ -75,13 +87,13 @@ async function syncSubscriptionFromStripe(user: any): Promise<boolean> {
       return true; // Synced successfully
     }
 
-    // If Stripe shows canceled or expired
-    if (!isStripeActive || stripePeriodEnd <= now) {
-      console.log(`[Stripe Sync] ❌ Stripe shows inactive/expired subscription for user ${user.id}`);
+    // If Stripe shows expired (period end passed)
+    if (stripePeriodEnd <= now) {
+      console.log(`[Stripe Sync] ❌ Stripe shows expired subscription for user ${user.id} (ended: ${stripePeriodEnd})`);
 
       await db.update(users)
         .set({
-          subscriptionStatus: subscription.status === "canceled" ? "canceled" : "inactive",
+          subscriptionStatus: "inactive",
           subscriptionEndDate: stripePeriodEnd,
         })
         .where(eq(users.id, user.id));
@@ -89,6 +101,8 @@ async function syncSubscriptionFromStripe(user: any): Promise<boolean> {
       return false; // No active subscription
     }
 
+    // If we get here, Stripe status is not active/trialing/canceled, treat as inactive
+    console.log(`[Stripe Sync] ⚠️ Unexpected Stripe status "${subscription.status}" for user ${user.id}, keeping DB unchanged`);
     return false;
   } catch (error) {
     console.error(`[Stripe Sync] Error syncing subscription for user ${user.id}:`, error);
