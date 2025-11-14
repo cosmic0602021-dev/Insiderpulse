@@ -56,7 +56,7 @@ export class DatabaseStorage implements IStorage {
 
     // Filter by transaction types if provided
     if (transactionTypes && transactionTypes.length > 0) {
-      conditions.push(inArray(insiderTrades.transactionType, transactionTypes));
+      conditions.push(inArray(insiderTrades.tradeType, transactionTypes));
     }
 
     let query = db

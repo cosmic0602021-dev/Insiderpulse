@@ -1761,7 +1761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionFilter = req.query.transactionTypes as string;
       const transactionTypes = transactionFilter
         ? transactionFilter.split(',')
-        : ['BUY', 'SELL', 'PURCHASE', 'SALE']; // Default: pure buy/sell only
+        : ['BUY', 'SELL']; // Default: pure buy/sell only (schema-valid values)
 
       // Access control: check if user has real-time access
       const userId = getUserIdFromToken(req);

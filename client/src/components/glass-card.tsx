@@ -13,13 +13,15 @@ interface GlassCardProps {
   className?: string;
   variant?: 'default' | 'elevated' | 'bordered' | 'premium';
   hover?: boolean;
+  onClick?: () => void;
 }
 
 export function GlassCard({
   children,
   className = "",
   variant = 'default',
-  hover = true
+  hover = true,
+  onClick
 }: GlassCardProps) {
   const baseStyles = "backdrop-blur-xl bg-white/5 border transition-all duration-300";
 
@@ -39,12 +41,15 @@ export function GlassCard({
     : "";
 
   return (
-    <div className={cn(
-      baseStyles,
-      variantStyles[variant],
-      hoverStyles,
-      className
-    )}>
+    <div
+      className={cn(
+        baseStyles,
+        variantStyles[variant],
+        hoverStyles,
+        className
+      )}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

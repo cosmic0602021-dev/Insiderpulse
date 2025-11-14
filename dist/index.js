@@ -295,7 +295,7 @@ var init_db_storage = __esm({
           conditions.push(lte(dateField, new Date(toDate)));
         }
         if (transactionTypes && transactionTypes.length > 0) {
-          conditions.push(inArray(insiderTrades.transactionType, transactionTypes));
+          conditions.push(inArray(insiderTrades.tradeType, transactionTypes));
         }
         let query = db.select().from(insiderTrades);
         if (conditions.length > 0) {
@@ -11609,7 +11609,7 @@ async function registerRoutes(app2) {
       const toDate = req.query.to;
       const sortBy = req.query.sortBy || "filedDate";
       const transactionFilter = req.query.transactionTypes;
-      const transactionTypes = transactionFilter ? transactionFilter.split(",") : ["BUY", "SELL", "PURCHASE", "SALE"];
+      const transactionTypes = transactionFilter ? transactionFilter.split(",") : ["BUY", "SELL"];
       const userId = getUserIdFromToken(req);
       let hasRealtimeAccess = false;
       if (!userId) {

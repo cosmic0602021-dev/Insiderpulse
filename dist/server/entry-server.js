@@ -9806,7 +9806,8 @@ function GlassCard({
   children,
   className = "",
   variant = "default",
-  hover = true
+  hover = true,
+  onClick
 }) {
   const baseStyles = "backdrop-blur-xl bg-white/5 border transition-all duration-300";
   const variantStyles = {
@@ -9820,12 +9821,19 @@ function GlassCard({
     `
   };
   const hoverStyles = hover ? "hover:bg-white/10 hover:border-white/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-0.5" : "";
-  return /* @__PURE__ */ jsx("div", { className: cn(
-    baseStyles,
-    variantStyles[variant],
-    hoverStyles,
-    className
-  ), children });
+  return /* @__PURE__ */ jsx(
+    "div",
+    {
+      className: cn(
+        baseStyles,
+        variantStyles[variant],
+        hoverStyles,
+        className
+      ),
+      onClick,
+      children
+    }
+  );
 }
 function LockedTradeCard({ trade, onUnlock }) {
   var _a, _b, _c;
