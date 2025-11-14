@@ -1183,7 +1183,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         where: eq(users.email, email),
       });
 
-      console.log('👤 User found:', user ? `Yes (${user.email})` : 'No');
+      console.log('👤 User found:', user ? `Yes (${user.email}, ID: ${user.id})` : 'No');
+      if (user) {
+        console.log('🔍 User details:', {
+          id: user.id,
+          email: user.email,
+          tier: user.subscriptionTier,
+          status: user.subscriptionStatus,
+          endDate: user.subscriptionEndDate,
+        });
+      }
 
       if (!user) {
         console.log('❌ Login failed: User not found');

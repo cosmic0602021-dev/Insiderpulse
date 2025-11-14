@@ -11168,7 +11168,16 @@ async function registerRoutes(app2) {
       const user2 = await db4.query.users.findFirst({
         where: eq5(users.email, email)
       });
-      console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email})` : "No");
+      console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email}, ID: ${user2.id})` : "No");
+      if (user2) {
+        console.log("\u{1F50D} User details:", {
+          id: user2.id,
+          email: user2.email,
+          tier: user2.subscriptionTier,
+          status: user2.subscriptionStatus,
+          endDate: user2.subscriptionEndDate
+        });
+      }
       if (!user2) {
         console.log("\u274C Login failed: User not found");
         return res.status(401).json({
