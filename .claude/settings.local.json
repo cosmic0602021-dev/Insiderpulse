@@ -58,7 +58,12 @@
       "Bash(sleep 3 curl -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"scottnim7777@gmail.com\"\",\"\"password\"\":\"\"Ski0602021!@#$\"\"}\")",
       "Bash(node /home/runner/workspace/check-stripe-sub.js:*)",
       "Bash(node /home/runner/workspace/test-date-comparison.js:*)",
-      "Bash(node /home/runner/workspace/test-api-access.js:*)"
+      "Bash(node /home/runner/workspace/test-api-access.js:*)",
+      "Bash(node /home/runner/workspace/test-verify-endpoint.js:*)",
+      "Bash(for:*)",
+      "Bash(do curl -s http://localhost:5000/api/health)",
+      "Bash(break)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

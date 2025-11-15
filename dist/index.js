@@ -11596,6 +11596,7 @@ async function registerRoutes(app2) {
           email: user2.email,
           subscriptionTier: user2.subscriptionTier,
           subscriptionStatus: user2.subscriptionStatus,
+          subscriptionEndDate: user2.subscriptionEndDate,
           hasUsedTrial: user2.hasUsedTrial,
           trialExpiresAt: user2.trialExpiresAt,
           emailVerified: user2.emailVerified
