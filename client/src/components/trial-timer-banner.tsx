@@ -88,7 +88,15 @@ interface TrialExpiredBannerProps {
 
 export function TrialExpiredBanner({ onUpgrade }: TrialExpiredBannerProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
+
+  // CRITICAL FIX: Don't show banner if user has active subscription
+  // This prevents showing "trial expired" to paying customers due to API errors
+  if (hasPremiumAccess(user)) {
+    console.log('[TRIAL EXPIRED BANNER] User has premium access, hiding banner');
+    return null;
+  }
 
   const handleUpgrade = () => {
     if (onUpgrade) {

@@ -5445,7 +5445,7 @@ const AccessContext = createContext(void 0);
 function AccessProvider({ children }) {
   const [accessLevel, setAccessLevel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, token, user } = useAuth();
+  const { isAuthenticated, token, user, refreshUser } = useAuth();
   const refreshAccessLevel = async () => {
     console.log("🔄 [ACCESS CONTEXT] Refreshing access level...");
     console.log("   isAuthenticated:", isAuthenticated);
@@ -5488,15 +5488,39 @@ function AccessProvider({ children }) {
         isTrialing: trialStatus.isTrialing,
         hasUsedTrial: trialStatus.hasUsedTrial
       });
+      const userDataIsStale = user && (user.subscriptionTier !== trialStatus.tier || user.subscriptionStatus !== trialStatus.status);
+      if (userDataIsStale && refreshUser) {
+        console.log("⚠️ [ACCESS CONTEXT] User data appears stale, refreshing from server...");
+        console.log("   Current user:", { tier: user.subscriptionTier, status: user.subscriptionStatus });
+        console.log("   API says:", { tier: trialStatus.tier, status: trialStatus.status });
+        await refreshUser();
+      }
     } catch (error) {
       console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
       console.error("   Error details:", error instanceof Error ? error.message : String(error));
-      console.log("   🔒 Defaulting to free access due to API error");
-      setAccessLevel({
-        hasRealtimeAccess: false,
-        isDelayed: true,
-        delayHours: 48
-      });
+      const hasPremiumFromUser = user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled") && user.subscriptionStatus !== "inactive" && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > /* @__PURE__ */ new Date());
+      if (hasPremiumFromUser) {
+        console.log("⚠️ [ACCESS CONTEXT] API error, but user has valid subscription in auth context");
+        console.log("   Using fallback premium access based on user data:", {
+          tier: user.subscriptionTier,
+          status: user.subscriptionStatus,
+          endDate: user.subscriptionEndDate
+        });
+        setAccessLevel({
+          hasRealtimeAccess: true,
+          isDelayed: false,
+          delayHours: 0,
+          tier: user.subscriptionTier,
+          status: user.subscriptionStatus
+        });
+      } else {
+        console.log("   🔒 No valid subscription found, defaulting to free access");
+        setAccessLevel({
+          hasRealtimeAccess: false,
+          isDelayed: true,
+          delayHours: 48
+        });
+      }
     }
   };
   useEffect(() => {
@@ -9944,6 +9968,7 @@ function FreeZoneBanner({ delayHours }) {
   const { t } = useLanguage();
   const { user } = useAuth();
   if (hasPremiumAccess(user)) {
+    console.log("[FREE ZONE BANNER] User has premium access, hiding banner");
     return null;
   }
   return /* @__PURE__ */ jsx(Alert, { className: "border-amber-500/50 bg-amber-50 dark:bg-amber-900/20", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
@@ -10007,7 +10032,12 @@ function TrialTimerBanner({ trialExpiresAt, onUpgrade }) {
 }
 function TrialExpiredBanner({ onUpgrade }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
+  if (hasPremiumAccess(user)) {
+    console.log("[TRIAL EXPIRED BANNER] User has premium access, hiding banner");
+    return null;
+  }
   const handleUpgrade = () => {
     if (onUpgrade) {
       onUpgrade();

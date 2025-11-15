@@ -55,7 +55,10 @@
       "WebFetch(domain:robinhood.com)",
       "Bash(node /home/runner/workspace/test-stripe-sync.js:*)",
       "Bash(node /home/runner/workspace/test-stripe-sync.cjs:*)",
-      "Bash(sleep 3 curl -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"scottnim7777@gmail.com\"\",\"\"password\"\":\"\"Ski0602021!@#$\"\"}\")"
+      "Bash(sleep 3 curl -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"scottnim7777@gmail.com\"\",\"\"password\"\":\"\"Ski0602021!@#$\"\"}\")",
+      "Bash(node /home/runner/workspace/check-stripe-sub.js:*)",
+      "Bash(node /home/runner/workspace/test-date-comparison.js:*)",
+      "Bash(node /home/runner/workspace/test-api-access.js:*)"
     ],
     "deny": [],
     "ask": []

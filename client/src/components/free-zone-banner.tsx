@@ -14,6 +14,7 @@ export function FreeZoneBanner({ delayHours }: FreeZoneBannerProps) {
 
   // Don't show banner if user has premium subscription
   if (hasPremiumAccess(user)) {
+    console.log('[FREE ZONE BANNER] User has premium access, hiding banner');
     return null;
   }
 
