@@ -4666,7 +4666,7 @@ const queryKeys = {
 };
 const AuthContext = createContext(void 0);
 function AuthProvider({ children }) {
-  const [user2, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(typeof window === "undefined" ? false : true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -4772,7 +4772,7 @@ function AuthProvider({ children }) {
   }, []);
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === "visible" && user2 && token) {
+      if (document.visibilityState === "visible" && user && token) {
         console.log("👁️ Tab became visible, refreshing user data...");
         await refreshUser();
       }
@@ -4781,7 +4781,7 @@ function AuthProvider({ children }) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user2, token]);
+  }, [user, token]);
   const openAuthModal = (mode) => {
     setAuthModalMode(mode);
     setShowAuthModal(true);
@@ -4793,9 +4793,9 @@ function AuthProvider({ children }) {
     AuthContext.Provider,
     {
       value: {
-        user: user2,
+        user,
         token,
-        isAuthenticated: !!user2 && !!token,
+        isAuthenticated: !!user && !!token,
         isLoading,
         showAuthModal,
         authModalMode,
@@ -4816,19 +4816,19 @@ function useAuth() {
   }
   return context;
 }
-function hasPremiumAccess(user2) {
-  if (!user2) {
+function hasPremiumAccess(user) {
+  if (!user) {
     return false;
   }
-  const isPro = user2.subscriptionTier === "insider_pro";
+  const isPro = user.subscriptionTier === "insider_pro";
   const now = /* @__PURE__ */ new Date();
-  const hasValidStatus = user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing" || user2.subscriptionStatus === "canceled";
-  const hasActiveAccess = hasValidStatus && (!user2.subscriptionEndDate || new Date(user2.subscriptionEndDate) > now);
+  const hasValidStatus = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled";
+  const hasActiveAccess = hasValidStatus && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
   console.log("[SUBSCRIPTION UTILS] hasPremiumAccess check:", {
-    email: user2.email,
-    tier: user2.subscriptionTier,
-    status: user2.subscriptionStatus,
-    endDate: user2.subscriptionEndDate,
+    email: user.email,
+    tier: user.subscriptionTier,
+    status: user.subscriptionStatus,
+    endDate: user.subscriptionEndDate,
     isPro,
     hasValidStatus,
     hasActiveAccess,
@@ -4855,7 +4855,7 @@ const getMenuItems = (t) => [
 function AppSidebar() {
   const [location2] = useLocation();
   const { t } = useLanguage();
-  const { user: user2, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [, navigate2] = useLocation();
   const [watchlist, setWatchlist] = useState([]);
   useEffect(() => {
@@ -5042,14 +5042,14 @@ function AppSidebar() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs(SidebarFooter, { className: "p-4 space-y-3", children: [
-      user2 && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 p-2 rounded-lg bg-muted/50", children: [
+      user && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 p-2 rounded-lg bg-muted/50", children: [
         /* @__PURE__ */ jsx("div", { className: "w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(User, { className: "h-4 w-4 text-primary" }) }),
         /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
-          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium truncate", children: user2.email }),
-          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: user2.subscriptionTier === "insider_pro" ? "Pro" : "Free" })
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium truncate", children: user.email }),
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: user.subscriptionTier === "insider_pro" ? "Pro" : "Free" })
         ] })
       ] }),
-      user2 && !hasPremiumAccess(user2) && /* @__PURE__ */ jsx(
+      user && !hasPremiumAccess(user) && /* @__PURE__ */ jsx(
         Button,
         {
           className: "w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold",
@@ -5057,9 +5057,9 @@ function AppSidebar() {
           "data-testid": "button-upgrade-premium",
           children: /* @__PURE__ */ jsxs(Link, { href: "/premium-checkout", onClick: () => {
             console.log("[APP SIDEBAR] Upgrade button clicked. User:", {
-              tier: user2.subscriptionTier,
-              status: user2.subscriptionStatus,
-              hasPremium: hasPremiumAccess(user2)
+              tier: user.subscriptionTier,
+              status: user.subscriptionStatus,
+              hasPremium: hasPremiumAccess(user)
             });
           }, children: [
             /* @__PURE__ */ jsx(Crown, { className: "h-4 w-4 mr-2" }),
@@ -5445,14 +5445,14 @@ const AccessContext = createContext(void 0);
 function AccessProvider({ children }) {
   const [accessLevel, setAccessLevel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, token, user: user2, refreshUser } = useAuth();
+  const { isAuthenticated, token, user, refreshUser } = useAuth();
   const refreshAccessLevel = async () => {
     console.log("🔄 [ACCESS CONTEXT] Refreshing access level...");
     console.log("   isAuthenticated:", isAuthenticated);
-    console.log("   user:", user2 ? {
-      email: user2.email,
-      tier: user2.subscriptionTier,
-      status: user2.subscriptionStatus
+    console.log("   user:", user ? {
+      email: user.email,
+      tier: user.subscriptionTier,
+      status: user.subscriptionStatus
     } : "null");
     if (!isAuthenticated || !token) {
       console.log("🔒 [ACCESS CONTEXT] User not authenticated, setting free access");
@@ -5488,10 +5488,10 @@ function AccessProvider({ children }) {
         isTrialing: trialStatus.isTrialing,
         hasUsedTrial: trialStatus.hasUsedTrial
       });
-      const userDataIsStale = user2 && (user2.subscriptionTier !== trialStatus.tier || user2.subscriptionStatus !== trialStatus.status);
+      const userDataIsStale = user && (user.subscriptionTier !== trialStatus.tier || user.subscriptionStatus !== trialStatus.status);
       if (userDataIsStale && refreshUser) {
         console.log("⚠️ [ACCESS CONTEXT] User data appears stale, refreshing from server...");
-        console.log("   Current user:", { tier: user2.subscriptionTier, status: user2.subscriptionStatus });
+        console.log("   Current user:", { tier: user.subscriptionTier, status: user.subscriptionStatus });
         console.log("   API says:", { tier: trialStatus.tier, status: trialStatus.status });
         await refreshUser();
       }
@@ -5499,20 +5499,20 @@ function AccessProvider({ children }) {
       console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
       console.error("   Error details:", error instanceof Error ? error.message : String(error));
       let hasPremiumFromUser = false;
-      if (user2 && user2.subscriptionTier === "insider_pro") {
-        if (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing") {
+      if (user && user.subscriptionTier === "insider_pro") {
+        if (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") {
           hasPremiumFromUser = true;
-        } else if (user2.subscriptionStatus === "canceled" && user2.subscriptionEndDate) {
-          const endDate = new Date(user2.subscriptionEndDate);
+        } else if (user.subscriptionStatus === "canceled" && user.subscriptionEndDate) {
+          const endDate = new Date(user.subscriptionEndDate);
           const now = /* @__PURE__ */ new Date();
           hasPremiumFromUser = endDate > now;
         }
       }
       console.log("⚠️ [ACCESS CONTEXT] API error - using fallback logic");
       console.log("   User data:", {
-        tier: user2 == null ? void 0 : user2.subscriptionTier,
-        status: user2 == null ? void 0 : user2.subscriptionStatus,
-        endDate: user2 == null ? void 0 : user2.subscriptionEndDate,
+        tier: user == null ? void 0 : user.subscriptionTier,
+        status: user == null ? void 0 : user.subscriptionStatus,
+        endDate: user == null ? void 0 : user.subscriptionEndDate,
         hasPremium: hasPremiumFromUser
       });
       if (hasPremiumFromUser) {
@@ -5521,8 +5521,8 @@ function AccessProvider({ children }) {
           hasRealtimeAccess: true,
           isDelayed: false,
           delayHours: 0,
-          tier: user2.subscriptionTier,
-          status: user2.subscriptionStatus
+          tier: user.subscriptionTier,
+          status: user.subscriptionStatus
         });
       } else {
         console.log("🔒 [ACCESS CONTEXT] Fallback: Defaulting to free access");
@@ -5542,7 +5542,7 @@ function AccessProvider({ children }) {
       setIsLoading(false);
     };
     loadAccessLevel();
-  }, [isAuthenticated, token, user2 == null ? void 0 : user2.subscriptionTier, user2 == null ? void 0 : user2.subscriptionStatus]);
+  }, [isAuthenticated, token, user == null ? void 0 : user.subscriptionTier, user == null ? void 0 : user.subscriptionStatus]);
   return /* @__PURE__ */ jsx(AccessContext.Provider, { value: { accessLevel, setAccessLevel, isLoading, refreshAccessLevel }, children });
 }
 function useAccess() {
@@ -8340,7 +8340,7 @@ function RefreshAccountButton({
   showIcon = true
 }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { refreshUser, user: user2 } = useAuth();
+  const { refreshUser, user } = useAuth();
   const { toast: toast2 } = useToast();
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -8351,7 +8351,7 @@ function RefreshAccountButton({
         console.log("✅ Account data refreshed successfully");
         toast2({
           title: "Account Refreshed",
-          description: `Subscription: ${(user2 == null ? void 0 : user2.subscriptionTier) || "free"} (${(user2 == null ? void 0 : user2.subscriptionStatus) || "inactive"})`
+          description: `Subscription: ${(user == null ? void 0 : user.subscriptionTier) || "free"} (${(user == null ? void 0 : user.subscriptionStatus) || "inactive"})`
         });
       } else {
         console.log("❌ Failed to refresh account data");
@@ -8391,7 +8391,7 @@ function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState("system");
   const { toast: toast2 } = useToast();
-  const { user: user2 } = useAuth();
+  const { user } = useAuth();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const {
     isSupported,
@@ -8511,7 +8511,7 @@ function Settings() {
         ] })
       ] }) })
     ] }),
-    user2 && user2.stripeCustomerId && /* @__PURE__ */ jsxs(Card, { children: [
+    user && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card, { children: [
       /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5" }),
         "Subscription Management"
@@ -8520,13 +8520,13 @@ function Settings() {
         /* @__PURE__ */ jsx("div", { className: "space-y-2", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
             /* @__PURE__ */ jsx(Label, { children: "Current Plan" }),
-            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: user2.subscriptionTier === "insider_pro" ? "Insider Pro" : "Free Plan" })
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: user.subscriptionTier === "insider_pro" ? "Insider Pro" : "Free Plan" })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "text-right", children: [
-            /* @__PURE__ */ jsx("p", { className: `text-sm font-medium ${user2.subscriptionStatus === "active" ? "text-green-600 dark:text-green-400" : user2.subscriptionStatus === "canceled" ? "text-orange-600 dark:text-orange-400" : "text-slate-600 dark:text-slate-400"}`, children: user2.subscriptionStatus === "active" ? "✓ Active" : user2.subscriptionStatus === "canceled" ? "⚠ Cancelled" : user2.subscriptionStatus === "trialing" ? "🎁 Trial" : "Inactive" }),
-            user2.subscriptionEndDate && /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
-              user2.subscriptionStatus === "canceled" ? "Access until: " : "Renews: ",
-              new Date(user2.subscriptionEndDate).toLocaleDateString()
+            /* @__PURE__ */ jsx("p", { className: `text-sm font-medium ${user.subscriptionStatus === "active" ? "text-green-600 dark:text-green-400" : user.subscriptionStatus === "canceled" ? "text-orange-600 dark:text-orange-400" : "text-slate-600 dark:text-slate-400"}`, children: user.subscriptionStatus === "active" ? "✓ Active" : user.subscriptionStatus === "canceled" ? "⚠ Cancelled" : user.subscriptionStatus === "trialing" ? "🎁 Trial" : "Inactive" }),
+            user.subscriptionEndDate && /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
+              user.subscriptionStatus === "canceled" ? "Access until: " : "Renews: ",
+              new Date(user.subscriptionEndDate).toLocaleDateString()
             ] })
           ] })
         ] }) }),
@@ -9940,7 +9940,7 @@ function LockedTradesSection({ trades, onUnlock }) {
         t("lockedTrade.lockedTrades")
       ] })
     ] }),
-    user && !user.hasUsedTrial && /* @__PURE__ */ jsxs("div", { className: "relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm", children: [
+    accessLevel && !accessLevel.hasUsedTrial && /* @__PURE__ */ jsxs("div", { className: "relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm", children: [
       /* @__PURE__ */ jsx("p", { className: "text-center text-sm text-slate-600 dark:text-slate-300 mb-5", children: t("lockedTrade.unlockDescription") }),
       /* @__PURE__ */ jsx(
         "button",
@@ -9958,7 +9958,7 @@ function LockedTradesSection({ trades, onUnlock }) {
         /* @__PURE__ */ jsx("span", { children: t("lockedTrade.unlockBelow") })
       ] }) })
     ] }),
-    user && user.hasUsedTrial && /* @__PURE__ */ jsxs("div", { className: "relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm", children: [
+    accessLevel && accessLevel.hasUsedTrial && /* @__PURE__ */ jsxs("div", { className: "relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm", children: [
       /* @__PURE__ */ jsx("p", { className: "text-center text-sm text-slate-600 dark:text-slate-300 mb-5", children: t("lockedTrade.unlockDescription") }),
       /* @__PURE__ */ jsx(
         "button",
@@ -10080,8 +10080,8 @@ function TrialExpiredBanner({ onUpgrade }) {
 }
 function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }) {
   const { t } = useLanguage();
-  const { user: user2 } = useAuth();
-  if (hasPremiumAccess(user2)) {
+  const { user } = useAuth();
+  if (hasPremiumAccess(user)) {
     return null;
   }
   return /* @__PURE__ */ jsxs(Alert, { className: "border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 relative", children: [
@@ -10118,8 +10118,8 @@ function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }) {
 }
 function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }) {
   const { t } = useLanguage();
-  const { user: user2 } = useAuth();
-  if (hasPremiumAccess(user2)) {
+  const { user } = useAuth();
+  if (hasPremiumAccess(user)) {
     return null;
   }
   const formatValue = (value) => {
@@ -10162,8 +10162,8 @@ function MissedGainsAlert({ missedTrades, totalValue, onDismiss, onSubscribe }) 
 }
 function BigTradeAlert({ companyName, ticker, tradeValue, traderTitle, onDismiss, onUnlock }) {
   const { t } = useLanguage();
-  const { user: user2 } = useAuth();
-  if (hasPremiumAccess(user2)) {
+  const { user } = useAuth();
+  if (hasPremiumAccess(user)) {
     return null;
   }
   const formatValue = (value) => {
@@ -13444,17 +13444,17 @@ function PremiumCheckout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const isSubmittingRef = useRef(false);
   const { toast: toast2 } = useToast();
-  const { user: user2, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   useEffect(() => {
-    if (user2 && user2.subscriptionTier === "insider_pro" && (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing")) {
+    if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
       toast2({
         title: "이미 프리미엄 구독 중입니다",
         description: "트레이딩 페이지로 이동합니다."
       });
       setTimeout(() => setLocation("/trades"), 1500);
     }
-  }, [user2, setLocation, toast2]);
+  }, [user, setLocation, toast2]);
   const plans = {
     monthly: {
       name: "Insider Pro",
@@ -13506,7 +13506,7 @@ function PremiumCheckout() {
       console.log("⚠️ Already submitting, ignoring duplicate click");
       return;
     }
-    if (!user2) {
+    if (!user) {
       console.error("❌ No user found when attempting checkout");
       toast2({
         title: "로그인 필요",
@@ -13530,8 +13530,8 @@ function PremiumCheckout() {
     isSubmittingRef.current = true;
     setIsProcessing(true);
     console.log("🚀 Starting checkout process", {
-      userId: user2.id,
-      email: user2.email,
+      userId: user.id,
+      email: user.email,
       plan: selectedPlan,
       priceId: currentPlan.priceId
     });
@@ -13571,7 +13571,7 @@ function PremiumCheckout() {
       setIsProcessing(false);
     }
   };
-  if (!authLoading && !user2) {
+  if (!authLoading && !user) {
     return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 flex items-center justify-center", children: /* @__PURE__ */ jsxs(Card, { className: "max-w-md w-full", children: [
       /* @__PURE__ */ jsxs(CardHeader, { children: [
         /* @__PURE__ */ jsx(CardTitle, { className: "text-center", children: "로그인 필요" }),
@@ -13774,7 +13774,7 @@ function PremiumCheckout() {
 function PaymentSuccess() {
   const [paymentStatus, setPaymentStatus] = useState("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { user: user2, login, refreshUser } = useAuth();
+  const { user, login, refreshUser } = useAuth();
   const [, setLocation] = useLocation();
   useEffect(() => {
     const refreshUserData = async () => {
@@ -13858,7 +13858,7 @@ function PaymentSuccess() {
     setIsRefreshing(true);
     console.log("🔄 User manually triggered refresh...");
     const success = await refreshUser();
-    if (success && user2 && user2.subscriptionTier === "insider_pro") {
+    if (success && user && user.subscriptionTier === "insider_pro") {
       console.log("✅ Manual refresh successful, subscription activated!");
       setPaymentStatus("success");
       localStorage.setItem("card-registered", "true");
@@ -15337,7 +15337,7 @@ const getStripe = () => {
 };
 function StartTrialPage() {
   const [, navigate2] = useLocation();
-  const { user: user2 } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const [planType, setPlanType] = useState("monthly");
   const { createSetupIntent, isLoading, error, clientSecret } = useTrialSetup();
@@ -15345,23 +15345,23 @@ function StartTrialPage() {
   const [submitError, setSubmitError] = useState(null);
   const [serverMessage, setServerMessage] = useState("");
   useEffect(() => {
-    if (!user2) {
+    if (!user) {
       navigate2("/login?redirect=/start-trial");
       return;
     }
-    if (user2.hasUsedTrial) {
+    if (user.hasUsedTrial) {
       setSubmitError("이미 무료 체험을 사용하셨습니다. 구독을 시작해주세요.");
       setTimeout(() => {
         navigate2("/premium-checkout");
       }, 2e3);
       return;
     }
-    if (user2.subscriptionStatus === "active" || user2.subscriptionStatus === "trialing") {
+    if (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") {
       navigate2("/trades");
       return;
     }
     createSetupIntent();
-  }, [user2]);
+  }, [user]);
   useEffect(() => {
     if (isSuccess) {
       setTimeout(() => {
@@ -16015,15 +16015,15 @@ function AdminDashboard() {
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Verified" }),
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Joined" })
         ] }) }),
-        /* @__PURE__ */ jsx("tbody", { children: users.map((user2) => /* @__PURE__ */ jsxs("tr", { className: "border-b hover:bg-muted/50", children: [
+        /* @__PURE__ */ jsx("tbody", { children: users.map((user) => /* @__PURE__ */ jsxs("tr", { className: "border-b hover:bg-muted/50", children: [
           /* @__PURE__ */ jsxs("td", { className: "py-3 px-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "font-medium", children: user2.email }),
-            user2.role === "admin" && /* @__PURE__ */ jsx(Badge, { variant: "destructive", className: "text-xs mt-1", children: "Admin" })
+            /* @__PURE__ */ jsx("div", { className: "font-medium", children: user.email }),
+            user.role === "admin" && /* @__PURE__ */ jsx(Badge, { variant: "destructive", className: "text-xs mt-1", children: "Admin" })
           ] }),
-          /* @__PURE__ */ jsx("td", { className: "py-3 px-4", children: getStatusBadge(user2.status) }),
-          /* @__PURE__ */ jsx("td", { className: "py-3 px-4", children: user2.emailVerified ? /* @__PURE__ */ jsx(Badge, { variant: "default", children: "✓ Yes" }) : /* @__PURE__ */ jsx(Badge, { variant: "outline", children: "✗ No" }) }),
-          /* @__PURE__ */ jsx("td", { className: "py-3 px-4 text-sm text-muted-foreground", children: formatDate(user2.createdAt) })
-        ] }, user2.id)) })
+          /* @__PURE__ */ jsx("td", { className: "py-3 px-4", children: getStatusBadge(user.status) }),
+          /* @__PURE__ */ jsx("td", { className: "py-3 px-4", children: user.emailVerified ? /* @__PURE__ */ jsx(Badge, { variant: "default", children: "✓ Yes" }) : /* @__PURE__ */ jsx(Badge, { variant: "outline", children: "✗ No" }) }),
+          /* @__PURE__ */ jsx("td", { className: "py-3 px-4 text-sm text-muted-foreground", children: formatDate(user.createdAt) })
+        ] }, user.id)) })
       ] }) }) })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "text-center text-sm text-muted-foreground", children: [

@@ -106,7 +106,7 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
       </div>
 
       {/* Start Trial Button - Only show if user hasn't used trial yet */}
-      {user && !user.hasUsedTrial && (
+      {accessLevel && !accessLevel.hasUsedTrial && (
         <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
           {/* Description */}
           <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
@@ -135,7 +135,7 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
       )}
 
       {/* Show premium upgrade button if user has used trial */}
-      {user && user.hasUsedTrial && (
+      {accessLevel && accessLevel.hasUsedTrial && (
         <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
           <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
             {t('lockedTrade.unlockDescription')}
