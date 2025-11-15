@@ -3,6 +3,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw, ArrowRight, Check, Sparkles } from "lucide-react";
 import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
 import { GlassCard } from "@/components/glass-card";

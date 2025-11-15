@@ -5498,14 +5498,25 @@ function AccessProvider({ children }) {
     } catch (error) {
       console.error("❌ [ACCESS CONTEXT] Failed to fetch access level:", error);
       console.error("   Error details:", error instanceof Error ? error.message : String(error));
-      const hasPremiumFromUser = user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled") && user.subscriptionStatus !== "inactive" && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > /* @__PURE__ */ new Date());
+      let hasPremiumFromUser = false;
+      if (user && user.subscriptionTier === "insider_pro") {
+        if (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing") {
+          hasPremiumFromUser = true;
+        } else if (user.subscriptionStatus === "canceled" && user.subscriptionEndDate) {
+          const endDate = new Date(user.subscriptionEndDate);
+          const now = /* @__PURE__ */ new Date();
+          hasPremiumFromUser = endDate > now;
+        }
+      }
+      console.log("⚠️ [ACCESS CONTEXT] API error - using fallback logic");
+      console.log("   User data:", {
+        tier: user == null ? void 0 : user.subscriptionTier,
+        status: user == null ? void 0 : user.subscriptionStatus,
+        endDate: user == null ? void 0 : user.subscriptionEndDate,
+        hasPremium: hasPremiumFromUser
+      });
       if (hasPremiumFromUser) {
-        console.log("⚠️ [ACCESS CONTEXT] API error, but user has valid subscription in auth context");
-        console.log("   Using fallback premium access based on user data:", {
-          tier: user.subscriptionTier,
-          status: user.subscriptionStatus,
-          endDate: user.subscriptionEndDate
-        });
+        console.log("✅ [ACCESS CONTEXT] Fallback: User has valid premium subscription");
         setAccessLevel({
           hasRealtimeAccess: true,
           isDelayed: false,
@@ -5514,7 +5525,7 @@ function AccessProvider({ children }) {
           status: user.subscriptionStatus
         });
       } else {
-        console.log("   🔒 No valid subscription found, defaulting to free access");
+        console.log("🔒 [ACCESS CONTEXT] Fallback: Defaulting to free access");
         setAccessLevel({
           hasRealtimeAccess: false,
           isDelayed: true,
@@ -6062,7 +6073,7 @@ function LanguageSelection({ onLanguageSelected }) {
     ] })
   ] }) });
 }
-const Card$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -6073,8 +6084,8 @@ const Card$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ *
     ...props
   }
 ));
-Card$1.displayName = "Card";
-const CardHeader$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+Card.displayName = "Card";
+const CardHeader = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -6082,8 +6093,8 @@ const CardHeader$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PU
     ...props
   }
 ));
-CardHeader$1.displayName = "CardHeader";
-const CardTitle$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+CardHeader.displayName = "CardHeader";
+const CardTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -6094,8 +6105,8 @@ const CardTitle$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PUR
     ...props
   }
 ));
-CardTitle$1.displayName = "CardTitle";
-const CardDescription$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+CardTitle.displayName = "CardTitle";
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
     ref,
@@ -6103,9 +6114,9 @@ const CardDescription$1 = React.forwardRef(({ className, ...props }, ref) => /* 
     ...props
   }
 ));
-CardDescription$1.displayName = "CardDescription";
-const CardContent$1 = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn("p-6 pt-0", className), ...props }));
-CardContent$1.displayName = "CardContent";
+CardDescription.displayName = "CardDescription";
+const CardContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx("div", { ref, className: cn("p-6 pt-0", className), ...props }));
+CardContent.displayName = "CardContent";
 const CardFooter = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
@@ -6143,12 +6154,12 @@ function DashboardStats({ stats }) {
   ];
   return /* @__PURE__ */ jsx("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4", children: statCards.map((stat, index) => {
     const Icon = stat.icon;
-    return /* @__PURE__ */ jsxs(Card$1, { className: "hover-elevate", "data-testid": `stat-card-${index}`, children: [
-      /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium text-muted-foreground", children: stat.title }),
+    return /* @__PURE__ */ jsxs(Card, { className: "hover-elevate", "data-testid": `stat-card-${index}`, children: [
+      /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+        /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium text-muted-foreground", children: stat.title }),
         /* @__PURE__ */ jsx(Icon, { className: "h-4 w-4 text-muted-foreground" })
       ] }),
-      /* @__PURE__ */ jsxs(CardContent$1, { children: [
+      /* @__PURE__ */ jsxs(CardContent, { children: [
         /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": `stat-value-${index}`, children: stat.value }),
         /* @__PURE__ */ jsxs("p", { className: `text-xs ${stat.positive ? "text-chart-2" : "text-destructive"}`, children: [
           stat.change,
@@ -6340,7 +6351,7 @@ function TradeCard({ trade, onViewDetails }) {
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
-  return /* @__PURE__ */ jsx(Card$1, { className: "hover-elevate", "data-testid": `trade-card-${trade.id}`, children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-4", children: [
+  return /* @__PURE__ */ jsx(Card, { className: "hover-elevate", "data-testid": `trade-card-${trade.id}`, children: /* @__PURE__ */ jsxs(CardContent, { className: "p-4", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between mb-3", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 flex-1", children: [
         /* @__PURE__ */ jsx(
@@ -6481,10 +6492,10 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
     console.log("Navigating to trade details:", trade.id);
     setLocation(`/trade/${trade.id}`);
   };
-  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "trade-list", children: [
-    /* @__PURE__ */ jsxs(CardHeader$1, { children: [
+  return /* @__PURE__ */ jsxs(Card, { "data-testid": "trade-list", children: [
+    /* @__PURE__ */ jsxs(CardHeader, { children: [
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4", children: [
-        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-lg font-semibold", children: t("tradeList.recentTrades") }),
+        /* @__PURE__ */ jsx(CardTitle, { className: "text-lg font-semibold", children: t("tradeList.recentTrades") }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsxs(
             Button,
@@ -6554,7 +6565,7 @@ function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, o
         ))
       ] }) })
     ] }),
-    /* @__PURE__ */ jsx(CardContent$1, { children: loading && filteredTrades.length === 0 ? /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center py-8", "data-testid": "loading-state", children: /* @__PURE__ */ jsxs("div", { className: "animate-pulse flex space-x-4", children: [
+    /* @__PURE__ */ jsx(CardContent, { children: loading && filteredTrades.length === 0 ? /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center py-8", "data-testid": "loading-state", children: /* @__PURE__ */ jsxs("div", { className: "animate-pulse flex space-x-4", children: [
       /* @__PURE__ */ jsx("div", { className: "rounded-md bg-muted h-4 w-4" }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 space-y-2 py-1", children: [
         /* @__PURE__ */ jsx("div", { className: "h-4 bg-muted rounded w-3/4" }),
@@ -6864,14 +6875,14 @@ function TradeDetailModal({
           )
         ] }),
         /* @__PURE__ */ jsxs(
-          Card$1,
+          Card,
           {
             ref: modalRef,
             className: "modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative",
             onClick: (e) => e.stopPropagation(),
             children: [
-              /* @__PURE__ */ jsx(CardHeader$1, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
-                /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
+              /* @__PURE__ */ jsx(CardHeader, { className: "relative z-10 px-3 sm:px-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between flex-wrap gap-2", children: [
+                /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 sm:gap-3 min-w-0", children: [
                   trade.ticker ? /* @__PURE__ */ jsxs("div", { className: "relative w-10 h-10 flex-shrink-0", children: [
                     /* @__PURE__ */ jsx(
                       "img",
@@ -6939,7 +6950,7 @@ function TradeDetailModal({
                   )
                 ] })
               ] }) }),
-              /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
+              /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4 relative z-10 px-3 sm:px-6", children: [
                 /* @__PURE__ */ jsxs("div", { className: "bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-6 rounded-lg space-y-4", children: [
                   /* @__PURE__ */ jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", children: [
                     /* @__PURE__ */ jsxs("div", { children: [
@@ -7478,12 +7489,12 @@ function TradeDetailModal({
             ]
           }
         ),
-        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "max-w-md w-full", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+        showPWAGuide && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4", children: /* @__PURE__ */ jsxs(Card, { className: "max-w-md w-full", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-blue-500" }),
             t("notification.settings.title")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4", children: [
               /* @__PURE__ */ jsxs("h4", { className: "font-semibold mb-2 text-blue-900 dark:text-blue-100", children: [
                 "📱 ",
@@ -8063,7 +8074,7 @@ function Dashboard() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6", children: [
-      /* @__PURE__ */ jsx(Card$1, { className: "lg:col-span-2", children: tradesLoading ? /* @__PURE__ */ jsx("div", { className: "p-6", children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: [...Array(5)].map((_, i) => /* @__PURE__ */ jsx("div", { className: "h-24 bg-muted/50 rounded-md animate-pulse" }, i)) }) }) : /* @__PURE__ */ jsx(
+      /* @__PURE__ */ jsx(Card, { className: "lg:col-span-2", children: tradesLoading ? /* @__PURE__ */ jsx("div", { className: "p-6", children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: [...Array(5)].map((_, i) => /* @__PURE__ */ jsx("div", { className: "h-24 bg-muted/50 rounded-md animate-pulse" }, i)) }) }) : /* @__PURE__ */ jsx(
         TradeList,
         {
           trades: tradesData,
@@ -8077,12 +8088,12 @@ function Dashboard() {
         }
       ) }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "trading-summary", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "text-base flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card, { "data-testid": "trading-summary", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "text-base flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4 text-primary" }),
             t("stats.tradingSummary")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs("div", { className: "p-3 bg-chart-2/10 rounded-md border border-chart-2/20", children: [
               /* @__PURE__ */ jsx("div", { className: "text-sm font-medium text-chart-2 mb-1", children: t("dashboardStats.recentActivity") }),
               /* @__PURE__ */ jsx("div", { className: "text-xs text-muted-foreground", children: t("dashboardStats.monitoring") })
@@ -8093,9 +8104,9 @@ function Dashboard() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "top-stocks", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-base", children: t("dashboardStats.topStocks") }) }),
-          /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: topStocks.length === 0 ? /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground text-center py-4", children: t("dashboardStats.noData") }) : topStocks.map((stock) => /* @__PURE__ */ jsxs("div", { className: "border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-2", children: [
+        /* @__PURE__ */ jsxs(Card, { "data-testid": "top-stocks", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-base", children: t("dashboardStats.topStocks") }) }),
+          /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: topStocks.length === 0 ? /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground text-center py-4", children: t("dashboardStats.noData") }) : topStocks.map((stock) => /* @__PURE__ */ jsxs("div", { className: "border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-2", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2", children: [
               /* @__PURE__ */ jsxs("div", { children: [
                 /* @__PURE__ */ jsx("div", { className: "font-mono text-sm font-semibold", children: stock.symbol }),
@@ -8465,12 +8476,12 @@ function Settings() {
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("settings.description") })
     ] }),
     /* @__PURE__ */ jsx(Separator, {}),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Languages, { className: "h-5 w-5" }),
         t("settings.language")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx(Label, { htmlFor: "language-select", children: t("placeholder.preferredLanguage") }),
         /* @__PURE__ */ jsxs(Select, { value: language, onValueChange: (value) => setLanguage(value), children: [
           /* @__PURE__ */ jsx(SelectTrigger, { id: "language-select", "data-testid": "select-language", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
@@ -8481,12 +8492,12 @@ function Settings() {
         ] })
       ] }) })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Palette, { className: "h-5 w-5" }),
         t("settings.theme")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
         /* @__PURE__ */ jsx(Label, { htmlFor: "theme-select", children: t("settings.themeDescription") }),
         /* @__PURE__ */ jsxs(Select, { value: theme, onValueChange: handleThemeChange, children: [
           /* @__PURE__ */ jsx(SelectTrigger, { id: "theme-select", "data-testid": "select-theme", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
@@ -8500,12 +8511,12 @@ function Settings() {
         ] })
       ] }) })
     ] }),
-    user && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    user && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5" }),
         "Subscription Management"
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("div", { className: "space-y-2", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
           /* @__PURE__ */ jsxs("div", { className: "space-y-0.5", children: [
             /* @__PURE__ */ jsx(Label, { children: "Current Plan" }),
@@ -8546,12 +8557,12 @@ function Settings() {
         /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm", children: /* @__PURE__ */ jsx("p", { className: "text-blue-900 dark:text-blue-100 text-xs", children: "💡 Tip: If you cancel your subscription, you'll keep access until the end of your billing period." }) })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5" }),
         t("notification.settings.title")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: !isSupported ? /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: !isSupported ? /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-sm text-muted-foreground", children: [
         /* @__PURE__ */ jsx(BellOff, { className: "h-4 w-4" }),
         /* @__PURE__ */ jsx("span", { children: "Push notifications are not supported on this device" })
       ] }) : /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -8664,12 +8675,12 @@ const PriceComparisonChart = memo(function PriceComparisonChart2({
     }
     return null;
   };
-  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "price-comparison-chart", children: [
-    /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs(Card, { "data-testid": "price-comparison-chart", children: [
+    /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
       isProfit ? /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-500" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "w-5 h-5 text-red-500" }),
       t("priceChart.title")
     ] }) }),
-    /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
       /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(LineChart, { data, margin: { top: 20, right: 30, left: 20, bottom: 20 }, children: [
         /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
         /* @__PURE__ */ jsx(
@@ -8854,21 +8865,21 @@ const StockHistoryChart = memo(function StockHistoryChart2({
     return null;
   };
   if (isLoading) {
-    return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart-loading", children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart-loading", children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History"
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx(Skeleton, { className: "h-80 w-full" }) })
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx(Skeleton, { className: "h-80 w-full" }) })
     ] });
   }
   if (error || !historyData.length) {
-    return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart-error", children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart-error", children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History"
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent$1, { className: "text-center py-8", children: [
+      /* @__PURE__ */ jsxs(CardContent, { className: "text-center py-8", children: [
         /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: error ? "Failed to load price history" : "No historical data available" }),
         /* @__PURE__ */ jsxs("p", { className: "text-sm text-muted-foreground mt-2", children: [
           "Historical data from ",
@@ -8882,9 +8893,9 @@ const StockHistoryChart = memo(function StockHistoryChart2({
   const priceChange = currentPrice - tradePrice;
   const percentChange = priceChange / tradePrice * 100;
   const isGain = priceChange > 0;
-  return /* @__PURE__ */ jsxs(Card$1, { "data-testid": "stock-history-chart", children: [
-    /* @__PURE__ */ jsxs(CardHeader$1, { children: [
-      /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+  return /* @__PURE__ */ jsxs(Card, { "data-testid": "stock-history-chart", children: [
+    /* @__PURE__ */ jsxs(CardHeader, { children: [
+      /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5" }),
         "Stock Price History (",
         ticker,
@@ -8922,7 +8933,7 @@ const StockHistoryChart = memo(function StockHistoryChart2({
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(CardContent$1, { children: [
+    /* @__PURE__ */ jsxs(CardContent, { children: [
       /* @__PURE__ */ jsx("div", { className: "h-80", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(LineChart, { data: chartData, margin: { top: 20, right: 30, left: 20, bottom: 20 }, children: [
         /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
         /* @__PURE__ */ jsx(
@@ -9088,12 +9099,12 @@ function TradeDetail() {
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 lg:grid-cols-3", children: [
       /* @__PURE__ */ jsxs("div", { className: "lg:col-span-2 space-y-6", children: [
-        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-trade-info", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card, { "data-testid": "card-trade-info", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(Building2, { className: "w-5 h-5" }),
             t("tradeDetail.companyInfo")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
               /* @__PURE__ */ jsxs("div", { className: "w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-md", children: [
                 /* @__PURE__ */ jsx(
@@ -9165,12 +9176,12 @@ function TradeDetail() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-transaction-details", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsxs(Card, { "data-testid": "card-transaction-details", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(DollarSign, { className: "w-5 h-5" }),
             t("tradeDetail.transactionDetails")
           ] }) }),
-          /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
+          /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: [
             /* @__PURE__ */ jsxs("div", { children: [
               /* @__PURE__ */ jsx("h4", { className: "font-medium text-sm text-muted-foreground mb-1", children: t("tradeDetail.sharesTraded") }),
               /* @__PURE__ */ jsx("p", { className: "text-xl font-bold", "data-testid": "text-shares", children: ((_b = trade.shares) == null ? void 0 : _b.toLocaleString()) || "N/A" })
@@ -9194,12 +9205,12 @@ function TradeDetail() {
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
-        stockPrice && /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-current-price", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+        stockPrice && /* @__PURE__ */ jsxs(Card, { "data-testid": "card-current-price", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5" }),
             t("tradeDetail.currentPrice")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
               /* @__PURE__ */ jsx("p", { className: "text-3xl font-bold", "data-testid": "text-current-price", children: typeof stockPrice.currentPrice === "string" ? formatCurrency(parseFloat(stockPrice.currentPrice)) : formatCurrency(stockPrice.currentPrice) }),
               /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center gap-2 mt-2", children: stockPrice.changePercent && /* @__PURE__ */ jsxs(Fragment$1, { children: [
@@ -9242,12 +9253,12 @@ function TradeDetail() {
             "data-testid": "stock-history-chart"
           }
         ),
-        profitLoss && trade.pricePerShare && stockPrice && /* @__PURE__ */ jsxs(Card$1, { "data-testid": "card-profit-loss", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+        profitLoss && trade.pricePerShare && stockPrice && /* @__PURE__ */ jsxs(Card, { "data-testid": "card-profit-loss", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
             profitLoss.isProfit ? /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-500" }) : /* @__PURE__ */ jsx(TrendingDown, { className: "w-5 h-5 text-red-500" }),
             t("tradeDetail.analysis")
           ] }) }),
-          /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
+          /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
             /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground mb-1", children: t("tradeDetail.priceComparison") }),
             /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
               /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center", children: [
@@ -9355,54 +9366,54 @@ function Analytics() {
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("analytics.subtitle") })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-4", children: [
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.totalTrades") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.totalTrades") }),
           /* @__PURE__ */ jsx(Activity, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-total-trades", children: analytics.totalTrades.toLocaleString() }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.transactionsRecorded") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.totalVolume") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.totalVolume") }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-total-volume", children: formatCurrency(analytics.totalVolume) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.combinedValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.avgTradeSize") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.avgTradeSize") }),
           /* @__PURE__ */ jsx(BarChart3, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-avg-trade", children: formatCurrency(analytics.avgTradeSize) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.averageValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("analytics.companies") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("analytics.companies") }),
           /* @__PURE__ */ jsx(Users, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "metric-companies", children: analytics.topCompanies.length }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("analytics.uniqueTracked") })
         ] })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 md:grid-cols-2", children: [
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(PieChart, { className: "h-5 w-5" }),
           t("analytics.tradeDistribution")
         ] }) }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
             /* @__PURE__ */ jsx(
               Pie,
@@ -9446,12 +9457,12 @@ function Analytics() {
           ] }, entry.name)) })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(BarChart3, { className: "h-5 w-5" }),
           t("analytics.monthlyActivity")
         ] }) }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(BarChart, { data: analytics.monthlyTrends, children: [
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "h-64", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ jsxs(BarChart, { data: analytics.monthlyTrends, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3", className: "opacity-30" }),
           /* @__PURE__ */ jsx(XAxis, { dataKey: "month", tick: { fontSize: 12 } }),
           /* @__PURE__ */ jsx(YAxis, { tick: { fontSize: 12 } }),
@@ -9469,12 +9480,12 @@ function Analytics() {
         ] }) }) }) })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(TrendingUp, { className: "h-5 w-5" }),
         t("analytics.topCompanies")
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: analytics.topCompanies.slice(0, 10).map((company, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "space-y-4", children: analytics.topCompanies.slice(0, 10).map((company, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
           /* @__PURE__ */ jsx("div", { className: "w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold", children: index + 1 }),
           /* @__PURE__ */ jsxs("div", { children: [
@@ -9567,12 +9578,12 @@ function SearchPage() {
       /* @__PURE__ */ jsx("h1", { className: "text-3xl font-bold tracking-tight", "data-testid": "text-search-title", children: t("search.title") }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: t("search.subtitle") })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx(Search, { className: "h-5 w-5" }),
         t("search.title")
       ] }) }),
-      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
           /* @__PURE__ */ jsxs("div", { className: "relative flex-1", children: [
             /* @__PURE__ */ jsx(Search, { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" }),
@@ -9660,22 +9671,22 @@ function SearchPage() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-6", children: [
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.results") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.results") }),
           /* @__PURE__ */ jsx(Search, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", "data-testid": "stat-total-results", children: searchStats.totalResults }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.totalFound") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.buyTrades") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.buyTrades") }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-green-600" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-green-600", children: searchStats.buyTrades }),
           /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
             searchStats.totalResults > 0 ? `${(searchStats.buyTrades / searchStats.totalResults * 100).toFixed(1)}%` : "0%",
@@ -9683,12 +9694,12 @@ function SearchPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.sellTrades") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.sellTrades") }),
           /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-red-600" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-red-600", children: searchStats.sellTrades }),
           /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
             searchStats.totalResults > 0 ? `${(searchStats.sellTrades / searchStats.totalResults * 100).toFixed(1)}%` : "0%",
@@ -9696,46 +9707,46 @@ function SearchPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.totalVolume") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.totalVolume") }),
           /* @__PURE__ */ jsx(DollarSign, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: formatCurrency(searchStats.totalVolume) }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.combinedValue") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.companies") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.companies") }),
           /* @__PURE__ */ jsx(Building2, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: searchStats.uniqueCompanies }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.uniqueEntities") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: t("search.traders") }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between space-y-0 pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: t("search.traders") }),
           /* @__PURE__ */ jsx(User, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: searchStats.uniqueTraders }),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("search.uniqueInsiders") })
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center justify-between", children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsx("span", { children: t("search.searchResults") }),
         /* @__PURE__ */ jsxs(Badge, { variant: "outline", children: [
           searchStats.totalResults,
           " results"
         ] })
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: isLoading ? /* @__PURE__ */ jsx("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-3", children: Array.from({ length: 6 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-48" }, i)) }) : filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ jsx(CardContent, { children: isLoading ? /* @__PURE__ */ jsx("div", { className: "grid gap-4 md:grid-cols-2 lg:grid-cols-3", children: Array.from({ length: 6 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-48" }, i)) }) : filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12", children: [
         /* @__PURE__ */ jsx(Search, { className: "h-12 w-12 mx-auto mb-4 text-muted-foreground/50" }),
         /* @__PURE__ */ jsx("h3", { className: "text-lg font-semibold mb-2", children: t("search.noTrades") }),
         /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-4", children: t("liveTrading.adjustFilters") }),
@@ -9865,7 +9876,7 @@ function LockedTradeCard({ trade, onUnlock }) {
   const insiderCount = 1;
   const totalValue = trade.totalValue || trade.shares * trade.pricePerShare;
   const hasHighRankInsider = ((_a = trade.traderTitle) == null ? void 0 : _a.toLowerCase().includes("ceo")) || ((_b = trade.traderTitle) == null ? void 0 : _b.toLowerCase().includes("cfo")) || ((_c = trade.traderTitle) == null ? void 0 : _c.toLowerCase().includes("president"));
-  return /* @__PURE__ */ jsxs(Card$1, { className: "relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900", children: [
+  return /* @__PURE__ */ jsxs(Card, { className: "relative overflow-hidden border-2 border-amber-500/50 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900", children: [
     /* @__PURE__ */ jsx("div", { className: "absolute inset-0 backdrop-blur-sm bg-slate-900/60 z-10 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "text-center space-y-4 p-6", children: [
       /* @__PURE__ */ jsx(Lock, { className: "h-12 w-12 text-amber-500 mx-auto" }),
       /* @__PURE__ */ jsx("p", { className: "text-white font-bold text-lg", children: t("lockedTrade.realtimeInsider") })
@@ -10570,13 +10581,13 @@ function LiveTrading() {
           onUnlock: handleUnlock
         }
       ),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-5 w-5" }),
           t("liveTrading.verifiedTradesList"),
           accessLevel && !accessLevel.hasRealtimeAccess && /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs", children: t("freeZone.delayedData") })
         ] }) }),
-        /* @__PURE__ */ jsxs(CardContent$1, { children: [
+        /* @__PURE__ */ jsxs(CardContent, { children: [
           filteredTrades.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8", children: [
             /* @__PURE__ */ jsx(AlertTriangle, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
             /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: searchQuery ? "검색 결과가 없습니다" : t("liveTrading.noValidatedTrades") }),
@@ -10915,7 +10926,7 @@ function Ranking() {
         ] }),
         /* @__PURE__ */ jsx(Skeleton, { className: "h-10 w-32" })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsx(CardContent$1, { className: "p-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+      /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsx(CardContent, { className: "p-6", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-4", children: [
           /* @__PURE__ */ jsx(Skeleton, { className: "h-12 w-12 rounded" }),
           /* @__PURE__ */ jsx(Skeleton, { className: "h-16 w-16 rounded-lg" }),
@@ -10929,7 +10940,7 @@ function Ranking() {
     ] });
   }
   if (error) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-6", children: /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-6 text-center", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-6", children: /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "p-6 text-center", children: [
       /* @__PURE__ */ jsx("p", { className: "text-destructive mb-4", children: t("ranking.noData") }),
       /* @__PURE__ */ jsxs(Button, { onClick: handleRefresh, variant: "outline", children: [
         /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 mr-2" }),
@@ -10977,7 +10988,7 @@ function Ranking() {
       var _a;
       const isLocked = !isPremium && index < 3;
       return /* @__PURE__ */ jsxs(
-        Card$1,
+        Card,
         {
           ref: (el) => cardRefs.current[index] = el,
           className: `hover-elevate cursor-pointer relative ${isLocked ? "overflow-hidden" : ""}`,
@@ -11016,7 +11027,7 @@ function Ranking() {
                 children: sharedCardIndex === index ? /* @__PURE__ */ jsx(RefreshCw, { className: "h-4 w-4 animate-spin" }) : /* @__PURE__ */ jsx(Share2, { className: "h-4 w-4" })
               }
             ),
-            /* @__PURE__ */ jsxs(CardContent$1, { className: `p-3 sm:p-6 relative ${isLocked ? "blur-sm" : ""}`, children: [
+            /* @__PURE__ */ jsxs(CardContent, { className: `p-3 sm:p-6 relative ${isLocked ? "blur-sm" : ""}`, children: [
               /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden", children: [
                 /* @__PURE__ */ jsx(
                   "img",
@@ -11281,7 +11292,7 @@ function Ranking() {
         item.ticker
       );
     }) }),
-    data && data.rankings.length === 0 && /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-12 text-center", children: [
+    data && data.rankings.length === 0 && /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "p-12 text-center", children: [
       /* @__PURE__ */ jsx(Star, { className: "h-12 w-12 text-muted-foreground mx-auto mb-4" }),
       /* @__PURE__ */ jsx("h3", { className: "text-xl font-semibold mb-2", children: t("ranking.noData") }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-4", children: "No ranking data available for the current period." }),
@@ -11307,7 +11318,7 @@ function Ranking() {
         isInWatchlist: (selectedTradeData == null ? void 0 : selectedTradeData.ticker) ? watchlist.includes(selectedTradeData.ticker) : false
       }
     ),
-    showWatchlistModal && selectedTradeForAlert && /* @__PURE__ */ jsx("div", { className: "modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsx("div", { className: "bg-gradient-to-br from-emerald-900/95 to-teal-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl", children: /* @__PURE__ */ jsx(Card$1, { className: "bg-transparent border-none shadow-none", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "p-0", children: [
+    showWatchlistModal && selectedTradeForAlert && /* @__PURE__ */ jsx("div", { className: "modal-backdrop fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsx("div", { className: "bg-gradient-to-br from-emerald-900/95 to-teal-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl", children: /* @__PURE__ */ jsx(Card, { className: "bg-transparent border-none shadow-none", children: /* @__PURE__ */ jsxs(CardContent, { className: "p-0", children: [
       /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-3 mb-4", children: [
           /* @__PURE__ */ jsxs("div", { className: "relative", children: [
@@ -13858,12 +13869,12 @@ function PaymentSuccess() {
     setIsRefreshing(false);
   };
   if (paymentStatus === "error") {
-    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-background flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "w-full max-w-md text-center", children: [
-      /* @__PURE__ */ jsxs(CardHeader$1, { children: [
-        /* @__PURE__ */ jsx(CardTitle$1, { className: "text-destructive", children: "Subscription Activation Delayed" }),
-        /* @__PURE__ */ jsx(CardDescription$1, { children: "Your payment was successful, but we're still activating your subscription. This can take a few moments." })
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-background flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-md text-center", children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsx(CardTitle, { className: "text-destructive", children: "Subscription Activation Delayed" }),
+        /* @__PURE__ */ jsx(CardDescription, { children: "Your payment was successful, but we're still activating your subscription. This can take a few moments." })
       ] }),
-      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
         /* @__PURE__ */ jsx(
           Button,
           {
@@ -13884,15 +13895,15 @@ function PaymentSuccess() {
       /* @__PURE__ */ jsx("h1", { className: "text-4xl font-bold text-white", "data-testid": "text-success-title", children: "🎉 Welcome to Insider Pro!" }),
       /* @__PURE__ */ jsx("p", { className: "text-green-300 text-xl", children: "Your subscription is now active. Start tracking insider trades in real-time!" })
     ] }),
-    /* @__PURE__ */ jsxs(Card$1, { className: "text-left bg-slate-800 border-green-500 border-2", children: [
-      /* @__PURE__ */ jsxs(CardHeader$1, { children: [
-        /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 text-white text-2xl", children: [
+    /* @__PURE__ */ jsxs(Card, { className: "text-left bg-slate-800 border-green-500 border-2", children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-white text-2xl", children: [
           /* @__PURE__ */ jsx(Shield, { className: "h-6 w-6 text-green-400" }),
           "All Premium Features Unlocked"
         ] }),
-        /* @__PURE__ */ jsx(CardDescription$1, { className: "text-slate-300", children: "You now have full access to real-time insider trading intelligence" })
+        /* @__PURE__ */ jsx(CardDescription, { className: "text-slate-300", children: "You now have full access to real-time insider trading intelligence" })
       ] }),
-      /* @__PURE__ */ jsx(CardContent$1, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "grid gap-3", children: [
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "grid gap-3", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
           /* @__PURE__ */ jsx(CheckCircle, { className: "w-5 h-5 text-green-400" }),
           /* @__PURE__ */ jsx("span", { className: "text-sm text-slate-200", children: "✨ Real-time insider trade alerts (no 48h delay)" })
@@ -14803,26 +14814,26 @@ function VerifyEmail() {
   const handleGoToLogin = () => {
     navigate2("/");
   };
-  return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-background p-4", children: /* @__PURE__ */ jsxs(Card$1, { className: "w-full max-w-md", "data-testid": "card-verify-email", children: [
-    /* @__PURE__ */ jsxs(CardHeader$1, { className: "text-center", children: [
+  return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-background p-4", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-md", "data-testid": "card-verify-email", children: [
+    /* @__PURE__ */ jsxs(CardHeader, { className: "text-center", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex justify-center mb-4", children: [
         status === "loading" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-primary/10", "data-testid": "icon-loading", children: /* @__PURE__ */ jsx(Loader2, { className: "h-12 w-12 text-primary animate-spin" }) }),
         status === "success" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-green-500/10", "data-testid": "icon-success", children: /* @__PURE__ */ jsx(CheckCircle2, { className: "h-12 w-12 text-green-500" }) }),
         status === "already-verified" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-blue-500/10", "data-testid": "icon-already-verified", children: /* @__PURE__ */ jsx(Mail, { className: "h-12 w-12 text-blue-500" }) }),
         status === "error" && /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-destructive/10", "data-testid": "icon-error", children: /* @__PURE__ */ jsx(XCircle, { className: "h-12 w-12 text-destructive" }) })
       ] }),
-      /* @__PURE__ */ jsxs(CardTitle$1, { className: "text-2xl", "data-testid": "text-title", children: [
+      /* @__PURE__ */ jsxs(CardTitle, { className: "text-2xl", "data-testid": "text-title", children: [
         status === "loading" && t("auth.verify.verifying"),
         status === "success" && t("auth.verify.success"),
         status === "already-verified" && t("auth.verify.alreadyVerified"),
         status === "error" && t("auth.verify.error")
       ] }),
-      /* @__PURE__ */ jsxs(CardDescription$1, { "data-testid": "text-message", children: [
+      /* @__PURE__ */ jsxs(CardDescription, { "data-testid": "text-message", children: [
         status === "loading" && t("auth.verify.loading"),
         (status === "success" || status === "already-verified" || status === "error") && message
       ] })
     ] }),
-    /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+    /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
       (status === "success" || status === "already-verified") && /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("div", { className: "p-4 rounded-lg bg-green-500/10 border border-green-500/20", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground text-center", children: t("auth.verify.successDesc") }) }),
         /* @__PURE__ */ jsx(
@@ -15366,7 +15377,7 @@ function StartTrialPage() {
     setSubmitError(errorMessage);
   };
   if (isSuccess) {
-    return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4", children: /* @__PURE__ */ jsx(Card$1, { className: "max-w-md w-full border-emerald-500/30 bg-gradient-to-br from-card to-slate-900/50 backdrop-blur-sm shadow-2xl shadow-emerald-500/10", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "pt-6 text-center", children: [
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4", children: /* @__PURE__ */ jsx(Card, { className: "max-w-md w-full border-emerald-500/30 bg-gradient-to-br from-card to-slate-900/50 backdrop-blur-sm shadow-2xl shadow-emerald-500/10", children: /* @__PURE__ */ jsxs(CardContent, { className: "pt-6 text-center", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative", children: [
         /* @__PURE__ */ jsx("div", { className: "absolute inset-0 flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-20 h-20 bg-emerald-500/20 rounded-full blur-xl" }) }),
         /* @__PURE__ */ jsx(CheckCircle2, { className: "relative w-16 h-16 text-emerald-500 mx-auto mb-4" })
@@ -15383,12 +15394,12 @@ function StartTrialPage() {
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8", children: [
       /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
-        /* @__PURE__ */ jsxs(Card$1, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { className: "flex items-center gap-2 text-foreground", children: [
+        /* @__PURE__ */ jsxs(Card, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-foreground", children: [
             /* @__PURE__ */ jsx(Sparkles, { className: "w-5 h-5 text-amber-400" }),
             t("trial.benefits.title")
           ] }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
               /* @__PURE__ */ jsx("div", { className: "p-2 rounded-lg bg-blue-500/10 border border-blue-500/20", children: /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-blue-400 flex-shrink-0" }) }),
               /* @__PURE__ */ jsxs("div", { children: [
@@ -15419,9 +15430,9 @@ function StartTrialPage() {
             ] })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { className: "border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm shadow-lg shadow-emerald-500/10", children: [
-          /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-emerald-400", children: t("trial.terms.title") }) }),
-          /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-3", children: [
+        /* @__PURE__ */ jsxs(Card, { className: "border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm shadow-lg shadow-emerald-500/10", children: [
+          /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-emerald-400", children: t("trial.terms.title") }) }),
+          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
             /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2", children: [
               /* @__PURE__ */ jsx(CheckCircle2, { className: "w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" }),
               /* @__PURE__ */ jsx("p", { className: "text-sm text-foreground font-medium", children: t("trial.terms.instant") })
@@ -15441,12 +15452,12 @@ function StartTrialPage() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs(Card$1, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-foreground", children: t("trial.form.title") }),
-          /* @__PURE__ */ jsx(CardDescription$1, { className: "text-muted-foreground", children: t("trial.form.description") })
+      /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs(Card, { className: "border-card-border bg-gradient-to-br from-card to-slate-900/50 shadow-lg", children: [
+        /* @__PURE__ */ jsxs(CardHeader, { children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-foreground", children: t("trial.form.title") }),
+          /* @__PURE__ */ jsx(CardDescription, { className: "text-muted-foreground", children: t("trial.form.description") })
         ] }),
-        /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-6", children: [
+        /* @__PURE__ */ jsxs(CardContent, { className: "space-y-6", children: [
           /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
             /* @__PURE__ */ jsx("label", { className: "text-sm font-medium text-foreground", children: t("trial.form.selectPlan") }),
             /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-3", children: [
@@ -15531,7 +15542,7 @@ function StartTrialPage() {
 }
 function NotFound() {
   const { t } = useLanguage();
-  return /* @__PURE__ */ jsx("div", { className: "min-h-screen w-full flex items-center justify-center bg-gray-50", children: /* @__PURE__ */ jsx(Card$1, { className: "w-full max-w-md mx-4", children: /* @__PURE__ */ jsxs(CardContent$1, { className: "pt-6", children: [
+  return /* @__PURE__ */ jsx("div", { className: "min-h-screen w-full flex items-center justify-center bg-gray-50", children: /* @__PURE__ */ jsx(Card, { className: "w-full max-w-md mx-4", children: /* @__PURE__ */ jsxs(CardContent, { className: "pt-6", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex mb-4 gap-2", children: [
       /* @__PURE__ */ jsx(AlertCircle, { className: "h-8 w-8 text-red-500" }),
       /* @__PURE__ */ jsx("h1", { className: "text-2xl font-bold text-gray-900", children: t("notFound.title") })
@@ -15656,9 +15667,9 @@ function AdminDashboard() {
     return /* @__PURE__ */ jsx(Badge, { variant: variants[status] || "outline", children: labels[status] || status });
   };
   if (showKeyInput) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Admin Access" }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Admin Access" }) }),
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("label", { className: "text-sm font-medium", children: "Admin API Key" }),
           /* @__PURE__ */ jsx(
@@ -15679,15 +15690,15 @@ function AdminDashboard() {
     ] }) });
   }
   if (loading) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8", children: /* @__PURE__ */ jsx(Card$1, { children: /* @__PURE__ */ jsxs(CardContent$1, { className: "flex items-center justify-center py-12", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8", children: /* @__PURE__ */ jsx(Card, { children: /* @__PURE__ */ jsxs(CardContent, { className: "flex items-center justify-center py-12", children: [
       /* @__PURE__ */ jsx(RefreshCw, { className: "h-8 w-8 animate-spin text-primary" }),
       /* @__PURE__ */ jsx("span", { className: "ml-3", children: "Loading admin dashboard..." })
     ] }) }) });
   }
   if (error) {
-    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card$1, { className: "border-destructive", children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { className: "text-destructive", children: "Error" }) }),
-      /* @__PURE__ */ jsxs(CardContent$1, { className: "space-y-4", children: [
+    return /* @__PURE__ */ jsx("div", { className: "container mx-auto p-8 max-w-md", children: /* @__PURE__ */ jsxs(Card, { className: "border-destructive", children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { className: "text-destructive", children: "Error" }) }),
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
         /* @__PURE__ */ jsx("p", { className: "text-sm", children: error }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
           /* @__PURE__ */ jsx(Button, { onClick: () => loadAdminData(adminKey), variant: "outline", children: "Retry" }),
@@ -15720,39 +15731,39 @@ function AdminDashboard() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Total Users" }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Total Users" }),
           /* @__PURE__ */ jsx(Users, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.totalUsers }) })
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.totalUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Free Trial" }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Free Trial" }),
           /* @__PURE__ */ jsx(UserCheck, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.trialUsers }) })
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.trialUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Paid Users" }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Paid Users" }),
           /* @__PURE__ */ jsx(CreditCard, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.paidUsers }) })
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.paidUsers }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-          /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "Today's Signups" }),
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+          /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "Today's Signups" }),
           /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
         ] }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.todaySignups }) })
+        /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: metrics.todaySignups }) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6", children: [
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Signup Growth (Last 30 Days)" }) }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: growthData.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: growthData, children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Signup Growth (Last 30 Days)" }) }),
+        /* @__PURE__ */ jsx(CardContent, { children: growthData.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: growthData, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3" }),
           /* @__PURE__ */ jsx(
             XAxis,
@@ -15785,9 +15796,9 @@ function AdminDashboard() {
           )
         ] }) }) : /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-[300px] text-muted-foreground", children: "No signup data available" }) })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "User Composition" }) }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: metrics && /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "User Composition" }) }),
+        /* @__PURE__ */ jsx(CardContent, { children: metrics && /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(PieChart$1, { children: [
           /* @__PURE__ */ jsx(
             Pie,
             {
@@ -15815,9 +15826,9 @@ function AdminDashboard() {
         ] }) }) })
       ] })
     ] }),
-    conversionData && /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Conversion Funnel" }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+    conversionData && /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Conversion Funnel" }) }),
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 mb-6", children: [
           /* @__PURE__ */ jsxs("div", { className: "p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg", children: [
             /* @__PURE__ */ jsx("div", { className: "text-sm text-muted-foreground", children: "Signup → Trial" }),
@@ -15862,12 +15873,12 @@ function AdminDashboard() {
     ] }),
     revenueData && /* @__PURE__ */ jsxs("div", { className: "space-y-6", children: [
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6", children: [
-        /* @__PURE__ */ jsxs(Card$1, { children: [
-          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "MRR" }),
+        /* @__PURE__ */ jsxs(Card, { children: [
+          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "MRR" }),
             /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent$1, { children: [
+          /* @__PURE__ */ jsxs(CardContent, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.mrr.toLocaleString()
@@ -15875,12 +15886,12 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Monthly Recurring Revenue" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { children: [
-          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "ARR" }),
+        /* @__PURE__ */ jsxs(Card, { children: [
+          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "ARR" }),
             /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent$1, { children: [
+          /* @__PURE__ */ jsxs(CardContent, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.arr.toLocaleString()
@@ -15888,12 +15899,12 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Annual Recurring Revenue" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { children: [
-          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "ARPU" }),
+        /* @__PURE__ */ jsxs(Card, { children: [
+          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "ARPU" }),
             /* @__PURE__ */ jsx(CreditCard, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent$1, { children: [
+          /* @__PURE__ */ jsxs(CardContent, { children: [
             /* @__PURE__ */ jsxs("div", { className: "text-2xl font-bold", children: [
               "$",
               revenueData.arpu.toFixed(2)
@@ -15901,20 +15912,20 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Average Revenue Per User" })
           ] })
         ] }),
-        /* @__PURE__ */ jsxs(Card$1, { children: [
-          /* @__PURE__ */ jsxs(CardHeader$1, { className: "flex flex-row items-center justify-between pb-2", children: [
-            /* @__PURE__ */ jsx(CardTitle$1, { className: "text-sm font-medium", children: "New Subs (30d)" }),
+        /* @__PURE__ */ jsxs(Card, { children: [
+          /* @__PURE__ */ jsxs(CardHeader, { className: "flex flex-row items-center justify-between pb-2", children: [
+            /* @__PURE__ */ jsx(CardTitle, { className: "text-sm font-medium", children: "New Subs (30d)" }),
             /* @__PURE__ */ jsx(UserCheck, { className: "h-4 w-4 text-muted-foreground" })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent$1, { children: [
+          /* @__PURE__ */ jsxs(CardContent, { children: [
             /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold", children: revenueData.newSubscriptionsLast30Days }),
             /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Last 30 days" })
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs(Card$1, { children: [
-        /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Revenue Trend (Last 30 Days)" }) }),
-        /* @__PURE__ */ jsx(CardContent$1, { children: revenueData.revenueTrend.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: revenueData.revenueTrend, children: [
+      /* @__PURE__ */ jsxs(Card, { children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Revenue Trend (Last 30 Days)" }) }),
+        /* @__PURE__ */ jsx(CardContent, { children: revenueData.revenueTrend.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(LineChart, { data: revenueData.revenueTrend, children: [
           /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3" }),
           /* @__PURE__ */ jsx(
             XAxis,
@@ -15962,9 +15973,9 @@ function AdminDashboard() {
         ] }) }) : /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-[300px] text-muted-foreground", children: "No revenue data available" }) })
       ] })
     ] }),
-    geographyData && /* @__PURE__ */ jsx("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsx(CardTitle$1, { children: "Geographic Distribution" }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+    geographyData && /* @__PURE__ */ jsx("div", { className: "space-y-6", children: /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsx(CardTitle, { children: "Geographic Distribution" }) }),
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("h4", { className: "text-sm font-medium mb-4", children: "Sessions by Country" }),
           geographyData.countries.length > 0 ? /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 300, children: /* @__PURE__ */ jsxs(BarChart, { data: geographyData.countries.slice(0, 10), layout: "vertical", children: [
@@ -15991,13 +16002,13 @@ function AdminDashboard() {
         ] })
       ] }) })
     ] }) }),
-    /* @__PURE__ */ jsxs(Card$1, { children: [
-      /* @__PURE__ */ jsx(CardHeader$1, { children: /* @__PURE__ */ jsxs(CardTitle$1, { children: [
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { children: [
         "Recent Users (",
         users.length,
         ")"
       ] }) }),
-      /* @__PURE__ */ jsx(CardContent$1, { children: /* @__PURE__ */ jsx("div", { className: "overflow-x-auto", children: /* @__PURE__ */ jsxs("table", { className: "w-full", children: [
+      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("div", { className: "overflow-x-auto", children: /* @__PURE__ */ jsxs("table", { className: "w-full", children: [
         /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { className: "border-b", children: [
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Email" }),
           /* @__PURE__ */ jsx("th", { className: "text-left py-2 px-4 font-medium", children: "Status" }),

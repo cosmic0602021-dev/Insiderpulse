@@ -82,23 +82,32 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       console.error('   Error details:', error instanceof Error ? error.message : String(error));
 
       // CRITICAL FIX: Don't default to free access on API error!
-      // Instead, use the user's subscription data from auth context
-      const hasPremiumFromUser =
-        user &&
-        user.subscriptionTier === 'insider_pro' &&
-        (user.subscriptionStatus === 'active' ||
-         user.subscriptionStatus === 'trialing' ||
-         user.subscriptionStatus === 'canceled') &&
-        user.subscriptionStatus !== 'inactive' &&
-        (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > new Date());
+      // Instead, use the user's subscription data from auth context as fallback
+      let hasPremiumFromUser = false;
+
+      if (user && user.subscriptionTier === 'insider_pro') {
+        // For active/trialing status: no endDate check needed
+        if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') {
+          hasPremiumFromUser = true;
+        }
+        // For canceled status: must have future endDate
+        else if (user.subscriptionStatus === 'canceled' && user.subscriptionEndDate) {
+          const endDate = new Date(user.subscriptionEndDate);
+          const now = new Date();
+          hasPremiumFromUser = endDate > now;
+        }
+      }
+
+      console.log('⚠️ [ACCESS CONTEXT] API error - using fallback logic');
+      console.log('   User data:', {
+        tier: user?.subscriptionTier,
+        status: user?.subscriptionStatus,
+        endDate: user?.subscriptionEndDate,
+        hasPremium: hasPremiumFromUser
+      });
 
       if (hasPremiumFromUser) {
-        console.log('⚠️ [ACCESS CONTEXT] API error, but user has valid subscription in auth context');
-        console.log('   Using fallback premium access based on user data:', {
-          tier: user.subscriptionTier,
-          status: user.subscriptionStatus,
-          endDate: user.subscriptionEndDate
-        });
+        console.log('✅ [ACCESS CONTEXT] Fallback: User has valid premium subscription');
         setAccessLevel({
           hasRealtimeAccess: true,
           isDelayed: false,
@@ -107,7 +116,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
           status: user.subscriptionStatus,
         });
       } else {
-        console.log('   🔒 No valid subscription found, defaulting to free access');
+        console.log('🔒 [ACCESS CONTEXT] Fallback: Defaulting to free access');
         setAccessLevel({
           hasRealtimeAccess: false,
           isDelayed: true,
