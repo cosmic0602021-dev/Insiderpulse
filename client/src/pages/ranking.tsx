@@ -7,10 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
-import { useAuth } from '@/contexts/auth-context';
+import { useAccess } from '@/contexts/access-context';
 import { apiClient } from '@/lib/api';
 import html2canvas from 'html2canvas';
-import { hasPremiumAccess } from '@/lib/subscription-utils';
 import { useLocation } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
@@ -61,7 +60,7 @@ interface RankingsResponse {
 
 export default function Ranking() {
   const { t, language } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
   const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -81,12 +80,12 @@ export default function Ranking() {
     });
   };
 
-  // Check if user has premium access
-  const isPremium = hasPremiumAccess(user);
+  // Check if user has realtime access
+  const isPremium = accessLevel?.hasRealtimeAccess || false;
 
   console.log('[RANKING] User premium status:', {
     isPremium,
-    user: user ? { tier: user.subscriptionTier, status: user.subscriptionStatus } : 'null'
+    accessLevel: accessLevel ? { hasRealtimeAccess: accessLevel.hasRealtimeAccess, tier: accessLevel.tier } : 'null'
   });
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({

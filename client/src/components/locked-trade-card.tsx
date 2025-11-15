@@ -1,9 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Lock, TrendingUp, Users, Unlock, ChevronDown, ArrowDown } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
-import { useAuth } from "@/contexts/auth-context";
+import { useAccess } from "@/contexts/access-context";
 import type { InsiderTrade } from "@shared/schema";
-import { hasPremiumAccess } from "@/lib/subscription-utils";
 
 interface LockedTradeCardProps {
   trade: InsiderTrade;
@@ -81,13 +80,13 @@ interface LockedTradesSectionProps {
 
 export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
 
   if (trades.length === 0) return null;
 
-  // Don't show locked section if user has premium subscription
-  if (hasPremiumAccess(user)) {
-    console.log('[LOCKED TRADES] User has premium access, hiding locked section');
+  // Don't show locked section if user has realtime access
+  if (accessLevel?.hasRealtimeAccess) {
+    console.log('[LOCKED TRADES] User has realtime access, hiding locked section');
     return null;
   }
 

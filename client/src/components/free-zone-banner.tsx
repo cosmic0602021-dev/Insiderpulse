@@ -1,8 +1,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Clock, Lock } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
-import { useAuth } from "@/contexts/auth-context";
-import { hasPremiumAccess } from "@/lib/subscription-utils";
+import { useAccess } from "@/contexts/access-context";
 
 interface FreeZoneBannerProps {
   delayHours: number;
@@ -10,11 +9,11 @@ interface FreeZoneBannerProps {
 
 export function FreeZoneBanner({ delayHours }: FreeZoneBannerProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
 
-  // Don't show banner if user has premium subscription
-  if (hasPremiumAccess(user)) {
-    console.log('[FREE ZONE BANNER] User has premium access, hiding banner');
+  // Don't show banner if user has realtime access
+  if (accessLevel?.hasRealtimeAccess) {
+    console.log('[FREE ZONE BANNER] User has realtime access, hiding banner');
     return null;
   }
 
@@ -36,10 +35,10 @@ interface UnlockPromptProps {
 
 export function UnlockPrompt({ onUnlock }: UnlockPromptProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
 
-  // Don't show prompt if user has premium subscription
-  if (hasPremiumAccess(user)) {
+  // Don't show prompt if user has realtime access
+  if (accessLevel?.hasRealtimeAccess) {
     return null;
   }
 

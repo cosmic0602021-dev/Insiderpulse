@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
-import { useAuth } from '@/contexts/auth-context';
+import { useAccess } from '@/contexts/access-context';
 import { useLocation } from 'wouter';
-import { hasPremiumAccess } from '@/lib/subscription-utils';
 
 interface TrialTimerBannerProps {
   trialExpiresAt: string | Date;
@@ -13,12 +12,12 @@ interface TrialTimerBannerProps {
 
 export function TrialTimerBanner({ trialExpiresAt, onUpgrade }: TrialTimerBannerProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
   const [, setLocation] = useLocation();
   const [timeLeft, setTimeLeft] = useState<string>('');
 
-  // Don't show banner if user has active or trialing subscription
-  if (hasPremiumAccess(user)) {
+  // Don't show banner if user has realtime access
+  if (accessLevel?.hasRealtimeAccess) {
     return null;
   }
 
@@ -88,13 +87,13 @@ interface TrialExpiredBannerProps {
 
 export function TrialExpiredBanner({ onUpgrade }: TrialExpiredBannerProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { accessLevel } = useAccess();
   const [, setLocation] = useLocation();
 
-  // CRITICAL FIX: Don't show banner if user has active subscription
-  // This prevents showing "trial expired" to paying customers due to API errors
-  if (hasPremiumAccess(user)) {
-    console.log('[TRIAL EXPIRED BANNER] User has premium access, hiding banner');
+  // CRITICAL FIX: Don't show banner if user has realtime access
+  // This prevents showing "trial expired" to paying customers
+  if (accessLevel?.hasRealtimeAccess) {
+    console.log('[TRIAL EXPIRED BANNER] User has realtime access, hiding banner');
     return null;
   }
 
