@@ -117,7 +117,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userFound: !!user,
         userId: user?.id,
         userStatus: user?.subscriptionStatus,
-        userEndDate: user?.subscriptionEndDate
+        userEndDate: user?.subscriptionEndDate,
+        fullDatabaseUrl: dbUrl
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 🔧 PUBLIC: Fix production database
+  app.post("/api/fix-production-db", async (_req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, 'scottnim7777@gmail.com')
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await db.update(users)
+        .set({
+          subscriptionStatus: 'active',
+          subscriptionEndDate: new Date('2025-12-08 16:29:53'),
+          stripeSubscriptionId: 'sub_1SRF1RQ9br8aQ595xOtjWRfv',
+          stripeCustomerId: 'cus_TO13QypiMy8Sqg',
+          hasUsedTrial: false,
+          trialExpiresAt: null,
+          trialActivatedAt: null
+        })
+        .where(eq(users.id, user.id));
+
+      const updated = await db.query.users.findFirst({
+        where: eq(users.email, 'scottnim7777@gmail.com')
+      });
+
+      res.json({
+        success: true,
+        before: { status: user.subscriptionStatus, endDate: user.subscriptionEndDate },
+        after: { status: updated?.subscriptionStatus, endDate: updated?.subscriptionEndDate }
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
