@@ -16086,7 +16086,13 @@ import { exec as exec2 } from "child_process";
 import { promisify as promisify2 } from "util";
 var execAsync2 = promisify2(exec2);
 var app = express3();
-app.use(express3.json());
+app.use((req, res, next) => {
+  if (req.path === "/api/stripe/webhook") {
+    next();
+  } else {
+    express3.json()(req, res, next);
+  }
+});
 app.use(express3.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const origin = req.headers.origin;

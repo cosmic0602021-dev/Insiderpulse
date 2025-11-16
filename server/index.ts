@@ -12,7 +12,16 @@ import { stockPriceService } from "./stock-price-service";
 const execAsync = promisify(exec);
 
 const app = express();
-app.use(express.json());
+
+// CRITICAL FIX: Skip JSON parsing for Stripe webhook (needs raw body)
+app.use((req, res, next) => {
+  if (req.path === '/api/stripe/webhook') {
+    next(); // Skip JSON parser for webhook
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 app.use(express.urlencoded({ extended: false }));
 
 // CORS middleware for custom domain support

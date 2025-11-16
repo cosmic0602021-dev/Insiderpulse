@@ -69,7 +69,13 @@
       "Bash(node /home/runner/workspace/test-production-api.js:*)",
       "Bash(node /home/runner/workspace/fix-production-db.js:*)",
       "Bash(bash:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(PROD_DB_URL=\"postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require\":*)",
+      "Bash(__NEW_LINE__ psql \"$PROD_DB_URL\" -c \"SELECT id, email, subscription_status, subscription_end_date FROM users WHERE email = ''scottnim7777@gmail.com'';\")",
+      "Bash(__NEW_LINE__ psql \"$PROD_DB_URL\" -c \"SELECT id, email, subscription_status, subscription_end_date, stripe_subscription_id FROM users WHERE email = ''scottnim7777@gmail.com'' OR id = ''user_1762200564967_t6whya'' ORDER BY id;\")",
+      "Bash(__NEW_LINE__ psql \"$PROD_DB_URL\" -c \"SELECT email, id, subscription_status, created_at FROM users ORDER BY created_at DESC LIMIT 10;\")",
+      "Bash(__NEW_LINE__ psql \"$PROD_DB_URL\" -c \"\n-- Delete sessions first\nDELETE FROM user_sessions WHERE user_id = ''user_1762267673018_x839zj'';\n\n-- Now update the user ID\nUPDATE users \nSET \n  id = ''user_1762200564967_t6whya'',\n  subscription_status = ''active'',\n  subscription_end_date = ''2025-12-08 16:29:53'',\n  stripe_subscription_id = ''sub_1SRF1RQ9br8aQ595xOtjWRfv'',\n  stripe_customer_id = ''cus_TO13QypiMy8Sqg'',\n  has_used_trial = false,\n  trial_expires_at = NULL,\n  trial_activated_at = NULL\nWHERE email = ''scottnim7777@gmail.com'';\n\nSELECT id, email, subscription_status, subscription_end_date FROM users WHERE email = ''scottnim7777@gmail.com'';\n\")",
+      "Bash(__NEW_LINE__ psql \"$PROD_DB_URL\" -c \"SELECT id, email, subscription_status, subscription_end_date, has_used_trial, trial_expires_at FROM users WHERE id = ''user_1762200564967_t6whya'';\")"
     ],
     "deny": [],
     "ask": []
