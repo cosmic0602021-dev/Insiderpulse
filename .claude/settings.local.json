@@ -65,7 +65,10 @@
       "Bash(break)",
       "Bash(done)",
       "Bash(journalctl:*)",
-      "Bash(node /home/runner/workspace/test-real-api.js:*)"
+      "Bash(node /home/runner/workspace/test-real-api.js:*)",
+      "Bash(node /home/runner/workspace/test-production-api.js:*)",
+      "Bash(node /home/runner/workspace/fix-production-db.js:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
