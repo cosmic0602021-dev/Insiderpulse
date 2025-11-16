@@ -9054,15 +9054,17 @@ async function upgradeToInsiderPro(userId, stripeCustomerId, stripeSubscriptionI
   console.log(`\u2705 User ${userId} upgraded to Insider Pro until ${endDate}`);
 }
 async function cancelSubscription(userId, periodEndDate) {
+  const now = /* @__PURE__ */ new Date();
+  const endDate = periodEndDate || now;
+  const status = endDate > now ? "active" : "inactive";
   await db3.update(users).set({
-    subscriptionStatus: "canceled",
-    subscriptionEndDate: periodEndDate || /* @__PURE__ */ new Date()
-    // Use provided end date or now
+    subscriptionStatus: status,
+    subscriptionEndDate: endDate
   }).where(eq3(users.id, userId));
-  if (periodEndDate) {
-    console.log(`\u274C Subscription canceled for user ${userId}, access until ${periodEndDate}`);
+  if (periodEndDate && periodEndDate > now) {
+    console.log(`\u26A0\uFE0F Subscription will end for user ${userId} at ${periodEndDate} (keeping active status until then)`);
   } else {
-    console.log(`\u274C Subscription canceled for user ${userId}, access ended immediately`);
+    console.log(`\u274C Subscription ended for user ${userId}, access terminated`);
   }
 }
 var db3, stripe, subscriptionService;
@@ -10795,8 +10797,11 @@ async function registerRoutes(app2) {
           if (user2) {
             if (subscription.cancel_at_period_end) {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
-              await subscriptionService.cancelSubscription(user2.id, periodEnd);
-              console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd}`);
+              await db4.update(users).set({
+                subscriptionStatus: "active",
+                subscriptionEndDate: periodEnd
+              }).where(eq5(users.id, user2.id));
+              console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === "active") {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
               await db4.update(users).set({
@@ -14222,6 +14227,7 @@ var init_routes = __esm({
 var cron_jobs_exports = {};
 __export(cron_jobs_exports, {
   startAllCronJobs: () => startAllCronJobs,
+  startSubscriptionExpirationCheckJob: () => startSubscriptionExpirationCheckJob,
   startSubscriptionSyncJob: () => startSubscriptionSyncJob,
   startTrialExpirationCheckJob: () => startTrialExpirationCheckJob
 });
@@ -14256,16 +14262,28 @@ function startSubscriptionSyncJob() {
             console.log(`[Cron] \u26A0\uFE0F  MISMATCH: User ${user2.id} (${user2.email}) - DB expired but Stripe active`);
             console.log(`[Cron]     DB: status=${user2.subscriptionStatus}, end=${user2.subscriptionEndDate}`);
             console.log(`[Cron]     Stripe: status=${subscription.status}, end=${stripePeriodEnd}`);
+            const now2 = /* @__PURE__ */ new Date();
+            let dbStatus = subscription.status;
+            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
+              dbStatus = "active";
+              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
+            }
             await db5.update(users).set({
-              subscriptionStatus: subscription.status,
+              subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
             }).where(eq6(users.id, user2.id));
             console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
             syncedCount++;
           } else if (dbStatusMismatch || dbEndDateMismatch) {
             console.log(`[Cron] \u{1F504} Minor sync for user ${user2.id} (${user2.email})`);
+            const now2 = /* @__PURE__ */ new Date();
+            let dbStatus = subscription.status;
+            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
+              dbStatus = "active";
+              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
+            }
             await db5.update(users).set({
-              subscriptionStatus: subscription.status,
+              subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
             }).where(eq6(users.id, user2.id));
             syncedCount++;
@@ -14316,9 +14334,37 @@ function startTrialExpirationCheckJob() {
   });
   console.log("\u2705 Trial expiration check cron job scheduled (hourly)");
 }
+function startSubscriptionExpirationCheckJob() {
+  cron.schedule("30 * * * *", async () => {
+    console.log("[Cron] Checking for expired subscriptions...");
+    try {
+      const now = /* @__PURE__ */ new Date();
+      const expiredSubscriptions = await db5.query.users.findMany({
+        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
+          eq7(users2.subscriptionStatus, "active"),
+          isNotNull(users2.subscriptionEndDate),
+          lt(users2.subscriptionEndDate, now)
+        )
+      });
+      if (expiredSubscriptions.length > 0) {
+        console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
+        for (const user2 of expiredSubscriptions) {
+          await db5.update(users).set({
+            subscriptionStatus: "inactive"
+          }).where(eq6(users.id, user2.id));
+          console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
+        }
+      }
+    } catch (error) {
+      console.error("[Cron] Error checking expired subscriptions:", error);
+    }
+  });
+  console.log("\u2705 Subscription expiration check cron job scheduled (hourly at :30)");
+}
 function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
+  startSubscriptionExpirationCheckJob();
   console.log("\u{1F550} All cron jobs started");
 }
 var db5, stripe3;

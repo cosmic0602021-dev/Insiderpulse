@@ -684,8 +684,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Check if subscription is set to cancel at period end
             if (subscription.cancel_at_period_end) {
               const periodEnd = new Date(subscription.current_period_end * 1000);
-              await subscriptionService.cancelSubscription(user.id, periodEnd);
-              console.log(`⚠️ Subscription will cancel for user ${user.email} at ${periodEnd}`);
+              // CRITICAL FIX: Keep status as "active" even when cancel_at_period_end is true
+              // User still has paid access until periodEnd
+              await db.update(users)
+                .set({
+                  subscriptionStatus: "active",
+                  subscriptionEndDate: periodEnd,
+                })
+                .where(eq(users.id, user.id));
+              console.log(`⚠️ Subscription will cancel for user ${user.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === 'active') {
               // Subscription was reactivated - update end date
               const periodEnd = new Date(subscription.current_period_end * 1000);

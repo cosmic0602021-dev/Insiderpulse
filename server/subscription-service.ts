@@ -310,19 +310,27 @@ export async function upgradeToInsiderPro(
 
 /**
  * Cancel subscription - keeps access until period end
+ * CRITICAL FIX: If periodEndDate is in the future, keep status as "active"
+ * Only set to "inactive" if period has actually ended
  */
 export async function cancelSubscription(userId: string, periodEndDate?: Date): Promise<void> {
+  const now = new Date();
+  const endDate = periodEndDate || now;
+
+  // Determine correct status based on whether user still has paid time
+  const status = endDate > now ? "active" : "inactive";
+
   await db.update(users)
     .set({
-      subscriptionStatus: "canceled",
-      subscriptionEndDate: periodEndDate || new Date(), // Use provided end date or now
+      subscriptionStatus: status,
+      subscriptionEndDate: endDate,
     })
     .where(eq(users.id, userId));
 
-  if (periodEndDate) {
-    console.log(`❌ Subscription canceled for user ${userId}, access until ${periodEndDate}`);
+  if (periodEndDate && periodEndDate > now) {
+    console.log(`⚠️ Subscription will end for user ${userId} at ${periodEndDate} (keeping active status until then)`);
   } else {
-    console.log(`❌ Subscription canceled for user ${userId}, access ended immediately`);
+    console.log(`❌ Subscription ended for user ${userId}, access terminated`);
   }
 }
 
