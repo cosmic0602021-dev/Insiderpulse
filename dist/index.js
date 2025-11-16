@@ -10549,7 +10549,11 @@ async function registerRoutes(app2) {
       } else {
         console.warn(`\u26A0\uFE0F Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
-      const trialEndTimestamp = Math.floor(Date.now() / 1e3) + trialDays * 24 * 60 * 60;
+      const now = /* @__PURE__ */ new Date();
+      const trialEnd = new Date(now);
+      trialEnd.setDate(trialEnd.getDate() + trialDays);
+      trialEnd.setHours(23, 59, 59, 999);
+      const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1e3);
       const subscriptionData = {
         metadata: {
           userId,
@@ -10557,8 +10561,8 @@ async function registerRoutes(app2) {
         },
         trial_end: trialEndTimestamp
       };
-      console.log(`\u2705 Setting ${trialDays}-day free trial for ${planType} plan`);
-      const idempotencyKey = `checkout_${userId}_${Math.floor(Date.now() / 6e4)}`;
+      console.log(`\u2705 Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
+      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 6e4)}`;
       let session;
       try {
         const sessionConfig = {
