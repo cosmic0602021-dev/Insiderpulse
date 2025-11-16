@@ -68,7 +68,8 @@
       "Bash(node /home/runner/workspace/test-real-api.js:*)",
       "Bash(node /home/runner/workspace/test-production-api.js:*)",
       "Bash(node /home/runner/workspace/fix-production-db.js:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []
