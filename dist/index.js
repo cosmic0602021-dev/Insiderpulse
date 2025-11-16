@@ -10376,7 +10376,37 @@ async function registerRoutes(app2) {
         userFound: !!user2,
         userId: user2?.id,
         userStatus: user2?.subscriptionStatus,
-        userEndDate: user2?.subscriptionEndDate
+        userEndDate: user2?.subscriptionEndDate,
+        fullDatabaseUrl: dbUrl
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/fix-production-db", async (_req, res) => {
+    try {
+      const user2 = await db4.query.users.findFirst({
+        where: eq5(users.email, "scottnim7777@gmail.com")
+      });
+      if (!user2) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      await db4.update(users).set({
+        subscriptionStatus: "active",
+        subscriptionEndDate: /* @__PURE__ */ new Date("2025-12-08 16:29:53"),
+        stripeSubscriptionId: "sub_1SRF1RQ9br8aQ595xOtjWRfv",
+        stripeCustomerId: "cus_TO13QypiMy8Sqg",
+        hasUsedTrial: false,
+        trialExpiresAt: null,
+        trialActivatedAt: null
+      }).where(eq5(users.id, user2.id));
+      const updated = await db4.query.users.findFirst({
+        where: eq5(users.email, "scottnim7777@gmail.com")
+      });
+      res.json({
+        success: true,
+        before: { status: user2.subscriptionStatus, endDate: user2.subscriptionEndDate },
+        after: { status: updated?.subscriptionStatus, endDate: updated?.subscriptionEndDate }
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
