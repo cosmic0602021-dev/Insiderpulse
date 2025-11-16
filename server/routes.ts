@@ -98,6 +98,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // 🔍 PUBLIC: Database connection info (for debugging deployment issues)
+  app.get("/api/db-info", async (_req, res) => {
+    try {
+      const dbUrl = process.env.DATABASE_URL || 'not set';
+      const host = dbUrl.match(/@([^/]+)/)?.[1] || 'unknown';
+      const endpoint = dbUrl.match(/ep-[^.]+/)?.[0] || 'unknown';
+
+      // Also check what the user data actually is in this database
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, 'scottnim7777@gmail.com')
+      });
+
+      res.json({
+        dbHost: host,
+        dbEndpoint: endpoint,
+        isNeon: dbUrl.includes('neon.tech'),
+        userFound: !!user,
+        userId: user?.id,
+        userStatus: user?.subscriptionStatus,
+        userEndDate: user?.subscriptionEndDate
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // 💳 STRIPE PAYMENT ENDPOINTS FOR REAL CARD PROCESSING
   
   // Create payment intent for one-time premium features
