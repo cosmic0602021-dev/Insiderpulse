@@ -12169,6 +12169,16 @@ async function registerRoutes(app2) {
       if (!trade) {
         return res.status(404).json({ error: "Trade not found" });
       }
+      if (trade.comprehensiveAnalysis && trade.analysisGeneratedAt) {
+        const cacheAge = Date.now() - new Date(trade.analysisGeneratedAt).getTime();
+        const SIX_HOURS = 6 * 60 * 60 * 1e3;
+        if (cacheAge < SIX_HOURS) {
+          console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / 6e4)} minutes old) - saved GPT API call`);
+          return res.json(trade.comprehensiveAnalysis);
+        } else {
+          console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - regenerating analysis`);
+        }
+      }
       const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
       const ONE_WEEK = 7 * 24 * 60 * 60 * 1e3;
       if (tradeAge > ONE_WEEK) {
@@ -12397,6 +12407,15 @@ async function registerRoutes(app2) {
           comprehensiveAnalysis.marketContext.reasoning,
           language
         );
+      }
+      try {
+        await db4.update(insiderTrades).set({
+          comprehensiveAnalysis,
+          analysisGeneratedAt: /* @__PURE__ */ new Date()
+        }).where(eq5(insiderTrades.id, tradeId));
+        console.log(`\u{1F4BE} Cached analysis saved to database for trade ${tradeId}`);
+      } catch (cacheError) {
+        console.error("\u26A0\uFE0F Failed to cache analysis (continuing):", cacheError);
       }
       res.json(comprehensiveAnalysis);
     } catch (error) {
