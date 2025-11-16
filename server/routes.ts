@@ -354,8 +354,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn(`⚠️ Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
 
-      // Calculate trial_end timestamp
-      const trialEndTimestamp = Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60);
+      // Calculate trial_end timestamp - set to end of day (23:59:59) N days from now
+      // This ensures Stripe displays exact "N days" in checkout
+      const now = new Date();
+      const trialEnd = new Date(now);
+      trialEnd.setDate(trialEnd.getDate() + trialDays);
+      trialEnd.setHours(23, 59, 59, 999);
+      const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1000);
 
       const subscriptionData: any = {
         metadata: {
@@ -365,11 +370,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         trial_end: trialEndTimestamp,
       };
 
-      console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan`);
+      console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
-      // Idempotency key is valid for 1 minute window per user
-      const idempotencyKey = `checkout_${userId}_${Math.floor(Date.now() / 60000)}`;
+      // Include priceId to allow switching plans within the same minute
+      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 60000)}`;
 
       let session;
       try {
