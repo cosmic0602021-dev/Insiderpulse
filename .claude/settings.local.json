@@ -63,7 +63,9 @@
       "Bash(for:*)",
       "Bash(do curl -s http://localhost:5000/api/health)",
       "Bash(break)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(journalctl:*)",
+      "Bash(node /home/runner/workspace/test-real-api.js:*)"
     ],
     "deny": [],
     "ask": []
