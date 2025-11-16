@@ -10983,6 +10983,29 @@ async function registerRoutes(app2) {
       });
     }
   });
+  app2.get("/api/admin/check-production-db", protectAdminEndpoint, async (req, res) => {
+    try {
+      const user2 = await db4.query.users.findFirst({
+        where: eq5(users.id, "user_1762200564967_t6whya")
+      });
+      res.json({
+        userFound: !!user2,
+        userId: user2?.id,
+        email: user2?.email,
+        status: user2?.subscriptionStatus,
+        endDate: user2?.subscriptionEndDate,
+        hasUsedTrial: user2?.hasUsedTrial,
+        trialExpiresAt: user2?.trialExpiresAt,
+        dbHost: process.env.DATABASE_URL?.match(/@([^/]+)/)?.[1],
+        dbEndpoint: process.env.DATABASE_URL?.match(/ep-[^.]+/)?.[0],
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  });
   app2.post("/api/admin/sync-all-subscriptions", protectAdminEndpoint, async (req, res) => {
     try {
       console.log("\u{1F504} Starting batch subscription sync from Stripe...");

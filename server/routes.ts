@@ -937,6 +937,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔍 Admin: Check production DB status (debugging)
+  app.get('/api/admin/check-production-db', protectAdminEndpoint, async (req, res) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, 'user_1762200564967_t6whya')
+      });
+
+      res.json({
+        userFound: !!user,
+        userId: user?.id,
+        email: user?.email,
+        status: user?.subscriptionStatus,
+        endDate: user?.subscriptionEndDate,
+        hasUsedTrial: user?.hasUsedTrial,
+        trialExpiresAt: user?.trialExpiresAt,
+        dbHost: process.env.DATABASE_URL?.match(/@([^/]+)/)?.[1],
+        dbEndpoint: process.env.DATABASE_URL?.match(/ep-[^.]+/)?.[0],
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  });
+
   // 🔄 Admin: Sync ALL subscriptions from Stripe (batch recovery)
   app.post('/api/admin/sync-all-subscriptions', protectAdminEndpoint, async (req, res) => {
     try {
