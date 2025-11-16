@@ -354,12 +354,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn(`⚠️ Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
 
-      // Calculate trial_end timestamp - set to end of day (23:59:59) N days from now
-      // This ensures Stripe displays exact "N days" in checkout
+      // Calculate trial_end timestamp - fix to today's midnight + N days
+      // This ensures same trial_end for all requests on the same day (fixes idempotency errors)
       const now = new Date();
-      const trialEnd = new Date(now);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today at 00:00:00
+      const trialEnd = new Date(today);
       trialEnd.setDate(trialEnd.getDate() + trialDays);
-      trialEnd.setHours(23, 59, 59, 999);
+      trialEnd.setHours(23, 59, 59, 0); // End of day, milliseconds = 0 (fixed value)
       const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1000);
 
       const subscriptionData: any = {
@@ -373,8 +374,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
-      // Include priceId to allow switching plans within the same minute
-      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 60000)}`;
+      // Use 30-second window (reduced from 60s) to allow faster retries while preventing duplicates
+      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 30000)}`;
 
       let session;
       try {

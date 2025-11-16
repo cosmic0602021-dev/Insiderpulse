@@ -907,6 +907,17 @@ function shouldRunDataCollection() {
     console.log("\u23F8\uFE0F Skipping data collection - Holiday");
     return false;
   }
+  const now = /* @__PURE__ */ new Date();
+  const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const hours = estTime.getHours();
+  const minutes = estTime.getMinutes();
+  const currentTimeInMinutes = hours * 60 + minutes;
+  const collectionStartMinutes = 8 * 60 + 30;
+  const collectionEndMinutes = 17 * 60;
+  if (currentTimeInMinutes < collectionStartMinutes || currentTimeInMinutes >= collectionEndMinutes) {
+    console.log(`\u23F8\uFE0F Skipping data collection - Outside collection window (8:30 AM - 5:00 PM ET, current: ${hours}:${minutes.toString().padStart(2, "0")} ET)`);
+    return false;
+  }
   return true;
 }
 function shouldUpdateStockPrices() {
@@ -9806,11 +9817,12 @@ var init_auto_scheduler = __esm({
         setTimeout(() => {
           this.runOpenInsiderCollection();
         }, 3e4);
-        console.log("\u2705 Auto scheduler started successfully - COST OPTIMIZED:");
-        console.log("   \u{1F504} OpenInsider: Every 6 hours (COST SAVING)");
-        console.log("   \u{1F504} MarketBeat: Every 6 hours (COST SAVING)");
-        console.log("   \u{1F504} SEC RSS: Every 6 hours (COST SAVING)");
-        console.log("   \u{1F3D6}\uFE0F Weekends: SKIPPED (US market closed - additional 28% cost saving)");
+        console.log("\u2705 Auto scheduler started successfully - MARKET HOURS OPTIMIZED:");
+        console.log("   \u{1F504} OpenInsider: Every 1 hour (during market hours)");
+        console.log("   \u{1F504} MarketBeat: Every 1 hour (during market hours)");
+        console.log("   \u{1F504} SEC RSS: Every 1 hour (during market hours)");
+        console.log("   \u23F0 Collection window: 8:30 AM - 5:00 PM ET");
+        console.log("   \u{1F3D6}\uFE0F Weekends/After-hours: SKIPPED (market closed)");
       }
       stop() {
         if (!this.isRunning) {
@@ -9836,26 +9848,26 @@ var init_auto_scheduler = __esm({
       startOpenInsiderSchedule() {
         this.openInsiderInterval = setInterval(() => {
           this.runOpenInsiderCollection();
-        }, 6 * 60 * 60 * 1e3);
-        console.log("\u{1F4C5} OpenInsider scheduled: Every 6 hours (COST OPTIMIZED)");
+        }, 1 * 60 * 60 * 1e3);
+        console.log("\u{1F4C5} OpenInsider scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
       }
       startMarketBeatSchedule() {
         setTimeout(() => {
           this.marketBeatInterval = setInterval(() => {
             this.runMarketBeatCollection();
-          }, 6 * 60 * 60 * 1e3);
+          }, 1 * 60 * 60 * 1e3);
           this.runMarketBeatCollection();
         }, 10 * 60 * 1e3);
-        console.log("\u{1F4C5} MarketBeat scheduled: Every 6 hours (COST OPTIMIZED)");
+        console.log("\u{1F4C5} MarketBeat scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
       }
       startSecRssSchedule() {
         setTimeout(() => {
           this.secRssInterval = setInterval(() => {
             this.runSecRssCollection();
-          }, 6 * 60 * 60 * 1e3);
+          }, 1 * 60 * 60 * 1e3);
           this.runSecRssCollection();
         }, 20 * 60 * 1e3);
-        console.log("\u{1F4C5} SEC RSS scheduled: Every 6 hours (COST OPTIMIZED)");
+        console.log("\u{1F4C5} SEC RSS scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
       }
       async runOpenInsiderCollection() {
         if (!shouldRunDataCollection()) {
@@ -10550,9 +10562,10 @@ async function registerRoutes(app2) {
         console.warn(`\u26A0\uFE0F Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
       const now = /* @__PURE__ */ new Date();
-      const trialEnd = new Date(now);
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const trialEnd = new Date(today);
       trialEnd.setDate(trialEnd.getDate() + trialDays);
-      trialEnd.setHours(23, 59, 59, 999);
+      trialEnd.setHours(23, 59, 59, 0);
       const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1e3);
       const subscriptionData = {
         metadata: {
@@ -10562,7 +10575,7 @@ async function registerRoutes(app2) {
         trial_end: trialEndTimestamp
       };
       console.log(`\u2705 Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
-      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 6e4)}`;
+      const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 3e4)}`;
       let session;
       try {
         const sessionConfig = {
@@ -16170,7 +16183,7 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   console.log("\u{1F680} Server started with automated data collection enabled");
-  console.log("\u{1F4B0} Data collection optimized: Every 6 hours to reduce costs (was 5-30 min)");
+  console.log("\u23F0 Data collection: Every 1 hour during market hours (8:30AM-5PM ET)");
   app.get("/sitemap.xml", (_req, res) => {
     try {
       const filePath = path4.join(process.cwd(), "sitemap", "sitemap.xml");

@@ -97,9 +97,9 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 Automated data collection enabled (cost optimized)
+  // 🚀 Automated data collection enabled (market hours optimized)
   console.log('🚀 Server started with automated data collection enabled');
-  console.log('💰 Data collection optimized: Every 6 hours to reduce costs (was 5-30 min)');
+  console.log('⏰ Data collection: Every 1 hour during market hours (8:30AM-5PM ET)');
 
   // Serve sitemap.xml and robots.txt
   app.get('/sitemap.xml', (_req, res) => {

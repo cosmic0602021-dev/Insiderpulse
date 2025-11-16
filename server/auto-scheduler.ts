@@ -44,11 +44,12 @@ class AutoScheduler {
       this.runOpenInsiderCollection();
     }, 30000);
 
-    console.log('✅ Auto scheduler started successfully - COST OPTIMIZED:');
-    console.log('   🔄 OpenInsider: Every 6 hours (COST SAVING)');
-    console.log('   🔄 MarketBeat: Every 6 hours (COST SAVING)');
-    console.log('   🔄 SEC RSS: Every 6 hours (COST SAVING)');
-    console.log('   🏖️ Weekends: SKIPPED (US market closed - additional 28% cost saving)');
+    console.log('✅ Auto scheduler started successfully - MARKET HOURS OPTIMIZED:');
+    console.log('   🔄 OpenInsider: Every 1 hour (during market hours)');
+    console.log('   🔄 MarketBeat: Every 1 hour (during market hours)');
+    console.log('   🔄 SEC RSS: Every 1 hour (during market hours)');
+    console.log('   ⏰ Collection window: 8:30 AM - 5:00 PM ET');
+    console.log('   🏖️ Weekends/After-hours: SKIPPED (market closed)');
   }
 
   stop() {
@@ -79,42 +80,42 @@ class AutoScheduler {
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 6 hours to save costs
+    // Run OpenInsider collection every 1 hour during market hours
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 6 * 60 * 60 * 1000); // 6 hours
+    }, 1 * 60 * 60 * 1000); // 1 hour
 
-    console.log('📅 OpenInsider scheduled: Every 6 hours (COST OPTIMIZED)');
+    console.log('📅 OpenInsider scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 6 hours to save costs
+    // Run MarketBeat collection every 1 hour during market hours
     // Offset by 10 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 6 * 60 * 60 * 1000); // 6 hours
+      }, 1 * 60 * 60 * 1000); // 1 hour
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
     }, 10 * 60 * 1000); // Start after 10 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 6 hours (COST OPTIMIZED)');
+    console.log('📅 MarketBeat scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)');
   }
 
   private startSecRssSchedule() {
-    // Run SEC RSS collection every 6 hours to save costs
+    // Run SEC RSS collection every 1 hour during market hours
     // Offset by 20 minutes to avoid conflicts with other collectors
     setTimeout(() => {
       this.secRssInterval = setInterval(() => {
         this.runSecRssCollection();
-      }, 6 * 60 * 60 * 1000); // 6 hours
+      }, 1 * 60 * 60 * 1000); // 1 hour
 
       // Run first SEC RSS collection after the initial delay
       this.runSecRssCollection();
     }, 20 * 60 * 1000); // Start after 20 minutes
 
-    console.log('📅 SEC RSS scheduled: Every 6 hours (COST OPTIMIZED)');
+    console.log('📅 SEC RSS scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)');
   }
 
   private async runOpenInsiderCollection() {

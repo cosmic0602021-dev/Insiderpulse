@@ -77,7 +77,7 @@ export function isUSHoliday(): boolean {
 
 /**
  * Check if data collection should run
- * Returns true only during weekdays when market is open or recently closed
+ * Returns true only during market hours + extended window (8:30 AM - 5:00 PM ET)
  */
 export function shouldRunDataCollection(): boolean {
   // Don't run on weekends
@@ -92,7 +92,23 @@ export function shouldRunDataCollection(): boolean {
     return false;
   }
 
-  // Run during weekdays (even after hours, to catch after-hours filings)
+  // Check if within collection window (8:30 AM - 5:00 PM ET)
+  // This covers pre-market (30min before), market hours, and 1hr after close
+  const now = new Date();
+  const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const hours = estTime.getHours();
+  const minutes = estTime.getMinutes();
+  const currentTimeInMinutes = hours * 60 + minutes;
+
+  const collectionStartMinutes = 8 * 60 + 30;  // 8:30 AM ET
+  const collectionEndMinutes = 17 * 60;         // 5:00 PM ET
+
+  if (currentTimeInMinutes < collectionStartMinutes ||
+      currentTimeInMinutes >= collectionEndMinutes) {
+    console.log(`⏸️ Skipping data collection - Outside collection window (8:30 AM - 5:00 PM ET, current: ${hours}:${minutes.toString().padStart(2, '0')} ET)`);
+    return false;
+  }
+
   return true;
 }
 
