@@ -10361,6 +10361,27 @@ async function registerRoutes(app2) {
       uptime: process.uptime()
     });
   });
+  app2.get("/api/db-info", async (_req, res) => {
+    try {
+      const dbUrl = process.env.DATABASE_URL || "not set";
+      const host = dbUrl.match(/@([^/]+)/)?.[1] || "unknown";
+      const endpoint = dbUrl.match(/ep-[^.]+/)?.[0] || "unknown";
+      const user2 = await db4.query.users.findFirst({
+        where: eq5(users.email, "scottnim7777@gmail.com")
+      });
+      res.json({
+        dbHost: host,
+        dbEndpoint: endpoint,
+        isNeon: dbUrl.includes("neon.tech"),
+        userFound: !!user2,
+        userId: user2?.id,
+        userStatus: user2?.subscriptionStatus,
+        userEndDate: user2?.subscriptionEndDate
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   app2.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount } = req.body;
