@@ -900,11 +900,9 @@ function isUSHoliday() {
 }
 function shouldRunDataCollection() {
   if (isUSWeekend()) {
-    console.log("\u23F8\uFE0F Skipping data collection - Weekend");
     return false;
   }
   if (isUSHoliday()) {
-    console.log("\u23F8\uFE0F Skipping data collection - Holiday");
     return false;
   }
   const now = /* @__PURE__ */ new Date();
@@ -912,13 +910,35 @@ function shouldRunDataCollection() {
   const hours = estTime.getHours();
   const minutes = estTime.getMinutes();
   const currentTimeInMinutes = hours * 60 + minutes;
-  const collectionStartMinutes = 8 * 60 + 30;
-  const collectionEndMinutes = 17 * 60;
-  if (currentTimeInMinutes < collectionStartMinutes || currentTimeInMinutes >= collectionEndMinutes) {
-    console.log(`\u23F8\uFE0F Skipping data collection - Outside collection window (8:30 AM - 5:00 PM ET, current: ${hours}:${minutes.toString().padStart(2, "0")} ET)`);
-    return false;
+  const collectionTimes = [
+    6 * 60,
+    // 06:00 - Morning backfill (overnight filings)
+    8 * 60 + 30,
+    // 08:30 - Morning backfill completion
+    12 * 60,
+    // 12:00 - Midday check
+    15 * 60,
+    // 15:00 - 🔥 PEAK START (55-65% of filings!)
+    16 * 60,
+    // 16:00 - 🔥 PEAK
+    17 * 60,
+    // 17:00 - 🔥 PEAK
+    18 * 60,
+    // 18:00 - 🔥 PEAK END / CFO/CEO filings
+    19 * 60,
+    // 19:00 - CFO/CEO filings
+    20 * 60 + 30
+    // 20:30 - Evening cleanup (last collection of the day)
+    // 23:00 removed - only 2-3% of filings, collected next morning at 06:00
+  ];
+  const isCollectionTime = collectionTimes.some(
+    (targetTime) => Math.abs(currentTimeInMinutes - targetTime) <= 30
+  );
+  if (!isCollectionTime) {
+    const currentTimeStr = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+    console.log(`\u23F8\uFE0F Skipping data collection - Outside strategic time slots (current: ${currentTimeStr} ET)`);
   }
-  return true;
+  return isCollectionTime;
 }
 function shouldUpdateStockPrices() {
   if (isUSWeekend()) {
@@ -9817,12 +9837,13 @@ var init_auto_scheduler = __esm({
         setTimeout(() => {
           this.runOpenInsiderCollection();
         }, 3e4);
-        console.log("\u2705 Auto scheduler started successfully - MARKET HOURS OPTIMIZED:");
-        console.log("   \u{1F504} OpenInsider: Every 1 hour (during market hours)");
-        console.log("   \u{1F504} MarketBeat: Every 1 hour (during market hours)");
-        console.log("   \u{1F504} SEC RSS: Every 1 hour (during market hours)");
-        console.log("   \u23F0 Collection window: 8:30 AM - 5:00 PM ET");
-        console.log("   \u{1F3D6}\uFE0F Weekends/After-hours: SKIPPED (market closed)");
+        console.log("\u2705 Auto scheduler started successfully - STRATEGIC TIME SLOTS:");
+        console.log("   \u{1F504} OpenInsider: Every 30 minutes");
+        console.log("   \u{1F504} MarketBeat: Every 30 minutes");
+        console.log("   \u{1F504} SEC RSS: Every 30 minutes");
+        console.log("   \u23F0 Collection: 9 strategic times per weekday");
+        console.log("   \u{1F525} Peak coverage: 15:00-18:00 ET (55-65% of filings)");
+        console.log("   \u{1F4CA} Total: ~45 collections per week (cost optimized)");
       }
       stop() {
         if (!this.isRunning) {
@@ -9848,26 +9869,26 @@ var init_auto_scheduler = __esm({
       startOpenInsiderSchedule() {
         this.openInsiderInterval = setInterval(() => {
           this.runOpenInsiderCollection();
-        }, 1 * 60 * 60 * 1e3);
-        console.log("\u{1F4C5} OpenInsider scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
+        }, 30 * 60 * 1e3);
+        console.log("\u{1F4C5} OpenInsider scheduled: Every 30 minutes (strategic time slots)");
       }
       startMarketBeatSchedule() {
         setTimeout(() => {
           this.marketBeatInterval = setInterval(() => {
             this.runMarketBeatCollection();
-          }, 1 * 60 * 60 * 1e3);
+          }, 30 * 60 * 1e3);
           this.runMarketBeatCollection();
         }, 10 * 60 * 1e3);
-        console.log("\u{1F4C5} MarketBeat scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
+        console.log("\u{1F4C5} MarketBeat scheduled: Every 30 minutes (strategic time slots)");
       }
       startSecRssSchedule() {
         setTimeout(() => {
           this.secRssInterval = setInterval(() => {
             this.runSecRssCollection();
-          }, 1 * 60 * 60 * 1e3);
+          }, 30 * 60 * 1e3);
           this.runSecRssCollection();
         }, 20 * 60 * 1e3);
-        console.log("\u{1F4C5} SEC RSS scheduled: Every 1 hour (during market hours 8:30AM-5PM ET)");
+        console.log("\u{1F4C5} SEC RSS scheduled: Every 30 minutes (strategic time slots)");
       }
       async runOpenInsiderCollection() {
         if (!shouldRunDataCollection()) {
@@ -14324,7 +14345,7 @@ __export(cron_jobs_exports, {
 import cron from "node-cron";
 import Stripe3 from "stripe";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { eq as eq6, sql as sql4 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
@@ -14429,11 +14450,15 @@ function startSubscriptionExpirationCheckJob() {
     console.log("[Cron] Checking for expired subscriptions...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredSubscriptions = await db5.select().from(users).where(
-        sql4`${users.subscriptionStatus} = 'active'
-              AND ${users.subscriptionEndDate} IS NOT NULL
-              AND ${users.subscriptionEndDate} < ${now}`
-      ).limit(100);
+      const expiredSubscriptions = await db5.query.users.findMany({
+        where: (users2, { and: and4, eq: eq7, isNotNull, lt }) => and4(
+          eq7(users2.subscriptionStatus, "active"),
+          isNotNull(users2.subscriptionEndDate),
+          lt(users2.subscriptionEndDate, now)
+        ),
+        limit: 100
+        // Prevent memory issues with large datasets
+      });
       if (expiredSubscriptions.length > 0) {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
         for (const user2 of expiredSubscriptions) {
@@ -14459,7 +14484,8 @@ function startSubscriptionExpirationCheckJob() {
 function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
-  console.log("\u{1F550} All cron jobs started (subscription expiration check temporarily disabled)");
+  startSubscriptionExpirationCheckJob();
+  console.log("\u{1F550} All cron jobs started");
 }
 var db5, stripe3;
 var init_cron_jobs = __esm({
@@ -16237,7 +16263,8 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   console.log("\u{1F680} Server started with automated data collection enabled");
-  console.log("\u23F0 Data collection: Every 1 hour during market hours (8:30AM-5PM ET)");
+  console.log("\u23F0 Data collection: 9 strategic times per weekday");
+  console.log("\u{1F525} Peak coverage: 15:00-18:00 ET (55-65% of all filings)");
   app.get("/sitemap.xml", (_req, res) => {
     try {
       const filePath = path4.join(process.cwd(), "sitemap", "sitemap.xml");

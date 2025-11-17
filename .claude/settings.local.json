@@ -80,7 +80,9 @@
       "Bash(if curl -s http://localhost:5000/api/health)",
       "Bash(/dev/null)",
       "Bash(then)",
-      "Bash(__NEW_LINE__ echo \"\")"
+      "Bash(__NEW_LINE__ echo \"\")",
+      "WebFetch(domain:orm.drizzle.team)",
+      "Bash(TZ='America/New_York' date:*)"
     ],
     "deny": [],
     "ask": []
