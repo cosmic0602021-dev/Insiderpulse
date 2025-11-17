@@ -229,6 +229,8 @@ export function startSubscriptionExpirationCheckJob() {
 export function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
-  startSubscriptionExpirationCheckJob();
-  console.log("🕐 All cron jobs started");
+  // TEMPORARY: Disabled subscription expiration check - causing server crashes
+  // TODO: Re-enable after fixing the database query issue
+  // startSubscriptionExpirationCheckJob();
+  console.log("🕐 All cron jobs started (subscription expiration check temporarily disabled)");
 }
