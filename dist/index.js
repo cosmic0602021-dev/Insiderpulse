@@ -14324,7 +14324,7 @@ __export(cron_jobs_exports, {
 import cron from "node-cron";
 import Stripe3 from "stripe";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq6, sql as sql4 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
@@ -14429,21 +14429,26 @@ function startSubscriptionExpirationCheckJob() {
     console.log("[Cron] Checking for expired subscriptions...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredSubscriptions = await db5.query.users.findMany({
-        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
-          eq7(users2.subscriptionStatus, "active"),
-          isNotNull(users2.subscriptionEndDate),
-          lt(users2.subscriptionEndDate, now)
-        )
-      });
+      const expiredSubscriptions = await db5.select().from(users).where(
+        sql4`${users.subscriptionStatus} = 'active'
+              AND ${users.subscriptionEndDate} IS NOT NULL
+              AND ${users.subscriptionEndDate} < ${now}`
+      ).limit(100);
       if (expiredSubscriptions.length > 0) {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
         for (const user2 of expiredSubscriptions) {
-          await db5.update(users).set({
-            subscriptionStatus: "inactive"
-          }).where(eq6(users.id, user2.id));
-          console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
+          try {
+            await db5.update(users).set({
+              subscriptionStatus: "inactive"
+            }).where(eq6(users.id, user2.id));
+            console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
+          } catch (updateError) {
+            console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);
+          }
         }
+        console.log(`[Cron] \u2705 Subscription expiration check completed`);
+      } else {
+        console.log(`[Cron] No expired subscriptions found`);
       }
     } catch (error) {
       console.error("[Cron] Error checking expired subscriptions:", error);
