@@ -12174,6 +12174,37 @@ async function registerRoutes(app2) {
         const SIX_HOURS = 6 * 60 * 60 * 1e3;
         if (cacheAge < SIX_HOURS) {
           console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / 6e4)} minutes old) - saved GPT API call`);
+          if (language !== "en") {
+            console.log(`\u{1F30D} Translating cached analysis to ${language}...`);
+            const cachedData = trade.comprehensiveAnalysis;
+            try {
+              if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
+                cachedData.catalysts = await Promise.all(
+                  cachedData.catalysts.map((catalyst) => translateText(catalyst, language))
+                );
+              }
+              if (cachedData.marketContext?.reasoning) {
+                cachedData.marketContext.reasoning = await translateText(
+                  cachedData.marketContext.reasoning,
+                  language
+                );
+              }
+              if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
+                cachedData.newsAnalysis.majorNews = await Promise.all(
+                  cachedData.newsAnalysis.majorNews.map(async (news) => ({
+                    ...news,
+                    title: await translateText(news.title, language),
+                    summary: await translateText(news.summary, language)
+                  }))
+                );
+              }
+              console.log(`\u2705 Cached analysis translated to ${language}`);
+              return res.json(cachedData);
+            } catch (translateError) {
+              console.error("\u26A0\uFE0F Translation failed, returning English cached data:", translateError);
+              return res.json(trade.comprehensiveAnalysis);
+            }
+          }
           return res.json(trade.comprehensiveAnalysis);
         } else {
           console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - regenerating analysis`);
