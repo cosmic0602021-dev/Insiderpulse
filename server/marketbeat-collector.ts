@@ -262,7 +262,11 @@ class MarketBeatCollector {
       }
 
       // Extract company name
-      const companyName = this.extractCompanyName(cells[0]) || `${ticker} Corp.`;
+      const companyName = this.extractCompanyName(cells[0]) || null;
+      if (!companyName) {
+        console.log(`⚠️ No company name found for ticker ${ticker}, skipping`);
+        return null; // Skip trades without proper company name
+      }
 
       // Extract insider name and position
       const insiderData = this.extractInsiderData(cells[1]);

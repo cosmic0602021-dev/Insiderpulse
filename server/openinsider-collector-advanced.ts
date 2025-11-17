@@ -874,49 +874,83 @@ class AdvancedOpenInsiderCollector {
 
   private extractTicker(text: string): string | null {
     if (!text) return null;
-    
+
     // First try to extract ticker from href attribute (most reliable)
     const hrefMatch = text.match(/href="\/([A-Z]{1,6})"/);
     if (hrefMatch) {
       const ticker = hrefMatch[1];
       // Exclude JavaScript keywords and invalid tickers
       if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT'].includes(ticker)) {
-        return ticker;
+        return this.normalizeTicker(ticker);
       }
     }
-    
+
     // Fallback: extract from link text content between > and <
     const linkTextMatch = text.match(/>([A-Z]{2,6})</);
     if (linkTextMatch) {
       const ticker = linkTextMatch[1];
       if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT'].includes(ticker)) {
-        return ticker;
+        return this.normalizeTicker(ticker);
       }
     }
-    
+
     // Last resort: use original patterns but exclude JS keywords
     const patterns = [
       /\b([A-Z]{1,5})\b/,
       /([A-Z]{2,5})/,
     ];
-    
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
         const ticker = match[1];
         if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT', 'ONMOUSEOVER', 'ONMOUSEOUT'].includes(ticker)) {
-          return ticker;
+          return this.normalizeTicker(ticker);
         }
       }
     }
-    
+
     return null;
+  }
+
+  /**
+   * Normalize ticker symbols (fix common issues from scraped data)
+   */
+  private normalizeTicker(ticker: string): string | null {
+    if (!ticker) return null;
+
+    // Fix common OpenInsider ticker issues
+    const tickerMap: Record<string, string> = {
+      'ZANDZ': 'Z',      // Zillow (OpenInsider combines Class A and C)
+      'GOOGL': 'GOOGL',  // Already correct
+      'GOOG': 'GOOG',    // Already correct
+    };
+
+    // If it's a known problematic ticker, return the correct one
+    if (tickerMap[ticker]) {
+      console.log(`🔧 Normalized ticker: ${ticker} → ${tickerMap[ticker]}`);
+      return tickerMap[ticker];
+    }
+
+    // Validate ticker format (1-5 uppercase letters, no numbers)
+    if (!/^[A-Z]{1,5}$/.test(ticker)) {
+      console.log(`⚠️ Invalid ticker format: ${ticker}`);
+      return null;
+    }
+
+    return ticker;
   }
 
   private extractCompanyName(text: string, ticker: string): string {
     let name = this.cleanText(text);
     name = name.replace(new RegExp(`\\b${ticker}\\b`, 'gi'), '').trim();
-    return name || `${ticker} Corporation`;
+
+    // Validate that we have a real company name, not just the ticker
+    if (!name || name.length < 3 || name === ticker) {
+      return 'Unknown Company'; // Don't make up fake company names
+    }
+
+    return name;
   }
 
   private cleanText(text: string): string {

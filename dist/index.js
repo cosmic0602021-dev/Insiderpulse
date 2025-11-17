@@ -3151,14 +3151,14 @@ var init_openinsider_collector_advanced = __esm({
         if (hrefMatch) {
           const ticker = hrefMatch[1];
           if (!["DELAY", "TIP", "UNTIP", "DIV", "IMG", "ALT"].includes(ticker)) {
-            return ticker;
+            return this.normalizeTicker(ticker);
           }
         }
         const linkTextMatch = text2.match(/>([A-Z]{2,6})</);
         if (linkTextMatch) {
           const ticker = linkTextMatch[1];
           if (!["DELAY", "TIP", "UNTIP", "DIV", "IMG", "ALT"].includes(ticker)) {
-            return ticker;
+            return this.normalizeTicker(ticker);
           }
         }
         const patterns = [
@@ -3170,16 +3170,42 @@ var init_openinsider_collector_advanced = __esm({
           if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
             const ticker = match[1];
             if (!["DELAY", "TIP", "UNTIP", "DIV", "IMG", "ALT", "ONMOUSEOVER", "ONMOUSEOUT"].includes(ticker)) {
-              return ticker;
+              return this.normalizeTicker(ticker);
             }
           }
         }
         return null;
       }
+      /**
+       * Normalize ticker symbols (fix common issues from scraped data)
+       */
+      normalizeTicker(ticker) {
+        if (!ticker) return null;
+        const tickerMap = {
+          "ZANDZ": "Z",
+          // Zillow (OpenInsider combines Class A and C)
+          "GOOGL": "GOOGL",
+          // Already correct
+          "GOOG": "GOOG"
+          // Already correct
+        };
+        if (tickerMap[ticker]) {
+          console.log(`\u{1F527} Normalized ticker: ${ticker} \u2192 ${tickerMap[ticker]}`);
+          return tickerMap[ticker];
+        }
+        if (!/^[A-Z]{1,5}$/.test(ticker)) {
+          console.log(`\u26A0\uFE0F Invalid ticker format: ${ticker}`);
+          return null;
+        }
+        return ticker;
+      }
       extractCompanyName(text2, ticker) {
         let name = this.cleanText(text2);
         name = name.replace(new RegExp(`\\b${ticker}\\b`, "gi"), "").trim();
-        return name || `${ticker} Corporation`;
+        if (!name || name.length < 3 || name === ticker) {
+          return "Unknown Company";
+        }
+        return name;
       }
       cleanText(text2) {
         return text2.replace(/\s+/g, " ").trim();
@@ -9359,7 +9385,11 @@ var init_marketbeat_collector = __esm({
           if (!ticker) {
             return null;
           }
-          const companyName = this.extractCompanyName(cells[0]) || `${ticker} Corp.`;
+          const companyName = this.extractCompanyName(cells[0]) || null;
+          if (!companyName) {
+            console.log(`\u26A0\uFE0F No company name found for ticker ${ticker}, skipping`);
+            return null;
+          }
           const insiderData = this.extractInsiderData(cells[1]);
           if (!insiderData.name) {
             return null;
