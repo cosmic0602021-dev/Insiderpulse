@@ -14459,8 +14459,7 @@ function startSubscriptionExpirationCheckJob() {
 function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
-  startSubscriptionExpirationCheckJob();
-  console.log("\u{1F550} All cron jobs started");
+  console.log("\u{1F550} All cron jobs started (subscription expiration check temporarily disabled)");
 }
 var db5, stripe3;
 var init_cron_jobs = __esm({
