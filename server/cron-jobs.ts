@@ -7,7 +7,7 @@ import cron from "node-cron";
 import Stripe from "stripe";
 import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 const db = drizzle(process.env.DATABASE_URL!, { schema });
@@ -180,16 +180,16 @@ export function startSubscriptionExpirationCheckJob() {
     try {
       const now = new Date();
 
-      // SAFER QUERY: Use raw SQL to avoid Drizzle ORM complexity issues
-      const expiredSubscriptions = await db
-        .select()
-        .from(users)
-        .where(
-          sql`${users.subscriptionStatus} = 'active'
-              AND ${users.subscriptionEndDate} IS NOT NULL
-              AND ${users.subscriptionEndDate} < ${now}`
-        )
-        .limit(100); // Prevent memory issues with large datasets
+      // FIX: Use Drizzle Query API (same pattern as working trial expiration check)
+      // This prevents HTTP client hang issues with neon-http
+      const expiredSubscriptions = await db.query.users.findMany({
+        where: (users, { and, eq, isNotNull, lt }) => and(
+          eq(users.subscriptionStatus, "active"),
+          isNotNull(users.subscriptionEndDate),
+          lt(users.subscriptionEndDate, now)
+        ),
+        limit: 100, // Prevent memory issues with large datasets
+      });
 
       if (expiredSubscriptions.length > 0) {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
@@ -229,8 +229,6 @@ export function startSubscriptionExpirationCheckJob() {
 export function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
-  // TEMPORARY: Disabled subscription expiration check - causing server crashes
-  // TODO: Re-enable after fixing the database query issue
-  // startSubscriptionExpirationCheckJob();
-  console.log("🕐 All cron jobs started (subscription expiration check temporarily disabled)");
+  startSubscriptionExpirationCheckJob();
+  console.log("🕐 All cron jobs started");
 }
