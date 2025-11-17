@@ -9194,6 +9194,55 @@ var init_4 = __esm({
   }
 });
 
+// server/ticker-validator.ts
+function validateAndCorrectTicker(ticker, companyName) {
+  if (!ticker || !companyName) {
+    return {
+      isValid: false,
+      reason: "Missing ticker or company name",
+      confidence: "high"
+    };
+  }
+  const corrections = TICKER_CORRECTIONS[ticker];
+  if (corrections) {
+    for (const [pattern, correctTicker] of Object.entries(corrections)) {
+      if (companyName.includes(pattern)) {
+        console.log(`\u{1F527} Ticker correction: ${ticker} \u2192 ${correctTicker} (${companyName})`);
+        return {
+          isValid: false,
+          correctedTicker: correctTicker,
+          reason: `Ticker conflict resolved: ${ticker} \u2192 ${correctTicker} for ${companyName}`,
+          confidence: "high"
+        };
+      }
+    }
+  }
+  if (!/^[A-Z]{1,5}$/.test(ticker)) {
+    return {
+      isValid: false,
+      reason: `Invalid ticker format: ${ticker}`,
+      confidence: "high"
+    };
+  }
+  return {
+    isValid: true,
+    confidence: "high"
+  };
+}
+var TICKER_CORRECTIONS;
+var init_ticker_validator = __esm({
+  "server/ticker-validator.ts"() {
+    "use strict";
+    TICKER_CORRECTIONS = {
+      "MSC": {
+        "MSC Industrial": "MSM"
+        // MSC Industrial Direct → MSM
+      }
+      // Add more as we discover them
+    };
+  }
+});
+
 // server/marketbeat-collector.ts
 function setBroadcaster2(fn) {
   broadcaster3 = fn;
@@ -9203,6 +9252,7 @@ var init_marketbeat_collector = __esm({
   "server/marketbeat-collector.ts"() {
     "use strict";
     init_storage();
+    init_ticker_validator();
     broadcaster3 = null;
     MarketBeatCollector = class {
       constructor() {
@@ -9381,7 +9431,7 @@ var init_marketbeat_collector = __esm({
           if (cells.length < 6) {
             return null;
           }
-          const ticker = this.extractTicker(cells[0]) || this.extractTicker(row);
+          let ticker = this.extractTicker(cells[0]) || this.extractTicker(row);
           if (!ticker) {
             return null;
           }
@@ -9389,6 +9439,11 @@ var init_marketbeat_collector = __esm({
           if (!companyName) {
             console.log(`\u26A0\uFE0F No company name found for ticker ${ticker}, skipping`);
             return null;
+          }
+          const validation = validateAndCorrectTicker(ticker, companyName);
+          if (!validation.isValid && validation.correctedTicker) {
+            console.log(`\u{1F527} Correcting ticker: ${ticker} \u2192 ${validation.correctedTicker} for ${companyName}`);
+            ticker = validation.correctedTicker;
           }
           const insiderData = this.extractInsiderData(cells[1]);
           if (!insiderData.name) {

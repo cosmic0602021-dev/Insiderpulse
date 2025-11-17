@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import type { InsertInsiderTrade } from '@shared/schema';
+import { validateAndCorrectTicker } from './ticker-validator';
 
 // Break circular dependency - broadcaster function will be injected
 let broadcaster: ((event: string, data: any) => void) | null = null;
@@ -256,7 +257,7 @@ class MarketBeatCollector {
       }
 
       // Extract ticker from the first cell (usually contains logo and ticker)
-      const ticker = this.extractTicker(cells[0]) || this.extractTicker(row);
+      let ticker = this.extractTicker(cells[0]) || this.extractTicker(row);
       if (!ticker) {
         return null;
       }
@@ -266,6 +267,13 @@ class MarketBeatCollector {
       if (!companyName) {
         console.log(`⚠️ No company name found for ticker ${ticker}, skipping`);
         return null; // Skip trades without proper company name
+      }
+
+      // Validate and correct ticker if needed
+      const validation = validateAndCorrectTicker(ticker, companyName);
+      if (!validation.isValid && validation.correctedTicker) {
+        console.log(`🔧 Correcting ticker: ${ticker} → ${validation.correctedTicker} for ${companyName}`);
+        ticker = validation.correctedTicker;
       }
 
       // Extract insider name and position
