@@ -353,9 +353,25 @@ class MarketBeatCollector {
   }
 
   private extractCompanyName(text: string): string | null {
-    // Extract company name after ticker
-    const match = text.match(/[A-Z]{2,5}\s+([A-Za-z\s&.,\-]+)/);
-    return match ? match[1].trim() : null;
+    // Extract company name after ticker (support 1-6 letter tickers)
+    // Pattern: TICKER CompanyName or TICKER COMPANY NAME
+    const patterns = [
+      /[A-Z]{1,6}\s+([A-Za-z][A-Za-z\s&.,\-'()]+)/,  // Full company name after ticker
+      />\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s*</,    // Company name in HTML tags
+    ];
+
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        // Validate it's a real company name (at least 3 chars, not just ticker)
+        if (name.length >= 3 && !/^[A-Z]{1,6}$/.test(name)) {
+          return name;
+        }
+      }
+    }
+
+    return null;
   }
 
   private extractInsiderData(text: string): { name: string; position: string } {

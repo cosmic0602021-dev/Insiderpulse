@@ -9450,8 +9450,22 @@ var init_marketbeat_collector = __esm({
         return null;
       }
       extractCompanyName(text2) {
-        const match = text2.match(/[A-Z]{2,5}\s+([A-Za-z\s&.,\-]+)/);
-        return match ? match[1].trim() : null;
+        const patterns = [
+          /[A-Z]{1,6}\s+([A-Za-z][A-Za-z\s&.,\-'()]+)/,
+          // Full company name after ticker
+          />\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\s*</
+          // Company name in HTML tags
+        ];
+        for (const pattern of patterns) {
+          const match = text2.match(pattern);
+          if (match && match[1]) {
+            const name = match[1].trim();
+            if (name.length >= 3 && !/^[A-Z]{1,6}$/.test(name)) {
+              return name;
+            }
+          }
+        }
+        return null;
       }
       extractInsiderData(text2) {
         const match = text2.match(/^([^(]+)(?:\(([^)]+)\))?/);
