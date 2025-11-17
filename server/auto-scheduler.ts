@@ -48,9 +48,9 @@ class AutoScheduler {
     console.log('   🔄 OpenInsider: Every 30 minutes');
     console.log('   🔄 MarketBeat: Every 30 minutes');
     console.log('   🔄 SEC RSS: Every 30 minutes');
-    console.log('   ⏰ Collection: 10 strategic times per weekday');
+    console.log('   ⏰ Collection: 9 strategic times per weekday');
     console.log('   🔥 Peak coverage: 15:00-18:00 ET (55-65% of filings)');
-    console.log('   📊 Total: ~50 collections per week (cost optimized)');
+    console.log('   📊 Total: ~45 collections per week (cost optimized)');
   }
 
   stop() {

@@ -99,7 +99,7 @@ app.use((req, res, next) => {
 
   // 🚀 Automated data collection enabled (strategic time slots)
   console.log('🚀 Server started with automated data collection enabled');
-  console.log('⏰ Data collection: 10 strategic times per weekday');
+  console.log('⏰ Data collection: 9 strategic times per weekday');
   console.log('🔥 Peak coverage: 15:00-18:00 ET (55-65% of all filings)');
 
   // Serve sitemap.xml and robots.txt

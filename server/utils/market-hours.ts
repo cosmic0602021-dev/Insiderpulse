@@ -83,9 +83,9 @@ export function isUSHoliday(): boolean {
  * - 15:00-18:00 ET: 55-65% of all filings (PEAK)
  * - 18:00-20:00 ET: CFO/CEO filings common
  * - 06:00-09:00 ET: Backfill overnight filings
- * - 20:00-06:00 ET: Only 5-10% of filings
+ * - 20:30-06:00 ET: Only 2-3% of filings (skip to save costs)
  *
- * Strategy: 10 collections per weekday at strategic times
+ * Strategy: 9 collections per weekday at strategic times
  */
 export function shouldRunDataCollection(): boolean {
   // Skip weekends
@@ -114,8 +114,8 @@ export function shouldRunDataCollection(): boolean {
     17 * 60,      // 17:00 - 🔥 PEAK
     18 * 60,      // 18:00 - 🔥 PEAK END / CFO/CEO filings
     19 * 60,      // 19:00 - CFO/CEO filings
-    20 * 60 + 30, // 20:30 - Evening cleanup
-    23 * 60       // 23:00 - Late night check
+    20 * 60 + 30, // 20:30 - Evening cleanup (last collection of the day)
+    // 23:00 removed - only 2-3% of filings, collected next morning at 06:00
   ];
 
   // Check if current time is within ±30 minutes of any collection time
