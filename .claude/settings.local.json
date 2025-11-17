@@ -82,7 +82,10 @@
       "Bash(then)",
       "Bash(__NEW_LINE__ echo \"\")",
       "WebFetch(domain:orm.drizzle.team)",
-      "Bash(TZ='America/New_York' date:*)"
+      "Bash(TZ='America/New_York' date:*)",
+      "Bash(killall:*)",
+      "Bash(NODE_ENV=production node dist/index.js)",
+      "Bash(tsx test:*)"
     ],
     "deny": [],
     "ask": []
