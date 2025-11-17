@@ -2460,6 +2460,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (cacheAge < SIX_HOURS) {
           console.log(`✅ Using cached analysis (${Math.floor(cacheAge / 60000)} minutes old) - saved GPT API call`);
+
+          // 🌍 Translate cached data if requested language is not English
+          if (language !== 'en') {
+            console.log(`🌍 Translating cached analysis to ${language}...`);
+            const cachedData = trade.comprehensiveAnalysis as any;
+
+            try {
+              // Translate catalysts array
+              if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
+                cachedData.catalysts = await Promise.all(
+                  cachedData.catalysts.map((catalyst: string) => translateText(catalyst, language))
+                );
+              }
+
+              // Translate market context reasoning
+              if (cachedData.marketContext?.reasoning) {
+                cachedData.marketContext.reasoning = await translateText(
+                  cachedData.marketContext.reasoning,
+                  language
+                );
+              }
+
+              // Translate news analysis (majorNews titles and summaries)
+              if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
+                cachedData.newsAnalysis.majorNews = await Promise.all(
+                  cachedData.newsAnalysis.majorNews.map(async (news: any) => ({
+                    ...news,
+                    title: await translateText(news.title, language),
+                    summary: await translateText(news.summary, language)
+                  }))
+                );
+              }
+
+              console.log(`✅ Cached analysis translated to ${language}`);
+              return res.json(cachedData);
+            } catch (translateError) {
+              console.error('⚠️ Translation failed, returning English cached data:', translateError);
+              return res.json(trade.comprehensiveAnalysis);
+            }
+          }
+
+          // Return cached English data as-is
           return res.json(trade.comprehensiveAnalysis);
         } else {
           console.log(`⏰ Cache expired (${Math.floor(cacheAge / (60 * 60 * 1000))} hours old) - regenerating analysis`);
