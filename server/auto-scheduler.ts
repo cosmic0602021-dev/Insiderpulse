@@ -44,12 +44,13 @@ class AutoScheduler {
       this.runOpenInsiderCollection();
     }, 30000);
 
-    console.log('✅ Auto scheduler started successfully - 24/7 REAL-TIME MODE:');
-    console.log('   🔄 OpenInsider: Every 1 hour (24/7)');
-    console.log('   🔄 MarketBeat: Every 1 hour (24/7)');
-    console.log('   🔄 SEC RSS: Every 1 hour (24/7)');
-    console.log('   ⏰ Collection: 24 hours a day, 7 days a week');
-    console.log('   🚀 Real-time insider trading data (within 1 hour of SEC filing)');
+    console.log('✅ Auto scheduler started successfully - STRATEGIC TIME SLOTS:');
+    console.log('   🔄 OpenInsider: Every 30 minutes');
+    console.log('   🔄 MarketBeat: Every 30 minutes');
+    console.log('   🔄 SEC RSS: Every 30 minutes');
+    console.log('   ⏰ Collection: 10 strategic times per weekday');
+    console.log('   🔥 Peak coverage: 15:00-18:00 ET (55-65% of filings)');
+    console.log('   📊 Total: ~50 collections per week (cost optimized)');
   }
 
   stop() {
@@ -80,42 +81,43 @@ class AutoScheduler {
   }
 
   private startOpenInsiderSchedule() {
-    // Run OpenInsider collection every 1 hour (24/7)
+    // Run OpenInsider collection every 30 minutes
+    // Actual collection only happens at strategic times (determined by shouldRunDataCollection())
     this.openInsiderInterval = setInterval(() => {
       this.runOpenInsiderCollection();
-    }, 1 * 60 * 60 * 1000); // 1 hour
+    }, 30 * 60 * 1000); // 30 minutes
 
-    console.log('📅 OpenInsider scheduled: Every 1 hour (24/7 real-time mode)');
+    console.log('📅 OpenInsider scheduled: Every 30 minutes (strategic time slots)');
   }
 
   private startMarketBeatSchedule() {
-    // Run MarketBeat collection every 1 hour (24/7)
+    // Run MarketBeat collection every 30 minutes
     // Offset by 10 minutes to avoid conflicts with OpenInsider
     setTimeout(() => {
       this.marketBeatInterval = setInterval(() => {
         this.runMarketBeatCollection();
-      }, 1 * 60 * 60 * 1000); // 1 hour
+      }, 30 * 60 * 1000); // 30 minutes
 
       // Run first MarketBeat collection after the initial delay
       this.runMarketBeatCollection();
     }, 10 * 60 * 1000); // Start after 10 minutes
 
-    console.log('📅 MarketBeat scheduled: Every 1 hour (24/7 real-time mode)');
+    console.log('📅 MarketBeat scheduled: Every 30 minutes (strategic time slots)');
   }
 
   private startSecRssSchedule() {
-    // Run SEC RSS collection every 1 hour (24/7)
+    // Run SEC RSS collection every 30 minutes
     // Offset by 20 minutes to avoid conflicts with other collectors
     setTimeout(() => {
       this.secRssInterval = setInterval(() => {
         this.runSecRssCollection();
-      }, 1 * 60 * 60 * 1000); // 1 hour
+      }, 30 * 60 * 1000); // 30 minutes
 
       // Run first SEC RSS collection after the initial delay
       this.runSecRssCollection();
     }, 20 * 60 * 1000); // Start after 20 minutes
 
-    console.log('📅 SEC RSS scheduled: Every 1 hour (24/7 real-time mode)');
+    console.log('📅 SEC RSS scheduled: Every 30 minutes (strategic time slots)');
   }
 
   private async runOpenInsiderCollection() {

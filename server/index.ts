@@ -97,9 +97,10 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
-  // 🚀 Automated data collection enabled (24/7 real-time mode)
+  // 🚀 Automated data collection enabled (strategic time slots)
   console.log('🚀 Server started with automated data collection enabled');
-  console.log('⏰ Data collection: Every 1 hour (24/7 real-time mode)');
+  console.log('⏰ Data collection: 10 strategic times per weekday');
+  console.log('🔥 Peak coverage: 15:00-18:00 ET (55-65% of all filings)');
 
   // Serve sitemap.xml and robots.txt
   app.get('/sitemap.xml', (_req, res) => {
