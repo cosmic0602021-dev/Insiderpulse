@@ -77,38 +77,17 @@ export function isUSHoliday(): boolean {
 
 /**
  * Check if data collection should run
- * Returns true only during market hours + extended window (8:30 AM - 5:00 PM ET)
+ * UPDATED: Now runs 24/7 for real-time insider trading data
+ * SEC Form 4 filings can be submitted at any time (including evenings and weekends)
  */
 export function shouldRunDataCollection(): boolean {
-  // Don't run on weekends
-  if (isUSWeekend()) {
-    console.log('⏸️ Skipping data collection - Weekend');
-    return false;
-  }
-
-  // Don't run on holidays
-  if (isUSHoliday()) {
-    console.log('⏸️ Skipping data collection - Holiday');
-    return false;
-  }
-
-  // Check if within collection window (8:30 AM - 5:00 PM ET)
-  // This covers pre-market (30min before), market hours, and 1hr after close
-  const now = new Date();
-  const estTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  const hours = estTime.getHours();
-  const minutes = estTime.getMinutes();
-  const currentTimeInMinutes = hours * 60 + minutes;
-
-  const collectionStartMinutes = 8 * 60 + 30;  // 8:30 AM ET
-  const collectionEndMinutes = 17 * 60;         // 5:00 PM ET
-
-  if (currentTimeInMinutes < collectionStartMinutes ||
-      currentTimeInMinutes >= collectionEndMinutes) {
-    console.log(`⏸️ Skipping data collection - Outside collection window (8:30 AM - 5:00 PM ET, current: ${hours}:${minutes.toString().padStart(2, '0')} ET)`);
-    return false;
-  }
-
+  // CHANGED: Always run data collection for real-time updates
+  // Insider trading Form 4 filings are submitted 24/7, including:
+  // - After market close (many CEOs file in the evening)
+  // - On weekends
+  // - On holidays
+  //
+  // Running 24/7 ensures Pro users get truly real-time data (within 1 hour)
   return true;
 }
 
