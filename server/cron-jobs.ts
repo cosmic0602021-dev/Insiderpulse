@@ -7,7 +7,7 @@ import cron from "node-cron";
 import Stripe from "stripe";
 import { drizzle } from "drizzle-orm/neon-http";
 import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 const db = drizzle(process.env.DATABASE_URL!, { schema });
@@ -180,31 +180,43 @@ export function startSubscriptionExpirationCheckJob() {
     try {
       const now = new Date();
 
-      // Find users with "active" status but subscriptionEndDate in the past
-      const expiredSubscriptions = await db.query.users.findMany({
-        where: (users, { and, lt, eq, isNotNull }) => and(
-          eq(users.subscriptionStatus, "active"),
-          isNotNull(users.subscriptionEndDate),
-          lt(users.subscriptionEndDate, now)
-        ),
-      });
+      // SAFER QUERY: Use raw SQL to avoid Drizzle ORM complexity issues
+      const expiredSubscriptions = await db
+        .select()
+        .from(users)
+        .where(
+          sql`${users.subscriptionStatus} = 'active'
+              AND ${users.subscriptionEndDate} IS NOT NULL
+              AND ${users.subscriptionEndDate} < ${now}`
+        )
+        .limit(100); // Prevent memory issues with large datasets
 
       if (expiredSubscriptions.length > 0) {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
 
         for (const user of expiredSubscriptions) {
-          // Update status to inactive
-          await db.update(users)
-            .set({
-              subscriptionStatus: "inactive",
-            })
-            .where(eq(users.id, user.id));
+          try {
+            // Update status to inactive
+            await db.update(users)
+              .set({
+                subscriptionStatus: "inactive",
+              })
+              .where(eq(users.id, user.id));
 
-          console.log(`[Cron] Updated user ${user.id} (${user.email}) subscription status to inactive (endDate: ${user.subscriptionEndDate})`);
+            console.log(`[Cron] Updated user ${user.id} (${user.email}) subscription status to inactive (endDate: ${user.subscriptionEndDate})`);
+          } catch (updateError) {
+            console.error(`[Cron] Failed to update user ${user.id}:`, updateError);
+            // Continue with other users even if one fails
+          }
         }
+
+        console.log(`[Cron] ✅ Subscription expiration check completed`);
+      } else {
+        console.log(`[Cron] No expired subscriptions found`);
       }
     } catch (error) {
       console.error("[Cron] Error checking expired subscriptions:", error);
+      // Don't throw - let the cron job continue for next run
     }
   });
 
