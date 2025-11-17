@@ -64,6 +64,10 @@ var init_schema = __esm({
       passwordResetExpires: timestamp("password_reset_expires"),
       // Token expires in 1 hour
       // Subscription & Trial Management
+      // ⚠️ CRITICAL: Before deleting a user, ALWAYS check stripeSubscriptionId and subscriptionStatus
+      // Users with active Stripe subscriptions MUST have their subscriptions canceled in Stripe first
+      // Otherwise, orphaned subscriptions will continue charging without user records
+      // Recommended: Implement soft delete instead of hard delete for users with payment history
       subscriptionTier: text("subscription_tier").notNull().default("free"),
       // "free" | "insider_pro"
       subscriptionStatus: text("subscription_status").notNull().default("inactive"),
@@ -187,7 +191,8 @@ var init_schema = __esm({
     });
     alerts = pgTable("alerts", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id),
+      // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
       name: text("name").notNull(),
       type: text("type").notNull(),
       // 'VOLUME', 'PRICE', 'COMPANY', 'TRADER', 'SIGNAL'
@@ -224,7 +229,8 @@ var init_schema = __esm({
     });
     userEvents = pgTable("user_events", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id).notNull(),
+      // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
       eventType: text("event_type").notNull(),
       // "SIGNUP" | "TRIAL_START" | "TRIAL_END" | "SUBSCRIPTION_START" | "SUBSCRIPTION_END" | "SUBSCRIPTION_CANCEL"
       eventData: json("event_data"),
@@ -237,7 +243,8 @@ var init_schema = __esm({
     });
     userSessions = pgTable("user_sessions", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id).notNull(),
+      // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
       ipAddress: text("ip_address"),
       country: text("country"),
       // ISO country code (e.g., "US", "KR")
@@ -1277,8 +1284,17 @@ var init_stock_price_service = __esm({
 function requireAdminAuth(req, res, next) {
   try {
     const adminApiKey = process.env.ADMIN_API_KEY || process.env.SESSION_SECRET;
-    if (!adminApiKey) {
-      console.error("\u{1F6A8} SECURITY: No admin API key configured");
+    if (!adminApiKey || adminApiKey.trim().length === 0) {
+      console.error("\u{1F6A8} SECURITY: No admin API key configured or key is empty/whitespace");
+      console.error(`   ADMIN_API_KEY: ${process.env.ADMIN_API_KEY ? "[set but invalid]" : "[not set]"}`);
+      console.error(`   SESSION_SECRET: ${process.env.SESSION_SECRET ? "[set but invalid]" : "[not set]"}`);
+      return res.status(500).json({
+        error: "Server configuration error - admin access unavailable"
+      });
+    }
+    if (adminApiKey.length < 16) {
+      console.error("\u{1F6A8} SECURITY: Admin API key is too short (minimum 16 characters)");
+      console.error(`   Current length: ${adminApiKey.length} characters`);
       return res.status(500).json({
         error: "Server configuration error - admin access unavailable"
       });
@@ -9816,11 +9832,17 @@ var init_auto_scheduler = __esm({
     init_schema();
     init_market_hours();
     AutoScheduler = class {
+      // Alert after 3 consecutive failures
       constructor() {
         this.openInsiderInterval = null;
         this.marketBeatInterval = null;
         this.secRssInterval = null;
         this.isRunning = false;
+        // Failure tracking for alerts
+        this.openInsiderFailures = 0;
+        this.marketBeatFailures = 0;
+        this.secRssFailures = 0;
+        this.FAILURE_ALERT_THRESHOLD = 3;
         setBroadcaster(broadcastUpdate);
         setBroadcaster2(broadcastUpdate);
       }
@@ -9915,6 +9937,7 @@ var init_auto_scheduler = __esm({
           console.log(`\u2705 [AUTO] OpenInsider collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("OpenInsider", processedCount, duration);
+          this.openInsiderFailures = 0;
         } catch (error) {
           console.error("\u274C [AUTO] OpenInsider collection failed:", error);
           if (runId) {
@@ -9923,6 +9946,11 @@ var init_auto_scheduler = __esm({
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
             }).where(eq4(collectionRuns.id, runId));
+          }
+          this.openInsiderFailures++;
+          if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
+            console.error(`\u{1F6A8} ALERT: OpenInsider collector has failed ${this.openInsiderFailures} consecutive times!`);
+            console.error(`\u{1F6A8} Action required: Check OpenInsider service availability and logs`);
           }
           console.log("\u{1F504} Will retry on next scheduled run...");
         }
@@ -9952,6 +9980,7 @@ var init_auto_scheduler = __esm({
           console.log(`\u2705 [AUTO] MarketBeat collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("MarketBeat", processedCount, duration);
+          this.marketBeatFailures = 0;
         } catch (error) {
           console.error("\u274C [AUTO] MarketBeat collection failed:", error);
           if (runId) {
@@ -9960,6 +9989,11 @@ var init_auto_scheduler = __esm({
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
             }).where(eq4(collectionRuns.id, runId));
+          }
+          this.marketBeatFailures++;
+          if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
+            console.error(`\u{1F6A8} ALERT: MarketBeat collector has failed ${this.marketBeatFailures} consecutive times!`);
+            console.error(`\u{1F6A8} Action required: Check MarketBeat service availability and logs`);
           }
           console.log("\u{1F504} Will retry on next scheduled run...");
         }
@@ -10030,6 +10064,7 @@ var init_auto_scheduler = __esm({
             console.log(`   \u{1F4A1} All trades already in database (normal if up-to-date)`);
           }
           this.logCollectionStats("SEC RSS", processedCount, duration);
+          this.secRssFailures = 0;
         } catch (error) {
           console.error("\u274C [AUTO] SEC RSS collection failed:", error);
           if (runId) {
@@ -10038,6 +10073,11 @@ var init_auto_scheduler = __esm({
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
             }).where(eq4(collectionRuns.id, runId));
+          }
+          this.secRssFailures++;
+          if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
+            console.error(`\u{1F6A8} ALERT: SEC RSS collector has failed ${this.secRssFailures} consecutive times!`);
+            console.error(`\u{1F6A8} Action required: Check SEC.gov accessibility and logs`);
           }
           console.log("\u{1F504} Will retry on next scheduled run...");
         }
@@ -10387,13 +10427,6 @@ async function translateText(text2, targetLanguage) {
   }
 }
 async function registerRoutes(app2) {
-  app2.get("/api/health", (_req, res) => {
-    res.status(200).json({
-      status: "healthy",
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      uptime: process.uptime()
-    });
-  });
   app2.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount } = req.body;
@@ -10724,7 +10757,18 @@ async function registerRoutes(app2) {
       });
     }
   });
-  const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET environment variable is required. Please set it in your .env file for security.");
+  }
+  if (JWT_SECRET.trim().length < 32) {
+    throw new Error(
+      `FATAL: JWT_SECRET must be at least 32 characters for security. Current length: ${JWT_SECRET.length} characters. Please generate a stronger secret: openssl rand -base64 48`
+    );
+  }
+  if (JWT_SECRET.trim() !== JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET contains leading/trailing whitespace. This is a security risk.");
+  }
   const SALT_ROUNDS = 10;
   const getUserIdFromToken = (req) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
@@ -10752,8 +10796,11 @@ async function registerRoutes(app2) {
     try {
       event = stripe2.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
-      console.error("\u26A0\uFE0F Webhook signature verification failed:", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      console.error("\u{1F6A8} SECURITY ALERT: Invalid webhook signature detected!");
+      console.error(`   Error: ${err.message}`);
+      console.error(`   Origin: ${req.headers.origin || "unknown"}`);
+      console.error(`   IP: ${req.ip}`);
+      return res.status(200).send("Signature verification failed - incident logged");
     }
     console.log("\u{1F514} Stripe webhook received:", event.type);
     switch (event.type) {
@@ -10907,11 +10954,8 @@ async function registerRoutes(app2) {
               where: eq5(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
-              await db4.update(users).set({
-                subscriptionTier: "free",
-                subscriptionStatus: "inactive"
-              }).where(eq5(users.id, user2.id));
-              console.log(`\u26A0\uFE0F Payment failed, downgraded user ${user2.email} to free tier`);
+              console.log(`\u26A0\uFE0F Payment failed for user ${user2.email} - Stripe will retry automatically`);
+              console.log(`\u{1F4E7} TODO: Send payment failure notification email to ${user2.email}`);
             }
           } catch (error) {
             console.error("\u274C Error handling payment failure:", error);
@@ -13981,11 +14025,43 @@ async function registerRoutes(app2) {
       } catch (error) {
         schedulerStatus.error = "Failed to load scheduler";
       }
+      let dataFreshness = { status: "unknown", message: "Not checked" };
+      try {
+        const recentTrades = await storage.getInsiderTrades(1);
+        if (recentTrades.length > 0) {
+          const mostRecentTrade = recentTrades[0];
+          const now = /* @__PURE__ */ new Date();
+          const filedDate = new Date(mostRecentTrade.filedDate);
+          const ageHours = Math.floor((now.getTime() - filedDate.getTime()) / (1e3 * 60 * 60));
+          dataFreshness = {
+            status: "ok",
+            mostRecentFilingDate: mostRecentTrade.filedDate,
+            ageHours,
+            message: `Most recent filing: ${ageHours}h old`
+          };
+          if (ageHours > 48) {
+            dataFreshness.status = "stale";
+            dataFreshness.warning = "Data collection may not be running";
+          }
+        } else {
+          dataFreshness = {
+            status: "error",
+            message: "No trades in database"
+          };
+        }
+      } catch (error) {
+        dataFreshness = {
+          status: "error",
+          message: `Data check failed: ${error.message}`
+        };
+      }
       res.json({
         status: "healthy",
         timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        uptime: process.uptime(),
         websocket: wss ? "connected" : "disconnected",
-        autoScheduler: schedulerStatus
+        autoScheduler: schedulerStatus,
+        dataFreshness
       });
     } catch (error) {
       res.status(500).json({
@@ -14331,172 +14407,6 @@ var init_routes = __esm({
       apiVersion: "2023-10-16"
     });
     openai2 = new OpenAI4({ apiKey: process.env.OPENAI_API_KEY });
-  }
-});
-
-// server/cron-jobs.ts
-var cron_jobs_exports = {};
-__export(cron_jobs_exports, {
-  startAllCronJobs: () => startAllCronJobs,
-  startSubscriptionExpirationCheckJob: () => startSubscriptionExpirationCheckJob,
-  startSubscriptionSyncJob: () => startSubscriptionSyncJob,
-  startTrialExpirationCheckJob: () => startTrialExpirationCheckJob
-});
-import cron from "node-cron";
-import Stripe3 from "stripe";
-import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { eq as eq6 } from "drizzle-orm";
-function startSubscriptionSyncJob() {
-  cron.schedule("0 2 * * *", async () => {
-    console.log("[Cron] Starting daily subscription sync...");
-    try {
-      const insiderProUsers = await db5.query.users.findMany({
-        where: eq6(users.subscriptionTier, "insider_pro")
-      });
-      console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
-      let syncedCount = 0;
-      let errorCount = 0;
-      for (const user2 of insiderProUsers) {
-        if (!user2.stripeSubscriptionId) {
-          console.log(`[Cron] User ${user2.id} (${user2.email}) has no Stripe subscription ID, skipping`);
-          continue;
-        }
-        try {
-          const subscription = await stripe3.subscriptions.retrieve(user2.stripeSubscriptionId);
-          const stripePeriodEnd = new Date(subscription.current_period_end * 1e3);
-          const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
-          const now = /* @__PURE__ */ new Date();
-          const dbShowsExpired = user2.subscriptionEndDate && user2.subscriptionEndDate < now;
-          const dbStatusMismatch = user2.subscriptionStatus !== subscription.status;
-          const dbEndDateMismatch = !user2.subscriptionEndDate || Math.abs(user2.subscriptionEndDate.getTime() - stripePeriodEnd.getTime()) > 6e4;
-          if (dbShowsExpired && isStripeActive) {
-            console.log(`[Cron] \u26A0\uFE0F  MISMATCH: User ${user2.id} (${user2.email}) - DB expired but Stripe active`);
-            console.log(`[Cron]     DB: status=${user2.subscriptionStatus}, end=${user2.subscriptionEndDate}`);
-            console.log(`[Cron]     Stripe: status=${subscription.status}, end=${stripePeriodEnd}`);
-            const now2 = /* @__PURE__ */ new Date();
-            let dbStatus = subscription.status;
-            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
-              dbStatus = "active";
-              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
-            }
-            await db5.update(users).set({
-              subscriptionStatus: dbStatus,
-              subscriptionEndDate: stripePeriodEnd
-            }).where(eq6(users.id, user2.id));
-            console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
-            syncedCount++;
-          } else if (dbStatusMismatch || dbEndDateMismatch) {
-            console.log(`[Cron] \u{1F504} Minor sync for user ${user2.id} (${user2.email})`);
-            const now2 = /* @__PURE__ */ new Date();
-            let dbStatus = subscription.status;
-            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
-              dbStatus = "active";
-              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
-            }
-            await db5.update(users).set({
-              subscriptionStatus: dbStatus,
-              subscriptionEndDate: stripePeriodEnd
-            }).where(eq6(users.id, user2.id));
-            syncedCount++;
-          } else {
-            console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
-          }
-        } catch (error) {
-          if (error.type === "StripeInvalidRequestError" && error.code === "resource_missing") {
-            console.log(`[Cron] \u26A0\uFE0F  Subscription ${user2.stripeSubscriptionId} not found in Stripe for user ${user2.id} (${user2.email})`);
-          } else {
-            console.error(`[Cron] \u274C Error syncing user ${user2.id} (${user2.email}):`, error.message);
-            errorCount++;
-          }
-        }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      console.log(`[Cron] Subscription sync complete: ${syncedCount} synced, ${errorCount} errors`);
-    } catch (error) {
-      console.error("[Cron] Fatal error in subscription sync:", error);
-    }
-  });
-  console.log("\u2705 Subscription sync cron job scheduled (daily at 2 AM)");
-}
-function startTrialExpirationCheckJob() {
-  cron.schedule("0 * * * *", async () => {
-    console.log("[Cron] Checking for expired trials...");
-    try {
-      const now = /* @__PURE__ */ new Date();
-      const expiredTrialUsers = await db5.query.users.findMany({
-        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
-          eq7(users2.subscriptionStatus, "trialing"),
-          isNotNull(users2.trialExpiresAt),
-          lt(users2.trialExpiresAt, now)
-        )
-      });
-      if (expiredTrialUsers.length > 0) {
-        console.log(`[Cron] Found ${expiredTrialUsers.length} expired trials`);
-        for (const user2 of expiredTrialUsers) {
-          await db5.update(users).set({
-            subscriptionStatus: "inactive"
-          }).where(eq6(users.id, user2.id));
-          console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
-        }
-      }
-    } catch (error) {
-      console.error("[Cron] Error checking expired trials:", error);
-    }
-  });
-  console.log("\u2705 Trial expiration check cron job scheduled (hourly)");
-}
-function startSubscriptionExpirationCheckJob() {
-  cron.schedule("30 * * * *", async () => {
-    console.log("[Cron] Checking for expired subscriptions...");
-    try {
-      const now = /* @__PURE__ */ new Date();
-      const expiredSubscriptions = await db5.query.users.findMany({
-        where: (users2, { and: and4, eq: eq7, isNotNull, lt }) => and4(
-          eq7(users2.subscriptionStatus, "active"),
-          isNotNull(users2.subscriptionEndDate),
-          lt(users2.subscriptionEndDate, now)
-        ),
-        limit: 100
-        // Prevent memory issues with large datasets
-      });
-      if (expiredSubscriptions.length > 0) {
-        console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
-        for (const user2 of expiredSubscriptions) {
-          try {
-            await db5.update(users).set({
-              subscriptionStatus: "inactive"
-            }).where(eq6(users.id, user2.id));
-            console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
-          } catch (updateError) {
-            console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);
-          }
-        }
-        console.log(`[Cron] \u2705 Subscription expiration check completed`);
-      } else {
-        console.log(`[Cron] No expired subscriptions found`);
-      }
-    } catch (error) {
-      console.error("[Cron] Error checking expired subscriptions:", error);
-    }
-  });
-  console.log("\u2705 Subscription expiration check cron job scheduled (hourly at :30)");
-}
-function startAllCronJobs() {
-  startSubscriptionSyncJob();
-  startTrialExpirationCheckJob();
-  startSubscriptionExpirationCheckJob();
-  console.log("\u{1F550} All cron jobs started");
-}
-var db5, stripe3;
-var init_cron_jobs = __esm({
-  "server/cron-jobs.ts"() {
-    "use strict";
-    init_schema();
-    init_schema();
-    db5 = drizzle5(process.env.DATABASE_URL, { schema: schema_exports });
-    stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-11-20.acacia"
-    });
   }
 });
 
@@ -16044,6 +15954,174 @@ var init_crash_prevention_system = __esm({
   }
 });
 
+// server/cron-jobs.ts
+var cron_jobs_exports = {};
+__export(cron_jobs_exports, {
+  startAllCronJobs: () => startAllCronJobs,
+  startSubscriptionExpirationCheckJob: () => startSubscriptionExpirationCheckJob,
+  startSubscriptionSyncJob: () => startSubscriptionSyncJob,
+  startTrialExpirationCheckJob: () => startTrialExpirationCheckJob
+});
+import cron from "node-cron";
+import Stripe3 from "stripe";
+import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
+import { eq as eq6 } from "drizzle-orm";
+function startSubscriptionSyncJob() {
+  cron.schedule("0 2 * * *", async () => {
+    console.log("[Cron] Starting daily subscription sync...");
+    try {
+      const insiderProUsers = await db5.query.users.findMany({
+        where: eq6(users.subscriptionTier, "insider_pro")
+      });
+      console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
+      let syncedCount = 0;
+      let errorCount = 0;
+      for (const user2 of insiderProUsers) {
+        if (!user2.stripeSubscriptionId) {
+          console.log(`[Cron] User ${user2.id} (${user2.email}) has no Stripe subscription ID, skipping`);
+          continue;
+        }
+        try {
+          const subscription = await stripe3.subscriptions.retrieve(user2.stripeSubscriptionId);
+          const stripePeriodEnd = new Date(subscription.current_period_end * 1e3);
+          const isStripeActive = subscription.status === "active" || subscription.status === "trialing";
+          const now = /* @__PURE__ */ new Date();
+          const dbShowsExpired = user2.subscriptionEndDate && user2.subscriptionEndDate < now;
+          const dbStatusMismatch = user2.subscriptionStatus !== subscription.status;
+          const dbEndDateMismatch = !user2.subscriptionEndDate || Math.abs(user2.subscriptionEndDate.getTime() - stripePeriodEnd.getTime()) > 6e4;
+          if (dbShowsExpired && isStripeActive) {
+            console.log(`[Cron] \u26A0\uFE0F  MISMATCH: User ${user2.id} (${user2.email}) - DB expired but Stripe active`);
+            console.log(`[Cron]     DB: status=${user2.subscriptionStatus}, end=${user2.subscriptionEndDate}`);
+            console.log(`[Cron]     Stripe: status=${subscription.status}, end=${stripePeriodEnd}`);
+            const now2 = /* @__PURE__ */ new Date();
+            let dbStatus = subscription.status;
+            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
+              dbStatus = "active";
+              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
+            }
+            await db5.update(users).set({
+              subscriptionStatus: dbStatus,
+              subscriptionEndDate: stripePeriodEnd
+            }).where(eq6(users.id, user2.id));
+            console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
+            syncedCount++;
+          } else if (dbStatusMismatch || dbEndDateMismatch) {
+            console.log(`[Cron] \u{1F504} Minor sync for user ${user2.id} (${user2.email})`);
+            const now2 = /* @__PURE__ */ new Date();
+            let dbStatus = subscription.status;
+            if (subscription.status === "canceled" && stripePeriodEnd > now2) {
+              dbStatus = "active";
+              console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
+            }
+            await db5.update(users).set({
+              subscriptionStatus: dbStatus,
+              subscriptionEndDate: stripePeriodEnd
+            }).where(eq6(users.id, user2.id));
+            syncedCount++;
+          } else {
+            console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
+          }
+        } catch (error) {
+          if (error.type === "StripeInvalidRequestError" && error.code === "resource_missing") {
+            console.log(`[Cron] \u26A0\uFE0F  Subscription ${user2.stripeSubscriptionId} not found in Stripe for user ${user2.id} (${user2.email})`);
+          } else {
+            console.error(`[Cron] \u274C Error syncing user ${user2.id} (${user2.email}):`, error.message);
+            errorCount++;
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      console.log(`[Cron] Subscription sync complete: ${syncedCount} synced, ${errorCount} errors`);
+    } catch (error) {
+      console.error("[Cron] Fatal error in subscription sync:", error);
+    }
+  });
+  console.log("\u2705 Subscription sync cron job scheduled (daily at 2 AM)");
+}
+function startTrialExpirationCheckJob() {
+  cron.schedule("0 * * * *", async () => {
+    console.log("[Cron] Checking for expired trials...");
+    try {
+      const now = /* @__PURE__ */ new Date();
+      const expiredTrialUsers = await db5.query.users.findMany({
+        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
+          eq7(users2.subscriptionStatus, "trialing"),
+          isNotNull(users2.trialExpiresAt),
+          lt(users2.trialExpiresAt, now)
+        )
+      });
+      if (expiredTrialUsers.length > 0) {
+        console.log(`[Cron] Found ${expiredTrialUsers.length} expired trials`);
+        for (const user2 of expiredTrialUsers) {
+          await db5.update(users).set({
+            subscriptionStatus: "inactive"
+          }).where(eq6(users.id, user2.id));
+          console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
+        }
+      }
+    } catch (error) {
+      console.error("[Cron] \u274C CRITICAL ERROR checking expired trials:", error);
+      console.error("[Cron] This means users may retain premium access after trial expires!");
+      console.error("[Cron] Will retry on next hourly run");
+    }
+  });
+  console.log("\u2705 Trial expiration check cron job scheduled (hourly)");
+}
+function startSubscriptionExpirationCheckJob() {
+  cron.schedule("30 * * * *", async () => {
+    console.log("[Cron] Checking for expired subscriptions...");
+    try {
+      const now = /* @__PURE__ */ new Date();
+      const expiredSubscriptions = await db5.query.users.findMany({
+        where: (users2, { and: and4, eq: eq7, isNotNull, lt }) => and4(
+          eq7(users2.subscriptionStatus, "active"),
+          isNotNull(users2.subscriptionEndDate),
+          lt(users2.subscriptionEndDate, now)
+        ),
+        limit: 100
+        // Prevent memory issues with large datasets
+      });
+      if (expiredSubscriptions.length > 0) {
+        console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
+        for (const user2 of expiredSubscriptions) {
+          try {
+            await db5.update(users).set({
+              subscriptionStatus: "inactive"
+            }).where(eq6(users.id, user2.id));
+            console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
+          } catch (updateError) {
+            console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);
+          }
+        }
+        console.log(`[Cron] \u2705 Subscription expiration check completed`);
+      } else {
+        console.log(`[Cron] No expired subscriptions found`);
+      }
+    } catch (error) {
+      console.error("[Cron] Error checking expired subscriptions:", error);
+    }
+  });
+  console.log("\u2705 Subscription expiration check cron job scheduled (hourly at :30)");
+}
+function startAllCronJobs() {
+  startSubscriptionSyncJob();
+  startTrialExpirationCheckJob();
+  startSubscriptionExpirationCheckJob();
+  console.log("\u{1F550} All cron jobs started");
+}
+var db5, stripe3;
+var init_cron_jobs = __esm({
+  "server/cron-jobs.ts"() {
+    "use strict";
+    init_schema();
+    init_schema();
+    db5 = drizzle5(process.env.DATABASE_URL, { schema: schema_exports });
+    stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-11-20.acacia"
+    });
+  }
+});
+
 // server/index.ts
 init_routes();
 import path4 from "path";
@@ -16225,7 +16303,7 @@ app.use((req, res, next) => {
     "http://localhost:5000",
     "http://127.0.0.1:5000"
   ].filter(Boolean);
-  if (origin && allowedOrigins.some((allowed) => origin.includes(allowed))) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -16333,6 +16411,16 @@ app.use((req, res, next) => {
       host: "0.0.0.0"
     }, () => {
       log(`serving on port ${port}`);
+      setTimeout(async () => {
+        try {
+          log("\u{1F6E1}\uFE0F Starting crash prevention system...");
+          const { crashPreventionSystem: crashPreventionSystem2 } = await Promise.resolve().then(() => (init_crash_prevention_system(), crash_prevention_system_exports));
+          crashPreventionSystem2.start();
+          log("\u2705 Crash prevention system started");
+        } catch (error) {
+          log("\u26A0\uFE0F Crash prevention system initialization failed:", error);
+        }
+      }, 5e3);
       setTimeout(async () => {
         try {
           log("\u{1F680} Starting auto-scheduler for automated data collection...");

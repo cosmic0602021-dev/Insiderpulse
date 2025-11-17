@@ -24,6 +24,10 @@ export const users = pgTable("users", {
   passwordResetExpires: timestamp("password_reset_expires"), // Token expires in 1 hour
 
   // Subscription & Trial Management
+  // ⚠️ CRITICAL: Before deleting a user, ALWAYS check stripeSubscriptionId and subscriptionStatus
+  // Users with active Stripe subscriptions MUST have their subscriptions canceled in Stripe first
+  // Otherwise, orphaned subscriptions will continue charging without user records
+  // Recommended: Implement soft delete instead of hard delete for users with payment history
   subscriptionTier: text("subscription_tier").notNull().default("free"), // "free" | "insider_pro"
   subscriptionStatus: text("subscription_status").notNull().default("inactive"), // "active" | "inactive" | "trialing" | "canceled"
   stripeCustomerId: text("stripe_customer_id"),
@@ -164,7 +168,8 @@ export type StockPriceHistory = typeof stockPriceHistory.$inferSelect;
 // Alerts table for user-defined trading alerts
 export const alerts = pgTable("alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
+  // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'VOLUME', 'PRICE', 'COMPANY', 'TRADER', 'SIGNAL'
   condition: text("condition").notNull(), // 'greater_than', 'less_than', 'equals', 'contains'
@@ -209,7 +214,8 @@ export type CollectionRun = typeof collectionRuns.$inferSelect;
 // User events for conversion tracking
 export const userEvents = pgTable("user_events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+  // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
   eventType: text("event_type").notNull(), // "SIGNUP" | "TRIAL_START" | "TRIAL_END" | "SUBSCRIPTION_START" | "SUBSCRIPTION_END" | "SUBSCRIPTION_CANCEL"
   eventData: json("event_data"), // Additional event-specific data
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -226,7 +232,8 @@ export type UserEvent = typeof userEvents.$inferSelect;
 // User sessions for geographic tracking
 export const userSessions = pgTable("user_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+  // CRITICAL FIX: Added CASCADE to prevent orphaned records when user is deleted
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
   ipAddress: text("ip_address"),
   country: text("country"), // ISO country code (e.g., "US", "KR")
   countryName: text("country_name"), // Full country name

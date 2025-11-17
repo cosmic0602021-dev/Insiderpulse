@@ -37,7 +37,9 @@ app.use((req, res, next) => {
     'http://127.0.0.1:5000'
   ].filter(Boolean);
 
-  if (origin && allowedOrigins.some(allowed => origin.includes(allowed as string))) {
+  // SECURITY FIX: Use exact match instead of includes() to prevent subdomain attacks
+  // (e.g., "insiderpulse.pro.evil.com" should NOT pass)
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -189,6 +191,18 @@ app.use((req, res, next) => {
       host: "0.0.0.0"
     }, () => {
       log(`serving on port ${port}`);
+
+      // 🛡️ Start crash prevention system early for protection
+      setTimeout(async () => {
+        try {
+          log('🛡️ Starting crash prevention system...');
+          const { crashPreventionSystem } = await import('./crash-prevention-system');
+          crashPreventionSystem.start();
+          log('✅ Crash prevention system started');
+        } catch (error) {
+          log('⚠️ Crash prevention system initialization failed:', error);
+        }
+      }, 5000); // Wait 5 seconds after server is ready
 
       // 🚀 Initialize auto-scheduler for automated data collection
       // Delayed start to ensure server is fully responsive first

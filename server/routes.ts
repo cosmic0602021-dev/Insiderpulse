@@ -89,16 +89,6 @@ async function translateText(text: string, targetLanguage: string): Promise<stri
 let wss: WebSocketServer;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // 🏥 HEALTH CHECK ENDPOINT - Prevents Replit autoscale spindown
-  app.get("/api/health", (_req, res) => {
-    res.status(200).json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
-
-
   // 💳 STRIPE PAYMENT ENDPOINTS FOR REAL CARD PROCESSING
   
   // Create payment intent for one-time premium features
@@ -160,6 +150,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: 'User not authenticated'
         });
       }
+
+      // RACE CONDITION MITIGATION:
+      // Multiple concurrent requests could reach this point simultaneously.
+      // We rely on Stripe's idempotency key (line 368) to prevent duplicate checkout sessions.
+      // The idempotency key uses a 30-second window, so concurrent requests within that window
+      // will receive the same checkout session from Stripe, preventing double-charging.
+      //
+      // FUTURE IMPROVEMENT: For maximum safety, wrap this entire user check + subscription validation
+      // in a database transaction with row-level locking (SELECT ... FOR UPDATE).
+      // However, this requires careful refactoring to avoid including Stripe API calls in the transaction.
 
       // Get user info
       const user = await db.query.users.findFirst({
@@ -536,7 +536,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 🔐 AUTHENTICATION ENDPOINTS
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  // CRITICAL SECURITY: JWT_SECRET must be set in environment variables
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET environment variable is required. Please set it in your .env file for security.');
+  }
+
+  // CRITICAL SECURITY FIX: Validate JWT secret strength
+  // Weak secrets can be brute-forced, allowing attackers to forge authentication tokens
+  if (JWT_SECRET.trim().length < 32) {
+    throw new Error(
+      `FATAL: JWT_SECRET must be at least 32 characters for security. ` +
+      `Current length: ${JWT_SECRET.length} characters. ` +
+      `Please generate a stronger secret: openssl rand -base64 48`
+    );
+  }
+
+  if (JWT_SECRET.trim() !== JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET contains leading/trailing whitespace. This is a security risk.');
+  }
   const SALT_ROUNDS = 10;
 
   // Middleware to extract userId from JWT token
@@ -572,8 +590,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       event = stripe.webhooks.constructEvent(req.body, sig!, webhookSecret);
     } catch (err: any) {
-      console.error('⚠️ Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      // CRITICAL SECURITY FIX: Return 200 instead of 400 to prevent Stripe webhook storms
+      // Invalid signatures indicate either:
+      // 1. Malicious webhook attempt (security threat)
+      // 2. Misconfigured webhook secret (config issue)
+      // Returning 400 causes Stripe to retry indefinitely, creating DoS-like load
+      console.error('🚨 SECURITY ALERT: Invalid webhook signature detected!');
+      console.error(`   Error: ${err.message}`);
+      console.error(`   Origin: ${req.headers.origin || 'unknown'}`);
+      console.error(`   IP: ${req.ip}`);
+
+      // TODO: Send security alert to admin
+      // await sendSecurityAlert('Invalid Stripe webhook signature', {
+      //   error: err.message,
+      //   ip: req.ip,
+      //   timestamp: new Date()
+      // });
+
+      // Return 200 to stop Stripe retries, but log security incident
+      return res.status(200).send('Signature verification failed - incident logged');
     }
 
     console.log('🔔 Stripe webhook received:', event.type);
@@ -788,15 +823,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             if (user) {
-              // Downgrade user to free tier on payment failure
-              await db.update(users)
-                .set({
-                  subscriptionTier: 'free',
-                  subscriptionStatus: 'inactive',
-                })
-                .where(eq(users.id, user.id));
+              // CRITICAL FIX: Don't downgrade immediately on payment failure!
+              // Stripe automatically retries failed payments 3-4 times over ~2 weeks
+              // Only log and notify - let Stripe's retry logic handle it
+              // Actual downgrade happens when subscription is canceled (customer.subscription.deleted)
+              console.log(`⚠️ Payment failed for user ${user.email} - Stripe will retry automatically`);
+              console.log(`📧 TODO: Send payment failure notification email to ${user.email}`);
 
-              console.log(`⚠️ Payment failed, downgraded user ${user.email} to free tier`);
+              // TODO: Integrate email notification service here
+              // await emailNotificationService.sendPaymentFailedNotification(user.email, {
+              //   invoiceUrl: invoice.hosted_invoice_url,
+              //   nextRetryDate: new Date(invoice.next_payment_attempt * 1000)
+              // });
             }
           } catch (error) {
             console.error('❌ Error handling payment failure:', error);
@@ -4727,26 +4765,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced health check endpoint with scheduler status
+  // Enhanced health check endpoint with scheduler status and data freshness
   app.get('/api/health', async (req, res) => {
     try {
       let schedulerStatus: any = { isRunning: false, error: 'Not loaded' };
-      
+
       try {
         const { autoScheduler } = await import('./auto-scheduler');
         schedulerStatus = autoScheduler.getStatus();
       } catch (error) {
         schedulerStatus.error = 'Failed to load scheduler';
       }
-      
-      res.json({ 
-        status: 'healthy', 
+
+      // Check data collection freshness
+      let dataFreshness: any = { status: 'unknown', message: 'Not checked' };
+      try {
+        const recentTrades = await storage.getInsiderTrades(1); // Get most recent trade
+        if (recentTrades.length > 0) {
+          const mostRecentTrade = recentTrades[0];
+          const now = new Date();
+          const filedDate = new Date(mostRecentTrade.filedDate);
+          const ageHours = Math.floor((now.getTime() - filedDate.getTime()) / (1000 * 60 * 60));
+
+          dataFreshness = {
+            status: 'ok',
+            mostRecentFilingDate: mostRecentTrade.filedDate,
+            ageHours,
+            message: `Most recent filing: ${ageHours}h old`
+          };
+
+          // Warn if data is stale (> 48 hours)
+          if (ageHours > 48) {
+            dataFreshness.status = 'stale';
+            dataFreshness.warning = 'Data collection may not be running';
+          }
+        } else {
+          dataFreshness = {
+            status: 'error',
+            message: 'No trades in database'
+          };
+        }
+      } catch (error: any) {
+        dataFreshness = {
+          status: 'error',
+          message: `Data check failed: ${error.message}`
+        };
+      }
+
+      res.json({
+        status: 'healthy',
         timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
         websocket: wss ? 'connected' : 'disconnected',
-        autoScheduler: schedulerStatus
+        autoScheduler: schedulerStatus,
+        dataFreshness
       });
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: 'error',
         error: 'Health check failed',
         timestamp: new Date().toISOString()

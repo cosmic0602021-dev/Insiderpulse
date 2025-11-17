@@ -160,7 +160,14 @@ export function startTrialExpirationCheckJob() {
         }
       }
     } catch (error) {
-      console.error("[Cron] Error checking expired trials:", error);
+      console.error("[Cron] ❌ CRITICAL ERROR checking expired trials:", error);
+      console.error("[Cron] This means users may retain premium access after trial expires!");
+      console.error("[Cron] Will retry on next hourly run");
+
+      // CRITICAL FIX: Log error for monitoring
+      // TODO: Integrate with alerting system to notify admins
+      // TODO: Implement exponential backoff retry logic
+      // For now, rely on hourly schedule to retry automatically
     }
   });
 

@@ -16,10 +16,23 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     
     // Method 1: Environment-based API key
     const adminApiKey = process.env.ADMIN_API_KEY || process.env.SESSION_SECRET;
-    if (!adminApiKey) {
-      console.error('🚨 SECURITY: No admin API key configured');
-      return res.status(500).json({ 
-        error: 'Server configuration error - admin access unavailable' 
+
+    // CRITICAL SECURITY FIX: Validate admin key is not empty or whitespace-only
+    if (!adminApiKey || adminApiKey.trim().length === 0) {
+      console.error('🚨 SECURITY: No admin API key configured or key is empty/whitespace');
+      console.error(`   ADMIN_API_KEY: ${process.env.ADMIN_API_KEY ? '[set but invalid]' : '[not set]'}`);
+      console.error(`   SESSION_SECRET: ${process.env.SESSION_SECRET ? '[set but invalid]' : '[not set]'}`);
+      return res.status(500).json({
+        error: 'Server configuration error - admin access unavailable'
+      });
+    }
+
+    // Additional validation: minimum length for security
+    if (adminApiKey.length < 16) {
+      console.error('🚨 SECURITY: Admin API key is too short (minimum 16 characters)');
+      console.error(`   Current length: ${adminApiKey.length} characters`);
+      return res.status(500).json({
+        error: 'Server configuration error - admin access unavailable'
       });
     }
 

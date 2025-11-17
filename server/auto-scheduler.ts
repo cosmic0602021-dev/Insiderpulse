@@ -15,6 +15,12 @@ class AutoScheduler {
   private secRssInterval: NodeJS.Timeout | null = null;
   private isRunning = false;
 
+  // Failure tracking for alerts
+  private openInsiderFailures = 0;
+  private marketBeatFailures = 0;
+  private secRssFailures = 0;
+  private readonly FAILURE_ALERT_THRESHOLD = 3; // Alert after 3 consecutive failures
+
   constructor() {
     // Inject broadcasters to avoid circular dependencies
     setBroadcaster(broadcastUpdate);
@@ -158,6 +164,9 @@ class AutoScheduler {
 
       this.logCollectionStats('OpenInsider', processedCount, duration);
 
+      // Reset failure counter on success
+      this.openInsiderFailures = 0;
+
     } catch (error) {
       console.error('❌ [AUTO] OpenInsider collection failed:', error);
 
@@ -170,6 +179,13 @@ class AutoScheduler {
             errorMessage: error instanceof Error ? error.message : String(error),
           })
           .where(eq(collectionRuns.id, runId));
+      }
+
+      // Track consecutive failures and alert if threshold exceeded
+      this.openInsiderFailures++;
+      if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
+        console.error(`🚨 ALERT: OpenInsider collector has failed ${this.openInsiderFailures} consecutive times!`);
+        console.error(`🚨 Action required: Check OpenInsider service availability and logs`);
       }
 
       console.log('🔄 Will retry on next scheduled run...');
@@ -214,6 +230,9 @@ class AutoScheduler {
 
       this.logCollectionStats('MarketBeat', processedCount, duration);
 
+      // Reset failure counter on success
+      this.marketBeatFailures = 0;
+
     } catch (error) {
       console.error('❌ [AUTO] MarketBeat collection failed:', error);
 
@@ -226,6 +245,13 @@ class AutoScheduler {
             errorMessage: error instanceof Error ? error.message : String(error),
           })
           .where(eq(collectionRuns.id, runId));
+      }
+
+      // Track consecutive failures and alert if threshold exceeded
+      this.marketBeatFailures++;
+      if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
+        console.error(`🚨 ALERT: MarketBeat collector has failed ${this.marketBeatFailures} consecutive times!`);
+        console.error(`🚨 Action required: Check MarketBeat service availability and logs`);
       }
 
       console.log('🔄 Will retry on next scheduled run...');
@@ -320,6 +346,9 @@ class AutoScheduler {
 
       this.logCollectionStats('SEC RSS', processedCount, duration);
 
+      // Reset failure counter on success
+      this.secRssFailures = 0;
+
     } catch (error) {
       console.error('❌ [AUTO] SEC RSS collection failed:', error);
 
@@ -332,6 +361,13 @@ class AutoScheduler {
             errorMessage: error instanceof Error ? error.message : String(error),
           })
           .where(eq(collectionRuns.id, runId));
+      }
+
+      // Track consecutive failures and alert if threshold exceeded
+      this.secRssFailures++;
+      if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
+        console.error(`🚨 ALERT: SEC RSS collector has failed ${this.secRssFailures} consecutive times!`);
+        console.error(`🚨 Action required: Check SEC.gov accessibility and logs`);
       }
 
       console.log('🔄 Will retry on next scheduled run...');
