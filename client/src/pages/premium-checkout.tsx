@@ -20,7 +20,7 @@ export default function PremiumCheckout() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Redirect if user already has active subscription
   useEffect(() => {
@@ -34,15 +34,20 @@ export default function PremiumCheckout() {
     }
   }, [user, setLocation, toast]);
 
-  const plans = {
-    monthly: {
-      name: "Insider",
-      price: 14,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
-      interval: "/month",
-      billingInterval: "월간 자동결제",
-      description: "Real-time insider trading data & AI analysis",
-      features: [
+  // Get localized plan data based on current language
+  const getLocalizedPlans = () => {
+    const features = {
+      ko: [
+        "실시간 내부자 거래 알림 (48시간 지연 없음)",
+        "순수 매수/매도 신호만 표시 (보조금, 옵션, 보상 제외)",
+        "AI 기반 거래 분석 & 예측",
+        "고급 패턴 감지 & 신호",
+        "임원 거래 추적 (CEO, CFO 등)",
+        "실시간 데이터 업데이트 & 푸시 알림",
+        "내부자 거래 성과 분석",
+        "독점 시장 인텔리전스 리포트"
+      ],
+      en: [
         "Real-time insider trade alerts (no 48h delay)",
         "Pure buy/sell signals only (no grants, options, awards)",
         "AI-powered trade analysis & predictions",
@@ -52,32 +57,70 @@ export default function PremiumCheckout() {
         "Historical insider performance analytics",
         "Exclusive market intelligence reports"
       ],
-      savings: null
-    },
-    yearly: {
-      name: "Insider",
-      price: 112,
-      originalPrice: 168,
-      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
-      interval: "/year",
-      billingInterval: "연간 자동결제",
-      pricePerMonth: 9.33,
-      description: "Real-time insider trading data & AI analysis",
-      features: [
-        "Real-time insider trade alerts (no 48h delay)",
-        "Pure buy/sell signals only (no grants, options, awards)",
-        "AI-powered trade analysis & predictions",
-        "Advanced pattern detection & signals",
-        "Executive trade tracking (CEO, CFO, etc.)",
-        "Live data updates & push notifications",
-        "Historical insider performance analytics",
-        "Exclusive market intelligence reports"
+      ja: [
+        "リアルタイムインサイダー取引アラート（48時間遅延なし）",
+        "純粋な買い/売りシグナルのみ（助成金、オプション、報酬を除く）",
+        "AI駆動の取引分析と予測",
+        "高度なパターン検出とシグナル",
+        "役員取引追跡（CEO、CFOなど）",
+        "ライブデータ更新とプッシュ通知",
+        "過去のインサイダーパフォーマンス分析",
+        "独占的な市場インテリジェンスレポート"
       ],
-      savings: "Save 33% with annual billing",
-      discount: "33% OFF"
-    },
+      zh: [
+        "实时内幕交易提醒（无48小时延迟）",
+        "仅纯粹买卖信号（不包括补助金、期权、奖励）",
+        "AI驱动的交易分析和预测",
+        "高级模式检测和信号",
+        "高管交易追踪（CEO、CFO等）",
+        "实时数据更新和推送通知",
+        "历史内幕交易绩效分析",
+        "独家市场情报报告"
+      ]
+    };
+
+    const intervals = {
+      ko: { month: '/월', year: '/년' },
+      en: { month: '/month', year: '/year' },
+      ja: { month: '/月', year: '/年' },
+      zh: { month: '/月', year: '/年' }
+    };
+
+    const billingIntervals = {
+      ko: { monthly: '월간 자동결제', yearly: '연간 자동결제' },
+      en: { monthly: 'Monthly auto-renewal', yearly: 'Yearly auto-renewal' },
+      ja: { monthly: '月次自動更新', yearly: '年次自動更新' },
+      zh: { monthly: '月度自动续费', yearly: '年度自动续费' }
+    };
+
+    return {
+      monthly: {
+        name: "Insider",
+        price: 14,
+        priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
+        interval: intervals[language].month,
+        billingInterval: billingIntervals[language].monthly,
+        description: t('checkout.planDescription'),
+        features: features[language],
+        savings: null
+      },
+      yearly: {
+        name: "Insider",
+        price: 112,
+        originalPrice: 168,
+        priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
+        interval: intervals[language].year,
+        billingInterval: billingIntervals[language].yearly,
+        pricePerMonth: 9.33,
+        description: t('checkout.planDescription'),
+        features: features[language],
+        savings: "Save 33% with annual billing",
+        discount: "33% OFF"
+      },
+    };
   };
 
+  const plans = getLocalizedPlans();
   const currentPlan = plans[selectedPlan];
 
   // Trial periods by plan
