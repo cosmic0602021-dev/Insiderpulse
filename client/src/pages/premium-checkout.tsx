@@ -429,18 +429,6 @@ export default function PremiumCheckout() {
                   </div>
                 </div>
 
-                {/* Warning Notice */}
-                {showTrialInfo && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        카드 정보 입력 시 자동결제 이후에는 환불 불가하오니 꼭 확인하세요.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Terms Agreement Checkbox */}
                 {showTrialInfo && (
                   <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
@@ -454,7 +442,7 @@ export default function PremiumCheckout() {
                       htmlFor="terms"
                       className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
                     >
-                      자동결제 및 환불 불가 정책에 동의하며, 무료체험 종료 후 자동으로 결제가 진행됨을 이해했습니다.
+                      무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.
                     </label>
                   </div>
                 )}
