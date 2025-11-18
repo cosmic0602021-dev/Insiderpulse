@@ -123,6 +123,49 @@ export default function PremiumCheckout() {
   const plans = getLocalizedPlans();
   const currentPlan = plans[selectedPlan];
 
+  // Localized text sections
+  const securityText = {
+    ko: {
+      title: '안전한 결제 & 자동 갱신',
+      description: (interval: string) => `모든 거래는 Stripe를 통해 암호화되고 안전하게 처리됩니다. 구독은 취소하실 때까지 ${interval}마다 자동으로 갱신됩니다. 언제든지 한 번의 클릭으로 취소 가능하며, 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.`,
+      interval: { monthly: '매월', yearly: '매년' }
+    },
+    en: {
+      title: 'Secure Payment & Auto-Renewal',
+      description: (interval: string) => `All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew ${interval} until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period.`,
+      interval: { monthly: 'every month', yearly: 'every year' }
+    },
+    ja: {
+      title: '安全な決済と自動更新',
+      description: (interval: string) => `すべての取引は暗号化され、Stripeを通じて安全に処理されます。サブスクリプションはキャンセルするまで${interval}自動的に更新されます。いつでもワンクリックでキャンセルでき、請求期間の終了までアクセスを維持できます。`,
+      interval: { monthly: '毎月', yearly: '毎年' }
+    },
+    zh: {
+      title: '安全支付与自动续费',
+      description: (interval: string) => `所有交易都经过加密，并通过Stripe安全处理。您的订阅将${interval}自动续订，直到您取消为止。随时一键取消 - 您将保留访问权限直至计费周期结束。`,
+      interval: { monthly: '每月', yearly: '每年' }
+    }
+  };
+
+  const dataText = {
+    ko: {
+      title: '실제 SEC 데이터',
+      description: 'SEC 서류에서 직접 가져온 데이터입니다. 가짜 데이터 없음 - 오직 실제 정보만 제공합니다.'
+    },
+    en: {
+      title: 'Real SEC Data',
+      description: 'All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.'
+    },
+    ja: {
+      title: '本物のSECデータ',
+      description: 'すべてのデータはSECファイリングから直接取得されています。偽のデータはありません - 実際の実用的な情報のみです。'
+    },
+    zh: {
+      title: '真实SEC数据',
+      description: '所有数据直接来源于SEC文件。没有虚假数据 - 只有真实、可操作的情报。'
+    }
+  };
+
   // Trial periods by plan
   const trialDays = selectedPlan === 'yearly' ? 7 : 3;
   const trialPeriodKo = selectedPlan === 'yearly' ? '7일' : '3일';
@@ -418,11 +461,9 @@ export default function PremiumCheckout() {
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Secure Payment & Auto-Renewal</h3>
+                  <h3 className="font-semibold text-sm text-white">{securityText[language].title}</h3>
                   <p className="text-sm text-slate-300 mt-1">
-                    All transactions are encrypted and processed securely through Stripe.
-                    Your subscription will automatically renew {selectedPlan === 'monthly' ? 'every month' : 'every year'} until you cancel.
-                    Cancel anytime with one click - you'll keep access until the end of your billing period.
+                    {securityText[language].description(securityText[language].interval[selectedPlan === 'monthly' ? 'monthly' : 'yearly'])}
                   </p>
                 </div>
               </div>
@@ -432,9 +473,9 @@ export default function PremiumCheckout() {
               <div className="flex items-start gap-3">
                 <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Real SEC Data</h3>
+                  <h3 className="font-semibold text-sm text-white">{dataText[language].title}</h3>
                   <p className="text-sm text-slate-300 mt-1">
-                    All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.
+                    {dataText[language].description}
                   </p>
                 </div>
               </div>

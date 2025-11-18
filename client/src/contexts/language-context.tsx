@@ -1132,7 +1132,7 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.priceLabel': 'Price:',
     'checkout.billingCycleLabel': 'Billing Cycle:',
     'checkout.priceWithTax': '${price}/{interval} (세금별도)',
-    'checkout.termsAgreement': '무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.',
+    'checkout.termsAgreement': 'Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing.',
   },
   ko: {
     // Navigation
@@ -2006,7 +2006,7 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.priceLabel': '가격:',
     'checkout.billingCycleLabel': '결제 주기:',
     'checkout.priceWithTax': '${price}/{interval} (세금별도)',
-    'checkout.termsAgreement': '무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.',
+    'checkout.termsAgreement': '무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.',
   },
   ja: {
     // Navigation
@@ -2747,7 +2747,7 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.priceLabel': '価格:',
     'checkout.billingCycleLabel': '請求サイクル:',
     'checkout.priceWithTax': '${price}/{interval} (税別)',
-    'checkout.termsAgreement': '無料トライアル終了後、自動的に課金されます。ご希望でない場合は、カード会社で自動支払いを直接キャンセルしてください。自動支払い後の返金は不可であることを理解しました。',
+    'checkout.termsAgreement': '無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。',
   },
   zh: {
     // Navigation
@@ -3488,7 +3488,7 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.priceLabel': '价格:',
     'checkout.billingCycleLabel': '计费周期:',
     'checkout.priceWithTax': '${price}/{interval} (不含税)',
-    'checkout.termsAgreement': '免费试用结束后将自动收费。如果不想续费，请通过发卡银行直接取消自动支付。我理解自动支付后不可退款。',
+    'checkout.termsAgreement': '免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。',
   },
 };
 

@@ -10929,23 +10929,48 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/cancel-subscription", async (req, res) => {
     try {
-      const { subscriptionId } = req.body;
-      if (!subscriptionId) {
-        return res.status(400).json({ error: "Missing subscriptionId" });
+      const userId = getUserIdFromToken(req);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
+        });
       }
-      const subscription = await stripe2.subscriptions.update(subscriptionId, {
+      const user2 = await db4.query.users.findFirst({
+        where: eq5(users.id, userId)
+      });
+      if (!user2) {
+        return res.status(404).json({
+          success: false,
+          message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      if (!user2.stripeSubscriptionId) {
+        return res.status(400).json({
+          success: false,
+          message: "\uAD6C\uB3C5 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      const subscription = await stripe2.subscriptions.update(user2.stripeSubscriptionId, {
         cancel_at_period_end: true
       });
-      console.log(`\u{1F4B3} Cancelled subscription: ${subscriptionId}`);
+      console.log(`\u{1F4B3} Cancelled subscription for user ${userId}: ${user2.stripeSubscriptionId}`);
+      const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1e3) : /* @__PURE__ */ new Date();
+      await db4.update(users).set({
+        subscriptionStatus: "canceled",
+        subscriptionEndDate: periodEnd
+      }).where(eq5(users.id, userId));
       res.json({
-        id: subscription.id,
-        status: subscription.status,
-        cancel_at_period_end: subscription.cancel_at_period_end
+        success: true,
+        message: "\uAD6C\uB3C5\uC774 \uD574\uC9C0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+        periodEnd: periodEnd.toISOString()
       });
     } catch (error) {
       console.error("\u274C Stripe subscription cancellation error:", error);
       res.status(500).json({
-        error: "Error cancelling subscription: " + error.message
+        success: false,
+        message: "\uAD6C\uB3C5 \uD574\uC9C0 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4",
+        error: error.message
       });
     }
   });

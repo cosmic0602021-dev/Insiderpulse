@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, Ticket, CheckCircle2, BellOff, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
+import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, Ticket, CheckCircle2, BellOff, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, XCircle, UserCheck, LineChart as LineChart$1, Ban } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -25,6 +25,7 @@ import * as SwitchPrimitives from "@radix-ui/react-switch";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 const useBuiltinInsertionEffect = React["useInsertionEffect"];
 const canUseDOM = !!(typeof window !== "undefined" && typeof window.document !== "undefined" && typeof window.document.createElement !== "undefined");
 const useIsomorphicLayoutEffect = canUseDOM ? React.useLayoutEffect : React.useEffect;
@@ -2335,7 +2336,7 @@ const translations = {
     "checkout.priceLabel": "Price:",
     "checkout.billingCycleLabel": "Billing Cycle:",
     "checkout.priceWithTax": "${price}/{interval} (세금별도)",
-    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
+    "checkout.termsAgreement": "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing."
   },
   ko: {
     // Navigation
@@ -3161,7 +3162,7 @@ const translations = {
     "checkout.priceLabel": "가격:",
     "checkout.billingCycleLabel": "결제 주기:",
     "checkout.priceWithTax": "${price}/{interval} (세금별도)",
-    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
+    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
   },
   ja: {
     // Navigation
@@ -3865,7 +3866,7 @@ const translations = {
     "checkout.priceLabel": "価格:",
     "checkout.billingCycleLabel": "請求サイクル:",
     "checkout.priceWithTax": "${price}/{interval} (税別)",
-    "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。ご希望でない場合は、カード会社で自動支払いを直接キャンセルしてください。自動支払い後の返金は不可であることを理解しました。"
+    "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。"
   },
   zh: {
     // Navigation
@@ -4569,7 +4570,7 @@ const translations = {
     "checkout.priceLabel": "价格:",
     "checkout.billingCycleLabel": "计费周期:",
     "checkout.priceWithTax": "${price}/{interval} (不含税)",
-    "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请通过发卡银行直接取消自动支付。我理解自动支付后不可退款。"
+    "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。"
   }
 };
 const LanguageContext = createContext(void 0);
@@ -13793,7 +13794,7 @@ function PremiumCheckout() {
   const { toast: toast2 } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   useEffect(() => {
     if (user && (user.subscriptionTier === "insider_pro" || user.subscriptionTier === "insider") && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
       toast2({
@@ -13803,15 +13804,19 @@ function PremiumCheckout() {
       setTimeout(() => setLocation("/trades"), 1500);
     }
   }, [user, setLocation, toast2]);
-  const plans = {
-    monthly: {
-      name: "Insider",
-      price: 14,
-      priceId: "price_1SPBb1Q9br8aQ595KTOAcBfO",
-      interval: "/month",
-      billingInterval: "월간 자동결제",
-      description: "Real-time insider trading data & AI analysis",
-      features: [
+  const getLocalizedPlans = () => {
+    const features = {
+      ko: [
+        "실시간 내부자 거래 알림 (48시간 지연 없음)",
+        "순수 매수/매도 신호만 표시 (보조금, 옵션, 보상 제외)",
+        "AI 기반 거래 분석 & 예측",
+        "고급 패턴 감지 & 신호",
+        "임원 거래 추적 (CEO, CFO 등)",
+        "실시간 데이터 업데이트 & 푸시 알림",
+        "내부자 거래 성과 분석",
+        "독점 시장 인텔리전스 리포트"
+      ],
+      en: [
         "Real-time insider trade alerts (no 48h delay)",
         "Pure buy/sell signals only (no grants, options, awards)",
         "AI-powered trade analysis & predictions",
@@ -13821,32 +13826,107 @@ function PremiumCheckout() {
         "Historical insider performance analytics",
         "Exclusive market intelligence reports"
       ],
-      savings: null
+      ja: [
+        "リアルタイムインサイダー取引アラート（48時間遅延なし）",
+        "純粋な買い/売りシグナルのみ（助成金、オプション、報酬を除く）",
+        "AI駆動の取引分析と予測",
+        "高度なパターン検出とシグナル",
+        "役員取引追跡（CEO、CFOなど）",
+        "ライブデータ更新とプッシュ通知",
+        "過去のインサイダーパフォーマンス分析",
+        "独占的な市場インテリジェンスレポート"
+      ],
+      zh: [
+        "实时内幕交易提醒（无48小时延迟）",
+        "仅纯粹买卖信号（不包括补助金、期权、奖励）",
+        "AI驱动的交易分析和预测",
+        "高级模式检测和信号",
+        "高管交易追踪（CEO、CFO等）",
+        "实时数据更新和推送通知",
+        "历史内幕交易绩效分析",
+        "独家市场情报报告"
+      ]
+    };
+    const intervals = {
+      ko: { month: "/월", year: "/년" },
+      en: { month: "/month", year: "/year" },
+      ja: { month: "/月", year: "/年" },
+      zh: { month: "/月", year: "/年" }
+    };
+    const billingIntervals = {
+      ko: { monthly: "월간 자동결제", yearly: "연간 자동결제" },
+      en: { monthly: "Monthly auto-renewal", yearly: "Yearly auto-renewal" },
+      ja: { monthly: "月次自動更新", yearly: "年次自動更新" },
+      zh: { monthly: "月度自动续费", yearly: "年度自动续费" }
+    };
+    return {
+      monthly: {
+        name: "Insider",
+        price: 14,
+        priceId: "price_1SPBb1Q9br8aQ595KTOAcBfO",
+        interval: intervals[language].month,
+        billingInterval: billingIntervals[language].monthly,
+        description: t("checkout.planDescription"),
+        features: features[language],
+        savings: null
+      },
+      yearly: {
+        name: "Insider",
+        price: 112,
+        originalPrice: 168,
+        priceId: "price_1SPBdLQ9br8aQ595n0dKEOLv",
+        interval: intervals[language].year,
+        billingInterval: billingIntervals[language].yearly,
+        pricePerMonth: 9.33,
+        description: t("checkout.planDescription"),
+        features: features[language],
+        savings: "Save 33% with annual billing",
+        discount: "33% OFF"
+      }
+    };
+  };
+  const plans = getLocalizedPlans();
+  const currentPlan = plans[selectedPlan];
+  const securityText = {
+    ko: {
+      title: "안전한 결제 & 자동 갱신",
+      description: (interval) => `모든 거래는 Stripe를 통해 암호화되고 안전하게 처리됩니다. 구독은 취소하실 때까지 ${interval}마다 자동으로 갱신됩니다. 언제든지 한 번의 클릭으로 취소 가능하며, 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.`,
+      interval: { monthly: "매월", yearly: "매년" }
     },
-    yearly: {
-      name: "Insider",
-      price: 112,
-      originalPrice: 168,
-      priceId: "price_1SPBdLQ9br8aQ595n0dKEOLv",
-      interval: "/year",
-      billingInterval: "연간 자동결제",
-      pricePerMonth: 9.33,
-      description: "Real-time insider trading data & AI analysis",
-      features: [
-        "Real-time insider trade alerts (no 48h delay)",
-        "Pure buy/sell signals only (no grants, options, awards)",
-        "AI-powered trade analysis & predictions",
-        "Advanced pattern detection & signals",
-        "Executive trade tracking (CEO, CFO, etc.)",
-        "Live data updates & push notifications",
-        "Historical insider performance analytics",
-        "Exclusive market intelligence reports"
-      ],
-      savings: "Save 33% with annual billing",
-      discount: "33% OFF"
+    en: {
+      title: "Secure Payment & Auto-Renewal",
+      description: (interval) => `All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew ${interval} until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period.`,
+      interval: { monthly: "every month", yearly: "every year" }
+    },
+    ja: {
+      title: "安全な決済と自動更新",
+      description: (interval) => `すべての取引は暗号化され、Stripeを通じて安全に処理されます。サブスクリプションはキャンセルするまで${interval}自動的に更新されます。いつでもワンクリックでキャンセルでき、請求期間の終了までアクセスを維持できます。`,
+      interval: { monthly: "毎月", yearly: "毎年" }
+    },
+    zh: {
+      title: "安全支付与自动续费",
+      description: (interval) => `所有交易都经过加密，并通过Stripe安全处理。您的订阅将${interval}自动续订，直到您取消为止。随时一键取消 - 您将保留访问权限直至计费周期结束。`,
+      interval: { monthly: "每月", yearly: "每年" }
     }
   };
-  const currentPlan = plans[selectedPlan];
+  const dataText = {
+    ko: {
+      title: "실제 SEC 데이터",
+      description: "SEC 서류에서 직접 가져온 데이터입니다. 가짜 데이터 없음 - 오직 실제 정보만 제공합니다."
+    },
+    en: {
+      title: "Real SEC Data",
+      description: "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence."
+    },
+    ja: {
+      title: "本物のSECデータ",
+      description: "すべてのデータはSECファイリングから直接取得されています。偽のデータはありません - 実際の実用的な情報のみです。"
+    },
+    zh: {
+      title: "真实SEC数据",
+      description: "所有数据直接来源于SEC文件。没有虚假数据 - 只有真实、可操作的情报。"
+    }
+  };
   const trialDays = selectedPlan === "yearly" ? 7 : 3;
   const trialPeriodKo = selectedPlan === "yearly" ? "7일" : "3일";
   const trialPeriodEn = selectedPlan === "yearly" ? "7 days" : "3 days";
@@ -14045,19 +14125,15 @@ function PremiumCheckout() {
           /* @__PURE__ */ jsx("div", { className: "mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx(Shield, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: "Secure Payment & Auto-Renewal" }),
-              /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-300 mt-1", children: [
-                "All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew ",
-                selectedPlan === "monthly" ? "every month" : "every year",
-                " until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period."
-              ] })
+              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: securityText[language].title }),
+              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: securityText[language].description(securityText[language].interval[selectedPlan === "monthly" ? "monthly" : "yearly"]) })
             ] })
           ] }) }),
           /* @__PURE__ */ jsx("div", { className: "mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: "Real SEC Data" }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence." })
+              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: dataText[language].title }),
+              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: dataText[language].description })
             ] })
           ] }) })
         ] }),
@@ -16765,10 +16841,110 @@ function LandingPage() {
     ] }) })
   ] });
 }
+const AlertDialog = AlertDialogPrimitive.Root;
+const AlertDialogPortal = AlertDialogPrimitive.Portal;
+const AlertDialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Overlay,
+  {
+    className: cn(
+      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    ),
+    ...props,
+    ref
+  }
+));
+AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
+const AlertDialogContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsxs(AlertDialogPortal, { children: [
+  /* @__PURE__ */ jsx(AlertDialogOverlay, {}),
+  /* @__PURE__ */ jsx(
+    AlertDialogPrimitive.Content,
+    {
+      ref,
+      className: cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      ),
+      ...props
+    }
+  )
+] }));
+AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
+const AlertDialogHeader = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn(
+      "flex flex-col space-y-2 text-center sm:text-left",
+      className
+    ),
+    ...props
+  }
+);
+AlertDialogHeader.displayName = "AlertDialogHeader";
+const AlertDialogFooter = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    ),
+    ...props
+  }
+);
+AlertDialogFooter.displayName = "AlertDialogFooter";
+const AlertDialogTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Title,
+  {
+    ref,
+    className: cn("text-lg font-semibold", className),
+    ...props
+  }
+));
+AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
+const AlertDialogDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Description,
+  {
+    ref,
+    className: cn("text-sm text-muted-foreground", className),
+    ...props
+  }
+));
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
+const AlertDialogAction = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Action,
+  {
+    ref,
+    className: cn(buttonVariants(), className),
+    ...props
+  }
+));
+AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName;
+const AlertDialogCancel = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  AlertDialogPrimitive.Cancel,
+  {
+    ref,
+    className: cn(
+      buttonVariants({ variant: "outline" }),
+      "mt-2 sm:mt-0",
+      className
+    ),
+    ...props
+  }
+));
+AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [, navigate2] = useLocation();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const { toast: toast2 } = useToast();
   const handleManageSubscription = async () => {
     if (!(user == null ? void 0 : user.stripeCustomerId)) return;
     setIsLoadingPortal(true);
@@ -16792,6 +16968,46 @@ function ProfilePage() {
   };
   const handleUpgradeToInsider = () => {
     navigate2("/premium-checkout");
+  };
+  const handleCancelSubscription = async () => {
+    if (!(user == null ? void 0 : user.stripeSubscriptionId)) {
+      toast2({
+        title: "오류",
+        description: "구독 정보를 찾을 수 없습니다.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast2({
+          title: "구독 해지 완료",
+          description: user.subscriptionStatus === "trialing" ? "무료체험 및 자동결제가 해지되었습니다. 체험 종료일까지 계속 이용하실 수 있습니다." : "구독이 해지되었습니다. 현재 결제 기간 종료일까지 계속 이용하실 수 있습니다."
+        });
+        await refreshUser();
+        setShowCancelDialog(false);
+      } else {
+        throw new Error(data.message || "구독 해지에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      toast2({
+        title: "구독 해지 실패",
+        description: error.message || "구독 해지 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCancelling(false);
+    }
   };
   if (!user) {
     return /* @__PURE__ */ jsx("div", { className: "container max-w-4xl mx-auto p-6", children: /* @__PURE__ */ jsx("p", { className: "text-center text-muted-foreground", children: "Loading..." }) });
@@ -16923,6 +17139,18 @@ function ProfilePage() {
             ),
             /* @__PURE__ */ jsx(RefreshAccountButton, { className: "w-full" })
           ] }),
+          user.subscriptionStatus !== "canceled" && /* @__PURE__ */ jsxs(
+            Button,
+            {
+              onClick: () => setShowCancelDialog(true),
+              className: "w-full",
+              variant: "destructive",
+              children: [
+                /* @__PURE__ */ jsx(Ban, { className: "w-4 h-4 mr-2" }),
+                user.subscriptionStatus === "trialing" ? "무료체험 해지" : "구독 해지"
+              ]
+            }
+          ),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground text-center", children: '💡 구독 상태가 자동으로 업데이트되지 않으면 "계정 새로고침"을 클릭하세요' })
         ] }) }),
         isPremium && user.subscriptionStatus === "trialing" && /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
@@ -16968,7 +17196,25 @@ function ProfilePage() {
           }
         )
       ] })
-    ] })
+    ] }),
+    /* @__PURE__ */ jsx(AlertDialog, { open: showCancelDialog, onOpenChange: setShowCancelDialog, children: /* @__PURE__ */ jsxs(AlertDialogContent, { children: [
+      /* @__PURE__ */ jsxs(AlertDialogHeader, { children: [
+        /* @__PURE__ */ jsx(AlertDialogTitle, { children: user.subscriptionStatus === "trialing" ? "무료체험 해지" : "구독 해지" }),
+        /* @__PURE__ */ jsx(AlertDialogDescription, { children: user.subscriptionStatus === "trialing" ? "무료체험 및 자동결제가 해지됩니다. 무료체험 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?" : "구독 및 자동결제가 해지됩니다. 현재 결제 기간 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?" })
+      ] }),
+      /* @__PURE__ */ jsxs(AlertDialogFooter, { children: [
+        /* @__PURE__ */ jsx(AlertDialogCancel, { children: "취소" }),
+        /* @__PURE__ */ jsx(
+          AlertDialogAction,
+          {
+            onClick: handleCancelSubscription,
+            disabled: isCancelling,
+            className: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            children: isCancelling ? "처리 중..." : "확인"
+          }
+        )
+      ] })
+    ] }) })
   ] });
 }
 function PublicRouter() {

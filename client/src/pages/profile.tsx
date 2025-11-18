@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Crown
+  Crown,
+  Ban
 } from 'lucide-react';
 import {
   formatTimeRemaining,
@@ -23,11 +24,26 @@ import {
   hasPremiumAccess
 } from '@/lib/subscription-utils';
 import { RefreshAccountButton } from '@/components/refresh-account-button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [, navigate] = useLocation();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const { toast } = useToast();
 
   const handleManageSubscription = async () => {
     if (!user?.stripeCustomerId) return;
@@ -55,6 +71,54 @@ export default function ProfilePage() {
 
   const handleUpgradeToInsider = () => {
     navigate('/premium-checkout');
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!user?.stripeSubscriptionId) {
+      toast({
+        title: '오류',
+        description: '구독 정보를 찾을 수 없습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const response = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: '구독 해지 완료',
+          description: user.subscriptionStatus === 'trialing'
+            ? '무료체험 및 자동결제가 해지되었습니다. 체험 종료일까지 계속 이용하실 수 있습니다.'
+            : '구독이 해지되었습니다. 현재 결제 기간 종료일까지 계속 이용하실 수 있습니다.',
+        });
+
+        // Refresh user data
+        await refreshUser();
+        setShowCancelDialog(false);
+      } else {
+        throw new Error(data.message || '구독 해지에 실패했습니다.');
+      }
+    } catch (error: any) {
+      console.error('Error cancelling subscription:', error);
+      toast({
+        title: '구독 해지 실패',
+        description: error.message || '구독 해지 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   if (!user) {
@@ -246,6 +310,19 @@ export default function ProfilePage() {
                   </Button>
                   <RefreshAccountButton className="w-full" />
                 </div>
+
+                {/* Cancel Subscription Button */}
+                {user.subscriptionStatus !== 'canceled' && (
+                  <Button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="w-full"
+                    variant="destructive"
+                  >
+                    <Ban className="w-4 h-4 mr-2" />
+                    {user.subscriptionStatus === 'trialing' ? '무료체험 해지' : '구독 해지'}
+                  </Button>
+                )}
+
                 <p className="text-xs text-muted-foreground text-center">
                   💡 구독 상태가 자동으로 업데이트되지 않으면 "계정 새로고침"을 클릭하세요
                 </p>
@@ -325,6 +402,33 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Cancel Subscription Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {user.subscriptionStatus === 'trialing' ? '무료체험 해지' : '구독 해지'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {user.subscriptionStatus === 'trialing'
+                ? '무료체험 및 자동결제가 해지됩니다. 무료체험 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?'
+                : '구독 및 자동결제가 해지됩니다. 현재 결제 기간 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? '처리 중...' : '확인'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

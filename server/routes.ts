@@ -628,27 +628,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cancel subscription
   app.post("/api/cancel-subscription", async (req, res) => {
     try {
-      const { subscriptionId } = req.body;
+      const userId = getUserIdFromToken(req);
 
-      if (!subscriptionId) {
-        return res.status(400).json({ error: 'Missing subscriptionId' });
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: '인증이 필요합니다'
+        });
       }
 
-      const subscription = await stripe.subscriptions.update(subscriptionId, {
+      // Get user info
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다'
+        });
+      }
+
+      if (!user.stripeSubscriptionId) {
+        return res.status(400).json({
+          success: false,
+          message: '구독 정보를 찾을 수 없습니다'
+        });
+      }
+
+      // Cancel subscription in Stripe (cancel at period end)
+      const subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
         cancel_at_period_end: true
       });
 
-      console.log(`💳 Cancelled subscription: ${subscriptionId}`);
+      console.log(`💳 Cancelled subscription for user ${userId}: ${user.stripeSubscriptionId}`);
+
+      // Get the period end date from Stripe
+      const periodEnd = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : new Date();
+
+      // Update database - set to "canceled" status but keep access until period end
+      await db.update(users)
+        .set({
+          subscriptionStatus: 'canceled',
+          subscriptionEndDate: periodEnd,
+        })
+        .where(eq(users.id, userId));
 
       res.json({
-        id: subscription.id,
-        status: subscription.status,
-        cancel_at_period_end: subscription.cancel_at_period_end
+        success: true,
+        message: '구독이 해지되었습니다',
+        periodEnd: periodEnd.toISOString()
       });
     } catch (error: any) {
       console.error('❌ Stripe subscription cancellation error:', error);
       res.status(500).json({
-        error: "Error cancelling subscription: " + error.message
+        success: false,
+        message: '구독 해지 중 오류가 발생했습니다',
+        error: error.message
       });
     }
   });
