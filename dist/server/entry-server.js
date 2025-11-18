@@ -2295,7 +2295,47 @@ const translations = {
     "tradeList.dateRange.month": "Last Month",
     "tradeList.dateRange.threeMonths": "Last 3 Months",
     "tradeList.dateRange.sixMonths": "Last 6 Months",
-    "tradeList.showingTrades": "Showing {count} trades"
+    "tradeList.showingTrades": "Showing {count} trades",
+    // Premium Checkout
+    "checkout.title": "Upgrade to Insider",
+    "checkout.subtitle": "Get {days} days free trial + real-time insider trading alerts",
+    "checkout.monthly": "Monthly",
+    "checkout.yearly": "Yearly",
+    "checkout.yearlyDiscount": "-33%",
+    "checkout.planName": "Insider",
+    "checkout.planDescription": "Real-time insider trading data & AI analysis",
+    "checkout.priceMonth": "/month",
+    "checkout.priceYear": "/year",
+    "checkout.billingMonthly": "월간 자동결제",
+    "checkout.billingYearly": "연간 자동결제",
+    "checkout.feature1": "Real-time insider trade alerts (no 48h delay)",
+    "checkout.feature2": "Pure buy/sell signals only (no grants, options, awards)",
+    "checkout.feature3": "AI-powered trade analysis & predictions",
+    "checkout.feature4": "Advanced pattern detection & signals",
+    "checkout.feature5": "Executive trade tracking (CEO, CFO, etc.)",
+    "checkout.feature6": "Live data updates & push notifications",
+    "checkout.feature7": "Historical insider performance analytics",
+    "checkout.feature8": "Exclusive market intelligence reports",
+    "checkout.trialTitle": "{days}일 무료체험",
+    "checkout.trialDescription": "오늘부터 {days}일간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${price}/{interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.",
+    "checkout.secureTitle": "Secure Payment & Auto-Renewal",
+    "checkout.secureDescription": "All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew every {interval} until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period.",
+    "checkout.realDataTitle": "Real SEC Data",
+    "checkout.realDataDescription": "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.",
+    "checkout.startTrial": "Start Free Trial",
+    "checkout.subscribeNow": "Subscribe Now",
+    "checkout.startTrialButton": "Start {days} days Free Trial",
+    "checkout.subscribeButton": "Subscribe Now - ${price}/{interval}",
+    "checkout.trialSubtext": "You won't be charged for {days} days. Cancel anytime during the trial.",
+    "checkout.cardDescriptionTrial": "{days} days free trial then ${price}{interval}",
+    "checkout.cardDescriptionNoTrial": "Start billing ${price}{interval} immediately",
+    "checkout.planLabel": "Plan:",
+    "checkout.freeTrialLabel": "Free Trial:",
+    "checkout.afterTrialLabel": "After Trial:",
+    "checkout.priceLabel": "Price:",
+    "checkout.billingCycleLabel": "Billing Cycle:",
+    "checkout.priceWithTax": "${price}/{interval} (세금별도)",
+    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
   },
   ko: {
     // Navigation
@@ -3081,7 +3121,47 @@ const translations = {
     "tradeList.dateRange.month": "지난 달",
     "tradeList.dateRange.threeMonths": "최근 3개월",
     "tradeList.dateRange.sixMonths": "최근 6개월",
-    "tradeList.showingTrades": "{count}개 거래 표시 중"
+    "tradeList.showingTrades": "{count}개 거래 표시 중",
+    // Premium Checkout
+    "checkout.title": "Insider로 업그레이드",
+    "checkout.subtitle": "{days}일 무료체험 + 실시간 insider 거래 알림",
+    "checkout.monthly": "월간",
+    "checkout.yearly": "연간",
+    "checkout.yearlyDiscount": "-33%",
+    "checkout.planName": "Insider",
+    "checkout.planDescription": "실시간 내부자 거래 데이터 & AI 분석",
+    "checkout.priceMonth": "/월",
+    "checkout.priceYear": "/년",
+    "checkout.billingMonthly": "월간 자동결제",
+    "checkout.billingYearly": "연간 자동결제",
+    "checkout.feature1": "실시간 내부자 거래 알림 (48시간 지연 없음)",
+    "checkout.feature2": "순수 매수/매도 신호만 표시 (보조금, 옵션, 보상 제외)",
+    "checkout.feature3": "AI 기반 거래 분석 & 예측",
+    "checkout.feature4": "고급 패턴 감지 & 신호",
+    "checkout.feature5": "임원 거래 추적 (CEO, CFO 등)",
+    "checkout.feature6": "실시간 데이터 업데이트 & 푸시 알림",
+    "checkout.feature7": "내부자 거래 성과 분석",
+    "checkout.feature8": "독점 시장 인텔리전스 리포트",
+    "checkout.trialTitle": "{days}일 무료체험",
+    "checkout.trialDescription": "오늘부터 {days}일간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${price}/{interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.",
+    "checkout.secureTitle": "안전한 결제 & 자동 갱신",
+    "checkout.secureDescription": "모든 거래는 Stripe를 통해 암호화되고 안전하게 처리됩니다. 구독은 취소하실 때까지 매 {interval}마다 자동으로 갱신됩니다. 언제든지 한 번의 클릭으로 취소 가능하며, 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.",
+    "checkout.realDataTitle": "실제 SEC 데이터",
+    "checkout.realDataDescription": "SEC 서류에서 직접 가져온 데이터입니다. 가짜 데이터 없음 - 오직 실제 정보만 제공합니다.",
+    "checkout.startTrial": "무료 체험 시작",
+    "checkout.subscribeNow": "지금 구독하기",
+    "checkout.startTrialButton": "{days}일 무료 체험 시작",
+    "checkout.subscribeButton": "지금 구독하기 - ${price}/{interval}",
+    "checkout.trialSubtext": "{days}일 동안 요금이 청구되지 않습니다. 무료체험 중 언제든지 취소 가능합니다.",
+    "checkout.cardDescriptionTrial": "{days}일 무료체험 후 ${price}{interval}",
+    "checkout.cardDescriptionNoTrial": "즉시 ${price}{interval} 결제 시작",
+    "checkout.planLabel": "플랜:",
+    "checkout.freeTrialLabel": "무료체험:",
+    "checkout.afterTrialLabel": "체험 후 가격:",
+    "checkout.priceLabel": "가격:",
+    "checkout.billingCycleLabel": "결제 주기:",
+    "checkout.priceWithTax": "${price}/{interval} (세금별도)",
+    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
   },
   ja: {
     // Navigation
@@ -3745,7 +3825,47 @@ const translations = {
     "tradeList.dateRange.month": "先月",
     "tradeList.dateRange.threeMonths": "過去3ヶ月",
     "tradeList.dateRange.sixMonths": "過去6ヶ月",
-    "tradeList.showingTrades": "{count}件の取引を表示中"
+    "tradeList.showingTrades": "{count}件の取引を表示中",
+    // Premium Checkout
+    "checkout.title": "Insiderにアップグレード",
+    "checkout.subtitle": "{days}日間無料トライアル + リアルタイムインサイダー取引アラート",
+    "checkout.monthly": "月次",
+    "checkout.yearly": "年次",
+    "checkout.yearlyDiscount": "-33%",
+    "checkout.planName": "Insider",
+    "checkout.planDescription": "リアルタイムインサイダー取引データ & AI分析",
+    "checkout.priceMonth": "/月",
+    "checkout.priceYear": "/年",
+    "checkout.billingMonthly": "月次自動更新",
+    "checkout.billingYearly": "年次自動更新",
+    "checkout.feature1": "リアルタイムインサイダー取引アラート（48時間遅延なし）",
+    "checkout.feature2": "純粋な買い/売りシグナルのみ（助成金、オプション、報酬を除く）",
+    "checkout.feature3": "AI駆動の取引分析と予測",
+    "checkout.feature4": "高度なパターン検出とシグナル",
+    "checkout.feature5": "役員取引追跡（CEO、CFOなど）",
+    "checkout.feature6": "ライブデータ更新とプッシュ通知",
+    "checkout.feature7": "過去のインサイダーパフォーマンス分析",
+    "checkout.feature8": "独占的な市場インテリジェンスレポート",
+    "checkout.trialTitle": "{days}日間無料トライアル",
+    "checkout.trialDescription": "本日から{days}日間、すべてのInsider機能を無料でお試しいただけます。無料トライアル期間が終了すると、自動的に${price}/{interval}の請求が開始されます。いつでもキャンセルできます。",
+    "checkout.secureTitle": "安全な決済と自動更新",
+    "checkout.secureDescription": "すべての取引は暗号化され、Stripeを通じて安全に処理されます。サブスクリプションはキャンセルするまで{interval}ごとに自動的に更新されます。いつでもワンクリックでキャンセルでき、請求期間の終了までアクセスを維持できます。",
+    "checkout.realDataTitle": "本物のSECデータ",
+    "checkout.realDataDescription": "すべてのデータはSECファイリングから直接取得されています。偽のデータはありません - 実際の実用的な情報のみです。",
+    "checkout.startTrial": "無料トライアルを開始",
+    "checkout.subscribeNow": "今すぐ購読",
+    "checkout.startTrialButton": "{days}日間無料トライアルを開始",
+    "checkout.subscribeButton": "今すぐ購読 - ${price}/{interval}",
+    "checkout.trialSubtext": "{days}日間は課金されません。トライアル期間中いつでもキャンセルできます。",
+    "checkout.cardDescriptionTrial": "{days}日間無料トライアル後 ${price}{interval}",
+    "checkout.cardDescriptionNoTrial": "即座に${price}{interval}請求開始",
+    "checkout.planLabel": "プラン:",
+    "checkout.freeTrialLabel": "無料トライアル:",
+    "checkout.afterTrialLabel": "トライアル後の価格:",
+    "checkout.priceLabel": "価格:",
+    "checkout.billingCycleLabel": "請求サイクル:",
+    "checkout.priceWithTax": "${price}/{interval} (税別)",
+    "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。ご希望でない場合は、カード会社で自動支払いを直接キャンセルしてください。自動支払い後の返金は不可であることを理解しました。"
   },
   zh: {
     // Navigation
@@ -4409,7 +4529,47 @@ const translations = {
     "tradeList.dateRange.month": "上月",
     "tradeList.dateRange.threeMonths": "最近3个月",
     "tradeList.dateRange.sixMonths": "最近6个月",
-    "tradeList.showingTrades": "显示{count}笔交易"
+    "tradeList.showingTrades": "显示{count}笔交易",
+    // Premium Checkout
+    "checkout.title": "升级到Insider",
+    "checkout.subtitle": "获得{days}天免费试用 + 实时内幕交易提醒",
+    "checkout.monthly": "月付",
+    "checkout.yearly": "年付",
+    "checkout.yearlyDiscount": "-33%",
+    "checkout.planName": "Insider",
+    "checkout.planDescription": "实时内幕交易数据 & AI分析",
+    "checkout.priceMonth": "/月",
+    "checkout.priceYear": "/年",
+    "checkout.billingMonthly": "月度自动续费",
+    "checkout.billingYearly": "年度自动续费",
+    "checkout.feature1": "实时内幕交易提醒（无48小时延迟）",
+    "checkout.feature2": "仅纯粹买卖信号（不包括补助金、期权、奖励）",
+    "checkout.feature3": "AI驱动的交易分析和预测",
+    "checkout.feature4": "高级模式检测和信号",
+    "checkout.feature5": "高管交易追踪（CEO、CFO等）",
+    "checkout.feature6": "实时数据更新和推送通知",
+    "checkout.feature7": "历史内幕交易绩效分析",
+    "checkout.feature8": "独家市场情报报告",
+    "checkout.trialTitle": "{days}天免费试用",
+    "checkout.trialDescription": "从今天开始{days}天免费使用所有Insider功能。免费试用期结束后，将自动开始${price}/{interval}的收费。随时可以取消。",
+    "checkout.secureTitle": "安全支付与自动续费",
+    "checkout.secureDescription": "所有交易都经过加密，并通过Stripe安全处理。您的订阅将每{interval}自动续订，直到您取消为止。随时一键取消 - 您将保留访问权限直至计费周期结束。",
+    "checkout.realDataTitle": "真实SEC数据",
+    "checkout.realDataDescription": "所有数据直接来源于SEC文件。没有虚假数据 - 只有真实、可操作的情报。",
+    "checkout.startTrial": "开始免费试用",
+    "checkout.subscribeNow": "立即订阅",
+    "checkout.startTrialButton": "开始{days}天免费试用",
+    "checkout.subscribeButton": "立即订阅 - ${price}/{interval}",
+    "checkout.trialSubtext": "{days}天内不会收费。试用期间随时可以取消。",
+    "checkout.cardDescriptionTrial": "{days}天免费试用后 ${price}{interval}",
+    "checkout.cardDescriptionNoTrial": "立即开始${price}{interval}收费",
+    "checkout.planLabel": "计划:",
+    "checkout.freeTrialLabel": "免费试用:",
+    "checkout.afterTrialLabel": "试用后价格:",
+    "checkout.priceLabel": "价格:",
+    "checkout.billingCycleLabel": "计费周期:",
+    "checkout.priceWithTax": "${price}/{interval} (不含税)",
+    "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请通过发卡银行直接取消自动支付。我理解自动支付后不可退款。"
   }
 };
 const LanguageContext = createContext(void 0);
@@ -13633,6 +13793,7 @@ function PremiumCheckout() {
   const { toast: toast2 } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
   useEffect(() => {
     if (user && (user.subscriptionTier === "insider_pro" || user.subscriptionTier === "insider") && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
       toast2({
@@ -13686,6 +13847,7 @@ function PremiumCheckout() {
     }
   };
   const currentPlan = plans[selectedPlan];
+  const trialDays = selectedPlan === "yearly" ? 7 : 3;
   const trialPeriodKo = selectedPlan === "yearly" ? "7일" : "3일";
   const trialPeriodEn = selectedPlan === "yearly" ? "7 days" : "3 days";
   const hasUsedTrial = (user == null ? void 0 : user.hasUsedTrial) || false;
@@ -13792,8 +13954,8 @@ function PremiumCheckout() {
           /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-2" }),
           "Premium Subscription"
         ] }),
-        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: "Upgrade to Insider" }),
-        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: showTrialInfo ? `Get ${trialPeriodEn} free trial + real-time insider trading alerts` : "Get real-time insider trading alerts and never miss a profitable opportunity" })
+        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: t("checkout.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: showTrialInfo ? t("checkout.subtitle").replace("{days}", trialPeriodKo.split("일")[0]) : t("checkout.subtitle").replace("{days}", trialPeriodKo.split("일")[0]) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8 items-start", children: [
         /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -13803,7 +13965,7 @@ function PremiumCheckout() {
               {
                 onClick: () => setSelectedPlan("monthly"),
                 className: `px-6 py-3 rounded-md font-semibold transition-all ${selectedPlan === "monthly" ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg" : "text-slate-400 hover:text-white"}`,
-                children: "Monthly"
+                children: t("checkout.monthly")
               }
             ),
             /* @__PURE__ */ jsxs(
@@ -13812,8 +13974,8 @@ function PremiumCheckout() {
                 onClick: () => setSelectedPlan("yearly"),
                 className: `relative px-6 py-3 rounded-md font-semibold transition-all ${selectedPlan === "yearly" ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg" : "text-slate-400 hover:text-white"}`,
                 children: [
-                  "Yearly",
-                  selectedPlan !== "yearly" && /* @__PURE__ */ jsx("span", { className: "absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full", children: "-33%" })
+                  t("checkout.yearly"),
+                  selectedPlan !== "yearly" && /* @__PURE__ */ jsx("span", { className: "absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full", children: t("checkout.yearlyDiscount") })
                 ]
               }
             )
@@ -13864,18 +14026,8 @@ function PremiumCheckout() {
           showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx(Clock, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsxs("h3", { className: "font-semibold text-sm text-white", children: [
-                trialPeriodKo,
-                " 무료체험"
-              ] }),
-              /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-300 mt-1", children: [
-                "오늘부터 ",
-                trialPeriodKo,
-                "간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 $",
-                currentPlan.price,
-                currentPlan.interval,
-                " 결제가 시작됩니다. 언제든지 해지 가능합니다."
-              ] })
+              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-base text-white", children: t("checkout.trialTitle").replace("{days}", trialDays.toString()) }),
+              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: t("checkout.trialDescription").replace("{days}", trialDays.toString()).replace("{price}", currentPlan.price.toString()).replace("{interval}", t("checkout.priceMonth")) })
             ] })
           ] }) }),
           !showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
@@ -13913,37 +14065,35 @@ function PremiumCheckout() {
           /* @__PURE__ */ jsxs(CardHeader, { children: [
             /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5 text-primary" }),
-              showTrialInfo ? "Start Free Trial" : "Subscribe Now"
+              showTrialInfo ? t("checkout.startTrial") : t("checkout.subscribeNow")
             ] }),
-            /* @__PURE__ */ jsx(CardDescription, { children: showTrialInfo ? `${trialPeriodKo} 무료체험 후 $${currentPlan.price}${currentPlan.interval}` : `즉시 $${currentPlan.price}${currentPlan.interval} 결제 시작` })
+            /* @__PURE__ */ jsx(CardDescription, { children: showTrialInfo ? t("checkout.cardDescriptionTrial").replace("{days}", trialDays.toString()).replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) : t("checkout.cardDescriptionNoTrial").replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) })
           ] }),
           /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800", children: [
+            /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400", children: [
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: "Plan:" }),
+                /* @__PURE__ */ jsx("span", { children: t("checkout.planLabel") }),
                 /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
                   currentPlan.name,
                   " (",
-                  selectedPlan === "monthly" ? "Monthly" : "Yearly",
+                  selectedPlan === "monthly" ? t("checkout.monthly") : t("checkout.yearly"),
                   ")"
                 ] })
               ] }),
               showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: "Free Trial:" }),
-                /* @__PURE__ */ jsx("span", { className: "font-semibold text-green-600 dark:text-green-400", children: trialPeriodEn })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: showTrialInfo ? "After Trial:" : "Price:" }),
-                /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
-                  "$",
-                  currentPlan.price,
-                  currentPlan.interval,
-                  " (세금별도)"
+                /* @__PURE__ */ jsx("span", { children: t("checkout.freeTrialLabel") }),
+                /* @__PURE__ */ jsxs("span", { className: "font-semibold text-green-600 dark:text-green-400 text-base", children: [
+                  trialDays,
+                  t("checkout.trialTitle").replace("{days}", "").trim()
                 ] })
               ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+                /* @__PURE__ */ jsx("span", { children: showTrialInfo ? t("checkout.afterTrialLabel") : t("checkout.priceLabel") }),
+                /* @__PURE__ */ jsx("span", { className: "font-semibold", children: t("checkout.priceWithTax").replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) })
+              ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between text-xs text-slate-500", children: [
-                /* @__PURE__ */ jsx("span", { children: "Billing Cycle:" }),
-                /* @__PURE__ */ jsx("span", { children: currentPlan.billingInterval })
+                /* @__PURE__ */ jsx("span", { children: t("checkout.billingCycleLabel") }),
+                /* @__PURE__ */ jsx("span", { children: selectedPlan === "monthly" ? t("checkout.billingMonthly") : t("checkout.billingYearly") })
               ] })
             ] }),
             showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 p-3 rounded-lg border bg-muted/50", children: [
@@ -13961,7 +14111,7 @@ function PremiumCheckout() {
                 {
                   htmlFor: "terms",
                   className: "text-xs text-muted-foreground leading-relaxed cursor-pointer",
-                  children: "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
+                  children: t("checkout.termsAgreement")
                 }
               )
             ] }),

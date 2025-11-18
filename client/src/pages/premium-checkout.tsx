@@ -10,6 +10,7 @@ import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
 import { GlassCard } from "@/components/glass-card";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
+import { useLanguage } from "@/contexts/language-context";
 
 export default function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
@@ -19,6 +20,7 @@ export default function PremiumCheckout() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   // Redirect if user already has active subscription
   useEffect(() => {
@@ -223,12 +225,12 @@ export default function PremiumCheckout() {
           </Badge>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight
                         bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40" data-testid="text-checkout-title">
-            Upgrade to Insider
+            {t('checkout.title')}
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
             {showTrialInfo
-              ? `Get ${trialPeriodEn} free trial + real-time insider trading alerts`
-              : 'Get real-time insider trading alerts and never miss a profitable opportunity'}
+              ? t('checkout.subtitle').replace('{days}', trialPeriodKo.split('일')[0])
+              : t('checkout.subtitle').replace('{days}', trialPeriodKo.split('일')[0])}
           </p>
         </div>
 
@@ -246,7 +248,7 @@ export default function PremiumCheckout() {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Monthly
+                  {t('checkout.monthly')}
                 </button>
                 <button
                   onClick={() => setSelectedPlan('yearly')}
@@ -256,10 +258,10 @@ export default function PremiumCheckout() {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Yearly
+                  {t('checkout.yearly')}
                   {selectedPlan !== 'yearly' && (
                     <span className="absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">
-                      -33%
+                      {t('checkout.yearlyDiscount')}
                     </span>
                   )}
                 </button>
@@ -338,11 +340,14 @@ export default function PremiumCheckout() {
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-sm text-white">
-                      {trialPeriodKo} 무료체험
+                    <h3 className="font-semibold text-base text-white">
+                      {t('checkout.trialTitle').replace('{days}', trialDays.toString())}
                     </h3>
                     <p className="text-sm text-slate-300 mt-1">
-                      오늘부터 {trialPeriodKo}간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${currentPlan.price}{currentPlan.interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.
+                      {t('checkout.trialDescription')
+                        .replace('{days}', trialDays.toString())
+                        .replace('{price}', currentPlan.price.toString())
+                        .replace('{interval}', t('checkout.priceMonth'))}
                     </p>
                   </div>
                 </div>
@@ -399,33 +404,40 @@ export default function PremiumCheckout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  {showTrialInfo ? 'Start Free Trial' : 'Subscribe Now'}
+                  {showTrialInfo ? t('checkout.startTrial') : t('checkout.subscribeNow')}
                 </CardTitle>
                 <CardDescription>
                   {showTrialInfo
-                    ? `${trialPeriodKo} 무료체험 후 $${currentPlan.price}${currentPlan.interval}`
-                    : `즉시 $${currentPlan.price}${currentPlan.interval} 결제 시작`}
+                    ? t('checkout.cardDescriptionTrial')
+                        .replace('{days}', trialDays.toString())
+                        .replace('{price}', currentPlan.price.toString())
+                        .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))
+                    : t('checkout.cardDescriptionNoTrial')
+                        .replace('{price}', currentPlan.price.toString())
+                        .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                   <div className="flex items-center justify-between">
-                    <span>Plan:</span>
-                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'})</span>
+                    <span>{t('checkout.planLabel')}</span>
+                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? t('checkout.monthly') : t('checkout.yearly')})</span>
                   </div>
                   {showTrialInfo && (
                     <div className="flex items-center justify-between">
-                      <span>Free Trial:</span>
-                      <span className="font-semibold text-green-600 dark:text-green-400">{trialPeriodEn}</span>
+                      <span>{t('checkout.freeTrialLabel')}</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-base">{trialDays}{t('checkout.trialTitle').replace('{days}', '').trim()}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <span>{showTrialInfo ? 'After Trial:' : 'Price:'}</span>
-                    <span className="font-semibold">${currentPlan.price}{currentPlan.interval} (세금별도)</span>
+                    <span>{showTrialInfo ? t('checkout.afterTrialLabel') : t('checkout.priceLabel')}</span>
+                    <span className="font-semibold">{t('checkout.priceWithTax')
+                      .replace('{price}', currentPlan.price.toString())
+                      .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>Billing Cycle:</span>
-                    <span>{currentPlan.billingInterval}</span>
+                    <span>{t('checkout.billingCycleLabel')}</span>
+                    <span>{selectedPlan === 'monthly' ? t('checkout.billingMonthly') : t('checkout.billingYearly')}</span>
                   </div>
                 </div>
 
@@ -442,7 +454,7 @@ export default function PremiumCheckout() {
                       htmlFor="terms"
                       className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
                     >
-                      무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시면 카드사에서 자동결제를 직접 취소해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.
+                      {t('checkout.termsAgreement')}
                     </label>
                   </div>
                 )}
