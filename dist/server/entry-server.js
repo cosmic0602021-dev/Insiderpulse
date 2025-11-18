@@ -4840,18 +4840,18 @@ function hasPremiumAccess(user) {
 }
 function formatTimeRemaining(endDate) {
   if (!endDate) {
-    return "00:00";
+    return "00시간:00분";
   }
   const now = /* @__PURE__ */ new Date();
   const end = new Date(endDate);
   const diffMs = end.getTime() - now.getTime();
   if (diffMs <= 0) {
-    return "00:00";
+    return "00시간:00분";
   }
   const totalMinutes = Math.floor(diffMs / (1e3 * 60));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  return `${hours.toString().padStart(2, "0")}시간:${minutes.toString().padStart(2, "0")}분`;
 }
 function getSubscriptionDisplayName(tier) {
   if (!tier || tier === "free" || tier === "outsider") {
@@ -13918,7 +13918,7 @@ function PremiumCheckout() {
             /* @__PURE__ */ jsx(CardDescription, { children: showTrialInfo ? `${trialPeriodKo} 무료체험 후 $${currentPlan.price}${currentPlan.interval}` : `즉시 $${currentPlan.price}${currentPlan.interval} 결제 시작` })
           ] }),
           /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400", children: [
+            /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800", children: [
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
                 /* @__PURE__ */ jsx("span", { children: "Plan:" }),
                 /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [

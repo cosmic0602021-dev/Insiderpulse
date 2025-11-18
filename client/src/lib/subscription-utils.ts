@@ -53,13 +53,13 @@ export function isFreeUser(user: User | null): boolean {
 }
 
 /**
- * Format time remaining until a specific date in HH:MM format
+ * Format time remaining until a specific date in Korean format
  * @param endDate - ISO date string of the end date
- * @returns Formatted string like "23:45" or "168:00" for 7 days
+ * @returns Formatted string like "23시간:45분" or "168시간:00분" for 7 days
  */
 export function formatTimeRemaining(endDate: string | null): string {
   if (!endDate) {
-    return '00:00';
+    return '00시간:00분';
   }
 
   const now = new Date();
@@ -67,14 +67,14 @@ export function formatTimeRemaining(endDate: string | null): string {
   const diffMs = end.getTime() - now.getTime();
 
   if (diffMs <= 0) {
-    return '00:00';
+    return '00시간:00분';
   }
 
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, '0')}시간:${minutes.toString().padStart(2, '0')}분`;
 }
 
 /**
