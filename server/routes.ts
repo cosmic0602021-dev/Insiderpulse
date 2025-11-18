@@ -2011,6 +2011,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasUsedTrial: user.hasUsedTrial,
           trialExpiresAt: user.trialExpiresAt,
           emailVerified: user.emailVerified,
+          createdAt: user.createdAt,
+          stripeCustomerId: user.stripeCustomerId,
+          stripeSubscriptionId: user.stripeSubscriptionId,
         },
       });
     } catch (error) {

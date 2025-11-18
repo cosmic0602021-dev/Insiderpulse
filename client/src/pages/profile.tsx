@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,7 +23,6 @@ import {
   getStatusDisplayName,
   hasPremiumAccess
 } from '@/lib/subscription-utils';
-import { RefreshAccountButton } from '@/components/refresh-account-button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +35,22 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+
+// Lightweight countdown timer component that updates independently
+function CountdownTimer({ endDate }: { endDate: string | null }) {
+  const [time, setTime] = useState(formatTimeRemaining(endDate));
+
+  useEffect(() => {
+    // Update every minute
+    const interval = setInterval(() => {
+      setTime(formatTimeRemaining(endDate));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [endDate]);
+
+  return <>{time}</>;
+}
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -54,7 +69,7 @@ export default function ProfilePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
 
@@ -148,7 +163,6 @@ export default function ProfilePage() {
     endDateLabel = '구독 종료까지';
   }
 
-  const timeRemaining = formatTimeRemaining(endDate);
   const formattedEndDate = endDate ? new Date(endDate).toLocaleString('ko-KR', {
     year: 'numeric',
     month: 'long',
@@ -256,7 +270,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="text-3xl font-bold font-mono">
-                    {timeRemaining}
+                    <CountdownTimer endDate={endDate} />
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
@@ -289,28 +303,6 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <Button
-                    onClick={handleManageSubscription}
-                    disabled={isLoadingPortal}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    {isLoadingPortal ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        구독 관리
-                      </>
-                    )}
-                  </Button>
-                  <RefreshAccountButton className="w-full" />
-                </div>
-
                 {/* Cancel Subscription Button */}
                 {user.subscriptionStatus !== 'canceled' && (
                   <Button

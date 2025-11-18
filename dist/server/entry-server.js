@@ -16938,6 +16938,16 @@ const AlertDialogCancel = React.forwardRef(({ className, ...props }, ref) => /* 
   }
 ));
 AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
+function CountdownTimer({ endDate }) {
+  const [time, setTime] = useState(formatTimeRemaining(endDate));
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(formatTimeRemaining(endDate));
+    }, 6e4);
+    return () => clearInterval(interval);
+  }, [endDate]);
+  return /* @__PURE__ */ jsx(Fragment$1, { children: time });
+}
 function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const [, navigate2] = useLocation();
@@ -16953,7 +16963,7 @@ function ProfilePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
         }
       });
       const data = await response.json();
@@ -17027,7 +17037,6 @@ function ProfilePage() {
     endDate = user.subscriptionEndDate;
     endDateLabel = "구독 종료까지";
   }
-  const timeRemaining = formatTimeRemaining(endDate);
   const formattedEndDate = endDate ? new Date(endDate).toLocaleString("ko-KR", {
     year: "numeric",
     month: "long",
@@ -17096,7 +17105,7 @@ function ProfilePage() {
               endDateLabel
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ jsx("div", { className: "text-3xl font-bold font-mono", children: timeRemaining }),
+              /* @__PURE__ */ jsx("div", { className: "text-3xl font-bold font-mono", children: /* @__PURE__ */ jsx(CountdownTimer, { endDate }) }),
               /* @__PURE__ */ jsx("div", { className: "text-right text-xs text-muted-foreground", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
                 /* @__PURE__ */ jsx(Calendar, { className: "h-3 w-3" }),
                 formattedEndDate
@@ -17120,25 +17129,6 @@ function ProfilePage() {
           ),
           /* @__PURE__ */ jsx("p", { className: "text-xs text-center text-muted-foreground", children: "실시간 insider 거래 데이터 및 고급 기능에 액세스하세요" })
         ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-2", children: [
-            /* @__PURE__ */ jsx(
-              Button,
-              {
-                onClick: handleManageSubscription,
-                disabled: isLoadingPortal,
-                className: "w-full",
-                variant: "outline",
-                children: isLoadingPortal ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" }),
-                  "Loading..."
-                ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx(ExternalLink, { className: "w-4 h-4 mr-2" }),
-                  "구독 관리"
-                ] })
-              }
-            ),
-            /* @__PURE__ */ jsx(RefreshAccountButton, { className: "w-full" })
-          ] }),
           user.subscriptionStatus !== "canceled" && /* @__PURE__ */ jsxs(
             Button,
             {

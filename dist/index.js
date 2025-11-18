@@ -11958,7 +11958,10 @@ async function registerRoutes(app2) {
           subscriptionEndDate: user2.subscriptionEndDate,
           hasUsedTrial: user2.hasUsedTrial,
           trialExpiresAt: user2.trialExpiresAt,
-          emailVerified: user2.emailVerified
+          emailVerified: user2.emailVerified,
+          createdAt: user2.createdAt,
+          stripeCustomerId: user2.stripeCustomerId,
+          stripeSubscriptionId: user2.stripeSubscriptionId
         }
       });
     } catch (error) {
