@@ -119,7 +119,12 @@ class ApiClient {
 
         // If server returned an error object with message, use it
         const errorMessage = (data as any).message || (data as any).error || response.statusText;
-        throw new Error(`API request failed: ${response.status} - ${errorMessage}`);
+
+        // Log technical details for debugging
+        console.error(`[API Error] ${response.status} ${endpoint}:`, errorMessage);
+
+        // Throw clean error message for user display (without technical prefix)
+        throw new Error(errorMessage);
       }
 
       return data;

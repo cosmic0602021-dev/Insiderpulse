@@ -4638,7 +4638,8 @@ class ApiClient {
           window.dispatchEvent(new Event("auth:logout"));
         }
         const errorMessage = data.message || data.error || response.statusText;
-        throw new Error(`API request failed: ${response.status} - ${errorMessage}`);
+        console.error(`[API Error] ${response.status} ${endpoint}:`, errorMessage);
+        throw new Error(errorMessage);
       }
       return data;
     } catch (error) {
