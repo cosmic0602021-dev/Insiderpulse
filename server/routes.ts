@@ -329,9 +329,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Check if user has already used their trial
+      const hasUsedTrial = updatedUser.hasUsedTrial || false;
+      console.log(`🔍 User trial status - hasUsedTrial: ${hasUsedTrial}`);
+
       // Determine plan type and set appropriate trial period
       // Monthly: 3 days free trial (72 hours)
       // Yearly: 7 days free trial (168 hours)
+      // Note: Trial only available if user hasn't used it before
       const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY;
       const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
 
@@ -344,34 +349,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (priceId === yearlyPriceId) {
         planType = 'yearly';
         trialDays = 7; // 7 days for yearly
-        console.log(`🎯 Detected YEARLY PLAN - ${trialDays} day trial`);
+        console.log(`🎯 Detected YEARLY PLAN - ${trialDays} day trial${hasUsedTrial ? ' (but trial already used)' : ''}`);
       } else if (priceId === monthlyPriceId) {
         planType = 'monthly';
         trialDays = 3; // 3 days for monthly
-        console.log(`🎯 Detected MONTHLY PLAN - ${trialDays} day trial`);
+        console.log(`🎯 Detected MONTHLY PLAN - ${trialDays} day trial${hasUsedTrial ? ' (but trial already used)' : ''}`);
       } else {
         // Unknown price ID - default to monthly with 3 days
         console.warn(`⚠️ Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
 
-      // Calculate trial_end timestamp - fix to today's midnight + N days
-      // This ensures same trial_end for all requests on the same day (fixes idempotency errors)
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today at 00:00:00
-      const trialEnd = new Date(today);
-      trialEnd.setDate(trialEnd.getDate() + trialDays);
-      trialEnd.setHours(23, 59, 59, 0); // End of day, milliseconds = 0 (fixed value)
-      const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1000);
-
       const subscriptionData: any = {
         metadata: {
           userId: userId,
           planType: planType
-        },
-        trial_end: trialEndTimestamp,
+        }
       };
 
-      console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
+      // Only add trial if user hasn't used it before
+      if (!hasUsedTrial) {
+        // Calculate trial_end timestamp - fix to today's midnight + N days
+        // This ensures same trial_end for all requests on the same day (fixes idempotency errors)
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Today at 00:00:00
+        const trialEnd = new Date(today);
+        trialEnd.setDate(trialEnd.getDate() + trialDays);
+        trialEnd.setHours(23, 59, 59, 0); // End of day, milliseconds = 0 (fixed value)
+        const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1000);
+
+        subscriptionData.trial_end = trialEndTimestamp;
+        console.log(`✅ Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
+      } else {
+        console.log(`⚠️ User has already used trial - creating subscription without trial (immediate billing)`);
+      }
 
       // Create Checkout Session with idempotency key to prevent duplicate requests
       // Use 30-second window (reduced from 60s) to allow faster retries while preventing duplicates
@@ -462,6 +472,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('❌ Stripe subscription retrieval error:', error);
       res.status(500).json({ 
         error: "Error retrieving subscription: " + error.message 
+      });
+    }
+  });
+
+  // Redeem coupon to extend trial period
+  app.post("/api/coupon/redeem", async (req, res) => {
+    try {
+      const userId = getUserIdFromToken(req);
+      const { couponCode } = req.body;
+
+      console.log(`🎟️ Coupon redemption attempt - userId: ${userId}, code: ${couponCode}`);
+
+      // 1. Validate user authentication
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: '로그인이 필요합니다'
+        });
+      }
+
+      // 2. Validate coupon code input
+      if (!couponCode || typeof couponCode !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: '쿠폰 코드를 입력해주세요'
+        });
+      }
+
+      // 3. Get user from database
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다'
+        });
+      }
+
+      // 4. Check if user is on trial
+      if (user.subscriptionStatus !== 'trialing') {
+        return res.status(400).json({
+          success: false,
+          message: '쿠폰은 무료체험 기간 중에만 사용할 수 있습니다'
+        });
+      }
+
+      // 5. Validate coupon code (case-insensitive)
+      const validCoupons = ['tosslove', 'stocktwitslove', 'redditlove', 'naverlove', 'kiwilove'];
+      const normalizedCoupon = couponCode.toLowerCase().trim();
+
+      if (!validCoupons.includes(normalizedCoupon)) {
+        return res.status(400).json({
+          success: false,
+          message: '유효하지 않은 쿠폰 코드입니다'
+        });
+      }
+
+      // 6. Check if user has already used ANY coupon (only 1 coupon per account allowed)
+      const usedCoupons = (user.usedCoupons as string[]) || [];
+      if (usedCoupons.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `이미 쿠폰을 사용하셨습니다 (${usedCoupons[0]}). 계정당 1개의 쿠폰만 사용 가능합니다.`
+        });
+      }
+
+      // 7. Validate coupon code (case-insensitive)
+      if (usedCoupons.includes(normalizedCoupon)) {
+        return res.status(400).json({
+          success: false,
+          message: '이미 사용한 쿠폰입니다'
+        });
+      }
+
+      // 8. Verify Stripe subscription exists and is trialing
+      if (!user.stripeSubscriptionId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Stripe 구독을 찾을 수 없습니다'
+        });
+      }
+
+      const stripeSubscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+
+      if (stripeSubscription.status !== 'trialing') {
+        return res.status(400).json({
+          success: false,
+          message: 'Stripe 구독이 무료체험 상태가 아닙니다'
+        });
+      }
+
+      // 9. Calculate new trial end (current trial_end + 3 days)
+      const currentTrialEnd = stripeSubscription.trial_end;
+      if (!currentTrialEnd) {
+        return res.status(400).json({
+          success: false,
+          message: '체험 종료 날짜를 찾을 수 없습니다'
+        });
+      }
+
+      const threeDaysInSeconds = 3 * 24 * 60 * 60;
+      const newTrialEnd = currentTrialEnd + threeDaysInSeconds;
+
+      console.log(`🔄 Extending trial: ${new Date(currentTrialEnd * 1000)} -> ${new Date(newTrialEnd * 1000)}`);
+
+      // 10. Update Stripe subscription trial_end
+      const updatedSubscription = await stripe.subscriptions.update(
+        user.stripeSubscriptionId,
+        {
+          trial_end: newTrialEnd
+        }
+      );
+
+      // 11. Update user record
+      const newTrialExpiresAt = new Date(newTrialEnd * 1000);
+      const newUsedCoupons = [...usedCoupons, normalizedCoupon];
+      const newExtensionDays = (user.couponExtensionDays || 0) + 3;
+
+      await db.update(users)
+        .set({
+          trialExpiresAt: newTrialExpiresAt,
+          subscriptionEndDate: newTrialExpiresAt,
+          usedCoupons: newUsedCoupons as any,
+          couponExtensionDays: newExtensionDays,
+          lastCouponUsedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`✅ Coupon "${normalizedCoupon}" redeemed by ${user.email}, trial extended to ${newTrialExpiresAt}`);
+
+      // SUCCESS RESPONSE
+      return res.status(200).json({
+        success: true,
+        message: '쿠폰이 성공적으로 적용되었습니다! 무료체험 기간이 3일 연장되었습니다.',
+        newTrialEnd: newTrialExpiresAt.toISOString(),
+        daysExtended: 3,
+        couponCode: normalizedCoupon,
+        totalExtensionDays: newExtensionDays,
+        usedCoupons: newUsedCoupons
+      });
+
+    } catch (error: any) {
+      console.error('❌ Coupon redemption error:', error);
+      return res.status(500).json({
+        success: false,
+        message: '쿠폰 적용 중 오류가 발생했습니다',
+        error: error.message
       });
     }
   });

@@ -84,7 +84,14 @@ var init_schema = __esm({
       hasUsedTrial: boolean("has_used_trial").notNull().default(false),
       // Prevent multiple trials
       // FOMO tracking
-      lastTrialNotificationSent: timestamp("last_trial_notification_sent")
+      lastTrialNotificationSent: timestamp("last_trial_notification_sent"),
+      // Coupon System
+      usedCoupons: json("used_coupons").$type().default(sql`'[]'::json`),
+      // Array of redeemed coupon codes
+      couponExtensionDays: integer("coupon_extension_days").notNull().default(0),
+      // Total days extended via coupons
+      lastCouponUsedAt: timestamp("last_coupon_used_at")
+      // When last coupon was used
     });
     insiderTrades = pgTable("insider_trades", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -10697,6 +10704,8 @@ async function registerRoutes(app2) {
           });
         }
       }
+      const hasUsedTrial = updatedUser.hasUsedTrial || false;
+      console.log(`\u{1F50D} User trial status - hasUsedTrial: ${hasUsedTrial}`);
       const monthlyPriceId = process.env.STRIPE_PRICE_ID_MONTHLY;
       const yearlyPriceId = process.env.STRIPE_PRICE_ID_YEARLY;
       console.log(`\u{1F50D} Plan detection - Received priceId: "${priceId}"`);
@@ -10706,28 +10715,32 @@ async function registerRoutes(app2) {
       if (priceId === yearlyPriceId) {
         planType = "yearly";
         trialDays = 7;
-        console.log(`\u{1F3AF} Detected YEARLY PLAN - ${trialDays} day trial`);
+        console.log(`\u{1F3AF} Detected YEARLY PLAN - ${trialDays} day trial${hasUsedTrial ? " (but trial already used)" : ""}`);
       } else if (priceId === monthlyPriceId) {
         planType = "monthly";
         trialDays = 3;
-        console.log(`\u{1F3AF} Detected MONTHLY PLAN - ${trialDays} day trial`);
+        console.log(`\u{1F3AF} Detected MONTHLY PLAN - ${trialDays} day trial${hasUsedTrial ? " (but trial already used)" : ""}`);
       } else {
         console.warn(`\u26A0\uFE0F Unknown priceId "${priceId}", defaulting to monthly with 3 day trial`);
       }
-      const now = /* @__PURE__ */ new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const trialEnd = new Date(today);
-      trialEnd.setDate(trialEnd.getDate() + trialDays);
-      trialEnd.setHours(23, 59, 59, 0);
-      const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1e3);
       const subscriptionData = {
         metadata: {
           userId,
           planType
-        },
-        trial_end: trialEndTimestamp
+        }
       };
-      console.log(`\u2705 Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
+      if (!hasUsedTrial) {
+        const now = /* @__PURE__ */ new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const trialEnd = new Date(today);
+        trialEnd.setDate(trialEnd.getDate() + trialDays);
+        trialEnd.setHours(23, 59, 59, 0);
+        const trialEndTimestamp = Math.floor(trialEnd.getTime() / 1e3);
+        subscriptionData.trial_end = trialEndTimestamp;
+        console.log(`\u2705 Setting ${trialDays}-day free trial for ${planType} plan (ends ${trialEnd.toISOString()})`);
+      } else {
+        console.log(`\u26A0\uFE0F User has already used trial - creating subscription without trial (immediate billing)`);
+      }
       const idempotencyKey = `checkout_${userId}_${priceId}_${Math.floor(Date.now() / 3e4)}`;
       let session;
       try {
@@ -10800,6 +10813,117 @@ async function registerRoutes(app2) {
       console.error("\u274C Stripe subscription retrieval error:", error);
       res.status(500).json({
         error: "Error retrieving subscription: " + error.message
+      });
+    }
+  });
+  app2.post("/api/coupon/redeem", async (req, res) => {
+    try {
+      const userId = getUserIdFromToken(req);
+      const { couponCode } = req.body;
+      console.log(`\u{1F39F}\uFE0F Coupon redemption attempt - userId: ${userId}, code: ${couponCode}`);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
+        });
+      }
+      if (!couponCode || typeof couponCode !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "\uCFE0\uD3F0 \uCF54\uB4DC\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
+        });
+      }
+      const user2 = await db4.query.users.findFirst({
+        where: eq5(users.id, userId)
+      });
+      if (!user2) {
+        return res.status(404).json({
+          success: false,
+          message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      if (user2.subscriptionStatus !== "trialing") {
+        return res.status(400).json({
+          success: false,
+          message: "\uCFE0\uD3F0\uC740 \uBB34\uB8CC\uCCB4\uD5D8 \uAE30\uAC04 \uC911\uC5D0\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      const validCoupons = ["tosslove", "stocktwitslove", "redditlove", "naverlove", "kiwilove"];
+      const normalizedCoupon = couponCode.toLowerCase().trim();
+      if (!validCoupons.includes(normalizedCoupon)) {
+        return res.status(400).json({
+          success: false,
+          message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uCFE0\uD3F0 \uCF54\uB4DC\uC785\uB2C8\uB2E4"
+        });
+      }
+      const usedCoupons = user2.usedCoupons || [];
+      if (usedCoupons.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `\uC774\uBBF8 \uCFE0\uD3F0\uC744 \uC0AC\uC6A9\uD558\uC168\uC2B5\uB2C8\uB2E4 (${usedCoupons[0]}). \uACC4\uC815\uB2F9 1\uAC1C\uC758 \uCFE0\uD3F0\uB9CC \uC0AC\uC6A9 \uAC00\uB2A5\uD569\uB2C8\uB2E4.`
+        });
+      }
+      if (usedCoupons.includes(normalizedCoupon)) {
+        return res.status(400).json({
+          success: false,
+          message: "\uC774\uBBF8 \uC0AC\uC6A9\uD55C \uCFE0\uD3F0\uC785\uB2C8\uB2E4"
+        });
+      }
+      if (!user2.stripeSubscriptionId) {
+        return res.status(400).json({
+          success: false,
+          message: "Stripe \uAD6C\uB3C5\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      const stripeSubscription = await stripe2.subscriptions.retrieve(user2.stripeSubscriptionId);
+      if (stripeSubscription.status !== "trialing") {
+        return res.status(400).json({
+          success: false,
+          message: "Stripe \uAD6C\uB3C5\uC774 \uBB34\uB8CC\uCCB4\uD5D8 \uC0C1\uD0DC\uAC00 \uC544\uB2D9\uB2C8\uB2E4"
+        });
+      }
+      const currentTrialEnd = stripeSubscription.trial_end;
+      if (!currentTrialEnd) {
+        return res.status(400).json({
+          success: false,
+          message: "\uCCB4\uD5D8 \uC885\uB8CC \uB0A0\uC9DC\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
+        });
+      }
+      const threeDaysInSeconds = 3 * 24 * 60 * 60;
+      const newTrialEnd = currentTrialEnd + threeDaysInSeconds;
+      console.log(`\u{1F504} Extending trial: ${new Date(currentTrialEnd * 1e3)} -> ${new Date(newTrialEnd * 1e3)}`);
+      const updatedSubscription = await stripe2.subscriptions.update(
+        user2.stripeSubscriptionId,
+        {
+          trial_end: newTrialEnd
+        }
+      );
+      const newTrialExpiresAt = new Date(newTrialEnd * 1e3);
+      const newUsedCoupons = [...usedCoupons, normalizedCoupon];
+      const newExtensionDays = (user2.couponExtensionDays || 0) + 3;
+      await db4.update(users).set({
+        trialExpiresAt: newTrialExpiresAt,
+        subscriptionEndDate: newTrialExpiresAt,
+        usedCoupons: newUsedCoupons,
+        couponExtensionDays: newExtensionDays,
+        lastCouponUsedAt: /* @__PURE__ */ new Date()
+      }).where(eq5(users.id, userId));
+      console.log(`\u2705 Coupon "${normalizedCoupon}" redeemed by ${user2.email}, trial extended to ${newTrialExpiresAt}`);
+      return res.status(200).json({
+        success: true,
+        message: "\uCFE0\uD3F0\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC801\uC6A9\uB418\uC5C8\uC2B5\uB2C8\uB2E4! \uBB34\uB8CC\uCCB4\uD5D8 \uAE30\uAC04\uC774 3\uC77C \uC5F0\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+        newTrialEnd: newTrialExpiresAt.toISOString(),
+        daysExtended: 3,
+        couponCode: normalizedCoupon,
+        totalExtensionDays: newExtensionDays,
+        usedCoupons: newUsedCoupons
+      });
+    } catch (error) {
+      console.error("\u274C Coupon redemption error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "\uCFE0\uD3F0 \uC801\uC6A9 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4",
+        error: error.message
       });
     }
   });

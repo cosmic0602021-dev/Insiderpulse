@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, CheckCircle2, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
+import { X, Bell, User, Crown, Settings as Settings$1, LogOut, TrendingUp, Star, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, Ticket, CheckCircle2, BellOff, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Timer, ArrowRight, XCircle, UserCheck, LineChart as LineChart$1 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -22,6 +22,7 @@ import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as
 import { formatDistanceToNow } from "date-fns";
 import { ko, ja, zhCN, enUS } from "date-fns/locale";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 const useBuiltinInsertionEffect = React["useInsertionEffect"];
@@ -4820,7 +4821,7 @@ function hasPremiumAccess(user) {
   if (!user) {
     return false;
   }
-  const isPro = user.subscriptionTier === "insider_pro";
+  const isPro = user.subscriptionTier === "insider" || user.subscriptionTier === "insider_pro";
   const now = /* @__PURE__ */ new Date();
   const hasValidStatus = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled";
   const hasActiveAccess = hasValidStatus && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
@@ -4836,6 +4837,44 @@ function hasPremiumAccess(user) {
   });
   return isPro && hasActiveAccess;
 }
+function formatTimeRemaining(endDate) {
+  if (!endDate) {
+    return "00:00";
+  }
+  const now = /* @__PURE__ */ new Date();
+  const end = new Date(endDate);
+  const diffMs = end.getTime() - now.getTime();
+  if (diffMs <= 0) {
+    return "00:00";
+  }
+  const totalMinutes = Math.floor(diffMs / (1e3 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+function getSubscriptionDisplayName(tier) {
+  if (!tier || tier === "free" || tier === "outsider") {
+    return "Outsider";
+  }
+  if (tier === "insider" || tier === "insider_pro") {
+    return "Insider";
+  }
+  return "Outsider";
+}
+function getStatusDisplayName(status) {
+  switch (status) {
+    case "active":
+      return "활성";
+    case "trialing":
+      return "무료체험 중";
+    case "canceled":
+      return "취소됨 (기간 내 사용 가능)";
+    case "inactive":
+      return "비활성";
+    default:
+      return "비활성";
+  }
+}
 const logoLight$6 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
 const logoDark$6 = "/insiderpulse_logo1.png";
 const getMenuItems = (t) => [
@@ -4850,6 +4889,12 @@ const getMenuItems = (t) => [
     url: "/ranking",
     icon: Star,
     key: "ranking"
+  },
+  {
+    title: "Profile",
+    url: "/profile",
+    icon: User,
+    key: "profile"
   }
 ];
 function AppSidebar() {
@@ -5046,7 +5091,7 @@ function AppSidebar() {
         /* @__PURE__ */ jsx("div", { className: "w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(User, { className: "h-4 w-4 text-primary" }) }),
         /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
           /* @__PURE__ */ jsx("p", { className: "text-sm font-medium truncate", children: user.email }),
-          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: user.subscriptionTier === "insider_pro" ? "Pro" : "Free" })
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: user.subscriptionTier === "insider_pro" || user.subscriptionTier === "insider" ? "Insider" : "Outsider" })
         ] })
       ] }),
       user && !hasPremiumAccess(user) && /* @__PURE__ */ jsx(
@@ -5063,7 +5108,7 @@ function AppSidebar() {
             });
           }, children: [
             /* @__PURE__ */ jsx(Crown, { className: "h-4 w-4 mr-2" }),
-            "Upgrade to Premium"
+            "Upgrade to Insider"
           ] })
         }
       ),
@@ -8391,8 +8436,10 @@ function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState("system");
   const { toast: toast2 } = useToast();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
   const {
     isSupported,
     isSubscribed,
@@ -8468,6 +8515,46 @@ function Settings() {
         variant: "destructive"
       });
       setIsLoadingPortal(false);
+    }
+  };
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast2({
+        title: "쿠폰 코드 입력",
+        description: "쿠폰 코드를 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsRedeemingCoupon(true);
+    try {
+      const response = await apiRequest("POST", "/api/coupon/redeem", {
+        couponCode: couponCode.trim()
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast2({
+          title: "쿠폰 적용 성공!",
+          description: data.message
+        });
+        setCouponCode("");
+        await refreshUser();
+      } else {
+        toast2({
+          title: "쿠폰 적용 실패",
+          description: data.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error redeeming coupon:", error);
+      toast2({
+        title: "오류",
+        description: "쿠폰 적용 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRedeemingCoupon(false);
     }
   };
   return /* @__PURE__ */ jsxs("div", { className: "p-6 max-w-4xl mx-auto space-y-6", children: [
@@ -8556,6 +8643,85 @@ function Settings() {
         ] }),
         /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-3 text-sm", children: /* @__PURE__ */ jsx("p", { className: "text-blue-900 dark:text-blue-100 text-xs", children: "💡 Tip: If you cancel your subscription, you'll keep access until the end of your billing period." }) })
       ] })
+    ] }),
+    user && user.subscriptionStatus === "trialing" && /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx(Ticket, { className: "h-5 w-5" }),
+        "쿠폰 등록"
+      ] }) }),
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: user.usedCoupons && user.usedCoupons.length > 0 ? (
+        // User has already used a coupon
+        /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-amber-50 dark:bg-amber-950 p-4 border border-amber-200 dark:border-amber-800", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+            /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" }),
+            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-amber-900 dark:text-amber-100", children: "쿠폰 사용 완료" }),
+              /* @__PURE__ */ jsxs("p", { className: "text-xs text-amber-800 dark:text-amber-200", children: [
+                "계정당 1개의 쿠폰만 사용 가능합니다. 이미 ",
+                /* @__PURE__ */ jsx("strong", { children: user.usedCoupons[0] }),
+                " 쿠폰을 사용하셨습니다."
+              ] })
+            ] })
+          ] }) }),
+          /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsx(Label, { className: "text-sm font-medium", children: "사용한 쿠폰" }),
+            /* @__PURE__ */ jsx("div", { className: "flex flex-wrap gap-2", children: user.usedCoupons.map((code) => /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium",
+                children: [
+                  /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3 w-3" }),
+                  code
+                ]
+              },
+              code
+            )) }),
+            user.couponExtensionDays && /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
+              "💡 무료체험 기간 ",
+              user.couponExtensionDays,
+              "일 연장됨"
+            ] })
+          ] })
+        ] })
+      ) : (
+        // User has not used any coupon yet
+        /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+            /* @__PURE__ */ jsx(Label, { htmlFor: "coupon-code", children: "쿠폰 코드" }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: "쿠폰 코드를 입력하면 무료체험 기간이 3일 연장됩니다" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
+              /* @__PURE__ */ jsx(
+                Input,
+                {
+                  id: "coupon-code",
+                  placeholder: "쿠폰 코드 입력",
+                  value: couponCode,
+                  onChange: (e) => setCouponCode(e.target.value),
+                  onKeyDown: (e) => {
+                    if (e.key === "Enter") {
+                      handleRedeemCoupon();
+                    }
+                  },
+                  disabled: isRedeemingCoupon,
+                  className: "flex-1"
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                Button,
+                {
+                  onClick: handleRedeemCoupon,
+                  disabled: isRedeemingCoupon || !couponCode.trim(),
+                  children: isRedeemingCoupon ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                    /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" }),
+                    "적용 중..."
+                  ] }) : "적용"
+                }
+              )
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-3", children: /* @__PURE__ */ jsx("p", { className: "text-blue-900 dark:text-blue-100 text-xs", children: "💡 Tip: 계정당 1개의 쿠폰만 사용 가능합니다. 신중하게 선택하세요!" }) })
+        ] })
+      ) })
     ] }),
     /* @__PURE__ */ jsxs(Card, { children: [
       /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
@@ -13439,17 +13605,37 @@ const EnhancedInsiderTradingDashboard = () => {
     ] }) }) })
   ] });
 };
+const Checkbox = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  CheckboxPrimitive.Root,
+  {
+    ref,
+    className: cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    ),
+    ...props,
+    children: /* @__PURE__ */ jsx(
+      CheckboxPrimitive.Indicator,
+      {
+        className: cn("flex items-center justify-center text-current"),
+        children: /* @__PURE__ */ jsx(Check, { className: "h-4 w-4" })
+      }
+    )
+  }
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState("monthly");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const isSubmittingRef = useRef(false);
   const { toast: toast2 } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   useEffect(() => {
-    if (user && user.subscriptionTier === "insider_pro" && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
+    if (user && (user.subscriptionTier === "insider_pro" || user.subscriptionTier === "insider") && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
       toast2({
-        title: "이미 프리미엄 구독 중입니다",
+        title: "이미 Insider 구독 중입니다",
         description: "트레이딩 페이지로 이동합니다."
       });
       setTimeout(() => setLocation("/trades"), 1500);
@@ -13457,7 +13643,7 @@ function PremiumCheckout() {
   }, [user, setLocation, toast2]);
   const plans = {
     monthly: {
-      name: "Insider Pro",
+      name: "Insider",
       price: 14,
       priceId: "price_1SPBb1Q9br8aQ595KTOAcBfO",
       interval: "/month",
@@ -13476,7 +13662,7 @@ function PremiumCheckout() {
       savings: null
     },
     yearly: {
-      name: "Insider Pro",
+      name: "Insider",
       price: 112,
       originalPrice: 168,
       priceId: "price_1SPBdLQ9br8aQ595n0dKEOLv",
@@ -13501,7 +13687,17 @@ function PremiumCheckout() {
   const currentPlan = plans[selectedPlan];
   const trialPeriodKo = selectedPlan === "yearly" ? "7일" : "3일";
   const trialPeriodEn = selectedPlan === "yearly" ? "7 days" : "3 days";
+  const hasUsedTrial = (user == null ? void 0 : user.hasUsedTrial) || false;
+  const showTrialInfo = !hasUsedTrial;
   const handleCheckout = async () => {
+    if (showTrialInfo && !agreedToTerms) {
+      toast2({
+        title: "약관 동의 필요",
+        description: "자동결제 및 환불 정책에 동의해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (isSubmittingRef.current) {
       console.log("⚠️ Already submitting, ignoring duplicate click");
       return;
@@ -13595,8 +13791,8 @@ function PremiumCheckout() {
           /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-2" }),
           "Premium Subscription"
         ] }),
-        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: "Upgrade to Insider Pro" }),
-        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: "Get real-time insider trading alerts and never miss a profitable opportunity" })
+        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: "Upgrade to Insider" }),
+        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: showTrialInfo ? `Get ${trialPeriodEn} free trial + real-time insider trading alerts` : "Get real-time insider trading alerts and never miss a profitable opportunity" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8 items-start", children: [
         /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
@@ -13664,7 +13860,7 @@ function PremiumCheckout() {
               /* @__PURE__ */ jsx("span", { children: feature })
             ] }, index)) }) })
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+          showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
             /* @__PURE__ */ jsx(Clock, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
             /* @__PURE__ */ jsxs("div", { children: [
               /* @__PURE__ */ jsxs("h3", { className: "font-semibold text-sm text-white", children: [
@@ -13674,10 +13870,22 @@ function PremiumCheckout() {
               /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-300 mt-1", children: [
                 "오늘부터 ",
                 trialPeriodKo,
-                "간 무료로 모든 Pro 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 $",
+                "간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 $",
                 currentPlan.price,
                 currentPlan.interval,
                 " 결제가 시작됩니다. 언제든지 해지 가능합니다."
+              ] })
+            ] })
+          ] }) }),
+          !showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+            /* @__PURE__ */ jsx(AlertTriangle, { className: "w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: "무료체험 이미 사용됨" }),
+              /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-300 mt-1", children: [
+                "무료체험은 계정당 1회만 제공됩니다. 결제 즉시 $",
+                currentPlan.price,
+                currentPlan.interval,
+                " 자동결제가 시작됩니다."
               ] })
             ] })
           ] }) }),
@@ -13704,14 +13912,9 @@ function PremiumCheckout() {
           /* @__PURE__ */ jsxs(CardHeader, { children: [
             /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
               /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5 text-primary" }),
-              "Start Free Trial"
+              showTrialInfo ? "Start Free Trial" : "Subscribe Now"
             ] }),
-            /* @__PURE__ */ jsxs(CardDescription, { children: [
-              trialPeriodKo,
-              " 무료체험 후 $",
-              currentPlan.price,
-              currentPlan.interval
-            ] })
+            /* @__PURE__ */ jsx(CardDescription, { children: showTrialInfo ? `${trialPeriodKo} 무료체험 후 $${currentPlan.price}${currentPlan.interval}` : `즉시 $${currentPlan.price}${currentPlan.interval} 결제 시작` })
           ] }),
           /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
             /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400", children: [
@@ -13724,12 +13927,12 @@ function PremiumCheckout() {
                   ")"
                 ] })
               ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+              showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
                 /* @__PURE__ */ jsx("span", { children: "Free Trial:" }),
                 /* @__PURE__ */ jsx("span", { className: "font-semibold text-green-600 dark:text-green-400", children: trialPeriodEn })
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: "After Trial:" }),
+                /* @__PURE__ */ jsx("span", { children: showTrialInfo ? "After Trial:" : "Price:" }),
                 /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
                   "$",
                   currentPlan.price,
@@ -13742,29 +13945,46 @@ function PremiumCheckout() {
                 /* @__PURE__ */ jsx("span", { children: currentPlan.billingInterval })
               ] })
             ] }),
+            showTrialInfo && /* @__PURE__ */ jsx("div", { className: "p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2", children: [
+              /* @__PURE__ */ jsx(AlertTriangle, { className: "w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" }),
+              /* @__PURE__ */ jsx("p", { className: "text-xs text-amber-800 dark:text-amber-200", children: "카드 정보 입력 시 자동결제 이후에는 환불 불가하오니 꼭 확인하세요." })
+            ] }) }),
+            showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 p-3 rounded-lg border bg-muted/50", children: [
+              /* @__PURE__ */ jsx(
+                Checkbox,
+                {
+                  id: "terms",
+                  checked: agreedToTerms,
+                  onCheckedChange: (checked) => setAgreedToTerms(checked === true),
+                  className: "mt-0.5"
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                "label",
+                {
+                  htmlFor: "terms",
+                  className: "text-xs text-muted-foreground leading-relaxed cursor-pointer",
+                  children: "자동결제 및 환불 불가 정책에 동의하며, 무료체험 종료 후 자동으로 결제가 진행됨을 이해했습니다."
+                }
+              )
+            ] }),
             /* @__PURE__ */ jsx(
               Button,
               {
                 onClick: handleCheckout,
                 className: "w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-6 text-lg",
-                disabled: isProcessing,
+                disabled: isProcessing || showTrialInfo && !agreedToTerms,
                 "data-testid": "button-complete-payment",
                 children: isProcessing ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
                   /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" }),
                   "Processing..."
                 ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
                   /* @__PURE__ */ jsx(Shield, { className: "w-5 h-5 mr-2" }),
-                  "Start ",
-                  trialPeriodEn,
-                  " Free Trial"
+                  showTrialInfo ? `Start ${trialPeriodEn} Free Trial` : "Subscribe Now"
                 ] })
               }
             ),
-            /* @__PURE__ */ jsxs("p", { className: "text-xs text-center text-slate-500", children: [
-              "You won't be charged for ",
-              trialPeriodEn,
-              ". Cancel anytime during the trial."
-            ] })
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-center text-slate-500", children: showTrialInfo ? `You won't be charged for ${trialPeriodEn}. Cancel anytime during the trial.` : "안전한 Stripe 결제 시스템을 통해 처리됩니다." })
           ] })
         ] }) })
       ] })
@@ -16398,6 +16618,212 @@ function LandingPage() {
     ] }) })
   ] });
 }
+function ProfilePage() {
+  const { user } = useAuth();
+  const [, navigate2] = useLocation();
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const handleManageSubscription = async () => {
+    if (!(user == null ? void 0 : user.stripeCustomerId)) return;
+    setIsLoadingPortal(true);
+    try {
+      const response = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error creating portal session:", error);
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
+  const handleUpgradeToInsider = () => {
+    navigate2("/premium-checkout");
+  };
+  if (!user) {
+    return /* @__PURE__ */ jsx("div", { className: "container max-w-4xl mx-auto p-6", children: /* @__PURE__ */ jsx("p", { className: "text-center text-muted-foreground", children: "Loading..." }) });
+  }
+  const isPremium = hasPremiumAccess(user);
+  const tierDisplayName = getSubscriptionDisplayName(user.subscriptionTier);
+  const statusDisplayName = getStatusDisplayName(user.subscriptionStatus);
+  let endDate = null;
+  let endDateLabel = "";
+  if (user.subscriptionStatus === "trialing") {
+    endDate = user.subscriptionEndDate;
+    endDateLabel = "무료체험 종료까지";
+  } else if (user.subscriptionStatus === "active") {
+    endDate = user.subscriptionEndDate;
+    endDateLabel = user.subscriptionStatus === "canceled" ? "구독 종료까지" : "다음 결제까지";
+  } else if (user.subscriptionStatus === "canceled" && user.subscriptionEndDate) {
+    endDate = user.subscriptionEndDate;
+    endDateLabel = "구독 종료까지";
+  }
+  const timeRemaining = formatTimeRemaining(endDate);
+  const formattedEndDate = endDate ? new Date(endDate).toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }) : null;
+  return /* @__PURE__ */ jsxs("div", { className: "container max-w-4xl mx-auto p-6 space-y-6", children: [
+    /* @__PURE__ */ jsxs("div", { children: [
+      /* @__PURE__ */ jsx("h1", { className: "text-3xl font-bold tracking-tight", children: "프로필" }),
+      /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mt-2", children: "계정 정보 및 구독 상태를 관리하세요" })
+    ] }),
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(User, { className: "h-5 w-5" }),
+          "계정 정보"
+        ] }),
+        /* @__PURE__ */ jsx(CardDescription, { children: "기본 계정 정보" })
+      ] }),
+      /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: /* @__PURE__ */ jsxs("div", { className: "grid gap-4 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsx(Label, { className: "text-sm text-muted-foreground", children: "이메일" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium", children: user.email })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
+          /* @__PURE__ */ jsx(Label, { className: "text-sm text-muted-foreground", children: "가입일" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium", children: user.createdAt ? new Date(user.createdAt).toLocaleDateString("ko-KR") : "N/A" })
+        ] })
+      ] }) })
+    ] }),
+    /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Crown, { className: "h-5 w-5" }),
+          "구독 상태"
+        ] }),
+        /* @__PURE__ */ jsx(CardDescription, { children: "현재 플랜 및 구독 정보" })
+      ] }),
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-6", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between p-4 rounded-lg border bg-card", children: [
+          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsx(Label, { className: "text-sm text-muted-foreground", children: "현재 플랜" }),
+            /* @__PURE__ */ jsxs("p", { className: "text-2xl font-bold flex items-center gap-2", children: [
+              tierDisplayName,
+              isPremium && /* @__PURE__ */ jsx(Crown, { className: "h-5 w-5 text-yellow-500" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "text-right", children: /* @__PURE__ */ jsx("p", { className: `text-sm font-medium px-3 py-1 rounded-full ${user.subscriptionStatus === "active" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : user.subscriptionStatus === "trialing" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" : user.subscriptionStatus === "canceled" ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`, children: statusDisplayName }) })
+        ] }),
+        /* @__PURE__ */ jsx(Separator, {}),
+        /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+            /* @__PURE__ */ jsx(Label, { className: "text-sm font-medium", children: "무료체험 사용 여부" }),
+            /* @__PURE__ */ jsx("div", { className: "flex items-center gap-2", children: user.hasUsedTrial ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(CheckCircle2, { className: "h-4 w-4 text-green-600 dark:text-green-400" }),
+              /* @__PURE__ */ jsx("span", { className: "text-sm text-muted-foreground", children: "사용 완료" })
+            ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(XCircle, { className: "h-4 w-4 text-slate-600 dark:text-slate-400" }),
+              /* @__PURE__ */ jsx("span", { className: "text-sm text-muted-foreground", children: "미사용 (사용 가능)" })
+            ] }) })
+          ] }),
+          endDate && /* @__PURE__ */ jsxs("div", { className: "space-y-2 p-4 rounded-lg bg-muted", children: [
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-sm font-medium", children: [
+              /* @__PURE__ */ jsx(Clock, { className: "h-4 w-4" }),
+              endDateLabel
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
+              /* @__PURE__ */ jsx("div", { className: "text-3xl font-bold font-mono", children: timeRemaining }),
+              /* @__PURE__ */ jsx("div", { className: "text-right text-xs text-muted-foreground", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1", children: [
+                /* @__PURE__ */ jsx(Calendar, { className: "h-3 w-3" }),
+                formattedEndDate
+              ] }) })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx(Separator, {}),
+        /* @__PURE__ */ jsx("div", { className: "space-y-3", children: !isPremium ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsxs(
+            Button,
+            {
+              onClick: handleUpgradeToInsider,
+              className: "w-full",
+              size: "lg",
+              children: [
+                /* @__PURE__ */ jsx(Crown, { className: "w-4 h-4 mr-2" }),
+                "Upgrade to Insider"
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-center text-muted-foreground", children: "실시간 insider 거래 데이터 및 고급 기능에 액세스하세요" })
+        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-2", children: [
+            /* @__PURE__ */ jsx(
+              Button,
+              {
+                onClick: handleManageSubscription,
+                disabled: isLoadingPortal,
+                className: "w-full",
+                variant: "outline",
+                children: isLoadingPortal ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                  /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" }),
+                  "Loading..."
+                ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                  /* @__PURE__ */ jsx(ExternalLink, { className: "w-4 h-4 mr-2" }),
+                  "구독 관리"
+                ] })
+              }
+            ),
+            /* @__PURE__ */ jsx(RefreshAccountButton, { className: "w-full" })
+          ] }),
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground text-center", children: '💡 구독 상태가 자동으로 업데이트되지 않으면 "계정 새로고침"을 클릭하세요' })
+        ] }) }),
+        isPremium && user.subscriptionStatus === "trialing" && /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-blue-50 dark:bg-blue-950 p-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+          /* @__PURE__ */ jsx(AlertCircle, { className: "h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" }),
+          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-blue-900 dark:text-blue-100", children: "무료체험 이용 중" }),
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-800 dark:text-blue-200", children: "무료체험 종료 시 자동으로 결제가 진행됩니다. 자동결제를 원하지 않으시면 카드사를 통해 자동결제를 취소하세요. 단, 무료체험 기간은 계속 유지되며 종료 시까지 서비스를 이용하실 수 있습니다." })
+          ] })
+        ] }) }),
+        isPremium && user.subscriptionStatus === "canceled" && /* @__PURE__ */ jsx("div", { className: "rounded-lg bg-orange-50 dark:bg-orange-950 p-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+          /* @__PURE__ */ jsx(AlertCircle, { className: "h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" }),
+          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-orange-900 dark:text-orange-100", children: "구독이 취소되었습니다" }),
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-orange-800 dark:text-orange-200", children: '구독 종료일까지 Insider 기능을 계속 이용하실 수 있습니다. 종료 후 다시 구독하시려면 "Upgrade to Insider" 버튼을 클릭하세요.' })
+          ] })
+        ] }) })
+      ] })
+    ] }),
+    isPremium && user.stripeCustomerId && /* @__PURE__ */ jsxs(Card, { children: [
+      /* @__PURE__ */ jsxs(CardHeader, { children: [
+        /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5" }),
+          "결제 정보"
+        ] }),
+        /* @__PURE__ */ jsx(CardDescription, { children: "Stripe를 통한 안전한 결제 관리" })
+      ] }),
+      /* @__PURE__ */ jsxs(CardContent, { className: "space-y-3", children: [
+        /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground", children: "결제 수단 변경, 영수증 확인, 구독 취소 등은 Stripe 고객 포털에서 관리하실 수 있습니다." }),
+        /* @__PURE__ */ jsx(
+          Button,
+          {
+            onClick: handleManageSubscription,
+            disabled: isLoadingPortal,
+            variant: "outline",
+            className: "w-full",
+            children: isLoadingPortal ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" }),
+              "Loading..."
+            ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(ExternalLink, { className: "w-4 h-4 mr-2" }),
+              "Stripe 고객 포털 열기"
+            ] })
+          }
+        )
+      ] })
+    ] })
+  ] });
+}
 function PublicRouter() {
   return /* @__PURE__ */ jsxs(Switch$1, { children: [
     /* @__PURE__ */ jsx(Route, { path: "/", component: LandingPage }),
@@ -16424,6 +16850,7 @@ function AppRouter() {
     /* @__PURE__ */ jsx(Route, { path: "/password-demo", component: PasswordDemo }),
     /* @__PURE__ */ jsx(Route, { path: "/enhanced-dashboard", component: EnhancedInsiderTradingDashboard }),
     /* @__PURE__ */ jsx(Route, { path: "/payment-success", component: PaymentSuccess }),
+    /* @__PURE__ */ jsx(Route, { path: "/profile", component: ProfilePage }),
     /* @__PURE__ */ jsx(Route, { path: "/settings", component: Settings }),
     /* @__PURE__ */ jsx(Route, { path: "/admin", component: AdminDashboard }),
     /* @__PURE__ */ jsx(Route, { component: NotFound })

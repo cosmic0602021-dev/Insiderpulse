@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Languages, Palette, Bell, Monitor, Sun, Moon, BellOff, CreditCard, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Languages, Palette, Bell, Monitor, Sun, Moon, BellOff, CreditCard, ExternalLink, Ticket, CheckCircle2 } from 'lucide-react';
 import { useLanguage, type Language } from '@/contexts/language-context';
 import { useState, useEffect } from 'react';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
@@ -17,8 +18,10 @@ export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [theme, setTheme] = useState<string>('system');
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
   const {
     isSupported,
     isSubscribed,
@@ -106,6 +109,52 @@ export default function Settings() {
         variant: 'destructive',
       });
       setIsLoadingPortal(false);
+    }
+  };
+
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: '쿠폰 코드 입력',
+        description: '쿠폰 코드를 입력해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsRedeemingCoupon(true);
+    try {
+      const response = await apiRequest('POST', '/api/coupon/redeem', {
+        couponCode: couponCode.trim()
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: '쿠폰 적용 성공!',
+          description: data.message,
+        });
+        setCouponCode('');
+
+        // Refresh user data to show updated trial end date
+        await refreshUser();
+      } else {
+        toast({
+          title: '쿠폰 적용 실패',
+          description: data.message,
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error redeeming coupon:', error);
+      toast({
+        title: '오류',
+        description: '쿠폰 적용 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRedeemingCoupon(false);
     }
   };
 
@@ -261,6 +310,101 @@ export default function Settings() {
                 💡 Tip: If you cancel your subscription, you'll keep access until the end of your billing period.
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Coupon Redemption - only show for trialing users */}
+      {user && user.subscriptionStatus === 'trialing' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Ticket className="h-5 w-5" />
+              쿠폰 등록
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {user.usedCoupons && (user.usedCoupons as string[]).length > 0 ? (
+              // User has already used a coupon
+              <>
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-950 p-4 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                        쿠폰 사용 완료
+                      </p>
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        계정당 1개의 쿠폰만 사용 가능합니다. 이미 <strong>{(user.usedCoupons as string[])[0]}</strong> 쿠폰을 사용하셨습니다.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">사용한 쿠폰</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(user.usedCoupons as string[]).map((code) => (
+                      <div
+                        key={code}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {code}
+                      </div>
+                    ))}
+                  </div>
+                  {user.couponExtensionDays && (
+                    <p className="text-xs text-muted-foreground">
+                      💡 무료체험 기간 {user.couponExtensionDays}일 연장됨
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              // User has not used any coupon yet
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="coupon-code">쿠폰 코드</Label>
+                  <p className="text-sm text-muted-foreground">
+                    쿠폰 코드를 입력하면 무료체험 기간이 3일 연장됩니다
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      id="coupon-code"
+                      placeholder="쿠폰 코드 입력"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleRedeemCoupon();
+                        }
+                      }}
+                      disabled={isRedeemingCoupon}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleRedeemCoupon}
+                      disabled={isRedeemingCoupon || !couponCode.trim()}
+                    >
+                      {isRedeemingCoupon ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                          적용 중...
+                        </>
+                      ) : (
+                        '적용'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3">
+                  <p className="text-blue-900 dark:text-blue-100 text-xs">
+                    💡 Tip: 계정당 1개의 쿠폰만 사용 가능합니다. 신중하게 선택하세요!
+                  </p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

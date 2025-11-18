@@ -35,6 +35,7 @@ import StartTrialPage from "@/pages/start-trial";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin-dashboard";
 import LandingPage from "@/pages/landing";
+import ProfilePage from "@/pages/profile";
 
 function PublicRouter() {
   return (
@@ -67,6 +68,7 @@ function AppRouter() {
       <Route path="/password-demo" component={PasswordDemo} />
       <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
       <Route path="/payment-success" component={PaymentSuccess} />
+      <Route path="/profile" component={ProfilePage} />
       <Route path="/settings" component={Settings} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />

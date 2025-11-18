@@ -42,6 +42,11 @@ export const users = pgTable("users", {
 
   // FOMO tracking
   lastTrialNotificationSent: timestamp("last_trial_notification_sent"),
+
+  // Coupon System
+  usedCoupons: json("used_coupons").$type<string[]>().default(sql`'[]'::json`), // Array of redeemed coupon codes
+  couponExtensionDays: integer("coupon_extension_days").notNull().default(0), // Total days extended via coupons
+  lastCouponUsedAt: timestamp("last_coupon_used_at"), // When last coupon was used
 });
 
 export const insiderTrades = pgTable("insider_trades", {

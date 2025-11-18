@@ -34,6 +34,12 @@ const getMenuItems = (t: (key: string) => string) => [
     icon: Star,
     key: 'ranking'
   },
+  {
+    title: "Profile",
+    url: "/profile",
+    icon: User,
+    key: 'profile'
+  },
 ];
 
 interface WatchlistItem {
@@ -268,7 +274,7 @@ export function AppSidebar() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.email}</p>
               <p className="text-xs text-muted-foreground">
-                {user.subscriptionTier === 'insider_pro' ? 'Pro' : 'Free'}
+                {(user.subscriptionTier === 'insider_pro' || user.subscriptionTier === 'insider') ? 'Insider' : 'Outsider'}
               </p>
             </div>
           </div>
@@ -289,7 +295,7 @@ export function AppSidebar() {
               });
             }}>
               <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Premium
+              Upgrade to Insider
             </Link>
           </Button>
         )}

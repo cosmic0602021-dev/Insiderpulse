@@ -4,7 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw, ArrowRight, Check, Sparkles } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw, ArrowRight, Check, Sparkles, AlertTriangle } from "lucide-react";
 import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
 import { GlassCard } from "@/components/glass-card";
 import { useAuth } from "@/contexts/auth-context";
@@ -13,6 +14,7 @@ import { useLocation } from 'wouter';
 export default function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const isSubmittingRef = useRef(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
@@ -20,10 +22,10 @@ export default function PremiumCheckout() {
 
   // Redirect if user already has active subscription
   useEffect(() => {
-    if (user && user.subscriptionTier === 'insider_pro' &&
+    if (user && (user.subscriptionTier === 'insider_pro' || user.subscriptionTier === 'insider') &&
        (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
       toast({
-        title: "이미 프리미엄 구독 중입니다",
+        title: "이미 Insider 구독 중입니다",
         description: "트레이딩 페이지로 이동합니다.",
       });
       setTimeout(() => setLocation('/trades'), 1500);
@@ -32,7 +34,7 @@ export default function PremiumCheckout() {
 
   const plans = {
     monthly: {
-      name: "Insider Pro",
+      name: "Insider",
       price: 14,
       priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
       interval: "/month",
@@ -51,7 +53,7 @@ export default function PremiumCheckout() {
       savings: null
     },
     yearly: {
-      name: "Insider Pro",
+      name: "Insider",
       price: 112,
       originalPrice: 168,
       priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
@@ -81,7 +83,21 @@ export default function PremiumCheckout() {
   const trialPeriodKo = selectedPlan === 'yearly' ? '7일' : '3일';
   const trialPeriodEn = selectedPlan === 'yearly' ? '7 days' : '3 days';
 
+  // Check if user has already used trial
+  const hasUsedTrial = user?.hasUsedTrial || false;
+  const showTrialInfo = !hasUsedTrial;
+
   const handleCheckout = async () => {
+    // Check if user agreed to terms (only required if trial available)
+    if (showTrialInfo && !agreedToTerms) {
+      toast({
+        title: "약관 동의 필요",
+        description: "자동결제 및 환불 정책에 동의해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Prevent double-clicks and concurrent requests
     if (isSubmittingRef.current) {
       console.log('⚠️ Already submitting, ignoring duplicate click');
@@ -207,10 +223,12 @@ export default function PremiumCheckout() {
           </Badge>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight
                         bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40" data-testid="text-checkout-title">
-            Upgrade to Insider Pro
+            Upgrade to Insider
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
-            Get real-time insider trading alerts and never miss a profitable opportunity
+            {showTrialInfo
+              ? `Get ${trialPeriodEn} free trial + real-time insider trading alerts`
+              : 'Get real-time insider trading alerts and never miss a profitable opportunity'}
           </p>
         </div>
 
@@ -314,20 +332,39 @@ export default function PremiumCheckout() {
               </CardContent>
             </Card>
 
-            {/* Free Trial Info */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-sm text-white">
-                    {trialPeriodKo} 무료체험
-                  </h3>
-                  <p className="text-sm text-slate-300 mt-1">
-                    오늘부터 {trialPeriodKo}간 무료로 모든 Pro 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${currentPlan.price}{currentPlan.interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.
-                  </p>
+            {/* Free Trial Info - only show if user hasn't used trial */}
+            {showTrialInfo && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-sm text-white">
+                      {trialPeriodKo} 무료체험
+                    </h3>
+                    <p className="text-sm text-slate-300 mt-1">
+                      오늘부터 {trialPeriodKo}간 무료로 모든 Insider 기능을 사용해보세요. 무료체험 기간이 끝나면 자동으로 ${currentPlan.price}{currentPlan.interval} 결제가 시작됩니다. 언제든지 해지 가능합니다.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* No Trial - Direct Billing Info */}
+            {!showTrialInfo && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/30">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-sm text-white">
+                      무료체험 이미 사용됨
+                    </h3>
+                    <p className="text-sm text-slate-300 mt-1">
+                      무료체험은 계정당 1회만 제공됩니다. 결제 즉시 ${currentPlan.price}{currentPlan.interval} 자동결제가 시작됩니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
               <div className="flex items-start gap-3">
@@ -362,10 +399,12 @@ export default function PremiumCheckout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  Start Free Trial
+                  {showTrialInfo ? 'Start Free Trial' : 'Subscribe Now'}
                 </CardTitle>
                 <CardDescription>
-                  {trialPeriodKo} 무료체험 후 ${currentPlan.price}{currentPlan.interval}
+                  {showTrialInfo
+                    ? `${trialPeriodKo} 무료체험 후 $${currentPlan.price}${currentPlan.interval}`
+                    : `즉시 $${currentPlan.price}${currentPlan.interval} 결제 시작`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -374,12 +413,14 @@ export default function PremiumCheckout() {
                     <span>Plan:</span>
                     <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'})</span>
                   </div>
+                  {showTrialInfo && (
+                    <div className="flex items-center justify-between">
+                      <span>Free Trial:</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">{trialPeriodEn}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
-                    <span>Free Trial:</span>
-                    <span className="font-semibold text-green-600 dark:text-green-400">{trialPeriodEn}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>After Trial:</span>
+                    <span>{showTrialInfo ? 'After Trial:' : 'Price:'}</span>
                     <span className="font-semibold">${currentPlan.price}{currentPlan.interval} (세금별도)</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -388,10 +429,40 @@ export default function PremiumCheckout() {
                   </div>
                 </div>
 
+                {/* Warning Notice */}
+                {showTrialInfo && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        카드 정보 입력 시 자동결제 이후에는 환불 불가하오니 꼭 확인하세요.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Terms Agreement Checkbox */}
+                {showTrialInfo && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
+                    <Checkbox
+                      id="terms"
+                      checked={agreedToTerms}
+                      onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label
+                      htmlFor="terms"
+                      className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                    >
+                      자동결제 및 환불 불가 정책에 동의하며, 무료체험 종료 후 자동으로 결제가 진행됨을 이해했습니다.
+                    </label>
+                  </div>
+                )}
+
                 <Button
                   onClick={handleCheckout}
                   className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-6 text-lg"
-                  disabled={isProcessing}
+                  disabled={isProcessing || (showTrialInfo && !agreedToTerms)}
                   data-testid="button-complete-payment"
                 >
                   {isProcessing ? (
@@ -402,13 +473,15 @@ export default function PremiumCheckout() {
                   ) : (
                     <>
                       <Shield className="w-5 h-5 mr-2" />
-                      Start {trialPeriodEn} Free Trial
+                      {showTrialInfo ? `Start ${trialPeriodEn} Free Trial` : 'Subscribe Now'}
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-center text-slate-500">
-                  You won't be charged for {trialPeriodEn}. Cancel anytime during the trial.
+                  {showTrialInfo
+                    ? `You won't be charged for ${trialPeriodEn}. Cancel anytime during the trial.`
+                    : '안전한 Stripe 결제 시스템을 통해 처리됩니다.'}
                 </p>
               </CardContent>
             </Card>
