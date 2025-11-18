@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import { dataIntegrityService } from './data-integrity-service';
+import { validateAndCorrectTicker } from './ticker-validator';
 import type { InsertInsiderTrade } from '@shared/schema';
 
 // Break circular dependency - broadcaster function will be injected
@@ -280,26 +281,38 @@ class OpenInsiderCollector {
     );
   }
 
-  private extractTicker(text: string): string | null {
+  private extractTicker(text: string, companyName?: string): string | null {
     // Look for ticker patterns - OpenInsider typically bolds the ticker
     const patterns = [
       /\b([A-Z]{1,5})\b/,  // Simple ticker pattern
       /([A-Z]{2,5})/,      // Ticker letters
     ];
-    
+
+    let extractedTicker: string | null = null;
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
-        return match[1];
+        extractedTicker = match[1];
+        break;
       }
     }
-    return null;
+
+    // Validate and correct ticker if company name is available
+    if (extractedTicker && companyName) {
+      const validation = validateAndCorrectTicker(extractedTicker, companyName);
+      if (!validation.isValid && validation.correctedTicker) {
+        console.log(`🔧 [OpenInsider] Correcting ticker: ${extractedTicker} → ${validation.correctedTicker} for ${companyName}`);
+        return validation.correctedTicker;
+      }
+    }
+
+    return extractedTicker;
   }
 
   private extractCompanyName(text: string, ticker: string): string {
     // Clean and extract company name
     let name = this.cleanText(text);
-    
+
     // Remove ticker if it appears in company name
     name = name.replace(new RegExp(`\\b${ticker}\\b`, 'gi'), '').trim();
     
@@ -344,19 +357,17 @@ class OpenInsiderCollector {
 
   private parseTradeType(text: string): 'Buy' | 'Sell' | 'Transfer' | null {
     const cleaned = text.toLowerCase().trim();
-    
+
+    // Only allow pure purchases (P) and sales (S)
     if (cleaned.includes('p') || cleaned.includes('purchase') || cleaned.includes('buy')) {
       return 'Buy';
     }
     if (cleaned.includes('s') || cleaned.includes('sale') || cleaned.includes('sell')) {
       return 'Sell';
     }
-    if (cleaned.includes('a') || cleaned.includes('grant') || cleaned.includes('award') || 
-        cleaned.includes('d') || cleaned.includes('g') || cleaned.includes('f') || 
-        cleaned.includes('m') || cleaned.includes('transfer')) {
-      return 'Transfer';
-    }
-    
+
+    // Exclude grants, awards, options, transfers, etc.
+    // Return null to skip these transactions
     return null;
   }
 

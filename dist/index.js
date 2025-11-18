@@ -2480,6 +2480,55 @@ var init_mega_sec_bulk_collector = __esm({
   }
 });
 
+// server/ticker-validator.ts
+function validateAndCorrectTicker(ticker, companyName) {
+  if (!ticker || !companyName) {
+    return {
+      isValid: false,
+      reason: "Missing ticker or company name",
+      confidence: "high"
+    };
+  }
+  const corrections = TICKER_CORRECTIONS[ticker];
+  if (corrections) {
+    for (const [pattern, correctTicker] of Object.entries(corrections)) {
+      if (companyName.includes(pattern)) {
+        console.log(`\u{1F527} Ticker correction: ${ticker} \u2192 ${correctTicker} (${companyName})`);
+        return {
+          isValid: false,
+          correctedTicker: correctTicker,
+          reason: `Ticker conflict resolved: ${ticker} \u2192 ${correctTicker} for ${companyName}`,
+          confidence: "high"
+        };
+      }
+    }
+  }
+  if (!/^[A-Z]{1,5}$/.test(ticker)) {
+    return {
+      isValid: false,
+      reason: `Invalid ticker format: ${ticker}`,
+      confidence: "high"
+    };
+  }
+  return {
+    isValid: true,
+    confidence: "high"
+  };
+}
+var TICKER_CORRECTIONS;
+var init_ticker_validator = __esm({
+  "server/ticker-validator.ts"() {
+    "use strict";
+    TICKER_CORRECTIONS = {
+      "MSC": {
+        "MSC Industrial": "MSM"
+        // MSC Industrial Direct → MSM
+      }
+      // Add more as we discover them
+    };
+  }
+});
+
 // server/openinsider-collector-advanced.ts
 function setBroadcaster(fn) {
   broadcaster = fn;
@@ -2489,6 +2538,7 @@ var init_openinsider_collector_advanced = __esm({
   "server/openinsider-collector-advanced.ts"() {
     "use strict";
     init_storage();
+    init_ticker_validator();
     broadcaster = null;
     AdvancedOpenInsiderCollector = class {
       constructor() {
@@ -3021,28 +3071,10 @@ var init_openinsider_collector_advanced = __esm({
         const mappings = {
           "P": "BUY",
           // Purchase
-          "S": "SELL",
+          "S": "SELL"
           // Sale
-          "A": "GRANT",
-          // Grant/Award
-          "M": "OPTION_EXERCISE",
-          // Option Exercise
-          "G": "GIFT",
-          // Gift
-          "F": "TAX",
-          // Payment of exercise price or tax liability
-          "X": "OPTION_EXERCISE",
-          // Exercise/conversion derivative security
-          "C": "CONVERSION",
-          // Conversion of derivative security
-          "W": "INHERIT",
-          // Acquisition or disposition by will or inheritance
-          "U": "DISPOSITION",
-          // Disposition pursuant to tender offer
-          "D": "DISPOSITION"
-          // Disposition to issuer of issuer equity securities
         };
-        return mappings[code] || "OTHER";
+        return mappings[code] || null;
       }
       /**
        * 🔗 EXTRACT REAL SEC ACCESSION NUMBER
@@ -3096,11 +3128,17 @@ var init_openinsider_collector_advanced = __esm({
         let errors = 0;
         for (const trade of trades) {
           try {
+            let ticker = trade.ticker;
+            const validation = validateAndCorrectTicker(ticker, trade.companyName);
+            if (!validation.isValid && validation.correctedTicker) {
+              console.log(`\u{1F527} [OpenInsider Advanced] Correcting ticker: ${ticker} \u2192 ${validation.correctedTicker} for ${trade.companyName}`);
+              ticker = validation.correctedTicker;
+            }
             const convertedTrade = {
               // Use REAL accession number if available
               accessionNumber: trade.realAccessionNumber || this.generateAccessionNumber(trade),
               companyName: trade.companyName,
-              ticker: trade.ticker,
+              ticker,
               traderName: trade.insiderName,
               traderTitle: trade.title,
               tradeType: trade.tradeType,
@@ -9198,55 +9236,6 @@ var globImport_openinsider_collector_ts_ts;
 var init_4 = __esm({
   'import("./openinsider-collector.ts?ts=*") in server/routes.ts'() {
     globImport_openinsider_collector_ts_ts = __glob({});
-  }
-});
-
-// server/ticker-validator.ts
-function validateAndCorrectTicker(ticker, companyName) {
-  if (!ticker || !companyName) {
-    return {
-      isValid: false,
-      reason: "Missing ticker or company name",
-      confidence: "high"
-    };
-  }
-  const corrections = TICKER_CORRECTIONS[ticker];
-  if (corrections) {
-    for (const [pattern, correctTicker] of Object.entries(corrections)) {
-      if (companyName.includes(pattern)) {
-        console.log(`\u{1F527} Ticker correction: ${ticker} \u2192 ${correctTicker} (${companyName})`);
-        return {
-          isValid: false,
-          correctedTicker: correctTicker,
-          reason: `Ticker conflict resolved: ${ticker} \u2192 ${correctTicker} for ${companyName}`,
-          confidence: "high"
-        };
-      }
-    }
-  }
-  if (!/^[A-Z]{1,5}$/.test(ticker)) {
-    return {
-      isValid: false,
-      reason: `Invalid ticker format: ${ticker}`,
-      confidence: "high"
-    };
-  }
-  return {
-    isValid: true,
-    confidence: "high"
-  };
-}
-var TICKER_CORRECTIONS;
-var init_ticker_validator = __esm({
-  "server/ticker-validator.ts"() {
-    "use strict";
-    TICKER_CORRECTIONS = {
-      "MSC": {
-        "MSC Industrial": "MSM"
-        // MSC Industrial Direct → MSM
-      }
-      // Add more as we discover them
-    };
   }
 });
 

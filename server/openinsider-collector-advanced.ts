@@ -1,4 +1,5 @@
 import { storage } from './storage';
+import { validateAndCorrectTicker } from './ticker-validator';
 import type { InsertInsiderTrade } from '@shared/schema';
 
 // Break circular dependency - broadcaster function will be injected
@@ -709,21 +710,15 @@ class AdvancedOpenInsiderCollector {
    * 📊 MAP TRANSACTION CODE TO TRADE TYPE
    */
   private parseTradeTypeFromCode(code: string): string | null {
+    // Only allow pure purchases (P) and sales (S)
     const mappings: { [key: string]: string } = {
-      'P': 'BUY',           // Purchase
-      'S': 'SELL',          // Sale
-      'A': 'GRANT',         // Grant/Award
-      'M': 'OPTION_EXERCISE', // Option Exercise
-      'G': 'GIFT',          // Gift
-      'F': 'TAX',           // Payment of exercise price or tax liability
-      'X': 'OPTION_EXERCISE', // Exercise/conversion derivative security
-      'C': 'CONVERSION',    // Conversion of derivative security
-      'W': 'INHERIT',       // Acquisition or disposition by will or inheritance
-      'U': 'DISPOSITION',   // Disposition pursuant to tender offer
-      'D': 'DISPOSITION',   // Disposition to issuer of issuer equity securities
+      'P': 'BUY',   // Purchase
+      'S': 'SELL',  // Sale
     };
-    
-    return mappings[code] || 'OTHER';
+
+    // Return null for all other codes (grants, options, etc.)
+    // This will cause the trade to be skipped
+    return mappings[code] || null;
   }
 
   /**
@@ -795,11 +790,19 @@ class AdvancedOpenInsiderCollector {
 
     for (const trade of trades) {
       try {
+        // Validate and correct ticker
+        let ticker = trade.ticker;
+        const validation = validateAndCorrectTicker(ticker, trade.companyName);
+        if (!validation.isValid && validation.correctedTicker) {
+          console.log(`🔧 [OpenInsider Advanced] Correcting ticker: ${ticker} → ${validation.correctedTicker} for ${trade.companyName}`);
+          ticker = validation.correctedTicker;
+        }
+
         const convertedTrade: InsertInsiderTrade = {
           // Use REAL accession number if available
           accessionNumber: trade.realAccessionNumber || this.generateAccessionNumber(trade),
           companyName: trade.companyName,
-          ticker: trade.ticker,
+          ticker: ticker,
           traderName: trade.insiderName,
           traderTitle: trade.title,
           tradeType: trade.tradeType as any,
