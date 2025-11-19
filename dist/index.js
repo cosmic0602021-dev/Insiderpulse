@@ -2523,6 +2523,10 @@ var init_ticker_validator = __esm({
       "MSC": {
         "MSC Industrial": "MSM"
         // MSC Industrial Direct → MSM
+      },
+      "CB": {
+        "CB Financial": "CBFV"
+        // CB Financial Services → CBFV (not Chubb which is also CB)
       }
       // Add more as we discover them
     };
@@ -13491,6 +13495,12 @@ async function registerRoutes(app2) {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
           priceChangePercent: priceChangePercent !== void 0 ? Math.round(priceChangePercent * 10) / 10 : void 0,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
+          // enhancedTrade 객체 추가 (frontend compatibility)
+          enhancedTrade: {
+            currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
+            pricePerShare: Math.round(metrics.avgTradeValue * 100) / 100,
+            priceLastUpdated: priceLastUpdated?.toISOString() || null
+          },
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map((p) => ({
             type: p.type,

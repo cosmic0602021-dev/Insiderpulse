@@ -4270,6 +4270,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
+          // enhancedTrade 객체 추가 (frontend compatibility)
+          enhancedTrade: {
+            currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
+            pricePerShare: Math.round(metrics.avgTradeValue * 100) / 100,
+            priceLastUpdated: priceLastUpdated?.toISOString() || null,
+          },
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map(p => ({
             type: p.type,

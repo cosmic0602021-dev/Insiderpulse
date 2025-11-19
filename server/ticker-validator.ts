@@ -20,6 +20,9 @@ const TICKER_CORRECTIONS: Record<string, Record<string, string>> = {
   'MSC': {
     'MSC Industrial': 'MSM',  // MSC Industrial Direct → MSM
   },
+  'CB': {
+    'CB Financial': 'CBFV',  // CB Financial Services → CBFV (not Chubb which is also CB)
+  },
   // Add more as we discover them
 };
 
