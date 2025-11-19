@@ -13485,39 +13485,63 @@ async function registerRoutes(app2) {
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1e6;
         const buyCountScore = metrics.buyCount * 5;
-        const insiderScore = metrics.uniqueInsiders.size * 10;
+        let executiveWeightedInsiderScore = 0;
+        const uniqueInsidersArray = Array.from(metrics.uniqueInsiders);
+        for (const insiderName of uniqueInsidersArray) {
+          const insiderTrades2 = metrics.trades.filter((t) => t.traderName === insiderName);
+          const title = insiderTrades2[0]?.traderTitle?.toLowerCase() || "";
+          let executiveMultiplier = 1;
+          if (title.includes("ceo") || title.includes("president")) {
+            executiveMultiplier = 1.3;
+          } else if (title.includes("cfo") || title.includes("coo")) {
+            executiveMultiplier = 1.2;
+          } else if (title.includes("director")) {
+            executiveMultiplier = 1.1;
+          }
+          executiveWeightedInsiderScore += 10 * executiveMultiplier;
+        }
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2;
+        const baseSignalStrength = Math.round(
+          netBuyingScore * 0.4 + // Net buying (40%, increased from 30%)
+          buyCountScore * 0.15 + // Buy count (15%)
+          executiveWeightedInsiderScore * 0.25 + // Weighted insiders (25%, increased from 20%)
+          avgValueScore * 0.05
+          // Avg value (5%)
+        );
         const daysSinceLastTrade = metrics.lastTradeDate ? (Date.now() - metrics.lastTradeDate.getTime()) / (1e3 * 60 * 60 * 24) : 30;
-        const recencyScore = Math.max(0, 30 - daysSinceLastTrade) * 2;
-        let patternBonus = 0;
+        const decayRate = 2;
+        const recencyMultiplier = Math.exp(-daysSinceLastTrade / decayRate);
+        let patternMultiplier = 1;
+        let patternBaseBonus = 0;
         const tickerPatterns = detectedPatterns.filter(
           (pattern) => pattern.ticker.toUpperCase() === metrics.ticker.toUpperCase()
         );
         for (const pattern of tickerPatterns) {
           switch (pattern.type) {
             case "CLUSTER_BUY":
-              patternBonus += pattern.significance === "HIGH" ? 30 : pattern.significance === "MEDIUM" ? 20 : 10;
+              const clusterDays = daysSinceLastTrade;
+              if (clusterDays <= 3) {
+                patternMultiplier *= 1.5;
+              } else if (clusterDays <= 7) {
+                patternMultiplier *= 1.1;
+              } else {
+                patternMultiplier *= 0.7;
+              }
+              patternBaseBonus += pattern.significance === "HIGH" ? 30 : pattern.significance === "MEDIUM" ? 20 : 10;
               break;
             case "CLUSTER_SELL":
-              patternBonus -= pattern.significance === "HIGH" ? 20 : pattern.significance === "MEDIUM" ? 15 : 5;
+              patternBaseBonus -= pattern.significance === "HIGH" ? 20 : pattern.significance === "MEDIUM" ? 15 : 5;
               break;
             case "CONSECUTIVE_TRADES":
-              patternBonus += pattern.significance === "HIGH" ? 25 : pattern.significance === "MEDIUM" ? 15 : 8;
+              patternBaseBonus += pattern.significance === "HIGH" ? 25 : pattern.significance === "MEDIUM" ? 15 : 8;
               break;
             case "LARGE_VOLUME":
-              patternBonus += pattern.significance === "HIGH" ? 20 : pattern.significance === "MEDIUM" ? 12 : 6;
+              patternBaseBonus += pattern.significance === "HIGH" ? 20 : pattern.significance === "MEDIUM" ? 12 : 6;
               break;
           }
         }
-        metrics.score = Math.round(
-          netBuyingScore * 0.3 + // Net buying amount (30%, reduced from 35%)
-          buyCountScore * 0.15 + // Buy trade count (15%, reduced from 20%)
-          insiderScore * 0.2 + // Unique insiders (20%, unchanged)
-          avgValueScore * 0.05 + // Average trade value (5%, reduced from 10%)
-          recencyScore * 0.2 + // Recency (20%, INCREASED from 10% - timing is critical!)
-          patternBonus * 0.1
-          // Pattern bonus (10%, INCREASED from 5%)
-        );
+        const signalWithPatternBonus = baseSignalStrength + patternBaseBonus * 0.15;
+        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier);
         if (metrics.score >= 80) {
           metrics.recommendation = "STRONG_BUY";
         } else if (metrics.score >= 50) {
@@ -13591,7 +13615,18 @@ async function registerRoutes(app2) {
           }).join(", ") : null
         };
       });
-      const topRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).sort((a, b) => b.score - a.score).slice(0, limit);
+      const topRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
+        const daysSince = r.lastTradeDate ? (Date.now() - new Date(r.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+        return daysSince <= 7;
+      }).filter((r) => {
+        if (r.enhancedTrade?.currentPrice && r.avgTradeValue > 0) {
+          const priceGap = Math.abs(
+            (r.enhancedTrade.currentPrice - r.avgTradeValue) / r.avgTradeValue
+          );
+          return priceGap <= 0.15;
+        }
+        return true;
+      }).sort((a, b) => b.score - a.score).slice(0, limit);
       res.json({
         rankings: topRankings,
         generatedAt: (/* @__PURE__ */ new Date()).toISOString(),

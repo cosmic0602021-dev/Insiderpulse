@@ -3999,18 +3999,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // - Pattern bonus (10% - cluster buying, consecutive trades, etc.)
         // - Average trade value (5% - log scale to prevent extreme values from dominating)
         
+        // 🔥 INSIDER MOMENTUM SCORE (IMS) ALGORITHM
+        // New algorithm: Final Score = Base Signal Strength × Recency Multiplier × Pattern Boost
+
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1000000; // Normalize to millions
         const buyCountScore = metrics.buyCount * 5; // 5 points per buy trade
-        const insiderScore = metrics.uniqueInsiders.size * 10; // 10 points per unique insider
+
+        // 🎯 C-level Executive Weighting - executives have higher impact
+        let executiveWeightedInsiderScore = 0;
+        const uniqueInsidersArray = Array.from(metrics.uniqueInsiders);
+
+        for (const insiderName of uniqueInsidersArray) {
+          const insiderTrades = metrics.trades.filter(t => t.traderName === insiderName);
+          const title = insiderTrades[0]?.traderTitle?.toLowerCase() || '';
+
+          let executiveMultiplier = 1.0;
+          if (title.includes('ceo') || title.includes('president')) {
+            executiveMultiplier = 1.3; // CEO/President → 130%
+          } else if (title.includes('cfo') || title.includes('coo')) {
+            executiveMultiplier = 1.2; // CFO/COO → 120%
+          } else if (title.includes('director')) {
+            executiveMultiplier = 1.1; // Director → 110%
+          }
+
+          executiveWeightedInsiderScore += 10 * executiveMultiplier;
+        }
+
         // Use log scale to prevent extremely large trades from dominating the score
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2; // Log scale normalization
-        
-        const daysSinceLastTrade = metrics.lastTradeDate ? 
+
+        // 🔥 1단계: 기본 신호 강도 계산 (Base Signal Strength) - 시간 제외
+        const baseSignalStrength = Math.round(
+          netBuyingScore * 0.40 +           // Net buying (40%, increased from 30%)
+          buyCountScore * 0.15 +            // Buy count (15%)
+          executiveWeightedInsiderScore * 0.25 +  // Weighted insiders (25%, increased from 20%)
+          avgValueScore * 0.05              // Avg value (5%)
+        );
+
+        // 🔥 2단계: 시간 감쇠 점수 (Exponential Time Decay)
+        const daysSinceLastTrade = metrics.lastTradeDate ?
           (Date.now() - metrics.lastTradeDate.getTime()) / (1000 * 60 * 60 * 24) : 30;
-        const recencyScore = Math.max(0, 30 - daysSinceLastTrade) * 2; // More recent = higher score
-        
-        // 🔍 패턴 감지 보너스 점수 추가
-        let patternBonus = 0;
+
+        const decayRate = 2; // 2일마다 반감기
+        const recencyMultiplier = Math.exp(-daysSinceLastTrade / decayRate);
+        // 0일=1.0, 1일=0.60, 2일=0.36, 4일=0.13, 7일=0.03
+
+        // 🔥 3단계: 패턴 부스트 배수 (Pattern Boost Multiplier)
+        let patternMultiplier = 1.0;
+        let patternBaseBonus = 0;
+
         const tickerPatterns = detectedPatterns.filter(pattern =>
           pattern.ticker.toUpperCase() === metrics.ticker.toUpperCase()
         );
@@ -4018,32 +4055,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const pattern of tickerPatterns) {
           switch (pattern.type) {
             case 'CLUSTER_BUY':
-              patternBonus += pattern.significance === 'HIGH' ? 30 :
-                            pattern.significance === 'MEDIUM' ? 20 : 10;
+              // 동시매수 패턴에 시간 민감도 추가
+              const clusterDays = daysSinceLastTrade; // 클러스터 발생 후 경과일
+
+              if (clusterDays <= 3) {
+                patternMultiplier *= 1.5; // 3일 이내 동시매수 → 150% 부스트
+              } else if (clusterDays <= 7) {
+                patternMultiplier *= 1.1; // 7일 이내 → 110%
+              } else {
+                patternMultiplier *= 0.7; // 8일 이상 → 감점
+              }
+
+              patternBaseBonus += pattern.significance === 'HIGH' ? 30 :
+                                  pattern.significance === 'MEDIUM' ? 20 : 10;
               break;
             case 'CLUSTER_SELL':
-              patternBonus -= pattern.significance === 'HIGH' ? 20 :
-                            pattern.significance === 'MEDIUM' ? 15 : 5;
+              patternBaseBonus -= pattern.significance === 'HIGH' ? 20 :
+                                  pattern.significance === 'MEDIUM' ? 15 : 5;
               break;
             case 'CONSECUTIVE_TRADES':
-              patternBonus += pattern.significance === 'HIGH' ? 25 :
-                            pattern.significance === 'MEDIUM' ? 15 : 8;
+              patternBaseBonus += pattern.significance === 'HIGH' ? 25 :
+                                  pattern.significance === 'MEDIUM' ? 15 : 8;
               break;
             case 'LARGE_VOLUME':
-              patternBonus += pattern.significance === 'HIGH' ? 20 :
-                            pattern.significance === 'MEDIUM' ? 12 : 6;
+              patternBaseBonus += pattern.significance === 'HIGH' ? 20 :
+                                  pattern.significance === 'MEDIUM' ? 12 : 6;
               break;
           }
         }
 
-        metrics.score = Math.round(
-          netBuyingScore * 0.30 +  // Net buying amount (30%, reduced from 35%)
-          buyCountScore * 0.15 +   // Buy trade count (15%, reduced from 20%)
-          insiderScore * 0.20 +    // Unique insiders (20%, unchanged)
-          avgValueScore * 0.05 +   // Average trade value (5%, reduced from 10%)
-          recencyScore * 0.20 +    // Recency (20%, INCREASED from 10% - timing is critical!)
-          patternBonus * 0.10      // Pattern bonus (10%, INCREASED from 5%)
-        );
+        // 패턴 기본 보너스를 신호 강도에 추가
+        const signalWithPatternBonus = baseSignalStrength + (patternBaseBonus * 0.15);
+
+        // 🔥 최종 점수 = 신호 강도 × 시간 감쇠 × 패턴 부스트 (곱셈 모델)
+        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier);
         
         // Determine recommendation
         if (metrics.score >= 80) {
@@ -4132,6 +4177,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(r => r.totalTrades >= 2) // Only include stocks with at least 2 trades
         .filter(r => r.netBuying > 0) // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
         .filter(r => r.buyTrades > 0) // Must have at least 1 buy trade
+        .filter(r => {
+          // 🔥 시간 필터: 7일 이상 경과된 신호는 완전 제외
+          const daysSince = r.lastTradeDate ?
+            (Date.now() - new Date(r.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+          return daysSince <= 7; // 7일 이내 거래만 추천
+        })
+        .filter(r => {
+          // 🔥 가격 괴리 필터: 내부자 평균 매수가 대비 현재가 괴리율 15% 이상 제외 (optional)
+          if (r.enhancedTrade?.currentPrice && r.avgTradeValue > 0) {
+            const priceGap = Math.abs(
+              (r.enhancedTrade.currentPrice - r.avgTradeValue) / r.avgTradeValue
+            );
+            return priceGap <= 0.15; // 15% 이상 괴리 시 제외
+          }
+          return true; // 가격 정보 없으면 통과
+        })
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
       
