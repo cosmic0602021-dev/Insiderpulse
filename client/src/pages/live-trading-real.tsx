@@ -25,7 +25,7 @@ interface DataQualityStatus {
 }
 
 export default function LiveTradingReal() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const [dataQuality, setDataQuality] = useState<DataQualityStatus | null>(null);
   const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
@@ -204,7 +204,9 @@ export default function LiveTradingReal() {
         <div>
           <h1 className="text-3xl font-bold">실시간 내부자 거래</h1>
           <p className="text-muted-foreground">
-            검증된 실제 데이터만 표시 • 마지막 검증: {lastValidationTime?.toLocaleTimeString('ko-KR')}
+            검증된 실제 데이터만 표시 • 마지막 검증: {lastValidationTime?.toLocaleTimeString(
+              language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">

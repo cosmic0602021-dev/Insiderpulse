@@ -115,7 +115,9 @@ function AppContent() {
             <div className="flex items-center gap-2 min-w-0">
               <SidebarTrigger data-testid="button-sidebar-toggle" className="flex-shrink-0" />
               <div className="text-xs sm:text-sm text-muted-foreground truncate hidden sm:block">
-                {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString()}
+                {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString(
+                  language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

@@ -1331,7 +1331,7 @@ const translations = {
     "lockedTrade.realtimeZone": "Real-Time Zone",
     "lockedTrade.lockedTrades": "locked trades",
     "lockedTrade.unlockPrompt": "Unlock {count} real-time insider trades and see what the insiders are doing right now!",
-    "lockedTrade.startTrial": "Start 5-Minute Free Trial",
+    "lockedTrade.startTrial": "Start Free Trial",
     "lockedTrade.unlockDescription": "Instantly unlock all trades below and see real-time insider activities",
     "lockedTrade.unlockBelow": "Unlock below",
     // Trial Timer
@@ -1343,7 +1343,7 @@ const translations = {
     "trial.upgradePrompt": "Upgrade to Insider Pro to continue accessing real-time data.",
     "trial.subscribeNow": "Subscribe Now",
     // Trial Start Page
-    "trial.heading": "InsiderPulse Pro 5-Minute Free Trial",
+    "trial.heading": "InsiderPulse Pro Free Trial",
     "trial.description": "Track real-time insider trades and get AI-powered analysis",
     "trial.benefits.title": "Pro Benefits",
     "trial.benefits.realtime": "Real-time Trade Tracking",
@@ -1360,18 +1360,18 @@ const translations = {
     "trial.terms.noChargeUntilEnd": "No charge until trial ends",
     "trial.terms.cancel": "Cancel anytime — cancellation takes effect immediately",
     "trial.form.title": "Enter Payment Information",
-    "trial.form.description": "Subscription starts automatically after 5-minute free trial",
+    "trial.form.description": "Subscription starts automatically after free trial",
     "trial.form.selectPlan": "Select Subscription Plan",
     "trial.form.monthly": "Monthly",
     "trial.form.yearly": "Annual",
     "trial.form.perMonth": "Billed monthly",
     "trial.form.perYear": "Billed annually",
     "trial.form.discount": "(33% off)",
-    "trial.form.info1": "* No charges during the 5-minute free trial period.",
+    "trial.form.info1": "* No charges during the free trial period.",
     "trial.form.info2": "* Automatically converts to selected plan when trial ends.",
     "trial.form.info3": "* Cancel anytime; Pro features will be disabled immediately upon cancellation.",
     "trial.success.title": "Trial Started!",
-    "trial.success.message": "5-minute free trial activated. Start using real-time trade tracking now!",
+    "trial.success.message": "Free trial activated. Start using real-time trade tracking now!",
     "trial.success.redirecting": "Redirecting automatically...",
     // Trial form additional translations
     "trial.yearly.perMonth": "/mo",
@@ -1757,7 +1757,10 @@ const translations = {
     "ranking.analysis": "Analysis",
     "ranking.insiderActivity": "Insider Activity",
     "ranking.tradesLast30Days": "trades in last 30 days",
-    "ranking.avgTradeValue": "Avg Buy/Sell Price",
+    "ranking.avgBuyPrice": "Avg Buy Price",
+    "ranking.avgTradeValue": "Avg Buy Price",
+    // Legacy support
+    "ranking.simultaneousBuyers": "Simultaneous Buyers",
     "ranking.netBuying": "Net Buying",
     "ranking.loading": "Loading stock rankings...",
     "ranking.noData": "No ranking data available",
@@ -1769,7 +1772,6 @@ const translations = {
     "ranking.recommendationReasonNetBuying": "Recommendation Reason: Net Buying",
     "ranking.buySell": "Buy / Sell",
     "ranking.recentTrade": "Recent Trade:",
-    "ranking.simultaneousBuyers": "{count} Simultaneous Buyers",
     "ranking.buyPrice": "Buy Price",
     "ranking.shareCount": "Share Count",
     "ranking.totalAmount": "Total Amount",
@@ -2243,7 +2245,6 @@ const translations = {
     "landing.tagline": "AI-Powered SEC Filing Analysis",
     "landing.title": "InsiderPulse: Track Insider Trading in Real-Time",
     "landing.description": "Get instant alerts and AI-powered insights from SEC Form 4 filings. Make informed investment decisions based on what corporate insiders are doing.",
-    "landing.noCreditCard": "No credit card required • Free 48-hour delayed data • Upgrade anytime",
     "landing.features.title": "Everything You Need to Track Insider Activity",
     "landing.features.subtitle": "Powerful features designed for serious investors",
     "landing.features.aiAnalysis": "AI-Powered Analysis",
@@ -2863,7 +2864,10 @@ const translations = {
     "ranking.analysis": "분석",
     "ranking.insiderActivity": "내부자 활동",
     "ranking.tradesLast30Days": "최근 30일 거래",
-    "ranking.avgTradeValue": "내부자 평균 매수가",
+    "ranking.avgBuyPrice": "평균 매수가",
+    "ranking.avgTradeValue": "평균 매수가",
+    // Legacy support
+    "ranking.simultaneousBuyers": "동시 매수자",
     "ranking.netBuying": "순매수",
     "ranking.loading": "주식 순위를 불러오는 중...",
     "ranking.noData": "순위 데이터가 없습니다",
@@ -2875,7 +2879,6 @@ const translations = {
     "ranking.recommendationReasonNetBuying": "추천 이유: 순매수",
     "ranking.buySell": "매수 / 매도",
     "ranking.recentTrade": "최근 거래:",
-    "ranking.simultaneousBuyers": "동시 매수자 {count}명",
     "ranking.buyPrice": "매수 가격",
     "ranking.shareCount": "주식 수",
     "ranking.totalAmount": "총액",
@@ -3110,7 +3113,6 @@ const translations = {
     "landing.tagline": "AI 기반 SEC 공시 분석",
     "landing.title": "InsiderPulse: 실시간 내부자 거래 추적",
     "landing.description": "SEC Form 4 공시를 AI로 분석하여 즉각적인 알림과 인사이트를 받으세요. 기업 내부자의 거래를 기반으로 정보에 입각한 투자 결정을 내리세요.",
-    "landing.noCreditCard": "신용카드 불필요 • 무료 48시간 지연 데이터 • 언제든 업그레이드",
     "landing.features.title": "내부자 활동 추적을 위한 모든 기능",
     "landing.features.subtitle": "진지한 투자자를 위한 강력한 기능",
     "landing.features.aiAnalysis": "AI 기반 분석",
@@ -3320,7 +3322,7 @@ const translations = {
     "lockedTrade.realtimeZone": "リアルタイムゾーン",
     "lockedTrade.lockedTrades": "件のロック取引",
     "lockedTrade.unlockPrompt": "{count}件のリアルタイムインサイダー取引をアンロックして、インサイダーが今何をしているか確認！",
-    "lockedTrade.startTrial": "5分間無料トライアル開始",
+    "lockedTrade.startTrial": "無料トライアル開始",
     "lockedTrade.unlockDescription": "以下の全取引を即座にアンロックし、リアルタイムのインサイダー活動を確認",
     "lockedTrade.unlockBelow": "以下をアンロック",
     // Trial Timer
@@ -3332,7 +3334,7 @@ const translations = {
     "trial.upgradePrompt": "Insider Proにアップグレードしてリアルタイムデータへのアクセスを継続。",
     "trial.subscribeNow": "今すぐ購読",
     // Trial Start Page
-    "trial.heading": "InsiderPulse Pro 5分間無料トライアル",
+    "trial.heading": "InsiderPulse Pro 無料トライアル",
     "trial.description": "リアルタイムのインサイダー取引を追跡し、AI分析を受けましょう",
     "trial.benefits.title": "Proの特典",
     "trial.benefits.realtime": "リアルタイム取引追跡",
@@ -3349,18 +3351,18 @@ const translations = {
     "trial.terms.noChargeUntilEnd": "トライアル終了まで請求なし",
     "trial.terms.cancel": "いつでもキャンセル可能 — キャンセル時はサブスクリプションが終了します",
     "trial.form.title": "お支払い情報の入力",
-    "trial.form.description": "5分間の無料トライアル後、自動的にサブスクリプションが開始されます",
+    "trial.form.description": "無料トライアル後、自動的にサブスクリプションが開始されます",
     "trial.form.selectPlan": "サブスクリプションプランを選択",
     "trial.form.monthly": "月額プラン",
     "trial.form.yearly": "年間プラン",
     "trial.form.perMonth": "毎月請求",
     "trial.form.perYear": "年間請求",
     "trial.form.discount": "(33%オフ)",
-    "trial.form.info1": "* 5分間の無料トライアル期間中はカードに請求されません。",
+    "trial.form.info1": "* 無料トライアル期間中はカードに請求されません。",
     "trial.form.info2": "* トライアル期間終了時に選択したプランに自動的に切り替わります。",
     "trial.form.info3": "* いつでもサブスクリプションをキャンセルでき、キャンセル時は即座にPro機能の使用が停止されます。",
     "trial.success.title": "トライアル開始！",
-    "trial.success.message": "5分間の無料トライアルが有効になりました。今すぐリアルタイム取引追跡をご利用ください！",
+    "trial.success.message": "無料トライアルが有効になりました。今すぐリアルタイム取引追跡をご利用ください！",
     "trial.success.redirecting": "自動的にリダイレクトしています...",
     // Trial form additional translations
     "trial.yearly.perMonth": "/月",
@@ -3747,7 +3749,10 @@ const translations = {
     "ranking.analysis": "分析",
     "ranking.insiderActivity": "インサイダー活動",
     "ranking.tradesLast30Days": "過去30日の取引",
+    "ranking.avgBuyPrice": "平均購入価格",
     "ranking.avgTradeValue": "平均購入価格",
+    // Legacy support
+    "ranking.simultaneousBuyers": "同時購入者",
     "ranking.netBuying": "ネット買い",
     "ranking.loading": "株式ランキングを読み込み中...",
     "ranking.noData": "ランキングデータがありません",
@@ -3759,7 +3764,6 @@ const translations = {
     "ranking.recommendationReasonNetBuying": "推奨理由: 純買い",
     "ranking.buySell": "買い / 売り",
     "ranking.recentTrade": "最近の取引:",
-    "ranking.simultaneousBuyers": "同時購入者 {count}人",
     "ranking.buyPrice": "購入価格",
     "ranking.shareCount": "株式数",
     "ranking.totalAmount": "総額",
@@ -3882,7 +3886,6 @@ const translations = {
     "landing.tagline": "AI搭載SEC申告分析",
     "landing.title": "InsiderPulse: インサイダー取引をリアルタイムで追跡",
     "landing.description": "SEC Form 4申告からAI分析による即時アラートとインサイトを取得。企業内部者の動向に基づいて情報に基づいた投資判断を行います。",
-    "landing.noCreditCard": "クレジットカード不要 • 無料48時間遅延データ • いつでもアップグレード",
     "landing.features.title": "インサイダー活動追跡に必要なすべて",
     "landing.features.subtitle": "真剣な投資家のための強力な機能",
     "landing.features.aiAnalysis": "AI搭載分析",
@@ -4065,7 +4068,7 @@ const translations = {
     "lockedTrade.realtimeZone": "实时区域",
     "lockedTrade.lockedTrades": "笔锁定交易",
     "lockedTrade.unlockPrompt": "解锁{count}笔实时内幕交易，看看内幕人士现在在做什么！",
-    "lockedTrade.startTrial": "开始5分钟免费试用",
+    "lockedTrade.startTrial": "开始免费试用",
     "lockedTrade.unlockDescription": "立即解锁下方所有交易并查看实时内幕活动",
     "lockedTrade.unlockBelow": "解锁下方",
     // Trial Timer
@@ -4077,7 +4080,7 @@ const translations = {
     "trial.upgradePrompt": "升级到Insider Pro以继续访问实时数据。",
     "trial.subscribeNow": "立即订阅",
     // Trial Start Page
-    "trial.heading": "InsiderPulse Pro 5分钟免费试用",
+    "trial.heading": "InsiderPulse Pro 免费试用",
     "trial.description": "追踪实时内幕交易并获得AI分析",
     "trial.benefits.title": "Pro权益",
     "trial.benefits.realtime": "实时交易追踪",
@@ -4094,18 +4097,18 @@ const translations = {
     "trial.terms.noChargeUntilEnd": "试用结束前不收费",
     "trial.terms.cancel": "随时取消 — 取消后订阅立即终止",
     "trial.form.title": "输入付款信息",
-    "trial.form.description": "5分钟免费试用后自动开始订阅",
+    "trial.form.description": "免费试用后自动开始订阅",
     "trial.form.selectPlan": "选择订阅计划",
     "trial.form.monthly": "月度订阅",
     "trial.form.yearly": "年度订阅",
     "trial.form.perMonth": "每月计费",
     "trial.form.perYear": "每年计费",
     "trial.form.discount": "(33%折扣)",
-    "trial.form.info1": "* 5分钟免费试用期间不会从卡中扣费。",
+    "trial.form.info1": "* 免费试用期间不会从卡中扣费。",
     "trial.form.info2": "* 试用期结束时自动转换为所选计划。",
     "trial.form.info3": "* 随时可以取消订阅，取消后Pro功能立即停用。",
     "trial.success.title": "试用开始！",
-    "trial.success.message": "5分钟免费试用已激活。立即开始使用实时交易追踪！",
+    "trial.success.message": "免费试用已激活。立即开始使用实时交易追踪！",
     "trial.success.redirecting": "正在自动跳转...",
     // Trial form additional translations
     "trial.yearly.perMonth": "/月",
@@ -4492,7 +4495,10 @@ const translations = {
     "ranking.analysis": "分析",
     "ranking.insiderActivity": "内幕人士活动",
     "ranking.tradesLast30Days": "过去30天交易",
+    "ranking.avgBuyPrice": "平均购买价格",
     "ranking.avgTradeValue": "平均购买价格",
+    // Legacy support
+    "ranking.simultaneousBuyers": "同时购买者",
     "ranking.netBuying": "净买入",
     "ranking.loading": "正在加载股票排名...",
     "ranking.noData": "没有排名数据",
@@ -4504,7 +4510,6 @@ const translations = {
     "ranking.recommendationReasonNetBuying": "推荐理由: 净买入",
     "ranking.buySell": "买入 / 卖出",
     "ranking.recentTrade": "最近交易:",
-    "ranking.simultaneousBuyers": "{count}位同时买家",
     "ranking.buyPrice": "买入价格",
     "ranking.shareCount": "股数",
     "ranking.totalAmount": "总额",
@@ -4627,7 +4632,6 @@ const translations = {
     "landing.tagline": "AI驱动的SEC申报分析",
     "landing.title": "InsiderPulse: 实时追踪内幕交易",
     "landing.description": "从SEC Form 4申报中获取AI驱动的即时警报和洞察。基于企业内部人士的行为做出明智的投资决策。",
-    "landing.noCreditCard": "无需信用卡 • 免费48小时延迟数据 • 随时升级",
     "landing.features.title": "追踪内幕活动所需的一切",
     "landing.features.subtitle": "为认真的投资者设计的强大功能",
     "landing.features.aiAnalysis": "AI驱动分析",
@@ -9392,7 +9396,7 @@ const StockHistoryChart = memo(function StockHistoryChart2({
 function TradeDetail() {
   var _a, _b, _c;
   const params = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const id = params.tradeId;
   const { data: trades = [], isLoading } = useQuery({
     queryKey: ["trades", "list", { limit: 100, offset: 0 }],
@@ -9620,7 +9624,9 @@ function TradeDetail() {
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex justify-between", children: [
                 /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: t("tradeDetail.lastUpdated") }),
-                /* @__PURE__ */ jsx("span", { className: "font-medium text-xs", "data-testid": "text-last-updated", children: stockPrice.lastUpdated ? new Date(stockPrice.lastUpdated).toLocaleTimeString() : "N/A" })
+                /* @__PURE__ */ jsx("span", { className: "font-medium text-xs", "data-testid": "text-last-updated", children: stockPrice.lastUpdated ? new Date(stockPrice.lastUpdated).toLocaleTimeString(
+                  language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US"
+                ) : "N/A" })
               ] })
             ] })
           ] })
@@ -11164,7 +11170,8 @@ function Ranking() {
     accessLevel: accessLevel ? { hasRealtimeAccess: accessLevel.hasRealtimeAccess, tier: accessLevel.tier } : "null"
   });
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["/api/rankings"],
+    queryKey: ["/api/rankings", language],
+    queryFn: () => fetch(`/api/rankings?language=${language}`).then((res) => res.json()),
     staleTime: 5 * 60 * 1e3
     // 5 minutes
   });
@@ -11230,7 +11237,7 @@ function Ranking() {
         let comprehensiveAnalysis = null;
         try {
           console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
-          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=ko`);
+          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`);
           if (response.ok) {
             comprehensiveAnalysis = await response.json();
             console.log("Comprehensive analysis fetched successfully");
@@ -11418,7 +11425,7 @@ function Ranking() {
       " ET"
     ] }),
     /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => {
-      var _a;
+      var _a, _b;
       const isLocked = !isPremium && index < 3;
       return /* @__PURE__ */ jsxs(
         Card,
@@ -11532,30 +11539,28 @@ function Ranking() {
                   }
                 ) })
               ] }),
-              /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10", children: [
+              /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10", children: [
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
+                  /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" }),
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium", children: item.totalTrades }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.tradesLast30Days") })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  item.buyTrades > item.sellTrades ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }) : item.buyTrades < item.sellTrades ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" }) : /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" }),
-                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ jsxs("p", { className: `text-xs sm:text-sm font-medium ${item.buyTrades > item.sellTrades ? "text-green-600" : item.buyTrades < item.sellTrades ? "text-red-600" : "text-gray-600"}`, children: [
-                      item.buyTrades,
-                      " / ",
-                      item.sellTrades
-                    ] }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("ranking.buySell") })
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium", children: ((_a = item.insiders) == null ? void 0 : _a.length) || 0 }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.simultaneousBuyers") })
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
                   /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.avgTradeValue) }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgTradeValue") })
+                    /* @__PURE__ */ jsxs("p", { className: "text-xs sm:text-sm font-medium truncate", children: [
+                      "$",
+                      item.avgTradeValue.toFixed(2),
+                      item.priceChangePercent !== void 0 && /* @__PURE__ */ jsxs("span", { className: `ml-1 text-[10px] ${item.priceChangePercent > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
+                        "(",
+                        item.priceChangePercent > 0 ? "+" : "",
+                        item.priceChangePercent.toFixed(1),
+                        "%)"
+                      ] })
+                    ] }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgBuyPrice") })
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
@@ -11572,7 +11577,7 @@ function Ranking() {
                   " ",
                   formatTimeAgo(item.lastTradeDate)
                 ] }),
-                ((_a = item.enhancedTrade) == null ? void 0 : _a.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
+                ((_b = item.enhancedTrade) == null ? void 0 : _b.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
                   var _a2;
                   const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
                   const percentChange = priceChange / item.enhancedTrade.pricePerShare * 100;
@@ -11854,7 +11859,7 @@ function PasswordDemo() {
   return /* @__PURE__ */ jsx("div", { className: "min-h-screen relative", children: /* @__PURE__ */ jsx(PasswordInput, {}) });
 }
 const EnhancedInsiderTradingDashboard = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13166,8 +13171,11 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx("span", { className: "text-sm text-slate-300", children: "실시간 업데이트" })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "text-xs text-slate-400", children: [
-              "마지막 업데이트: ",
-              (/* @__PURE__ */ new Date()).toLocaleTimeString("ko")
+              t("dashboard.lastUpdated"),
+              ": ",
+              (/* @__PURE__ */ new Date()).toLocaleTimeString(
+                language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US"
+              )
             ] })
           ] }) })
         ] }),
@@ -17513,7 +17521,9 @@ function AppContent() {
           /* @__PURE__ */ jsxs("div", { className: "text-xs sm:text-sm text-muted-foreground truncate hidden sm:block", children: [
             t("dashboard.lastUpdated"),
             ": ",
-            (/* @__PURE__ */ new Date()).toLocaleTimeString()
+            (/* @__PURE__ */ new Date()).toLocaleTimeString(
+              language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US"
+            )
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2 flex-shrink-0", children: [

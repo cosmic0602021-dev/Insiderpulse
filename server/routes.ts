@@ -2722,10 +2722,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (cacheAge < SIX_HOURS) {
           console.log(`✅ Using cached analysis (${Math.floor(cacheAge / 60000)} minutes old) - saved GPT API call`);
 
-          // 🌍 Translate cached data if requested language is not English
-          if (language !== 'en') {
-            console.log(`🌍 Translating cached analysis to ${language}...`);
-            const cachedData = trade.comprehensiveAnalysis as any;
+          const cachedData = trade.comprehensiveAnalysis as any;
+          const cachedLanguage = cachedData._language || 'en'; // Default to English if not specified
+
+          // 🌍 Translate cached data if language doesn't match
+          if (cachedLanguage !== language) {
+            console.log(`🌍 Translating cached analysis from ${cachedLanguage} to ${language}...`);
 
             try {
               // Translate catalysts array
@@ -2735,10 +2737,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               }
 
+              // Translate executive summary
+              if (cachedData.executiveSummary) {
+                cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
+              }
+
               // Translate market context reasoning
               if (cachedData.marketContext?.reasoning) {
                 cachedData.marketContext.reasoning = await translateText(
                   cachedData.marketContext.reasoning,
+                  language
+                );
+              }
+
+              // Translate risk assessment mitigation
+              if (cachedData.riskAssessment?.mitigation) {
+                cachedData.riskAssessment.mitigation = await translateText(
+                  cachedData.riskAssessment.mitigation,
                   language
                 );
               }
@@ -2754,15 +2769,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               }
 
-              console.log(`✅ Cached analysis translated to ${language}`);
+              // Update language marker
+              cachedData._language = language;
+
+              console.log(`✅ Cached analysis translated from ${cachedLanguage} to ${language}`);
               return res.json(cachedData);
             } catch (translateError) {
-              console.error('⚠️ Translation failed, returning English cached data:', translateError);
+              console.error('⚠️ Translation failed, returning cached data as-is:', translateError);
               return res.json(trade.comprehensiveAnalysis);
             }
           }
 
-          // Return cached English data as-is
+          // Return cached data as-is (language matches)
+          console.log(`✅ Returning cached analysis in ${language}`);
           return res.json(trade.comprehensiveAnalysis);
         } else {
           console.log(`⏰ Cache expired (${Math.floor(cacheAge / (60 * 60 * 1000))} hours old) - regenerating analysis`);
@@ -3046,6 +3065,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
+      // Translate executiveSummary if not English
+      if (language !== 'en' && comprehensiveAnalysis.executiveSummary) {
+        comprehensiveAnalysis.executiveSummary = await translateText(
+          comprehensiveAnalysis.executiveSummary,
+          language
+        );
+      }
+
+      // Translate actionableRecommendation if not English
+      if (language !== 'en' && comprehensiveAnalysis.actionableRecommendation) {
+        comprehensiveAnalysis.actionableRecommendation = await translateText(
+          comprehensiveAnalysis.actionableRecommendation,
+          language
+        );
+      }
+
+      // Add language marker to cached analysis
+      (comprehensiveAnalysis as any)._language = language;
+
       // 💾 SAVE TO DATABASE: Cache analysis for future requests (90% cost reduction)
       try {
         await db.update(insiderTrades)
@@ -3260,10 +3298,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // 기본 통계
         const uniqueInsiders = new Set(tickerTrades.map(t => t.traderName)).size;
-        const buyTrades = tickerTrades.filter(t => t.tradeType === 'BUY').length;
-        const sellTrades = tickerTrades.filter(t => t.tradeType === 'SELL').length;
+        const buyTrades = tickerTrades.filter(t => t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.transactionCode === 'P').length;
+        const sellTrades = tickerTrades.filter(t => t.tradeType === 'SELL' || t.tradeType === 'SALE' || t.transactionCode === 'S').length;
         const totalTrades = tickerTrades.length;
-        const avgTradeValue = tickerTrades.reduce((sum, t) => sum + (t.totalValue || 0), 0) / totalTrades;
+        const avgTradeValue = tickerTrades.reduce((sum, t) => sum + (t.pricePerShare || 0), 0) / totalTrades;
         const netBuying = tickerTrades.filter(t => t.tradeType === 'BUY').reduce((sum, t) => sum + (t.totalValue || 0), 0) -
                          tickerTrades.filter(t => t.tradeType === 'SELL').reduce((sum, t) => sum + (t.totalValue || 0), 0);
 
@@ -3941,6 +3979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/rankings', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
+      const language = (req.query.language as string) || 'en';
 
       // 🔍 자동 패턴 감지 실행
       console.log('🔍 자동 패턴 감지 실행 중...');
@@ -3973,6 +4012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             trades: [],
             totalBuyValue: 0,
             totalSellValue: 0,
+            totalPricePerShare: 0,
             buyCount: 0,
             sellCount: 0,
             uniqueInsiders: new Set(),
@@ -3988,20 +4028,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metrics.uniqueInsiders.add(trade.traderName);
         
         const tradeValue = Math.abs(trade.totalValue || 0);
+        const pricePerShare = Math.abs(trade.pricePerShare || 0);
         const tradeDate = new Date(trade.filedDate || trade.createdAt || '');
-        
+
         if (!metrics.lastTradeDate || tradeDate > metrics.lastTradeDate) {
           metrics.lastTradeDate = tradeDate;
         }
-        
+
         // Classify as buy or sell based on trade type and transaction code
-        const isBuy = trade.tradeType === 'BUY' || 
+        const isBuy = trade.tradeType === 'BUY' ||
                       trade.tradeType === 'PURCHASE' ||
                       trade.tradeType === 'GRANT' ||
                       trade.transactionCode === 'P' ||
                       trade.transactionCode === 'A' ||
                       (trade.shares && trade.shares > 0);
-        
+
         if (isBuy) {
           metrics.totalBuyValue += tradeValue;
           metrics.buyCount++;
@@ -4009,12 +4050,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metrics.totalSellValue += tradeValue;
           metrics.sellCount++;
         }
+
+        // Track price per share for averaging
+        metrics.totalPricePerShare += pricePerShare;
       }
       
+      // Fetch current stock prices for all tickers
+      const uniqueTickers = Array.from(tickerMetrics.keys());
+      const stockPriceMap = new Map<string, { price: number; lastUpdated: Date }>();
+
+      if (uniqueTickers.length > 0) {
+        const prices = await db.query.stockPrices.findMany({
+          where: (stockPrices, { inArray }) => inArray(stockPrices.ticker, uniqueTickers),
+          columns: {
+            ticker: true,
+            currentPrice: true,
+            lastUpdated: true,
+          }
+        });
+
+        prices.forEach(price => {
+          if (price.ticker && price.currentPrice) {
+            stockPriceMap.set(price.ticker, {
+              price: Number(price.currentPrice),
+              lastUpdated: price.lastUpdated || new Date()
+            });
+          }
+        });
+      }
+
       // Calculate scores and rankings
-      const rankings = Array.from(tickerMetrics.values()).map(metrics => {
+      const rankings = await Promise.all(Array.from(tickerMetrics.values()).map(async (metrics) => {
         const totalTrades = metrics.buyCount + metrics.sellCount;
-        metrics.avgTradeValue = totalTrades > 0 ? (metrics.totalBuyValue + metrics.totalSellValue) / totalTrades : 0;
+
+        // Calculate average price per share of BUY trades only (not all trades)
+        const buyTrades = metrics.trades.filter(t =>
+          t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' ||
+          t.tradeType === 'GRANT' || t.transactionCode === 'P' ||
+          t.transactionCode === 'A'
+        );
+        const totalBuyPricePerShare = buyTrades.reduce((sum, t) => sum + (t.pricePerShare || 0), 0);
+        metrics.avgTradeValue = buyTrades.length > 0 ? totalBuyPricePerShare / buyTrades.length : 0;
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         
         // Calculate ranking score based on (TIMING-FOCUSED WEIGHTS):
@@ -4165,6 +4241,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
 
+        // Get current price for this ticker
+        const stockPriceData = stockPriceMap.get(metrics.ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceLastUpdated = stockPriceData?.lastUpdated;
+
+        // Calculate percentage change from average buy price
+        let priceChangePercent = undefined;
+        if (currentPrice && metrics.avgTradeValue > 0) {
+          priceChangePercent = ((currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue) * 100;
+        }
+
         return {
           ticker: metrics.ticker,
           companyName: metrics.companyName,
@@ -4174,11 +4261,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           buyTrades: metrics.buyCount,
           sellTrades: metrics.sellCount,
           uniqueInsiders: metrics.uniqueInsiders.size,
-          avgTradeValue: Math.round(metrics.avgTradeValue),
+          avgTradeValue: Math.round(metrics.avgTradeValue * 100) / 100, // Round to 2 decimals for per-share price
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
           insiders: insiderDetails, // 📋 Insider 상세 정보 추가!
+          // 현재 주가 및 변동률 정보 추가
+          currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
+          priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
+          priceLastUpdated: priceLastUpdated?.toISOString() || null,
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map(p => ({
             type: p.type,
@@ -4186,17 +4277,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             significance: p.significance
           })),
           patternSignals: stockPatterns.length > 0 ?
-            stockPatterns.map(p => {
+            await Promise.all(stockPatterns.map(async (p) => {
+              let label: string;
               switch (p.type) {
-                case 'CLUSTER_BUY': return '🟢 집단 매수';
-                case 'CLUSTER_SELL': return '🔴 집단 매도';
-                case 'CONSECUTIVE_TRADES': return '🔄 연속 거래';
-                case 'LARGE_VOLUME': return '📈 대량 거래';
-                default: return '🔍 패턴 감지';
+                case 'CLUSTER_BUY': label = '🟢 Cluster Buying'; break;
+                case 'CLUSTER_SELL': label = '🔴 Cluster Selling'; break;
+                case 'CONSECUTIVE_TRADES': label = '🔄 Consecutive Trades'; break;
+                case 'LARGE_VOLUME': label = '📈 Large Volume'; break;
+                default: label = '🔍 Pattern Detected'; break;
               }
-            }).join(', ') : null
+              return language !== 'en' ? await translateText(label, language) : label;
+            })).then(labels => labels.join(', ')) : null
         };
-      });
+      }));
       
       // Sort by score and return top results
       const topRankings = rankings

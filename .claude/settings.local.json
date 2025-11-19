@@ -85,7 +85,19 @@
       "Bash(TZ='America/New_York' date:*)",
       "Bash(killall:*)",
       "Bash(NODE_ENV=production node dist/index.js)",
-      "Bash(tsx test:*)"
+      "Bash(tsx test:*)",
+      "Bash(if [ -n \"$OPENAI_API_KEY\" ])",
+      "Bash(then echo \"OpenAI API key is set ($#OPENAI_API_KEY characters)\")",
+      "Bash(else echo \"OpenAI API key is NOT set\")",
+      "Bash(then psql \"$DATABASE_URL\" -c \"UPDATE insider_trades SET comprehensive_analysis = NULL, analysis_generated_at = NULL WHERE comprehensive_analysis IS NOT NULL;\")",
+      "Bash(else echo \"DATABASE_URL not set\")",
+      "Bash(do if curl -s http://localhost:5000/api/health)",
+      "Bash(then echo \"Server is up!\")",
+      "Bash(node /home/runner/workspace/test-translation.js:*)",
+      "Bash(then echo \"API Key: $OPENAI_API_KEY:0:20...$OPENAI_API_KEY: -4\")",
+      "Bash(else echo \"No API key found\")",
+      "Bash(node /home/runner/workspace/check-openai-account.js:*)",
+      "Bash(node /home/runner/workspace/test-translation-working.js:*)"
     ],
     "deny": [],
     "ask": []

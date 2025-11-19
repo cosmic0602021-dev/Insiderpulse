@@ -14,7 +14,7 @@ import type { InsiderTrade, StockPrice } from "@shared/schema";
 
 export default function TradeDetail() {
   const params = useParams<{ tradeId: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const id = params.tradeId;
 
   // Fetch trade details
@@ -375,8 +375,10 @@ export default function TradeDetail() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('tradeDetail.lastUpdated')}</span>
                     <span className="font-medium text-xs" data-testid="text-last-updated">
-                      {stockPrice.lastUpdated 
-                        ? new Date(stockPrice.lastUpdated).toLocaleTimeString()
+                      {stockPrice.lastUpdated
+                        ? new Date(stockPrice.lastUpdated).toLocaleTimeString(
+                            language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
+                          )
                         : 'N/A'
                       }
                     </span>

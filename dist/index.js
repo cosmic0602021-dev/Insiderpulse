@@ -12497,18 +12497,28 @@ async function registerRoutes(app2) {
         const SIX_HOURS = 6 * 60 * 60 * 1e3;
         if (cacheAge < SIX_HOURS) {
           console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / 6e4)} minutes old) - saved GPT API call`);
-          if (language !== "en") {
-            console.log(`\u{1F30D} Translating cached analysis to ${language}...`);
-            const cachedData = trade.comprehensiveAnalysis;
+          const cachedData = trade.comprehensiveAnalysis;
+          const cachedLanguage = cachedData._language || "en";
+          if (cachedLanguage !== language) {
+            console.log(`\u{1F30D} Translating cached analysis from ${cachedLanguage} to ${language}...`);
             try {
               if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
                 cachedData.catalysts = await Promise.all(
                   cachedData.catalysts.map((catalyst) => translateText(catalyst, language))
                 );
               }
+              if (cachedData.executiveSummary) {
+                cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
+              }
               if (cachedData.marketContext?.reasoning) {
                 cachedData.marketContext.reasoning = await translateText(
                   cachedData.marketContext.reasoning,
+                  language
+                );
+              }
+              if (cachedData.riskAssessment?.mitigation) {
+                cachedData.riskAssessment.mitigation = await translateText(
+                  cachedData.riskAssessment.mitigation,
                   language
                 );
               }
@@ -12521,13 +12531,15 @@ async function registerRoutes(app2) {
                   }))
                 );
               }
-              console.log(`\u2705 Cached analysis translated to ${language}`);
+              cachedData._language = language;
+              console.log(`\u2705 Cached analysis translated from ${cachedLanguage} to ${language}`);
               return res.json(cachedData);
             } catch (translateError) {
-              console.error("\u26A0\uFE0F Translation failed, returning English cached data:", translateError);
+              console.error("\u26A0\uFE0F Translation failed, returning cached data as-is:", translateError);
               return res.json(trade.comprehensiveAnalysis);
             }
           }
+          console.log(`\u2705 Returning cached analysis in ${language}`);
           return res.json(trade.comprehensiveAnalysis);
         } else {
           console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - regenerating analysis`);
@@ -12762,6 +12774,19 @@ async function registerRoutes(app2) {
           language
         );
       }
+      if (language !== "en" && comprehensiveAnalysis.executiveSummary) {
+        comprehensiveAnalysis.executiveSummary = await translateText(
+          comprehensiveAnalysis.executiveSummary,
+          language
+        );
+      }
+      if (language !== "en" && comprehensiveAnalysis.actionableRecommendation) {
+        comprehensiveAnalysis.actionableRecommendation = await translateText(
+          comprehensiveAnalysis.actionableRecommendation,
+          language
+        );
+      }
+      comprehensiveAnalysis._language = language;
       try {
         await db4.update(insiderTrades).set({
           comprehensiveAnalysis,
@@ -13263,6 +13288,7 @@ async function registerRoutes(app2) {
   app2.get("/api/rankings", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit) || 10;
+      const language = req.query.language || "en";
       console.log("\u{1F50D} \uC790\uB3D9 \uD328\uD134 \uAC10\uC9C0 \uC2E4\uD589 \uC911...");
       let detectedPatterns = [];
       try {
@@ -13286,6 +13312,7 @@ async function registerRoutes(app2) {
             trades: [],
             totalBuyValue: 0,
             totalSellValue: 0,
+            totalPricePerShare: 0,
             buyCount: 0,
             sellCount: 0,
             uniqueInsiders: /* @__PURE__ */ new Set(),
@@ -13299,6 +13326,7 @@ async function registerRoutes(app2) {
         metrics.trades.push(trade);
         metrics.uniqueInsiders.add(trade.traderName);
         const tradeValue = Math.abs(trade.totalValue || 0);
+        const pricePerShare = Math.abs(trade.pricePerShare || 0);
         const tradeDate = new Date(trade.filedDate || trade.createdAt || "");
         if (!metrics.lastTradeDate || tradeDate > metrics.lastTradeDate) {
           metrics.lastTradeDate = tradeDate;
@@ -13311,10 +13339,35 @@ async function registerRoutes(app2) {
           metrics.totalSellValue += tradeValue;
           metrics.sellCount++;
         }
+        metrics.totalPricePerShare += pricePerShare;
       }
-      const rankings = Array.from(tickerMetrics.values()).map((metrics) => {
+      const uniqueTickers = Array.from(tickerMetrics.keys());
+      const stockPriceMap = /* @__PURE__ */ new Map();
+      if (uniqueTickers.length > 0) {
+        const prices = await db4.query.stockPrices.findMany({
+          where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
+          columns: {
+            ticker: true,
+            currentPrice: true,
+            lastUpdated: true
+          }
+        });
+        prices.forEach((price) => {
+          if (price.ticker && price.currentPrice) {
+            stockPriceMap.set(price.ticker, {
+              price: Number(price.currentPrice),
+              lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date()
+            });
+          }
+        });
+      }
+      const rankings = await Promise.all(Array.from(tickerMetrics.values()).map(async (metrics) => {
         const totalTrades = metrics.buyCount + metrics.sellCount;
-        metrics.avgTradeValue = totalTrades > 0 ? (metrics.totalBuyValue + metrics.totalSellValue) / totalTrades : 0;
+        const buyTrades = metrics.trades.filter(
+          (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.tradeType === "GRANT" || t.transactionCode === "P" || t.transactionCode === "A"
+        );
+        const totalBuyPricePerShare = buyTrades.reduce((sum2, t) => sum2 + (t.pricePerShare || 0), 0);
+        metrics.avgTradeValue = buyTrades.length > 0 ? totalBuyPricePerShare / buyTrades.length : 0;
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1e6;
         const buyCountScore = metrics.buyCount * 5;
@@ -13411,6 +13464,13 @@ async function registerRoutes(app2) {
           date: t.filedDate,
           tradeType: t.tradeType
         })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const stockPriceData = stockPriceMap.get(metrics.ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceLastUpdated = stockPriceData?.lastUpdated;
+        let priceChangePercent = void 0;
+        if (currentPrice && metrics.avgTradeValue > 0) {
+          priceChangePercent = (currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue * 100;
+        }
         return {
           ticker: metrics.ticker,
           companyName: metrics.companyName,
@@ -13420,34 +13480,46 @@ async function registerRoutes(app2) {
           buyTrades: metrics.buyCount,
           sellTrades: metrics.sellCount,
           uniqueInsiders: metrics.uniqueInsiders.size,
-          avgTradeValue: Math.round(metrics.avgTradeValue),
+          avgTradeValue: Math.round(metrics.avgTradeValue * 100) / 100,
+          // Round to 2 decimals for per-share price
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
           insiders: insiderDetails,
           // 📋 Insider 상세 정보 추가!
+          // 현재 주가 및 변동률 정보 추가
+          currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
+          priceChangePercent: priceChangePercent !== void 0 ? Math.round(priceChangePercent * 10) / 10 : void 0,
+          priceLastUpdated: priceLastUpdated?.toISOString() || null,
           // 패턴 정보 추가
           detectedPatterns: stockPatterns.map((p) => ({
             type: p.type,
             description: p.description,
             significance: p.significance
           })),
-          patternSignals: stockPatterns.length > 0 ? stockPatterns.map((p) => {
+          patternSignals: stockPatterns.length > 0 ? await Promise.all(stockPatterns.map(async (p) => {
+            let label;
             switch (p.type) {
               case "CLUSTER_BUY":
-                return "\u{1F7E2} \uC9D1\uB2E8 \uB9E4\uC218";
+                label = "\u{1F7E2} Cluster Buying";
+                break;
               case "CLUSTER_SELL":
-                return "\u{1F534} \uC9D1\uB2E8 \uB9E4\uB3C4";
+                label = "\u{1F534} Cluster Selling";
+                break;
               case "CONSECUTIVE_TRADES":
-                return "\u{1F504} \uC5F0\uC18D \uAC70\uB798";
+                label = "\u{1F504} Consecutive Trades";
+                break;
               case "LARGE_VOLUME":
-                return "\u{1F4C8} \uB300\uB7C9 \uAC70\uB798";
+                label = "\u{1F4C8} Large Volume";
+                break;
               default:
-                return "\u{1F50D} \uD328\uD134 \uAC10\uC9C0";
+                label = "\u{1F50D} Pattern Detected";
+                break;
             }
-          }).join(", ") : null
+            return language !== "en" ? await translateText(label, language) : label;
+          })).then((labels) => labels.join(", ")) : null
         };
-      });
+      }));
       const topRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
         const daysSince = r.lastTradeDate ? (Date.now() - new Date(r.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
         return daysSince <= 7;

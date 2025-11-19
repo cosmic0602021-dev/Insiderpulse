@@ -42,6 +42,10 @@ interface RankingItem {
   netBuying: number;
   lastTradeDate: string;
   insiderActivity: string;
+  // 현재 주가 및 변동률 정보
+  currentPrice?: number;
+  priceChangePercent?: number;
+  priceLastUpdated?: string | null;
   // 패턴 정보 추가
   detectedPatterns?: Array<{
     type: string;
@@ -89,7 +93,8 @@ export default function Ranking() {
   });
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({
-    queryKey: ['/api/rankings'],
+    queryKey: ['/api/rankings', language],
+    queryFn: () => fetch(`/api/rankings?language=${language}`).then(res => res.json()),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -173,7 +178,7 @@ export default function Ranking() {
         let comprehensiveAnalysis = null;
         try {
           console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
-          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=ko`);
+          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`);
 
           if (response.ok) {
             comprehensiveAnalysis = await response.json();
@@ -545,43 +550,35 @@ export default function Ranking() {
               </div>
 
               {/* Bottom section - Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10">
+                {/* 1. Simultaneous Buyers */}
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium">{item.totalTrades}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t('ranking.tradesLast30Days')}</p>
+                    <p className="text-xs sm:text-sm font-medium">{item.insiders?.length || 0}</p>
+                    <p className="text-xs text-muted-foreground truncate">{t('ranking.simultaneousBuyers')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {item.buyTrades > item.sellTrades ? (
-                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
-                  ) : item.buyTrades < item.sellTrades ? (
-                    <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
-                  ) : (
-                    <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <p className={`text-xs sm:text-sm font-medium ${
-                      item.buyTrades > item.sellTrades ? 'text-green-600' :
-                      item.buyTrades < item.sellTrades ? 'text-red-600' :
-                      'text-gray-600'
-                    }`}>
-                      {item.buyTrades} / {item.sellTrades}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{t('ranking.buySell')}</p>
-                  </div>
-                </div>
-
+                {/* 2. Avg Buy Price with % change */}
                 <div className="flex items-center gap-1 sm:gap-2">
                   <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.avgTradeValue)}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t('ranking.avgTradeValue')}</p>
+                    <p className="text-xs sm:text-sm font-medium truncate">
+                      ${item.avgTradeValue.toFixed(2)}
+                      {item.priceChangePercent !== undefined && (
+                        <span className={`ml-1 text-[10px] ${
+                          item.priceChangePercent > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          ({item.priceChangePercent > 0 ? '+' : ''}{item.priceChangePercent.toFixed(1)}%)
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{t('ranking.avgBuyPrice')}</p>
                   </div>
                 </div>
 
+                {/* 3. Net Buying */}
                 <div className="flex items-center gap-1 sm:gap-2">
                   <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-blue-500 flex-shrink-0" />
                   <div className="min-w-0">

@@ -4,7 +4,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, ComposedChart, XAxis, 
 import { useLanguage } from '@/contexts/language-context';
 
 const EnhancedInsiderTradingDashboard = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1450,7 +1450,9 @@ const EnhancedInsiderTradingDashboard = () => {
                     <span className="text-sm text-slate-300">실시간 업데이트</span>
                   </div>
                   <div className="text-xs text-slate-400">
-                    마지막 업데이트: {new Date().toLocaleTimeString('ko')}
+                    {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString(
+                      language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
+                    )}
                   </div>
                 </div>
               </div>
