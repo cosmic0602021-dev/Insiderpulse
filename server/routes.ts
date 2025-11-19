@@ -3138,6 +3138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 📊 추천 주식 랭킹 엔드포인트
+  // 🗑️ OLD RANKINGS ENDPOINT - DISABLED (새 IMS 알고리즘 사용 - line 3915)
+  /*
   app.get('/api/rankings', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
@@ -3383,6 +3385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: '랭킹 생성에 실패했습니다' });
     }
   });
+  */
 
   // 📧 이메일 알림 엔드포인트들
   // 테스트 이메일 발송
