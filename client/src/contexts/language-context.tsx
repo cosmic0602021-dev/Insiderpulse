@@ -1215,7 +1215,7 @@ const translations: Record<Language, Record<string, string>> = {
     'lockedTrade.realtimeZone': '실시간 구역',
     'lockedTrade.lockedTrades': '개 잠금 거래',
     'lockedTrade.unlockPrompt': '{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!',
-    'lockedTrade.startTrial': '5분 무료 체험 시작',
+    'lockedTrade.startTrial': '무료 체험 시작',
     'lockedTrade.unlockDescription': '아래 모든 거래를 즉시 잠금 해제하고 실시간 내부자 활동 확인',
     'lockedTrade.unlockBelow': '아래 거래 잠금 해제',
 
@@ -1229,7 +1229,7 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.subscribeNow': '지금 구독',
 
     // Trial Start Page
-    'trial.heading': 'InsiderPulse Pro 5분 무료 체험',
+    'trial.heading': 'InsiderPulse Pro 무료 체험',
     'trial.description': '실시간 내부자 거래를 추적하고 AI 분석을 받아보세요',
     'trial.benefits.title': 'Pro 혜택',
     'trial.benefits.realtime': '실시간 거래 추적',
@@ -1246,18 +1246,18 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.terms.noChargeUntilEnd': '무료체험 종료 이전에는 청구되지 않습니다',
     'trial.terms.cancel': '언제든지 취소할 수 있습니다 — 단, 취소 시 구독이 종료됩니다',
     'trial.form.title': '결제 정보 입력',
-    'trial.form.description': '5분 무료 체험 후 자동으로 구독이 시작됩니다',
+    'trial.form.description': '무료 체험 후 자동으로 구독이 시작됩니다',
     'trial.form.selectPlan': '구독 플랜 선택',
     'trial.form.monthly': '월간 구독',
     'trial.form.yearly': '연간 구독',
     'trial.form.perMonth': '매월 청구',
     'trial.form.perYear': '연간 청구',
     'trial.form.discount': '(33% 할인)',
-    'trial.form.info1': '* 5분 무료 체험 기간 동안 카드에서 청구되지 않습니다.',
+    'trial.form.info1': '* 무료 체험 기간 동안 카드에서 청구되지 않습니다.',
     'trial.form.info2': '* 체험 기간 종료 시 선택하신 플랜으로 자동 전환됩니다.',
     'trial.form.info3': '* 언제든지 구독을 취소할 수 있으며, 취소 시 즉시 Pro 기능 사용이 중지됩니다.',
     'trial.success.title': '체험 시작!',
-    'trial.success.message': '5분 무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!',
+    'trial.success.message': '무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!',
     'trial.success.redirecting': '잠시 후 자동으로 이동합니다...',
 
     // Trial form additional translations
@@ -1274,8 +1274,8 @@ const translations: Record<Language, Record<string, string>> = {
     'trial.form.securePayment': '안전한 결제 · Stripe 보안 처리',
     'trial.form.processing': '처리 중...',
     'trial.form.startTrial': '무료 체험 시작하기',
-    'trial.form.afterTrialMonthly': '5분 후 자동 결제: 월 $14',
-    'trial.form.afterTrialYearly': '5분 후 자동 결제: 연 $112',
+    'trial.form.afterTrialMonthly': '체험 종료 후 자동 결제: 월 $14',
+    'trial.form.afterTrialYearly': '체험 종료 후 자동 결제: 연 $112',
 
     // FOMO Alerts
     'fomo.trialExpiringSoon': '⚠️ 체험이 {hours}시간 후 만료됩니다!',
