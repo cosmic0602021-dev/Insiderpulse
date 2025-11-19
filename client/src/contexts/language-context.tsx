@@ -387,6 +387,11 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.lastUpdated': 'Last updated',
     'liveTrading.validatedData': 'Validated data',
 
+    // Filters
+    'filter.all': 'All',
+    'filter.buy': 'Buy Only',
+    'filter.sell': 'Sell Only',
+
     // Trade Card
     'tradeCard.filed': 'Filed',
     'tradeCard.shares': 'Shares',
@@ -542,6 +547,29 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.lockedTitle': 'Premium Feature',
     'ranking.lockedDescription': 'Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns',
     'ranking.unlockButton': 'Unlock Top Rankings',
+    'ranking.recommendationReason': 'Recommendation Reason:',
+    'ranking.recommendationReasonNetBuying': 'Recommendation Reason: Net Buying',
+    'ranking.buySell': 'Buy / Sell',
+    'ranking.recentTrade': 'Recent Trade:',
+    'ranking.simultaneousBuyers': '{count} Simultaneous Buyers',
+    'ranking.buyPrice': 'Buy Price',
+    'ranking.shareCount': 'Share Count',
+    'ranking.totalAmount': 'Total Amount',
+    'ranking.tradeDate': 'Trade Date:',
+    'ranking.lastUpdated': 'Last Updated',
+    'ranking.alert.noTradeData': 'No recent trade information available for {company}.',
+    'ranking.alert.loadFailed': 'Failed to load trade data.',
+
+    // Ranking AI Analysis
+    'ranking.aiAnalysis.executiveSummary': '{name} ({title}) bought {shares} shares of {company} at ${price}. This is interpreted as a positive signal.',
+    'ranking.aiAnalysis.riskMitigation': 'Insider buying is generally a positive signal, but diversified investment is recommended.',
+    'ranking.aiAnalysis.recommendation': 'The purchase by {title} is likely based on internal company information. Consider entry near ${price}.',
+    'ranking.aiAnalysis.insiderBuyByTitle': 'Insider buy by {title}',
+    'ranking.aiAnalysis.totalTradeValue': 'Total trade value: ${value}K',
+    'ranking.aiAnalysis.simultaneousBuyersCount': '{count} simultaneous buyers',
+    'ranking.aiAnalysis.executiveBuyActivity': 'Direct executive buying activity',
+    'ranking.aiAnalysis.insiderConfidence': 'Increased insider confidence',
+    'ranking.aiAnalysis.simultaneousEntry': '{count} simultaneous entries',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'Add InsiderPulse to Home Screen',
@@ -987,6 +1015,22 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.aiAnalysisInProgress': 'AI analysis in progress...',
     'tradeDetail.preparingAdvancedAnalysis': 'Preparing advanced AI analysis results',
     'tradeDetail.shareText': '{company} Insider Trade Information',
+    'tradeDetail.tradeDate': 'Trade Date',
+    'tradeDetail.priceUpdatedAt': 'Price Updated At',
+
+    // Price Chart Errors
+    'priceChart.error.invalidTicker': 'Invalid Ticker Symbol',
+    'priceChart.error.invalidTickerDesc': 'Please check the ticker format',
+    'priceChart.error.invalidDate': 'Invalid Trade Date',
+    'priceChart.error.invalidDateDesc': 'Unable to load price data for this date',
+    'priceChart.error.noDataTitle': 'Unable to collect real-time stock price data',
+    'priceChart.error.noDataDescDelisted': 'This stock may be delisted or not traded on major exchanges',
+    'priceChart.error.noDataDescPending': 'Stock price data has not been collected yet',
+    'priceChart.error.fallbackTitle': 'Providing analysis based on insider trade price',
+    'priceChart.error.fallbackDesc': 'You can check insider trade prices and related information below',
+    'priceChart.error.apiFailed': 'Failed to load price data',
+    'priceChart.error.apiFailedDesc': 'This is a temporary error. Please try again later',
+    'priceChart.error.tradeInfoAvailable': 'Insider trade information is available below',
 
     // Dashboard
     'dashboard.loadMoreTradesError': 'Failed to load more trades. Please try again.',
@@ -1496,6 +1540,11 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.lastUpdated': '마지막 업데이트',
     'liveTrading.validatedData': '검증된 데이터',
 
+    // Filters
+    'filter.all': '전체',
+    'filter.buy': '매수만',
+    'filter.sell': '매도만',
+
     // Trade Card
     'tradeCard.filed': '신고됨',
     'tradeCard.shares': '주식수',
@@ -1643,7 +1692,7 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.analysis': '분석',
     'ranking.insiderActivity': '내부자 활동',
     'ranking.tradesLast30Days': '최근 30일 거래',
-    'ranking.avgTradeValue': '평균 매수가',
+    'ranking.avgTradeValue': '내부자 평균 매수가',
     'ranking.netBuying': '순매수',
     'ranking.loading': '주식 순위를 불러오는 중...',
     'ranking.noData': '순위 데이터가 없습니다',
@@ -1651,6 +1700,29 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.lockedTitle': '프리미엄 기능',
     'ranking.lockedDescription': 'Insider Pro로 업그레이드하여 내부자 거래 패턴 기반 최고의 주식 추천을 확인하세요',
     'ranking.unlockButton': '상위 순위 잠금 해제',
+    'ranking.recommendationReason': '추천 이유:',
+    'ranking.recommendationReasonNetBuying': '추천 이유: 순매수',
+    'ranking.buySell': '매수 / 매도',
+    'ranking.recentTrade': '최근 거래:',
+    'ranking.simultaneousBuyers': '동시 매수자 {count}명',
+    'ranking.buyPrice': '매수 가격',
+    'ranking.shareCount': '주식 수',
+    'ranking.totalAmount': '총액',
+    'ranking.tradeDate': '거래일:',
+    'ranking.lastUpdated': '마지막 업데이트',
+    'ranking.alert.noTradeData': '{company}에 대한 최근 거래 정보가 없습니다.',
+    'ranking.alert.loadFailed': '거래 데이터를 불러오는데 실패했습니다.',
+
+    // Ranking AI Analysis
+    'ranking.aiAnalysis.executiveSummary': '{name} ({title})이(가) {company}의 주식 {shares}주를 ${price}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.',
+    'ranking.aiAnalysis.riskMitigation': '내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다.',
+    'ranking.aiAnalysis.recommendation': '{title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. ${price} 근처에서 진입을 고려하세요.',
+    'ranking.aiAnalysis.insiderBuyByTitle': '{title} 직책의 내부자 매수',
+    'ranking.aiAnalysis.totalTradeValue': '총 거래액: ${value}K',
+    'ranking.aiAnalysis.simultaneousBuyersCount': '동시 매수자 {count}명',
+    'ranking.aiAnalysis.executiveBuyActivity': '임원진의 직접 매수 활동',
+    'ranking.aiAnalysis.insiderConfidence': '내부자 신뢰도 증가',
+    'ranking.aiAnalysis.simultaneousEntry': '{count}명의 동시 진입',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'InsiderPulse 홈 화면에 추가',
@@ -1825,6 +1897,22 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.aiAnalysisInProgress': 'AI 분석이 진행 중입니다...',
     'tradeDetail.preparingAdvancedAnalysis': '고급 AI 분석 결과를 준비하고 있습니다',
     'tradeDetail.shareText': '{company} 내부자 거래 정보',
+    'tradeDetail.tradeDate': '거래일',
+    'tradeDetail.priceUpdatedAt': '가격 업데이트 시간',
+
+    // Price Chart Errors
+    'priceChart.error.invalidTicker': '유효하지 않은 티커 심볼',
+    'priceChart.error.invalidTickerDesc': '티커 형식을 확인해주세요',
+    'priceChart.error.invalidDate': '유효하지 않은 거래 날짜',
+    'priceChart.error.invalidDateDesc': '이 날짜의 가격 데이터를 불러올 수 없습니다',
+    'priceChart.error.noDataTitle': '실시간 주가 데이터를 수집하지 못했습니다',
+    'priceChart.error.noDataDescDelisted': '이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다',
+    'priceChart.error.noDataDescPending': '주가 데이터를 아직 수집하지 못했습니다',
+    'priceChart.error.fallbackTitle': '내부자 거래 가격 기준으로 분석을 제공합니다',
+    'priceChart.error.fallbackDesc': '아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다',
+    'priceChart.error.apiFailed': '가격 데이터를 불러오지 못했습니다',
+    'priceChart.error.apiFailedDesc': '일시적인 오류입니다. 잠시 후 다시 시도해주세요',
+    'priceChart.error.tradeInfoAvailable': '내부자 거래 정보는 아래에서 확인하실 수 있습니다',
 
     // Missing Dashboard keys
     'dashboard.loadMoreTradesError': '더 많은 거래를 불러오지 못했습니다. 다시 시도해주세요.',
@@ -2331,6 +2419,12 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.validTrades': '有効な取引',
     'liveTrading.lastUpdated': '最終更新',
     'liveTrading.validatedData': '検証済みデータ',
+
+    // Filters
+    'filter.all': 'すべて',
+    'filter.buy': '買いのみ',
+    'filter.sell': '売りのみ',
+
     'liveTrading.shares': '株',
     'liveTrading.filingDateNotice.title': 'SEC提出日について',
     'liveTrading.filingDateNotice.description': '表示されている日付は実際の取引日ではなく、SEC提出日です。SEC規則により、インサイダーは取引後2営業日以内に報告する必要がありますが、一部の提出は遅延する場合があります。「最終更新」のタイムスタンプは、当システムがSECサーバーからこのデータを収集した時点を示しています。',
@@ -2488,7 +2582,23 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.aiAnalysisInProgress': 'AI分析が進行中です...',
     'tradeDetail.preparingAdvancedAnalysis': '高度なAI分析結果を準備しています',
     'tradeDetail.shareText': '{company} インサイダー取引情報',
-    
+    'tradeDetail.tradeDate': '取引日',
+    'tradeDetail.priceUpdatedAt': '価格更新時刻',
+
+    // Price Chart Errors
+    'priceChart.error.invalidTicker': '無効なティッカーシンボル',
+    'priceChart.error.invalidTickerDesc': 'ティッカー形式を確認してください',
+    'priceChart.error.invalidDate': '無効な取引日',
+    'priceChart.error.invalidDateDesc': 'この日付の価格データを読み込めません',
+    'priceChart.error.noDataTitle': 'リアルタイム株価データを収集できませんでした',
+    'priceChart.error.noDataDescDelisted': 'この銘柄は上場廃止されたか、主要取引所で取引されていない可能性があります',
+    'priceChart.error.noDataDescPending': '株価データはまだ収集されていません',
+    'priceChart.error.fallbackTitle': 'インサイダー取引価格に基づいて分析を提供します',
+    'priceChart.error.fallbackDesc': '以下でインサイダーの取引価格と関連情報を確認できます',
+    'priceChart.error.apiFailed': '価格データの読み込みに失敗しました',
+    'priceChart.error.apiFailedDesc': '一時的なエラーです。しばらくしてからもう一度お試しください',
+    'priceChart.error.tradeInfoAvailable': 'インサイダー取引情報は以下で確認できます',
+
     // Price Comparison Chart
     'priceChart.title': '価格比較チャート',
     'priceChart.tradePrice': '取引価格',
@@ -2525,6 +2635,29 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.lockedTitle': 'プレミアム機能',
     'ranking.lockedDescription': 'Insider Proにアップグレードして、インサイダー取引パターンに基づくトップの株式推奨をご覧ください',
     'ranking.unlockButton': 'トップランキングのロック解除',
+    'ranking.recommendationReason': '推奨理由:',
+    'ranking.recommendationReasonNetBuying': '推奨理由: 純買い',
+    'ranking.buySell': '買い / 売り',
+    'ranking.recentTrade': '最近の取引:',
+    'ranking.simultaneousBuyers': '同時購入者 {count}人',
+    'ranking.buyPrice': '購入価格',
+    'ranking.shareCount': '株式数',
+    'ranking.totalAmount': '総額',
+    'ranking.tradeDate': '取引日:',
+    'ranking.lastUpdated': '最終更新',
+    'ranking.alert.noTradeData': '{company}の最新の取引情報がありません。',
+    'ranking.alert.loadFailed': '取引データの読み込みに失敗しました。',
+
+    // Ranking AI Analysis
+    'ranking.aiAnalysis.executiveSummary': '{name} ({title})が{company}の株式{shares}株を${price}で購入しました。これは肯定的な信号と解釈されます。',
+    'ranking.aiAnalysis.riskMitigation': 'インサイダー購入は一般的に肯定的な信号ですが、分散投資をお勧めします。',
+    'ranking.aiAnalysis.recommendation': '{title}の購入は社内情報に基づいた決定である可能性が高いです。${price}付近でのエントリーを検討してください。',
+    'ranking.aiAnalysis.insiderBuyByTitle': '{title}役職のインサイダー購入',
+    'ranking.aiAnalysis.totalTradeValue': '総取引額: ${value}K',
+    'ranking.aiAnalysis.simultaneousBuyersCount': '同時購入者 {count}人',
+    'ranking.aiAnalysis.executiveBuyActivity': '経営陣の直接購入活動',
+    'ranking.aiAnalysis.insiderConfidence': 'インサイダー信頼度の向上',
+    'ranking.aiAnalysis.simultaneousEntry': '{count}人の同時参入',
 
     // PWA Install Prompt
     'pwa.prompt.title': 'InsiderPulseをホーム画面に追加',
@@ -3072,6 +3205,12 @@ const translations: Record<Language, Record<string, string>> = {
     'liveTrading.validTrades': '有效交易',
     'liveTrading.lastUpdated': '最后更新',
     'liveTrading.validatedData': '已验证数据',
+
+    // Filters
+    'filter.all': '全部',
+    'filter.buy': '仅买入',
+    'filter.sell': '仅卖出',
+
     'liveTrading.shares': '股',
     'liveTrading.filingDateNotice.title': '关于SEC提交日期',
     'liveTrading.filingDateNotice.description': '显示的日期是SEC提交日期，而非实际交易日期。根据SEC规定，内部人员必须在交易后2个工作日内报告，但某些提交可能会延迟。"最后更新"时间戳显示我们的系统从SEC服务器收集此数据的时间。',
@@ -3229,7 +3368,23 @@ const translations: Record<Language, Record<string, string>> = {
     'tradeDetail.aiAnalysisInProgress': 'AI分析进行中...',
     'tradeDetail.preparingAdvancedAnalysis': '正在准备高级AI分析结果',
     'tradeDetail.shareText': '{company} 内部人交易信息',
-    
+    'tradeDetail.tradeDate': '交易日期',
+    'tradeDetail.priceUpdatedAt': '价格更新时间',
+
+    // Price Chart Errors
+    'priceChart.error.invalidTicker': '无效的股票代码',
+    'priceChart.error.invalidTickerDesc': '请检查股票代码格式',
+    'priceChart.error.invalidDate': '无效的交易日期',
+    'priceChart.error.invalidDateDesc': '无法加载此日期的价格数据',
+    'priceChart.error.noDataTitle': '无法收集实时股价数据',
+    'priceChart.error.noDataDescDelisted': '此股票可能已退市或未在主要交易所交易',
+    'priceChart.error.noDataDescPending': '股价数据尚未收集',
+    'priceChart.error.fallbackTitle': '基于内部人交易价格提供分析',
+    'priceChart.error.fallbackDesc': '您可以在下方查看内部人的交易价格和相关信息',
+    'priceChart.error.apiFailed': '加载价格数据失败',
+    'priceChart.error.apiFailedDesc': '这是暂时性错误。请稍后再试',
+    'priceChart.error.tradeInfoAvailable': '内部人交易信息可在下方查看',
+
     // Price Comparison Chart
     'priceChart.title': '价格比较图表',
     'priceChart.tradePrice': '交易价格',
@@ -3266,6 +3421,29 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.lockedTitle': '高级功能',
     'ranking.lockedDescription': '升级到Insider Pro，查看基于内幕交易模式的顶级股票推荐',
     'ranking.unlockButton': '解锁顶级排名',
+    'ranking.recommendationReason': '推荐理由:',
+    'ranking.recommendationReasonNetBuying': '推荐理由: 净买入',
+    'ranking.buySell': '买入 / 卖出',
+    'ranking.recentTrade': '最近交易:',
+    'ranking.simultaneousBuyers': '{count}位同时买家',
+    'ranking.buyPrice': '买入价格',
+    'ranking.shareCount': '股数',
+    'ranking.totalAmount': '总额',
+    'ranking.tradeDate': '交易日期:',
+    'ranking.lastUpdated': '最后更新',
+    'ranking.alert.noTradeData': '没有{company}的最新交易信息。',
+    'ranking.alert.loadFailed': '加载交易数据失败。',
+
+    // Ranking AI Analysis
+    'ranking.aiAnalysis.executiveSummary': '{name} ({title})以${price}的价格购买了{company}的{shares}股股票。这被解释为积极信号。',
+    'ranking.aiAnalysis.riskMitigation': '内部人买入通常是积极信号，但建议分散投资。',
+    'ranking.aiAnalysis.recommendation': '{title}的购买很可能是基于公司内部信息的决定。考虑在${price}附近进入。',
+    'ranking.aiAnalysis.insiderBuyByTitle': '{title}职位的内部人买入',
+    'ranking.aiAnalysis.totalTradeValue': '总交易额: ${value}K',
+    'ranking.aiAnalysis.simultaneousBuyersCount': '{count}位同时买家',
+    'ranking.aiAnalysis.executiveBuyActivity': '高管直接购买活动',
+    'ranking.aiAnalysis.insiderConfidence': '内部人信心增强',
+    'ranking.aiAnalysis.simultaneousEntry': '{count}位同时进入',
 
     // PWA Install Prompt
     'pwa.prompt.title': '添加 InsiderPulse 到主屏幕',

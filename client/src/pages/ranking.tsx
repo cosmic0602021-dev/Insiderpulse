@@ -226,11 +226,11 @@ export default function Ranking() {
       } else {
         // If no trades found for this ticker, show info message
         console.log(`No trades found for ${ticker}`);
-        alert(`${companyName}에 대한 최근 거래 정보가 없습니다.`);
+        alert(t('ranking.alert.noTradeData').replace('{company}', companyName));
       }
     } catch (error) {
       console.error('Failed to fetch trade data:', error);
-      alert('거래 데이터를 불러오는데 실패했습니다.');
+      alert(t('ranking.alert.loadFailed'));
     }
   };
 
@@ -390,15 +390,18 @@ export default function Ranking() {
       {/* Last Updated */}
       {data && (
         <div className="text-right text-xs text-muted-foreground">
-          Last Updated: {new Date(data.generatedAt).toLocaleString('en-US', {
-            timeZone: 'America/New_York',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-          })} ET
+          {t('ranking.lastUpdated')}: {new Date(data.generatedAt).toLocaleString(
+            language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US',
+            {
+              timeZone: 'America/New_York',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            }
+          )} ET
         </div>
       )}
 
@@ -515,7 +518,7 @@ export default function Ranking() {
                     {item.patternSignals && (
                       <div className="mt-2 flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full">
-                          추천 이유: {item.patternSignals}
+                          {t('ranking.recommendationReason')} {item.patternSignals}
                         </Badge>
                       </div>
                     )}
@@ -523,7 +526,7 @@ export default function Ranking() {
                     {!item.patternSignals && item.netBuying > 0 && (
                       <div className="mt-2 flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                          추천 이유: 순매수 ${(item.netBuying/1000000).toFixed(1)}M
+                          {t('ranking.recommendationReasonNetBuying')} ${(item.netBuying/1000000).toFixed(1)}M
                         </Badge>
                       </div>
                     )}
@@ -567,7 +570,7 @@ export default function Ranking() {
                     }`}>
                       {item.buyTrades} / {item.sellTrades}
                     </p>
-                    <p className="text-xs text-muted-foreground">Buy / Sell</p>
+                    <p className="text-xs text-muted-foreground">{t('ranking.buySell')}</p>
                   </div>
                 </div>
 
@@ -590,7 +593,7 @@ export default function Ranking() {
 
               {/* Additional info */}
               <div className="mt-4 flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">최근 거래: {new Date(item.lastTradeDate).toLocaleDateString('ko-KR')}</span>
+                <span className="text-muted-foreground">{t('ranking.recentTrade')} {formatTimeAgo(item.lastTradeDate)}</span>
                 {item.enhancedTrade?.currentPrice && item.enhancedTrade.pricePerShare && (
                   (() => {
                     const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
@@ -630,7 +633,7 @@ export default function Ranking() {
               {item.insiders && item.insiders.length > 0 ? (
                 <div className="mt-4 border-t pt-4">
                   <h4 className="text-base font-semibold mb-3 text-purple-700 dark:text-purple-400">
-                    동시 매수자 {item.insiders.length}명
+                    {t('ranking.simultaneousBuyers').replace('{count}', item.insiders.length.toString())}
                   </h4>
                   <div className="space-y-3">
                     {item.insiders.slice(0, 4).map((insider, index) => (
@@ -664,27 +667,34 @@ export default function Ranking() {
                             impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
                             aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
                             comprehensiveAnalysis: {
-                              executiveSummary: `${insider.name} (${insider.title})이(가) ${item.companyName}의 주식 ${insider.shares.toLocaleString()}주를 $${insider.pricePerShare.toFixed(2)}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.`,
+                              executiveSummary: t('ranking.aiAnalysis.executiveSummary')
+                                .replace('{name}', insider.name)
+                                .replace('{title}', insider.title)
+                                .replace('{company}', item.companyName)
+                                .replace('{shares}', insider.shares.toLocaleString())
+                                .replace('{price}', insider.pricePerShare.toFixed(2)),
                               priceTargets,
                               riskAssessment: {
                                 level: 'LOW',
-                                mitigation: '내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다.'
+                                mitigation: t('ranking.aiAnalysis.riskMitigation')
                               },
-                              actionableRecommendation: `${insider.title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. $${insider.pricePerShare.toFixed(2)} 근처에서 진입을 고려하세요.`,
+                              actionableRecommendation: t('ranking.aiAnalysis.recommendation')
+                                .replace('{title}', insider.title)
+                                .replace('{price}', insider.pricePerShare.toFixed(2)),
                               confidence: 85,
                               timeHorizon: '3-6개월',
                               marketContext: {
                                 sentiment: 'BULLISH',
                                 keyFactors: [
-                                  `${insider.title} 직책의 내부자 매수`,
-                                  `총 거래액: $${(insider.totalValue / 1000).toFixed(0)}K`,
-                                  `동시 매수자 ${item.insiders.length}명`
+                                  t('ranking.aiAnalysis.insiderBuyByTitle').replace('{title}', insider.title),
+                                  t('ranking.aiAnalysis.totalTradeValue').replace('{value}', (insider.totalValue / 1000).toFixed(0)),
+                                  t('ranking.aiAnalysis.simultaneousBuyersCount').replace('{count}', item.insiders.length.toString())
                                 ]
                               },
                               catalysts: [
-                                '임원진의 직접 매수 활동',
-                                '내부자 신뢰도 증가',
-                                `${item.insiders.length}명의 동시 진입`
+                                t('ranking.aiAnalysis.executiveBuyActivity'),
+                                t('ranking.aiAnalysis.insiderConfidence'),
+                                t('ranking.aiAnalysis.simultaneousEntry').replace('{count}', item.insiders.length.toString())
                               ]
                             }
                           };
@@ -701,7 +711,7 @@ export default function Ranking() {
                                 variant="secondary"
                                 className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                               >
-                                매수
+                                {t('filter.buy')}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">{insider.title}</p>
@@ -711,7 +721,7 @@ export default function Ranking() {
                         {/* 거래 상세 정보 */}
                         <div className="grid grid-cols-3 gap-3 text-xs">
                           <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">매수 가격</p>
+                            <p className="text-muted-foreground mb-1">{t('ranking.buyPrice')}</p>
                             <p className="font-semibold text-sm text-blue-600 dark:text-blue-400">
                               ${insider.pricePerShare.toFixed(2)}
                             </p>
@@ -747,13 +757,13 @@ export default function Ranking() {
                             )}
                           </div>
                           <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">주식 수</p>
+                            <p className="text-muted-foreground mb-1">{t('ranking.shareCount')}</p>
                             <p className="font-semibold text-sm">
                               {insider.shares.toLocaleString()}
                             </p>
                           </div>
                           <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">총액</p>
+                            <p className="text-muted-foreground mb-1">{t('ranking.totalAmount')}</p>
                             <p className="font-semibold text-sm text-green-600 dark:text-green-400">
                               ${(insider.totalValue / 1000).toFixed(0)}K
                             </p>
@@ -764,7 +774,7 @@ export default function Ranking() {
                         <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Calendar className="h-3.5 w-3.5" />
-                            <span>거래일: {new Date(insider.date).toLocaleDateString('ko-KR')}</span>
+                            <span>{t('ranking.tradeDate')} {formatTimeAgo(insider.date)}</span>
                           </div>
                         </div>
                       </div>

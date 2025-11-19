@@ -49,6 +49,7 @@ export default function LiveTrading() {
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tradeTypeFilter, setTradeTypeFilter] = useState<'all' | 'buy' | 'sell'>('all');
   const [loadedCount, setLoadedCount] = useState(100);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -216,22 +217,38 @@ export default function LiveTrading() {
     }
   }, [allTrades]);
 
-  // 검색 필터링
+  // 검색 및 거래 타입 필터링
   const filteredTrades = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return validatedData.trades;
+    let filtered = validatedData.trades;
+
+    // 거래 타입 필터 적용
+    if (tradeTypeFilter !== 'all') {
+      filtered = filtered.filter(trade => {
+        const tradeType = trade.tradeType?.toUpperCase() || '';
+        if (tradeTypeFilter === 'buy') {
+          return tradeType.includes('BUY') || tradeType.includes('PURCHASE');
+        } else if (tradeTypeFilter === 'sell') {
+          return tradeType.includes('SELL') || tradeType.includes('SALE');
+        }
+        return true;
+      });
     }
 
-    const query = searchQuery.toLowerCase().trim();
-    return validatedData.trades.filter(trade => {
-      return (
-        trade.companyName?.toLowerCase().includes(query) ||
-        trade.ticker?.toLowerCase().includes(query) ||
-        trade.traderName?.toLowerCase().includes(query) ||
-        trade.traderTitle?.toLowerCase().includes(query)
-      );
-    });
-  }, [validatedData.trades, searchQuery]);
+    // 검색어 필터 적용
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(trade => {
+        return (
+          trade.companyName?.toLowerCase().includes(query) ||
+          trade.ticker?.toLowerCase().includes(query) ||
+          trade.traderName?.toLowerCase().includes(query) ||
+          trade.traderTitle?.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    return filtered;
+  }, [validatedData.trades, searchQuery, tradeTypeFilter]);
 
   // WebSocket 메시지 처리
   useEffect(() => {
@@ -412,8 +429,42 @@ export default function LiveTrading() {
             )}
           </div>
 
+          {/* 거래 타입 필터 버튼 */}
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={() => setTradeTypeFilter('all')}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                tradeTypeFilter === 'all'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50'
+                  : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              {t('filter.all')}
+            </button>
+            <button
+              onClick={() => setTradeTypeFilter('buy')}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                tradeTypeFilter === 'buy'
+                  ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                  : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              {t('filter.buy')}
+            </button>
+            <button
+              onClick={() => setTradeTypeFilter('sell')}
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                tradeTypeFilter === 'sell'
+                  ? 'bg-red-500/20 text-red-300 border border-red-500/50'
+                  : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              {t('filter.sell')}
+            </button>
+          </div>
+
           {/* 검색 결과 카운트 */}
-          {searchQuery && (
+          {(searchQuery || tradeTypeFilter !== 'all') && (
             <div className="text-sm text-slate-400">
               {filteredTrades.length}{t('search.tradesFound')}
               {filteredTrades.length !== validatedData.trades.length && (

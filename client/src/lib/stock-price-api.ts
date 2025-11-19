@@ -100,11 +100,8 @@ class StockPriceCache {
 
 const priceCache = new StockPriceCache();
 
-// 메인 주가 조회 함수 (여러 API 폴백 지원) - 🚨 임시 비활성화로 무한 루프 방지
+// 메인 주가 조회 함수 (단일 종목 API만 사용 - 무한 루프 방지)
 export async function getCurrentStockPrice(symbol: string): Promise<StockPrice | null> {
-  console.log('🚨 getCurrentStockPrice called but temporarily disabled to prevent infinite loops for:', symbol);
-  return null; // 🚨 임시 비활성화
-  
   if (!symbol) return null;
 
   // 캐시에서 먼저 확인
@@ -113,27 +110,19 @@ export async function getCurrentStockPrice(symbol: string): Promise<StockPrice |
     return cachedPrice;
   }
 
-  // 여러 API를 순차적으로 시도 (백엔드 API 우선 사용)
-  const apiFunctions = [
-    fetchBackendStockPrice,
-    fetchMultipleStocksPrice
-  ];
-
-  for (const apiFunction of apiFunctions) {
-    try {
-      const price = await apiFunction(symbol);
-      if (price) {
-        // 성공한 데이터를 캐시에 저장
-        priceCache.set(symbol, price);
-        return price;
-      }
-    } catch (error) {
-      console.warn(`API function failed for ${symbol}:`, error);
-      continue;
+  // 단일 종목 API만 사용 (복수 종목 API는 무한 루프 방지를 위해 사용하지 않음)
+  try {
+    const price = await fetchBackendStockPrice(symbol);
+    if (price) {
+      // 성공한 데이터를 캐시에 저장
+      priceCache.set(symbol, price);
+      return price;
     }
+  } catch (error) {
+    console.warn(`Stock price API failed for ${symbol}:`, error);
   }
 
-  console.error(`All stock price APIs failed for symbol: ${symbol}`);
+  console.error(`Stock price API failed for symbol: ${symbol}`);
   return null;
 }
 

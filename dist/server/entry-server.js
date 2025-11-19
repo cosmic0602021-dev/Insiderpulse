@@ -1612,6 +1612,10 @@ const translations = {
     "liveTrading.opportunistic": "Opportunistic",
     "liveTrading.lastUpdated": "Last updated",
     "liveTrading.validatedData": "Validated data",
+    // Filters
+    "filter.all": "All",
+    "filter.buy": "Buy Only",
+    "filter.sell": "Sell Only",
     // Trade Card
     "tradeCard.filed": "Filed",
     "tradeCard.shares": "Shares",
@@ -1761,6 +1765,28 @@ const translations = {
     "ranking.lockedTitle": "Premium Feature",
     "ranking.lockedDescription": "Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns",
     "ranking.unlockButton": "Unlock Top Rankings",
+    "ranking.recommendationReason": "Recommendation Reason:",
+    "ranking.recommendationReasonNetBuying": "Recommendation Reason: Net Buying",
+    "ranking.buySell": "Buy / Sell",
+    "ranking.recentTrade": "Recent Trade:",
+    "ranking.simultaneousBuyers": "{count} Simultaneous Buyers",
+    "ranking.buyPrice": "Buy Price",
+    "ranking.shareCount": "Share Count",
+    "ranking.totalAmount": "Total Amount",
+    "ranking.tradeDate": "Trade Date:",
+    "ranking.lastUpdated": "Last Updated",
+    "ranking.alert.noTradeData": "No recent trade information available for {company}.",
+    "ranking.alert.loadFailed": "Failed to load trade data.",
+    // Ranking AI Analysis
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title}) bought {shares} shares of {company} at ${price}. This is interpreted as a positive signal.",
+    "ranking.aiAnalysis.riskMitigation": "Insider buying is generally a positive signal, but diversified investment is recommended.",
+    "ranking.aiAnalysis.recommendation": "The purchase by {title} is likely based on internal company information. Consider entry near ${price}.",
+    "ranking.aiAnalysis.insiderBuyByTitle": "Insider buy by {title}",
+    "ranking.aiAnalysis.totalTradeValue": "Total trade value: ${value}K",
+    "ranking.aiAnalysis.simultaneousBuyersCount": "{count} simultaneous buyers",
+    "ranking.aiAnalysis.executiveBuyActivity": "Direct executive buying activity",
+    "ranking.aiAnalysis.insiderConfidence": "Increased insider confidence",
+    "ranking.aiAnalysis.simultaneousEntry": "{count} simultaneous entries",
     // PWA Install Prompt
     "pwa.prompt.title": "Add InsiderPulse to Home Screen",
     "pwa.prompt.subtitle": "No installation needed! Add directly to your home screen",
@@ -2195,6 +2221,21 @@ const translations = {
     "tradeDetail.aiAnalysisInProgress": "AI analysis in progress...",
     "tradeDetail.preparingAdvancedAnalysis": "Preparing advanced AI analysis results",
     "tradeDetail.shareText": "{company} Insider Trade Information",
+    "tradeDetail.tradeDate": "Trade Date",
+    "tradeDetail.priceUpdatedAt": "Price Updated At",
+    // Price Chart Errors
+    "priceChart.error.invalidTicker": "Invalid Ticker Symbol",
+    "priceChart.error.invalidTickerDesc": "Please check the ticker format",
+    "priceChart.error.invalidDate": "Invalid Trade Date",
+    "priceChart.error.invalidDateDesc": "Unable to load price data for this date",
+    "priceChart.error.noDataTitle": "Unable to collect real-time stock price data",
+    "priceChart.error.noDataDescDelisted": "This stock may be delisted or not traded on major exchanges",
+    "priceChart.error.noDataDescPending": "Stock price data has not been collected yet",
+    "priceChart.error.fallbackTitle": "Providing analysis based on insider trade price",
+    "priceChart.error.fallbackDesc": "You can check insider trade prices and related information below",
+    "priceChart.error.apiFailed": "Failed to load price data",
+    "priceChart.error.apiFailedDesc": "This is a temporary error. Please try again later",
+    "priceChart.error.tradeInfoAvailable": "Insider trade information is available below",
     // Dashboard
     "dashboard.loadMoreTradesError": "Failed to load more trades. Please try again.",
     // Landing Page
@@ -2412,7 +2453,7 @@ const translations = {
     "lockedTrade.realtimeZone": "실시간 구역",
     "lockedTrade.lockedTrades": "개 잠금 거래",
     "lockedTrade.unlockPrompt": "{count}개의 실시간 내부자 거래를 해제하고 내부자들이 지금 무엇을 하는지 확인하세요!",
-    "lockedTrade.startTrial": "5분 무료 체험 시작",
+    "lockedTrade.startTrial": "무료 체험 시작",
     "lockedTrade.unlockDescription": "아래 모든 거래를 즉시 잠금 해제하고 실시간 내부자 활동 확인",
     "lockedTrade.unlockBelow": "아래 거래 잠금 해제",
     // Trial Timer
@@ -2424,7 +2465,7 @@ const translations = {
     "trial.upgradePrompt": "Insider Pro로 업그레이드하여 실시간 데이터 접근을 계속하세요.",
     "trial.subscribeNow": "지금 구독",
     // Trial Start Page
-    "trial.heading": "InsiderPulse Pro 5분 무료 체험",
+    "trial.heading": "InsiderPulse Pro 무료 체험",
     "trial.description": "실시간 내부자 거래를 추적하고 AI 분석을 받아보세요",
     "trial.benefits.title": "Pro 혜택",
     "trial.benefits.realtime": "실시간 거래 추적",
@@ -2441,18 +2482,18 @@ const translations = {
     "trial.terms.noChargeUntilEnd": "무료체험 종료 이전에는 청구되지 않습니다",
     "trial.terms.cancel": "언제든지 취소할 수 있습니다 — 단, 취소 시 구독이 종료됩니다",
     "trial.form.title": "결제 정보 입력",
-    "trial.form.description": "5분 무료 체험 후 자동으로 구독이 시작됩니다",
+    "trial.form.description": "무료 체험 후 자동으로 구독이 시작됩니다",
     "trial.form.selectPlan": "구독 플랜 선택",
     "trial.form.monthly": "월간 구독",
     "trial.form.yearly": "연간 구독",
     "trial.form.perMonth": "매월 청구",
     "trial.form.perYear": "연간 청구",
     "trial.form.discount": "(33% 할인)",
-    "trial.form.info1": "* 5분 무료 체험 기간 동안 카드에서 청구되지 않습니다.",
+    "trial.form.info1": "* 무료 체험 기간 동안 카드에서 청구되지 않습니다.",
     "trial.form.info2": "* 체험 기간 종료 시 선택하신 플랜으로 자동 전환됩니다.",
     "trial.form.info3": "* 언제든지 구독을 취소할 수 있으며, 취소 시 즉시 Pro 기능 사용이 중지됩니다.",
     "trial.success.title": "체험 시작!",
-    "trial.success.message": "5분 무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!",
+    "trial.success.message": "무료 체험이 활성화되었습니다. 실시간 거래 추적을 바로 이용하세요!",
     "trial.success.redirecting": "잠시 후 자동으로 이동합니다...",
     // Trial form additional translations
     "trial.yearly.perMonth": "/월",
@@ -2468,8 +2509,8 @@ const translations = {
     "trial.form.securePayment": "안전한 결제 · Stripe 보안 처리",
     "trial.form.processing": "처리 중...",
     "trial.form.startTrial": "무료 체험 시작하기",
-    "trial.form.afterTrialMonthly": "5분 후 자동 결제: 월 $14",
-    "trial.form.afterTrialYearly": "5분 후 자동 결제: 연 $112",
+    "trial.form.afterTrialMonthly": "체험 종료 후 자동 결제: 월 $14",
+    "trial.form.afterTrialYearly": "체험 종료 후 자동 결제: 연 $112",
     // FOMO Alerts
     "fomo.trialExpiringSoon": "⚠️ 체험이 {hours}시간 후 만료됩니다!",
     "fomo.upgradeToKeepAccess": "지금 업그레이드하여 실시간 접근을 유지하세요.",
@@ -2677,6 +2718,10 @@ const translations = {
     "liveTrading.dataLoadingFailed": "데이터 로딩 실패",
     "liveTrading.lastUpdated": "마지막 업데이트",
     "liveTrading.validatedData": "검증된 데이터",
+    // Filters
+    "filter.all": "전체",
+    "filter.buy": "매수만",
+    "filter.sell": "매도만",
     // Trade Card
     "tradeCard.filed": "신고됨",
     "tradeCard.shares": "주식수",
@@ -2818,7 +2863,7 @@ const translations = {
     "ranking.analysis": "분석",
     "ranking.insiderActivity": "내부자 활동",
     "ranking.tradesLast30Days": "최근 30일 거래",
-    "ranking.avgTradeValue": "평균 매수가",
+    "ranking.avgTradeValue": "내부자 평균 매수가",
     "ranking.netBuying": "순매수",
     "ranking.loading": "주식 순위를 불러오는 중...",
     "ranking.noData": "순위 데이터가 없습니다",
@@ -2826,6 +2871,28 @@ const translations = {
     "ranking.lockedTitle": "프리미엄 기능",
     "ranking.lockedDescription": "Insider Pro로 업그레이드하여 내부자 거래 패턴 기반 최고의 주식 추천을 확인하세요",
     "ranking.unlockButton": "상위 순위 잠금 해제",
+    "ranking.recommendationReason": "추천 이유:",
+    "ranking.recommendationReasonNetBuying": "추천 이유: 순매수",
+    "ranking.buySell": "매수 / 매도",
+    "ranking.recentTrade": "최근 거래:",
+    "ranking.simultaneousBuyers": "동시 매수자 {count}명",
+    "ranking.buyPrice": "매수 가격",
+    "ranking.shareCount": "주식 수",
+    "ranking.totalAmount": "총액",
+    "ranking.tradeDate": "거래일:",
+    "ranking.lastUpdated": "마지막 업데이트",
+    "ranking.alert.noTradeData": "{company}에 대한 최근 거래 정보가 없습니다.",
+    "ranking.alert.loadFailed": "거래 데이터를 불러오는데 실패했습니다.",
+    // Ranking AI Analysis
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})이(가) {company}의 주식 {shares}주를 ${price}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.",
+    "ranking.aiAnalysis.riskMitigation": "내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다.",
+    "ranking.aiAnalysis.recommendation": "{title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. ${price} 근처에서 진입을 고려하세요.",
+    "ranking.aiAnalysis.insiderBuyByTitle": "{title} 직책의 내부자 매수",
+    "ranking.aiAnalysis.totalTradeValue": "총 거래액: ${value}K",
+    "ranking.aiAnalysis.simultaneousBuyersCount": "동시 매수자 {count}명",
+    "ranking.aiAnalysis.executiveBuyActivity": "임원진의 직접 매수 활동",
+    "ranking.aiAnalysis.insiderConfidence": "내부자 신뢰도 증가",
+    "ranking.aiAnalysis.simultaneousEntry": "{count}명의 동시 진입",
     // PWA Install Prompt
     "pwa.prompt.title": "InsiderPulse 홈 화면에 추가",
     "pwa.prompt.subtitle": "설치 필요 없이 홈 화면에 바로 추가!",
@@ -2990,6 +3057,21 @@ const translations = {
     "tradeDetail.aiAnalysisInProgress": "AI 분석이 진행 중입니다...",
     "tradeDetail.preparingAdvancedAnalysis": "고급 AI 분석 결과를 준비하고 있습니다",
     "tradeDetail.shareText": "{company} 내부자 거래 정보",
+    "tradeDetail.tradeDate": "거래일",
+    "tradeDetail.priceUpdatedAt": "가격 업데이트 시간",
+    // Price Chart Errors
+    "priceChart.error.invalidTicker": "유효하지 않은 티커 심볼",
+    "priceChart.error.invalidTickerDesc": "티커 형식을 확인해주세요",
+    "priceChart.error.invalidDate": "유효하지 않은 거래 날짜",
+    "priceChart.error.invalidDateDesc": "이 날짜의 가격 데이터를 불러올 수 없습니다",
+    "priceChart.error.noDataTitle": "실시간 주가 데이터를 수집하지 못했습니다",
+    "priceChart.error.noDataDescDelisted": "이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다",
+    "priceChart.error.noDataDescPending": "주가 데이터를 아직 수집하지 못했습니다",
+    "priceChart.error.fallbackTitle": "내부자 거래 가격 기준으로 분석을 제공합니다",
+    "priceChart.error.fallbackDesc": "아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다",
+    "priceChart.error.apiFailed": "가격 데이터를 불러오지 못했습니다",
+    "priceChart.error.apiFailedDesc": "일시적인 오류입니다. 잠시 후 다시 시도해주세요",
+    "priceChart.error.tradeInfoAvailable": "내부자 거래 정보는 아래에서 확인하실 수 있습니다",
     // Missing Dashboard keys
     "dashboard.loadMoreTradesError": "더 많은 거래를 불러오지 못했습니다. 다시 시도해주세요.",
     // Missing Search keys
@@ -3467,6 +3549,10 @@ const translations = {
     "liveTrading.validTrades": "有効な取引",
     "liveTrading.lastUpdated": "最終更新",
     "liveTrading.validatedData": "検証済みデータ",
+    // Filters
+    "filter.all": "すべて",
+    "filter.buy": "買いのみ",
+    "filter.sell": "売りのみ",
     "liveTrading.shares": "株",
     "liveTrading.filingDateNotice.title": "SEC提出日について",
     "liveTrading.filingDateNotice.description": "表示されている日付は実際の取引日ではなく、SEC提出日です。SEC規則により、インサイダーは取引後2営業日以内に報告する必要がありますが、一部の提出は遅延する場合があります。「最終更新」のタイムスタンプは、当システムがSECサーバーからこのデータを収集した時点を示しています。",
@@ -3619,6 +3705,21 @@ const translations = {
     "tradeDetail.aiAnalysisInProgress": "AI分析が進行中です...",
     "tradeDetail.preparingAdvancedAnalysis": "高度なAI分析結果を準備しています",
     "tradeDetail.shareText": "{company} インサイダー取引情報",
+    "tradeDetail.tradeDate": "取引日",
+    "tradeDetail.priceUpdatedAt": "価格更新時刻",
+    // Price Chart Errors
+    "priceChart.error.invalidTicker": "無効なティッカーシンボル",
+    "priceChart.error.invalidTickerDesc": "ティッカー形式を確認してください",
+    "priceChart.error.invalidDate": "無効な取引日",
+    "priceChart.error.invalidDateDesc": "この日付の価格データを読み込めません",
+    "priceChart.error.noDataTitle": "リアルタイム株価データを収集できませんでした",
+    "priceChart.error.noDataDescDelisted": "この銘柄は上場廃止されたか、主要取引所で取引されていない可能性があります",
+    "priceChart.error.noDataDescPending": "株価データはまだ収集されていません",
+    "priceChart.error.fallbackTitle": "インサイダー取引価格に基づいて分析を提供します",
+    "priceChart.error.fallbackDesc": "以下でインサイダーの取引価格と関連情報を確認できます",
+    "priceChart.error.apiFailed": "価格データの読み込みに失敗しました",
+    "priceChart.error.apiFailedDesc": "一時的なエラーです。しばらくしてからもう一度お試しください",
+    "priceChart.error.tradeInfoAvailable": "インサイダー取引情報は以下で確認できます",
     // Price Comparison Chart
     "priceChart.title": "価格比較チャート",
     "priceChart.tradePrice": "取引価格",
@@ -3654,6 +3755,28 @@ const translations = {
     "ranking.lockedTitle": "プレミアム機能",
     "ranking.lockedDescription": "Insider Proにアップグレードして、インサイダー取引パターンに基づくトップの株式推奨をご覧ください",
     "ranking.unlockButton": "トップランキングのロック解除",
+    "ranking.recommendationReason": "推奨理由:",
+    "ranking.recommendationReasonNetBuying": "推奨理由: 純買い",
+    "ranking.buySell": "買い / 売り",
+    "ranking.recentTrade": "最近の取引:",
+    "ranking.simultaneousBuyers": "同時購入者 {count}人",
+    "ranking.buyPrice": "購入価格",
+    "ranking.shareCount": "株式数",
+    "ranking.totalAmount": "総額",
+    "ranking.tradeDate": "取引日:",
+    "ranking.lastUpdated": "最終更新",
+    "ranking.alert.noTradeData": "{company}の最新の取引情報がありません。",
+    "ranking.alert.loadFailed": "取引データの読み込みに失敗しました。",
+    // Ranking AI Analysis
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})が{company}の株式{shares}株を${price}で購入しました。これは肯定的な信号と解釈されます。",
+    "ranking.aiAnalysis.riskMitigation": "インサイダー購入は一般的に肯定的な信号ですが、分散投資をお勧めします。",
+    "ranking.aiAnalysis.recommendation": "{title}の購入は社内情報に基づいた決定である可能性が高いです。${price}付近でのエントリーを検討してください。",
+    "ranking.aiAnalysis.insiderBuyByTitle": "{title}役職のインサイダー購入",
+    "ranking.aiAnalysis.totalTradeValue": "総取引額: ${value}K",
+    "ranking.aiAnalysis.simultaneousBuyersCount": "同時購入者 {count}人",
+    "ranking.aiAnalysis.executiveBuyActivity": "経営陣の直接購入活動",
+    "ranking.aiAnalysis.insiderConfidence": "インサイダー信頼度の向上",
+    "ranking.aiAnalysis.simultaneousEntry": "{count}人の同時参入",
     // PWA Install Prompt
     "pwa.prompt.title": "InsiderPulseをホーム画面に追加",
     "pwa.prompt.subtitle": "インストール不要！ホーム画面に直接追加",
@@ -4171,6 +4294,10 @@ const translations = {
     "liveTrading.validTrades": "有效交易",
     "liveTrading.lastUpdated": "最后更新",
     "liveTrading.validatedData": "已验证数据",
+    // Filters
+    "filter.all": "全部",
+    "filter.buy": "仅买入",
+    "filter.sell": "仅卖出",
     "liveTrading.shares": "股",
     "liveTrading.filingDateNotice.title": "关于SEC提交日期",
     "liveTrading.filingDateNotice.description": '显示的日期是SEC提交日期，而非实际交易日期。根据SEC规定，内部人员必须在交易后2个工作日内报告，但某些提交可能会延迟。"最后更新"时间戳显示我们的系统从SEC服务器收集此数据的时间。',
@@ -4323,6 +4450,21 @@ const translations = {
     "tradeDetail.aiAnalysisInProgress": "AI分析进行中...",
     "tradeDetail.preparingAdvancedAnalysis": "正在准备高级AI分析结果",
     "tradeDetail.shareText": "{company} 内部人交易信息",
+    "tradeDetail.tradeDate": "交易日期",
+    "tradeDetail.priceUpdatedAt": "价格更新时间",
+    // Price Chart Errors
+    "priceChart.error.invalidTicker": "无效的股票代码",
+    "priceChart.error.invalidTickerDesc": "请检查股票代码格式",
+    "priceChart.error.invalidDate": "无效的交易日期",
+    "priceChart.error.invalidDateDesc": "无法加载此日期的价格数据",
+    "priceChart.error.noDataTitle": "无法收集实时股价数据",
+    "priceChart.error.noDataDescDelisted": "此股票可能已退市或未在主要交易所交易",
+    "priceChart.error.noDataDescPending": "股价数据尚未收集",
+    "priceChart.error.fallbackTitle": "基于内部人交易价格提供分析",
+    "priceChart.error.fallbackDesc": "您可以在下方查看内部人的交易价格和相关信息",
+    "priceChart.error.apiFailed": "加载价格数据失败",
+    "priceChart.error.apiFailedDesc": "这是暂时性错误。请稍后再试",
+    "priceChart.error.tradeInfoAvailable": "内部人交易信息可在下方查看",
     // Price Comparison Chart
     "priceChart.title": "价格比较图表",
     "priceChart.tradePrice": "交易价格",
@@ -4358,6 +4500,28 @@ const translations = {
     "ranking.lockedTitle": "高级功能",
     "ranking.lockedDescription": "升级到Insider Pro，查看基于内幕交易模式的顶级股票推荐",
     "ranking.unlockButton": "解锁顶级排名",
+    "ranking.recommendationReason": "推荐理由:",
+    "ranking.recommendationReasonNetBuying": "推荐理由: 净买入",
+    "ranking.buySell": "买入 / 卖出",
+    "ranking.recentTrade": "最近交易:",
+    "ranking.simultaneousBuyers": "{count}位同时买家",
+    "ranking.buyPrice": "买入价格",
+    "ranking.shareCount": "股数",
+    "ranking.totalAmount": "总额",
+    "ranking.tradeDate": "交易日期:",
+    "ranking.lastUpdated": "最后更新",
+    "ranking.alert.noTradeData": "没有{company}的最新交易信息。",
+    "ranking.alert.loadFailed": "加载交易数据失败。",
+    // Ranking AI Analysis
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})以${price}的价格购买了{company}的{shares}股股票。这被解释为积极信号。",
+    "ranking.aiAnalysis.riskMitigation": "内部人买入通常是积极信号，但建议分散投资。",
+    "ranking.aiAnalysis.recommendation": "{title}的购买很可能是基于公司内部信息的决定。考虑在${price}附近进入。",
+    "ranking.aiAnalysis.insiderBuyByTitle": "{title}职位的内部人买入",
+    "ranking.aiAnalysis.totalTradeValue": "总交易额: ${value}K",
+    "ranking.aiAnalysis.simultaneousBuyersCount": "{count}位同时买家",
+    "ranking.aiAnalysis.executiveBuyActivity": "高管直接购买活动",
+    "ranking.aiAnalysis.insiderConfidence": "内部人信心增强",
+    "ranking.aiAnalysis.simultaneousEntry": "{count}位同时进入",
     // PWA Install Prompt
     "pwa.prompt.title": "添加 InsiderPulse 到主屏幕",
     "pwa.prompt.subtitle": "无需安装！直接添加到主屏幕",
@@ -7395,27 +7559,45 @@ function TradeDetailModal({
                       }
                     ) }) : /* @__PURE__ */ jsxs("div", { className: "bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700", children: [
                       priceHistoryError === "INVALID_TICKER" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 티커 심볼" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "티커 형식을 확인해주세요" })
+                        /* @__PURE__ */ jsxs("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: [
+                          "⚠️ ",
+                          t("priceChart.error.invalidTicker")
+                        ] }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: t("priceChart.error.invalidTickerDesc") })
                       ] }),
                       priceHistoryError === "INVALID_DATE" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: "⚠️ 유효하지 않은 거래 날짜" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: "이 날짜의 가격 데이터를 불러올 수 없습니다" })
+                        /* @__PURE__ */ jsxs("p", { className: "text-amber-700 dark:text-amber-300 font-medium mb-2", children: [
+                          "⚠️ ",
+                          t("priceChart.error.invalidDate")
+                        ] }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-600 dark:text-amber-400", children: t("priceChart.error.invalidDateDesc") })
                       ] }),
                       (priceHistoryError === "NO_DATA" || !priceHistoryError) && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
                         /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-blue-800 dark:text-blue-200 font-semibold text-base mb-1", children: "💡 실시간 주가 데이터를 수집하지 못했습니다" }),
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-700 dark:text-blue-300", children: priceHistoryError === "NO_DATA" ? "이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다" : "주가 데이터를 아직 수집하지 못했습니다" })
+                          /* @__PURE__ */ jsxs("p", { className: "text-blue-800 dark:text-blue-200 font-semibold text-base mb-1", children: [
+                            "💡 ",
+                            t("priceChart.error.noDataTitle")
+                          ] }),
+                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-700 dark:text-blue-300", children: priceHistoryError === "NO_DATA" ? t("priceChart.error.noDataDescDelisted") : t("priceChart.error.noDataDescPending") })
                         ] }),
                         /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3", children: [
-                          /* @__PURE__ */ jsx("p", { className: "text-sm text-blue-900 dark:text-blue-100 font-medium mb-2", children: "✅ 내부자 거래 가격 기준으로 분석을 제공합니다" }),
-                          /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다" })
+                          /* @__PURE__ */ jsxs("p", { className: "text-sm text-blue-900 dark:text-blue-100 font-medium mb-2", children: [
+                            "✅ ",
+                            t("priceChart.error.fallbackTitle")
+                          ] }),
+                          /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: t("priceChart.error.fallbackDesc") })
                         ] })
                       ] }),
                       (priceHistoryError === "API_ERROR" || priceHistoryError === "FETCH_ERROR") && /* @__PURE__ */ jsxs("div", { className: "text-center", children: [
-                        /* @__PURE__ */ jsx("p", { className: "text-red-700 dark:text-red-300 font-medium mb-2", children: "❌ 가격 데이터를 불러오지 못했습니다" }),
-                        /* @__PURE__ */ jsx("p", { className: "text-sm text-red-600 dark:text-red-400 mb-3", children: "일시적인 오류입니다. 잠시 후 다시 시도해주세요" }),
-                        /* @__PURE__ */ jsx("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3", children: /* @__PURE__ */ jsx("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: "💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다" }) })
+                        /* @__PURE__ */ jsxs("p", { className: "text-red-700 dark:text-red-300 font-medium mb-2", children: [
+                          "❌ ",
+                          t("priceChart.error.apiFailed")
+                        ] }),
+                        /* @__PURE__ */ jsx("p", { className: "text-sm text-red-600 dark:text-red-400 mb-3", children: t("priceChart.error.apiFailedDesc") }),
+                        /* @__PURE__ */ jsx("div", { className: "bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3", children: /* @__PURE__ */ jsxs("p", { className: "text-xs text-blue-700 dark:text-blue-300", children: [
+                          "💡 ",
+                          t("priceChart.error.tradeInfoAvailable")
+                        ] }) })
                       ] })
                     ] })
                   ] }),
@@ -10513,6 +10695,7 @@ function LiveTrading() {
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [tradeTypeFilter, setTradeTypeFilter] = useState("all");
   const [loadedCount, setLoadedCount] = useState(100);
   useState(false);
   const [watchlist, setWatchlist] = useState([]);
@@ -10645,15 +10828,28 @@ function LiveTrading() {
     }
   }, [allTrades]);
   const filteredTrades = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return validatedData.trades;
+    let filtered = validatedData.trades;
+    if (tradeTypeFilter !== "all") {
+      filtered = filtered.filter((trade) => {
+        var _a;
+        const tradeType = ((_a = trade.tradeType) == null ? void 0 : _a.toUpperCase()) || "";
+        if (tradeTypeFilter === "buy") {
+          return tradeType.includes("BUY") || tradeType.includes("PURCHASE");
+        } else if (tradeTypeFilter === "sell") {
+          return tradeType.includes("SELL") || tradeType.includes("SALE");
+        }
+        return true;
+      });
     }
-    const query = searchQuery.toLowerCase().trim();
-    return validatedData.trades.filter((trade) => {
-      var _a, _b, _c, _d;
-      return ((_a = trade.companyName) == null ? void 0 : _a.toLowerCase().includes(query)) || ((_b = trade.ticker) == null ? void 0 : _b.toLowerCase().includes(query)) || ((_c = trade.traderName) == null ? void 0 : _c.toLowerCase().includes(query)) || ((_d = trade.traderTitle) == null ? void 0 : _d.toLowerCase().includes(query));
-    });
-  }, [validatedData.trades, searchQuery]);
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((trade) => {
+        var _a, _b, _c, _d;
+        return ((_a = trade.companyName) == null ? void 0 : _a.toLowerCase().includes(query)) || ((_b = trade.ticker) == null ? void 0 : _b.toLowerCase().includes(query)) || ((_c = trade.traderName) == null ? void 0 : _c.toLowerCase().includes(query)) || ((_d = trade.traderTitle) == null ? void 0 : _d.toLowerCase().includes(query));
+      });
+    }
+    return filtered;
+  }, [validatedData.trades, searchQuery, tradeTypeFilter]);
   useEffect(() => {
     if (lastMessage) {
       switch (lastMessage.type) {
@@ -10775,7 +10971,33 @@ function LiveTrading() {
             }
           )
         ] }),
-        searchQuery && /* @__PURE__ */ jsxs("div", { className: "text-sm text-slate-400", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex gap-2 w-full", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setTradeTypeFilter("all"),
+              className: `flex-1 px-4 py-2 rounded-lg font-medium transition-all ${tradeTypeFilter === "all" ? "bg-purple-500/20 text-purple-300 border border-purple-500/50" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"}`,
+              children: t("filter.all")
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setTradeTypeFilter("buy"),
+              className: `flex-1 px-4 py-2 rounded-lg font-medium transition-all ${tradeTypeFilter === "buy" ? "bg-green-500/20 text-green-300 border border-green-500/50" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"}`,
+              children: t("filter.buy")
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setTradeTypeFilter("sell"),
+              className: `flex-1 px-4 py-2 rounded-lg font-medium transition-all ${tradeTypeFilter === "sell" ? "bg-red-500/20 text-red-300 border border-red-500/50" : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"}`,
+              children: t("filter.sell")
+            }
+          )
+        ] }),
+        (searchQuery || tradeTypeFilter !== "all") && /* @__PURE__ */ jsxs("div", { className: "text-sm text-slate-400", children: [
           filteredTrades.length,
           t("search.tradesFound"),
           filteredTrades.length !== validatedData.trades.length && /* @__PURE__ */ jsx("span", { className: "ml-1", children: t("search.outOfTotal").replace("{total}", validatedData.trades.length.toString()) })
@@ -11052,11 +11274,11 @@ function Ranking() {
         setShowTradeModal(true);
       } else {
         console.log(`No trades found for ${ticker}`);
-        alert(`${companyName}에 대한 최근 거래 정보가 없습니다.`);
+        alert(t("ranking.alert.noTradeData").replace("{company}", companyName));
       }
     } catch (error2) {
       console.error("Failed to fetch trade data:", error2);
-      alert("거래 데이터를 불러오는데 실패했습니다.");
+      alert(t("ranking.alert.loadFailed"));
     }
   };
   const getRecommendationColor = (recommendation) => {
@@ -11179,16 +11401,20 @@ function Ranking() {
       )
     ] }),
     data && /* @__PURE__ */ jsxs("div", { className: "text-right text-xs text-muted-foreground", children: [
-      "Last Updated: ",
-      new Date(data.generatedAt).toLocaleString("en-US", {
-        timeZone: "America/New_York",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true
-      }),
+      t("ranking.lastUpdated"),
+      ": ",
+      new Date(data.generatedAt).toLocaleString(
+        language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US",
+        {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        }
+      ),
       " ET"
     ] }),
     /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => {
@@ -11285,11 +11511,13 @@ function Ranking() {
                     /* @__PURE__ */ jsx("h3", { className: "text-base sm:text-xl font-semibold truncate", "data-testid": `text-ticker-${item.ticker.toLowerCase()}`, children: item.ticker }),
                     /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground truncate", "data-testid": `text-company-${item.ticker.toLowerCase()}`, children: item.companyName }),
                     item.patternSignals && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full", children: [
-                      "추천 이유: ",
+                      t("ranking.recommendationReason"),
+                      " ",
                       item.patternSignals
                     ] }) }),
                     !item.patternSignals && item.netBuying > 0 && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-green-100 text-green-700 border-green-200", children: [
-                      "추천 이유: 순매수 $",
+                      t("ranking.recommendationReasonNetBuying"),
+                      " $",
                       (item.netBuying / 1e6).toFixed(1),
                       "M"
                     ] }) })
@@ -11320,7 +11548,7 @@ function Ranking() {
                       " / ",
                       item.sellTrades
                     ] }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: "Buy / Sell" })
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: t("ranking.buySell") })
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
@@ -11340,8 +11568,9 @@ function Ranking() {
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "mt-4 flex items-center justify-between text-sm", children: [
                 /* @__PURE__ */ jsxs("span", { className: "text-muted-foreground", children: [
-                  "최근 거래: ",
-                  new Date(item.lastTradeDate).toLocaleDateString("ko-KR")
+                  t("ranking.recentTrade"),
+                  " ",
+                  formatTimeAgo(item.lastTradeDate)
                 ] }),
                 ((_a = item.enhancedTrade) == null ? void 0 : _a.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
                   var _a2;
@@ -11367,11 +11596,7 @@ function Ranking() {
                 })()
               ] }),
               item.insiders && item.insiders.length > 0 ? /* @__PURE__ */ jsxs("div", { className: "mt-4 border-t pt-4", children: [
-                /* @__PURE__ */ jsxs("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400", children: [
-                  "동시 매수자 ",
-                  item.insiders.length,
-                  "명"
-                ] }),
+                /* @__PURE__ */ jsx("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400", children: t("ranking.simultaneousBuyers").replace("{count}", item.insiders.length.toString()) }),
                 /* @__PURE__ */ jsx("div", { className: "space-y-3", children: item.insiders.slice(0, 4).map((insider, index2) => {
                   var _a2;
                   return /* @__PURE__ */ jsxs(
@@ -11402,27 +11627,27 @@ function Ranking() {
                           impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
                           aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
                           comprehensiveAnalysis: {
-                            executiveSummary: `${insider.name} (${insider.title})이(가) ${item.companyName}의 주식 ${insider.shares.toLocaleString()}주를 $${insider.pricePerShare.toFixed(2)}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.`,
+                            executiveSummary: t("ranking.aiAnalysis.executiveSummary").replace("{name}", insider.name).replace("{title}", insider.title).replace("{company}", item.companyName).replace("{shares}", insider.shares.toLocaleString()).replace("{price}", insider.pricePerShare.toFixed(2)),
                             priceTargets,
                             riskAssessment: {
                               level: "LOW",
-                              mitigation: "내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다."
+                              mitigation: t("ranking.aiAnalysis.riskMitigation")
                             },
-                            actionableRecommendation: `${insider.title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. $${insider.pricePerShare.toFixed(2)} 근처에서 진입을 고려하세요.`,
+                            actionableRecommendation: t("ranking.aiAnalysis.recommendation").replace("{title}", insider.title).replace("{price}", insider.pricePerShare.toFixed(2)),
                             confidence: 85,
                             timeHorizon: "3-6개월",
                             marketContext: {
                               sentiment: "BULLISH",
                               keyFactors: [
-                                `${insider.title} 직책의 내부자 매수`,
-                                `총 거래액: $${(insider.totalValue / 1e3).toFixed(0)}K`,
-                                `동시 매수자 ${item.insiders.length}명`
+                                t("ranking.aiAnalysis.insiderBuyByTitle").replace("{title}", insider.title),
+                                t("ranking.aiAnalysis.totalTradeValue").replace("{value}", (insider.totalValue / 1e3).toFixed(0)),
+                                t("ranking.aiAnalysis.simultaneousBuyersCount").replace("{count}", item.insiders.length.toString())
                               ]
                             },
                             catalysts: [
-                              "임원진의 직접 매수 활동",
-                              "내부자 신뢰도 증가",
-                              `${item.insiders.length}명의 동시 진입`
+                              t("ranking.aiAnalysis.executiveBuyActivity"),
+                              t("ranking.aiAnalysis.insiderConfidence"),
+                              t("ranking.aiAnalysis.simultaneousEntry").replace("{count}", item.insiders.length.toString())
                             ]
                           }
                         };
@@ -11438,7 +11663,7 @@ function Ranking() {
                               {
                                 variant: "secondary",
                                 className: "text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                children: "매수"
+                                children: t("filter.buy")
                               }
                             )
                           ] }),
@@ -11446,7 +11671,7 @@ function Ranking() {
                         ] }) }),
                         /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-3 text-xs", children: [
                           /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "매수 가격" }),
+                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: t("ranking.buyPrice") }),
                             /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-blue-600 dark:text-blue-400", children: [
                               "$",
                               insider.pricePerShare.toFixed(2)
@@ -11468,11 +11693,11 @@ function Ranking() {
                             })()
                           ] }),
                           /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "주식 수" }),
+                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: t("ranking.shareCount") }),
                             /* @__PURE__ */ jsx("p", { className: "font-semibold text-sm", children: insider.shares.toLocaleString() })
                           ] }),
                           /* @__PURE__ */ jsxs("div", { className: "bg-white dark:bg-gray-900 rounded p-2.5", children: [
-                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: "총액" }),
+                            /* @__PURE__ */ jsx("p", { className: "text-muted-foreground mb-1", children: t("ranking.totalAmount") }),
                             /* @__PURE__ */ jsxs("p", { className: "font-semibold text-sm text-green-600 dark:text-green-400", children: [
                               "$",
                               (insider.totalValue / 1e3).toFixed(0),
@@ -11483,8 +11708,9 @@ function Ranking() {
                         /* @__PURE__ */ jsx("div", { className: "mt-3 pt-2 border-t border-gray-200 dark:border-gray-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-xs text-muted-foreground", children: [
                           /* @__PURE__ */ jsx(Calendar, { className: "h-3.5 w-3.5" }),
                           /* @__PURE__ */ jsxs("span", { children: [
-                            "거래일: ",
-                            new Date(insider.date).toLocaleDateString("ko-KR")
+                            t("ranking.tradeDate"),
+                            " ",
+                            formatTimeAgo(insider.date)
                           ] })
                         ] }) })
                       ]
@@ -16878,13 +17104,23 @@ function ProfilePage() {
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`
         }
       });
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError);
+        throw new Error("서버 응답을 처리할 수 없습니다.");
+      }
       if (response.ok && data.success) {
         toast2({
           title: "구독 해지 완료",
           description: user.subscriptionStatus === "trialing" ? "무료체험 및 자동결제가 해지되었습니다. 체험 종료일까지 계속 이용하실 수 있습니다." : "구독이 해지되었습니다. 현재 결제 기간 종료일까지 계속 이용하실 수 있습니다."
         });
-        await refreshUser();
+        try {
+          await refreshUser();
+        } catch (refreshError) {
+          console.error("Error refreshing user data:", refreshError);
+        }
         setShowCancelDialog(false);
       } else {
         throw new Error(data.message || "구독 해지에 실패했습니다.");

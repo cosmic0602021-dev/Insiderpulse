@@ -113,7 +113,13 @@ export default function ProfilePage() {
         },
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        throw new Error('서버 응답을 처리할 수 없습니다.');
+      }
 
       if (response.ok && data.success) {
         toast({
@@ -123,8 +129,14 @@ export default function ProfilePage() {
             : '구독이 해지되었습니다. 현재 결제 기간 종료일까지 계속 이용하실 수 있습니다.',
         });
 
-        // Refresh user data
-        await refreshUser();
+        // Refresh user data - don't throw error if refresh fails
+        try {
+          await refreshUser();
+        } catch (refreshError) {
+          console.error('Error refreshing user data:', refreshError);
+          // Continue even if refresh fails - the cancellation was successful
+        }
+
         setShowCancelDialog(false);
       } else {
         throw new Error(data.message || '구독 해지에 실패했습니다.');

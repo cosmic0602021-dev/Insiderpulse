@@ -802,47 +802,47 @@ export function TradeDetailModal({
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
                   {priceHistoryError === 'INVALID_TICKER' && (
                     <>
-                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ 유효하지 않은 티커 심볼</p>
-                      <p className="text-sm text-amber-600 dark:text-amber-400">티커 형식을 확인해주세요</p>
+                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ {t('priceChart.error.invalidTicker')}</p>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">{t('priceChart.error.invalidTickerDesc')}</p>
                     </>
                   )}
                   {priceHistoryError === 'INVALID_DATE' && (
                     <>
-                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ 유효하지 않은 거래 날짜</p>
-                      <p className="text-sm text-amber-600 dark:text-amber-400">이 날짜의 가격 데이터를 불러올 수 없습니다</p>
+                      <p className="text-amber-700 dark:text-amber-300 font-medium mb-2">⚠️ {t('priceChart.error.invalidDate')}</p>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">{t('priceChart.error.invalidDateDesc')}</p>
                     </>
                   )}
                   {(priceHistoryError === 'NO_DATA' || !priceHistoryError) && (
                     <div className="text-center">
                       <div className="mb-3">
                         <p className="text-blue-800 dark:text-blue-200 font-semibold text-base mb-1">
-                          💡 실시간 주가 데이터를 수집하지 못했습니다
+                          💡 {t('priceChart.error.noDataTitle')}
                         </p>
                         <p className="text-sm text-blue-700 dark:text-blue-300">
                           {priceHistoryError === 'NO_DATA'
-                            ? '이 종목은 상장폐지되었거나 주요 거래소에서 거래되지 않을 수 있습니다'
-                            : '주가 데이터를 아직 수집하지 못했습니다'}
+                            ? t('priceChart.error.noDataDescDelisted')
+                            : t('priceChart.error.noDataDescPending')}
                         </p>
                       </div>
                       <div className="bg-white dark:bg-blue-950/50 rounded-lg p-4 mt-3">
                         <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
-                          ✅ 내부자 거래 가격 기준으로 분석을 제공합니다
+                          ✅ {t('priceChart.error.fallbackTitle')}
                         </p>
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                          아래에서 내부자의 거래 가격과 관련 정보를 확인하실 수 있습니다
+                          {t('priceChart.error.fallbackDesc')}
                         </p>
                       </div>
                     </div>
                   )}
                   {(priceHistoryError === 'API_ERROR' || priceHistoryError === 'FETCH_ERROR') && (
                     <div className="text-center">
-                      <p className="text-red-700 dark:text-red-300 font-medium mb-2">❌ 가격 데이터를 불러오지 못했습니다</p>
+                      <p className="text-red-700 dark:text-red-300 font-medium mb-2">❌ {t('priceChart.error.apiFailed')}</p>
                       <p className="text-sm text-red-600 dark:text-red-400 mb-3">
-                        일시적인 오류입니다. 잠시 후 다시 시도해주세요
+                        {t('priceChart.error.apiFailedDesc')}
                       </p>
                       <div className="bg-white dark:bg-blue-950/50 rounded-lg p-3 mt-3">
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                          💡 내부자 거래 정보는 아래에서 확인하실 수 있습니다
+                          💡 {t('priceChart.error.tradeInfoAvailable')}
                         </p>
                       </div>
                     </div>

@@ -656,10 +656,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check if already canceled
+      if (user.subscriptionStatus === 'canceled') {
+        return res.status(400).json({
+          success: false,
+          message: '이미 해지된 구독입니다'
+        });
+      }
+
       // Cancel subscription in Stripe (cancel at period end)
-      const subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
-        cancel_at_period_end: true
-      });
+      let subscription;
+      try {
+        subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
+          cancel_at_period_end: true
+        });
+      } catch (stripeError: any) {
+        console.error('❌ Stripe API error:', stripeError);
+
+        // Handle specific Stripe errors
+        if (stripeError.type === 'StripeInvalidRequestError') {
+          return res.status(400).json({
+            success: false,
+            message: '유효하지 않은 구독 정보입니다'
+          });
+        }
+
+        throw stripeError;
+      }
 
       console.log(`💳 Cancelled subscription for user ${userId}: ${user.stripeSubscriptionId}`);
 

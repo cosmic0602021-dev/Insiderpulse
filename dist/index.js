@@ -10940,9 +10940,27 @@ async function registerRoutes(app2) {
           message: "\uAD6C\uB3C5 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
         });
       }
-      const subscription = await stripe2.subscriptions.update(user2.stripeSubscriptionId, {
-        cancel_at_period_end: true
-      });
+      if (user2.subscriptionStatus === "canceled") {
+        return res.status(400).json({
+          success: false,
+          message: "\uC774\uBBF8 \uD574\uC9C0\uB41C \uAD6C\uB3C5\uC785\uB2C8\uB2E4"
+        });
+      }
+      let subscription;
+      try {
+        subscription = await stripe2.subscriptions.update(user2.stripeSubscriptionId, {
+          cancel_at_period_end: true
+        });
+      } catch (stripeError) {
+        console.error("\u274C Stripe API error:", stripeError);
+        if (stripeError.type === "StripeInvalidRequestError") {
+          return res.status(400).json({
+            success: false,
+            message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAD6C\uB3C5 \uC815\uBCF4\uC785\uB2C8\uB2E4"
+          });
+        }
+        throw stripeError;
+      }
       console.log(`\u{1F4B3} Cancelled subscription for user ${userId}: ${user2.stripeSubscriptionId}`);
       const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1e3) : /* @__PURE__ */ new Date();
       await db4.update(users).set({
@@ -12834,191 +12852,6 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("AI \uAC70\uB798 \uBD84\uC11D \uC2E4\uD328:", error);
       res.status(500).json({ error: "AI \uAC70\uB798 \uBD84\uC11D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4" });
-    }
-  });
-  app2.get("/api/rankings", async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit) || 20;
-      const period = parseInt(req.query.period) || 90;
-      const threeMonthsAgo = /* @__PURE__ */ new Date();
-      threeMonthsAgo.setDate(threeMonthsAgo.getDate() - period);
-      const trades = await storage.getInsiderTrades(1e3, 0, false, threeMonthsAgo.toISOString().split("T")[0]);
-      const tradesByTicker = /* @__PURE__ */ new Map();
-      for (const trade of trades) {
-        if (!trade.ticker) continue;
-        if (!tradesByTicker.has(trade.ticker)) {
-          tradesByTicker.set(trade.ticker, []);
-        }
-        tradesByTicker.get(trade.ticker).push(trade);
-      }
-      const rankings = [];
-      const uniqueTickers = [...tradesByTicker.keys()];
-      const stockPriceMap = /* @__PURE__ */ new Map();
-      if (uniqueTickers.length > 0) {
-        const prices = await db4.query.stockPrices.findMany({
-          where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
-          columns: {
-            ticker: true,
-            currentPrice: true,
-            lastUpdated: true
-          }
-        });
-        prices.forEach((price) => {
-          if (price.ticker && price.currentPrice) {
-            stockPriceMap.set(price.ticker, {
-              price: Number(price.currentPrice),
-              lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date()
-            });
-          }
-        });
-        console.log(`\u{1F4CA} [RANKINGS] Loaded ${stockPriceMap.size} stock prices for ${uniqueTickers.length} tickers`);
-      }
-      for (const [ticker, allTickerTrades] of tradesByTicker) {
-        const tickerTrades = allTickerTrades.filter(
-          (t) => t.tradeType === "BUY" || t.tradeType === "SELL" || t.tradeType === "PURCHASE" || t.tradeType === "SALE" || (t.transactionCode === "P" || t.transactionCode === "S")
-        );
-        if (tickerTrades.length === 0) continue;
-        const simultaneousEntries = [];
-        const buyOnlyTrades = tickerTrades.filter((t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P");
-        const sortedTrades = buyOnlyTrades.sort((a, b) => new Date(a.filedDate).getTime() - new Date(b.filedDate).getTime());
-        for (let i = 0; i < sortedTrades.length; i++) {
-          const baseTrade = sortedTrades[i];
-          const baseDate = new Date(baseTrade.filedDate);
-          const simultaneousGroup = [baseTrade];
-          for (let j = i + 1; j < sortedTrades.length; j++) {
-            const compareTrade = sortedTrades[j];
-            const compareDate = new Date(compareTrade.filedDate);
-            const daysDiff = (compareDate.getTime() - baseDate.getTime()) / (1e3 * 60 * 60 * 24);
-            if (daysDiff <= 7) {
-              if (compareTrade.traderName !== baseTrade.traderName) {
-                simultaneousGroup.push(compareTrade);
-              }
-            } else {
-              break;
-            }
-          }
-          if (simultaneousGroup.length >= 2) {
-            simultaneousEntries.push({
-              group: simultaneousGroup,
-              count: simultaneousGroup.length,
-              date: baseDate
-            });
-          }
-        }
-        const uniqueInsiders = new Set(tickerTrades.map((t) => t.traderName)).size;
-        const buyTrades = tickerTrades.filter((t) => t.tradeType === "BUY").length;
-        const sellTrades = tickerTrades.filter((t) => t.tradeType === "SELL").length;
-        const totalTrades = tickerTrades.length;
-        const avgTradeValue = tickerTrades.reduce((sum2, t) => sum2 + (t.totalValue || 0), 0) / totalTrades;
-        const netBuying = tickerTrades.filter((t) => t.tradeType === "BUY").reduce((sum2, t) => sum2 + (t.totalValue || 0), 0) - tickerTrades.filter((t) => t.tradeType === "SELL").reduce((sum2, t) => sum2 + (t.totalValue || 0), 0);
-        let score = 0;
-        const maxSimultaneous = simultaneousEntries.length > 0 ? Math.max(...simultaneousEntries.map((e) => e.count)) : 0;
-        const simultaneousBonus = maxSimultaneous >= 5 ? 70 : maxSimultaneous >= 4 ? 60 : maxSimultaneous >= 3 ? 50 : maxSimultaneous >= 2 ? 30 : 0;
-        score += simultaneousBonus;
-        const insiderBonus = Math.min(uniqueInsiders * 3, 15);
-        score += insiderBonus;
-        const buyRatio = totalTrades > 0 ? buyTrades / totalTrades : 0;
-        const buyRatioBonus = buyRatio >= 0.8 ? 10 : buyRatio >= 0.6 ? 7 : buyRatio >= 0.5 ? 5 : 0;
-        score += buyRatioBonus;
-        const activityBonus = Math.min(totalTrades * 0.5, 5);
-        score += activityBonus;
-        const tickerPatterns = patternDetectionService.getPatternsByTicker(ticker);
-        let patternBonus = 0;
-        let patternSignals = null;
-        for (const pattern of tickerPatterns) {
-          switch (pattern.type) {
-            case "CLUSTER_BUY":
-              patternBonus += pattern.significance === "HIGH" ? 15 : 10;
-              patternSignals = `${pattern.metadata?.traderCount}\uBA85 \uC9D1\uB2E8 \uB9E4\uC218`;
-              break;
-            case "CLUSTER_SELL":
-              patternBonus += pattern.significance === "HIGH" ? 10 : 5;
-              patternSignals = `${pattern.metadata?.traderCount}\uBA85 \uC9D1\uB2E8 \uB9E4\uB3C4`;
-              break;
-            case "CONSECUTIVE_TRADES":
-              patternBonus += 5;
-              break;
-            case "LARGE_VOLUME":
-              patternBonus += 3;
-              break;
-          }
-        }
-        score += patternBonus;
-        const recommendation = score >= 70 ? "STRONG_BUY" : score >= 50 ? "BUY" : "HOLD";
-        const lastTrade = tickerTrades.sort((a, b) => new Date(b.filedDate).getTime() - new Date(a.filedDate).getTime())[0];
-        const buyTradesOnly = tickerTrades.filter((t) => {
-          const isBuy = t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P";
-          const suspiciousPatterns = [
-            /instruments?/i,
-            /apparatus/i,
-            /closed-end/i,
-            /funds?/i,
-            /pharmaceutical/i,
-            /preparations?/i,
-            /commercial\s+banks?/i,
-            /national\s+/i,
-            /^[A-Z\s&-]+$/
-            // 모두 대문자 + 공백/&/- 로만 구성
-          ];
-          const name = t.traderName || "";
-          const hasValidName = !suspiciousPatterns.some((pattern) => pattern.test(name)) && name.length > 0;
-          return isBuy && hasValidName;
-        });
-        const stockPriceData = stockPriceMap.get(ticker);
-        const currentPrice = stockPriceData?.price;
-        const priceUpdatedAt = stockPriceData?.lastUpdated;
-        const insiders = buyTradesOnly.map((t) => ({
-          name: t.traderName,
-          title: t.traderTitle || "Insider",
-          shares: t.shares,
-          pricePerShare: t.pricePerShare,
-          totalValue: t.totalValue,
-          date: t.filedDate,
-          tradeType: t.tradeType,
-          secFilingUrl: t.secFilingUrl
-        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const enhancedTrade = {
-          ...lastTrade,
-          currentPrice,
-          pricePerShare: lastTrade.pricePerShare
-        };
-        rankings.push({
-          ticker,
-          companyName: lastTrade.companyName || ticker,
-          score: Math.round(score),
-          recommendation,
-          totalTrades,
-          buyTrades,
-          sellTrades,
-          uniqueInsiders,
-          avgTradeValue,
-          netBuying,
-          lastTradeDate: lastTrade.filedDate,
-          insiderActivity: `${uniqueInsiders}\uBA85 \uB0B4\uBD80\uC790, ${totalTrades}\uAC74 \uAC70\uB798`,
-          simultaneousEntries: maxSimultaneous,
-          // 동시 진입 최대 인원
-          insiders,
-          // 🔥 동시 매수자 상세 정보 추가!
-          detectedPatterns: tickerPatterns,
-          patternSignals,
-          currentPrice,
-          // 📊 현재 주가
-          priceUpdatedAt,
-          // 📊 가격 업데이트 시간
-          enhancedTrade
-          // 📊 Enhanced trade with current price
-        });
-      }
-      const sortedRankings = rankings.filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).sort((a, b) => b.score - a.score).slice(0, limit);
-      res.json({
-        rankings: sortedRankings,
-        generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-        period: `${period}\uC77C`,
-        totalStocksAnalyzed: rankings.length
-      });
-    } catch (error) {
-      console.error("\uB7AD\uD0B9 \uC0DD\uC131 \uC2E4\uD328:", error);
-      res.status(500).json({ error: "\uB7AD\uD0B9 \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4" });
     }
   });
   app2.post("/api/notifications/test-email", async (req, res) => {
