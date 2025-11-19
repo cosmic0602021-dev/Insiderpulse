@@ -153,8 +153,15 @@ export default function ProfilePage() {
 
     setIsRedeemingCoupon(true);
     try {
-      const response = await apiRequest('POST', '/api/coupon/redeem', {
-        couponCode: couponCode.trim()
+      // Use direct fetch instead of apiRequest to properly handle error responses
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/coupon/redeem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({ couponCode: couponCode.trim() })
       });
 
       const data = await response.json();
@@ -169,9 +176,10 @@ export default function ProfilePage() {
         // Refresh user data to show updated trial end date
         await refreshUser();
       } else {
+        // Show the actual error message from backend
         toast({
           title: '쿠폰 적용 실패',
-          description: data.message,
+          description: data.message || '쿠폰 적용에 실패했습니다.',
           variant: 'destructive',
         });
       }

@@ -16911,8 +16911,14 @@ function ProfilePage() {
     }
     setIsRedeemingCoupon(true);
     try {
-      const response = await apiRequest("POST", "/api/coupon/redeem", {
-        couponCode: couponCode.trim()
+      const token = localStorage.getItem("authToken");
+      const response = await fetch("/api/coupon/redeem", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...token && { "Authorization": `Bearer ${token}` }
+        },
+        body: JSON.stringify({ couponCode: couponCode.trim() })
       });
       const data = await response.json();
       if (data.success) {
@@ -16925,7 +16931,7 @@ function ProfilePage() {
       } else {
         toast2({
           title: "쿠폰 적용 실패",
-          description: data.message,
+          description: data.message || "쿠폰 적용에 실패했습니다.",
           variant: "destructive"
         });
       }
