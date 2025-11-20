@@ -9648,6 +9648,7 @@ var SecRssScraper, secRssScraper;
 var init_sec_rss_scraper = __esm({
   "server/scrapers/sec-rss-scraper.ts"() {
     "use strict";
+    init_ticker_validator();
     SecRssScraper = class {
       constructor() {
         this.RSS_URLS = {
@@ -9742,12 +9743,22 @@ var init_sec_rss_scraper = __esm({
           const trades = [];
           const companyName = this.extractCompanyName($, item.title);
           const ticker = this.extractTicker($, item.title);
+          let validatedTicker = ticker;
+          if (ticker && companyName) {
+            const validation = validateAndCorrectTicker(ticker, companyName);
+            if (!validation.isValid && validation.correctedTicker) {
+              console.log(`\u{1F527} [SEC RSS] Ticker correction: ${ticker} \u2192 ${validation.correctedTicker} for "${companyName}"`);
+              validatedTicker = validation.correctedTicker;
+            } else if (!validation.isValid) {
+              console.warn(`\u26A0\uFE0F [SEC RSS] Invalid ticker "${ticker}" for "${companyName}" - using anyway`);
+            }
+          }
           const accessionNumber = this.extractAccessionNumber(item.link);
           const transactionData = this.extractTransactionData($);
           if (transactionData.length > 0) {
             for (const transaction of transactionData) {
               const trade = {
-                ticker: ticker || "UNKNOWN",
+                ticker: validatedTicker || "UNKNOWN",
                 companyName: companyName || "Unknown Company",
                 insiderName: transaction.insiderName || "Unknown Insider",
                 title: transaction.title || "Unknown Title",

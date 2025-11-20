@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { validateAndCorrectTicker } from '../ticker-validator';
 
 interface RSSItem {
   title: string;
@@ -147,6 +148,19 @@ export class SecRssScraper {
       // Form 4에서 기본 정보 추출
       const companyName = this.extractCompanyName($, item.title);
       const ticker = this.extractTicker($, item.title);
+
+      // 🔧 Validate and correct ticker if needed
+      let validatedTicker = ticker;
+      if (ticker && companyName) {
+        const validation = validateAndCorrectTicker(ticker, companyName);
+        if (!validation.isValid && validation.correctedTicker) {
+          console.log(`🔧 [SEC RSS] Ticker correction: ${ticker} → ${validation.correctedTicker} for "${companyName}"`);
+          validatedTicker = validation.correctedTicker;
+        } else if (!validation.isValid) {
+          console.warn(`⚠️ [SEC RSS] Invalid ticker "${ticker}" for "${companyName}" - using anyway`);
+        }
+      }
+
       const accessionNumber = this.extractAccessionNumber(item.link);
 
       // 거래 테이블에서 데이터 추출
@@ -155,7 +169,7 @@ export class SecRssScraper {
       if (transactionData.length > 0) {
         for (const transaction of transactionData) {
           const trade: ParsedInsiderTrade = {
-            ticker: ticker || 'UNKNOWN',
+            ticker: validatedTicker || 'UNKNOWN',
             companyName: companyName || 'Unknown Company',
             insiderName: transaction.insiderName || 'Unknown Insider',
             title: transaction.title || 'Unknown Title',

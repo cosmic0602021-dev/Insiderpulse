@@ -97,7 +97,9 @@
       "Bash(then echo \"API Key: $OPENAI_API_KEY:0:20...$OPENAI_API_KEY: -4\")",
       "Bash(else echo \"No API key found\")",
       "Bash(node /home/runner/workspace/check-openai-account.js:*)",
-      "Bash(node /home/runner/workspace/test-translation-working.js:*)"
+      "Bash(node /home/runner/workspace/test-translation-working.js:*)",
+      "Bash(ss:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []
