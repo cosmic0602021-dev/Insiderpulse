@@ -564,17 +564,23 @@ export default function Ranking() {
 
                 {/* 2. Current Price with % change from avg buy price */}
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
+                  {item.priceChangePercent !== undefined && item.priceChangePercent > 0 ? (
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
+                  ) : item.priceChangePercent !== undefined && item.priceChangePercent < 0 ? (
+                    <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
+                  ) : (
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                  )}
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">
+                    <p className="text-xs sm:text-sm font-medium truncate flex items-center gap-1.5">
                       {item.currentPrice ? (
                         <>
-                          ${item.currentPrice.toFixed(2)}
+                          <span>${item.currentPrice.toFixed(2)}</span>
                           {item.priceChangePercent !== undefined && (
-                            <span className={`ml-1 text-[10px] ${
+                            <span className={`text-xs sm:text-sm font-bold ${
                               item.priceChangePercent > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                             }`}>
-                              ({item.priceChangePercent > 0 ? '+' : ''}{item.priceChangePercent.toFixed(1)}%)
+                              {item.priceChangePercent > 0 ? '+' : ''}{item.priceChangePercent.toFixed(1)}%
                             </span>
                           )}
                         </>

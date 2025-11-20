@@ -11559,16 +11559,17 @@ function Ranking() {
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }),
+                  item.priceChangePercent !== void 0 && item.priceChangePercent > 0 ? /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }) : item.priceChangePercent !== void 0 && item.priceChangePercent < 0 ? /* @__PURE__ */ jsx(TrendingDown, { className: "h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" }) : /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" }),
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: item.currentPrice ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                      "$",
-                      item.currentPrice.toFixed(2),
-                      item.priceChangePercent !== void 0 && /* @__PURE__ */ jsxs("span", { className: `ml-1 text-[10px] ${item.priceChangePercent > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
-                        "(",
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate flex items-center gap-1.5", children: item.currentPrice ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                      /* @__PURE__ */ jsxs("span", { children: [
+                        "$",
+                        item.currentPrice.toFixed(2)
+                      ] }),
+                      item.priceChangePercent !== void 0 && /* @__PURE__ */ jsxs("span", { className: `text-xs sm:text-sm font-bold ${item.priceChangePercent > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
                         item.priceChangePercent > 0 ? "+" : "",
                         item.priceChangePercent.toFixed(1),
-                        "%)"
+                        "%"
                       ] })
                     ] }) : /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "N/A" }) }),
                     /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.currentPrice") })
