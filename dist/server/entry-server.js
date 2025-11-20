@@ -8407,10 +8407,10 @@ function Dashboard() {
       return [];
     }
     const stockGroups = trades.reduce((acc, trade) => {
-      const key = trade.tickerSymbol;
+      const key = trade.ticker;
       if (!acc[key]) {
         acc[key] = {
-          symbol: trade.tickerSymbol,
+          symbol: trade.ticker,
           companyName: trade.companyName,
           trades: []
         };
@@ -8562,7 +8562,7 @@ function Dashboard() {
         onClose: handleCloseModal,
         trade: selectedTrade,
         onAddToWatchlist: handleAddToWatchlist,
-        isInWatchlist: (selectedTrade == null ? void 0 : selectedTrade.tickerSymbol) ? watchlist.includes(selectedTrade.tickerSymbol) : false,
+        isInWatchlist: (selectedTrade == null ? void 0 : selectedTrade.ticker) ? watchlist.includes(selectedTrade.ticker) : false,
         "data-testid": "trade-detail-modal"
       }
     )

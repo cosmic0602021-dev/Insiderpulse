@@ -232,10 +232,10 @@ export default function Dashboard() {
 
     // Group trades by ticker symbol
     const stockGroups = trades.reduce((acc, trade) => {
-      const key = trade.tickerSymbol;
+      const key = trade.ticker;
       if (!acc[key]) {
         acc[key] = {
-          symbol: trade.tickerSymbol,
+          symbol: trade.ticker,
           companyName: trade.companyName,
           trades: []
         };
@@ -462,7 +462,7 @@ export default function Dashboard() {
         onClose={handleCloseModal}
         trade={selectedTrade}
         onAddToWatchlist={handleAddToWatchlist}
-        isInWatchlist={selectedTrade?.tickerSymbol ? watchlist.includes(selectedTrade.tickerSymbol) : false}
+        isInWatchlist={selectedTrade?.ticker ? watchlist.includes(selectedTrade.ticker) : false}
         data-testid="trade-detail-modal"
       />
       </div>

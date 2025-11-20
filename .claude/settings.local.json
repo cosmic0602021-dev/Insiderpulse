@@ -99,7 +99,8 @@
       "Bash(node /home/runner/workspace/check-openai-account.js:*)",
       "Bash(node /home/runner/workspace/test-translation-working.js:*)",
       "Bash(ss:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(timeout 15 npm run dev:*)"
     ],
     "deny": [],
     "ask": []
