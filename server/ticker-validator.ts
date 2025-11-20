@@ -27,6 +27,12 @@ const TICKER_CORRECTIONS: Record<string, Record<string, string>> = {
     'F&G Annuities': 'FG',  // F&G Annuities & Life → FG (not Genpact which is G)
     'F&G Life': 'FG',       // Alternative name for F&G
   },
+  'R': {
+    'H&R Block': 'HRB',     // H&R Block → HRB (not R which is Ryder System)
+  },
+  'T': {
+    'S&T Bancorp': 'STBA',  // S&T Bancorp → STBA (not T which is AT&T)
+  },
   // Add more as we discover them
 };
 
