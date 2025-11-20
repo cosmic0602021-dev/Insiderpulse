@@ -256,20 +256,37 @@ export class SecRssScraper {
    * 티커 추출
    */
   private extractTicker($: cheerio.CheerioAPI, title: string): string {
-    // 제목에서 티커 추출 (보통 괄호 안에 있음)
-    const tickerMatch = title.match(/\(([A-Z]{1,5})\)/);
+    // PRIORITY 1: 제목에서 티커 추출 (보통 괄호 안에 있음)
+    // Improved pattern to handle ampersands: (FG) not (F&G)
+    const tickerMatch = title.match(/\(([A-Z]{1,6})\)/);
     if (tickerMatch) {
       return tickerMatch[1];
     }
 
-    // HTML에서 티커 찾기
+    // PRIORITY 2: 제목에서 직접 추출 (괄호 없이)
+    // Look for 1-5 consecutive capitals at word boundaries, but avoid word boundary issues with &
+    const directMatch = title.match(/(?:^|\s)([A-Z]{1,5})(?:\s|$|:|-)/);
+    if (directMatch && directMatch[1]) {
+      return directMatch[1];
+    }
+
+    // PRIORITY 3: HTML에서 티커 찾기
     const tickerElement = $('*').filter((i, el) => {
       const text = $(el).text();
-      return /\b[A-Z]{1,5}\b/.test(text);
+      // Improved regex without \b to handle ampersands
+      return /(?:^|\s)[A-Z]{1,5}(?:\s|$)/.test(text);
     }).first();
 
-    const tickerText = tickerElement.text().match(/\b[A-Z]{1,5}\b/);
-    return tickerText ? tickerText[0] : 'UNKNOWN';
+    if (tickerElement.length > 0) {
+      const tickerText = tickerElement.text().match(/(?:^|\s)([A-Z]{1,5})(?:\s|$)/);
+      if (tickerText && tickerText[1]) {
+        return tickerText[1];
+      }
+    }
+
+    // FALLBACK: Any 1-5 consecutive capitals
+    const fallbackMatch = title.match(/([A-Z]{1,5})/);
+    return fallbackMatch ? fallbackMatch[1] : 'UNKNOWN';
   }
 
   /**

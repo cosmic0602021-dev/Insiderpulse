@@ -282,18 +282,41 @@ class OpenInsiderCollector {
   }
 
   private extractTicker(text: string, companyName?: string): string | null {
-    // Look for ticker patterns - OpenInsider typically bolds the ticker
+    // PRIORITY 1: Extract from HTML href attribute (most reliable)
+    const hrefMatch = text.match(/<a[^>]+href=["']\/(?:quote\/)?([A-Z]{1,6})["'][^>]*>/i);
+    if (hrefMatch && hrefMatch[1]) {
+      const ticker = hrefMatch[1];
+      // Validate if company name is available
+      if (companyName) {
+        const validation = validateAndCorrectTicker(ticker, companyName);
+        if (!validation.isValid && validation.correctedTicker) {
+          console.log(`🔧 [OpenInsider] Correcting ticker: ${ticker} → ${validation.correctedTicker} for ${companyName}`);
+          return validation.correctedTicker;
+        }
+      }
+      return ticker;
+    }
+
+    // PRIORITY 2: Look for ticker patterns in text
+    // Improved patterns to handle ampersands correctly (e.g., "F&G" → "FG")
     const patterns = [
-      /\b([A-Z]{1,5})\b/,  // Simple ticker pattern
-      /([A-Z]{2,5})/,      // Ticker letters
+      /^([A-Z]{1,5})(?:\s|$)/,                    // Ticker at start of text
+      /^([A-Z]{1,5})(?=[^A-Z]|$)/,                // Ticker at start before non-capital
+      /(?:^|\s)([A-Z]{1,5})(?=\s+[A-Z][a-z])/,    // Ticker before company name (capital then lowercase)
+      /([A-Z]{1,5})/,                              // Any 1-5 consecutive capitals (fallback)
     ];
 
     let extractedTicker: string | null = null;
     for (const pattern of patterns) {
       const match = text.match(pattern);
-      if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
-        extractedTicker = match[1];
-        break;
+      if (match && match[1] && match[1].length >= 1 && match[1].length <= 5) {
+        const ticker = match[1];
+        // Exclude common HTML/text keywords that aren't tickers
+        const excludeList = ['DIV', 'IMG', 'ALT', 'TIP', 'DELAY', 'NEW', 'HOT', 'TOP', 'BUY', 'SELL'];
+        if (!excludeList.includes(ticker)) {
+          extractedTicker = ticker;
+          break;
+        }
       }
     }
 

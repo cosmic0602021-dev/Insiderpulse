@@ -345,16 +345,30 @@ class MarketBeatCollector {
   }
 
   private extractTicker(text: string): string | null {
-    // Look for ticker patterns in text
+    // PRIORITY 1: Extract from HTML href or link (most reliable)
+    const hrefMatch = text.match(/<a[^>]+href=["'][^"']*\/(?:stock|quote)\/([A-Z]{1,6})["'][^>]*>/i);
+    if (hrefMatch && hrefMatch[1]) {
+      return hrefMatch[1];
+    }
+
+    // PRIORITY 2: Look for ticker patterns in text
+    // Improved patterns to handle ampersands correctly (e.g., "F&G" won't break)
     const patterns = [
-      /\b([A-Z]{1,5})\s+[A-Z][a-z]/,  // Ticker followed by company name
-      /\b([A-Z]{2,5})\b/,             // Simple ticker pattern
+      /^([A-Z]{1,5})(?:\s|$)/,                     // Ticker at start of text
+      /^([A-Z]{1,5})(?=\s+[A-Z][a-z])/,           // Ticker at start before company name
+      /(?:^|\s)([A-Z]{1,5})(?=\s+[A-Z][a-z])/,    // Ticker before company name (anywhere)
+      /([A-Z]{1,5})/,                              // Any 1-5 consecutive capitals (fallback)
     ];
-    
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
-      if (match && match[1]) {
-        return match[1];
+      if (match && match[1] && match[1].length >= 1) {
+        const ticker = match[1];
+        // Exclude common non-ticker words
+        const excludeList = ['DIV', 'IMG', 'ALT', 'TIP', 'DELAY', 'NEW', 'HOT', 'TOP', 'BUY', 'SELL', 'SEC'];
+        if (!excludeList.includes(ticker)) {
+          return ticker;
+        }
       }
     }
     return null;

@@ -2527,6 +2527,12 @@ var init_ticker_validator = __esm({
       "CB": {
         "CB Financial": "CBFV"
         // CB Financial Services → CBFV (not Chubb which is also CB)
+      },
+      "G": {
+        "F&G Annuities": "FG",
+        // F&G Annuities & Life → FG (not Genpact which is G)
+        "F&G Life": "FG"
+        // Alternative name for F&G
       }
       // Add more as we discover them
     };
@@ -3211,14 +3217,21 @@ var init_openinsider_collector_advanced = __esm({
           }
         }
         const patterns = [
-          /\b([A-Z]{1,5})\b/,
-          /([A-Z]{2,5})/
+          /^([A-Z]{1,5})(?:\s|$)/,
+          // Ticker at start of text
+          /^([A-Z]{1,5})(?=[^A-Z]|$)/,
+          // Ticker at start before non-capital
+          /(?:^|\s)([A-Z]{1,5})(?=\s+[A-Z][a-z])/,
+          // Ticker before company name
+          /([A-Z]{1,5})/
+          // Any 1-5 consecutive capitals (fallback)
         ];
         for (const pattern of patterns) {
           const match = text2.match(pattern);
-          if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
+          if (match && match[1] && match[1].length >= 1 && match[1].length <= 5) {
             const ticker = match[1];
-            if (!["DELAY", "TIP", "UNTIP", "DIV", "IMG", "ALT", "ONMOUSEOVER", "ONMOUSEOUT"].includes(ticker)) {
+            const excludeList = ["DELAY", "TIP", "UNTIP", "DIV", "IMG", "ALT", "ONMOUSEOVER", "ONMOUSEOUT", "NEW", "HOT", "TOP", "BUY", "SELL"];
+            if (!excludeList.includes(ticker)) {
               return this.normalizeTicker(ticker);
             }
           }
@@ -9490,16 +9503,28 @@ var init_marketbeat_collector = __esm({
         );
       }
       extractTicker(text2) {
+        const hrefMatch = text2.match(/<a[^>]+href=["'][^"']*\/(?:stock|quote)\/([A-Z]{1,6})["'][^>]*>/i);
+        if (hrefMatch && hrefMatch[1]) {
+          return hrefMatch[1];
+        }
         const patterns = [
-          /\b([A-Z]{1,5})\s+[A-Z][a-z]/,
-          // Ticker followed by company name
-          /\b([A-Z]{2,5})\b/
-          // Simple ticker pattern
+          /^([A-Z]{1,5})(?:\s|$)/,
+          // Ticker at start of text
+          /^([A-Z]{1,5})(?=\s+[A-Z][a-z])/,
+          // Ticker at start before company name
+          /(?:^|\s)([A-Z]{1,5})(?=\s+[A-Z][a-z])/,
+          // Ticker before company name (anywhere)
+          /([A-Z]{1,5})/
+          // Any 1-5 consecutive capitals (fallback)
         ];
         for (const pattern of patterns) {
           const match = text2.match(pattern);
-          if (match && match[1]) {
-            return match[1];
+          if (match && match[1] && match[1].length >= 1) {
+            const ticker = match[1];
+            const excludeList = ["DIV", "IMG", "ALT", "TIP", "DELAY", "NEW", "HOT", "TOP", "BUY", "SELL", "SEC"];
+            if (!excludeList.includes(ticker)) {
+              return ticker;
+            }
           }
         }
         return null;
@@ -9829,16 +9854,26 @@ var init_sec_rss_scraper = __esm({
        * 티커 추출
        */
       extractTicker($, title) {
-        const tickerMatch = title.match(/\(([A-Z]{1,5})\)/);
+        const tickerMatch = title.match(/\(([A-Z]{1,6})\)/);
         if (tickerMatch) {
           return tickerMatch[1];
         }
+        const directMatch = title.match(/(?:^|\s)([A-Z]{1,5})(?:\s|$|:|-)/);
+        if (directMatch && directMatch[1]) {
+          return directMatch[1];
+        }
         const tickerElement = $("*").filter((i, el) => {
           const text2 = $(el).text();
-          return /\b[A-Z]{1,5}\b/.test(text2);
+          return /(?:^|\s)[A-Z]{1,5}(?:\s|$)/.test(text2);
         }).first();
-        const tickerText = tickerElement.text().match(/\b[A-Z]{1,5}\b/);
-        return tickerText ? tickerText[0] : "UNKNOWN";
+        if (tickerElement.length > 0) {
+          const tickerText = tickerElement.text().match(/(?:^|\s)([A-Z]{1,5})(?:\s|$)/);
+          if (tickerText && tickerText[1]) {
+            return tickerText[1];
+          }
+        }
+        const fallbackMatch = title.match(/([A-Z]{1,5})/);
+        return fallbackMatch ? fallbackMatch[1] : "UNKNOWN";
       }
       /**
        * Accession Number 추출

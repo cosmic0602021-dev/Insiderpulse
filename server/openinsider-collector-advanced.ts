@@ -897,17 +897,22 @@ class AdvancedOpenInsiderCollector {
       }
     }
 
-    // Last resort: use original patterns but exclude JS keywords
+    // Last resort: use improved patterns that handle ampersands correctly
+    // Avoid word boundary (\b) which treats & as a separator
     const patterns = [
-      /\b([A-Z]{1,5})\b/,
-      /([A-Z]{2,5})/,
+      /^([A-Z]{1,5})(?:\s|$)/,                     // Ticker at start of text
+      /^([A-Z]{1,5})(?=[^A-Z]|$)/,                 // Ticker at start before non-capital
+      /(?:^|\s)([A-Z]{1,5})(?=\s+[A-Z][a-z])/,     // Ticker before company name
+      /([A-Z]{1,5})/,                               // Any 1-5 consecutive capitals (fallback)
     ];
 
     for (const pattern of patterns) {
       const match = text.match(pattern);
-      if (match && match[1] && match[1].length >= 2 && match[1].length <= 5) {
+      if (match && match[1] && match[1].length >= 1 && match[1].length <= 5) {
         const ticker = match[1];
-        if (!['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT', 'ONMOUSEOVER', 'ONMOUSEOUT'].includes(ticker)) {
+        // Expanded exclusion list for common HTML/JS keywords
+        const excludeList = ['DELAY', 'TIP', 'UNTIP', 'DIV', 'IMG', 'ALT', 'ONMOUSEOVER', 'ONMOUSEOUT', 'NEW', 'HOT', 'TOP', 'BUY', 'SELL'];
+        if (!excludeList.includes(ticker)) {
           return this.normalizeTicker(ticker);
         }
       }

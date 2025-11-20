@@ -23,6 +23,10 @@ const TICKER_CORRECTIONS: Record<string, Record<string, string>> = {
   'CB': {
     'CB Financial': 'CBFV',  // CB Financial Services → CBFV (not Chubb which is also CB)
   },
+  'G': {
+    'F&G Annuities': 'FG',  // F&G Annuities & Life → FG (not Genpact which is G)
+    'F&G Life': 'FG',       // Alternative name for F&G
+  },
   // Add more as we discover them
 };
 
