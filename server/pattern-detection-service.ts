@@ -48,9 +48,9 @@ class PatternDetectionService {
     for (const [ticker, trades] of tradesByTicker) {
       if (trades.length < 3) continue;
 
-      // 매수 클러스터 감지
+      // 매수 클러스터 감지 (순수 Purchase만)
       const buyTrades = trades.filter(t =>
-        t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.tradeType === 'GRANT'
+        t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.transactionCode === 'P'
       );
 
       if (buyTrades.length >= 3) {
@@ -76,9 +76,9 @@ class PatternDetectionService {
         }
       }
 
-      // 매도 클러스터 감지
+      // 매도 클러스터 감지 (순수 Sale만)
       const sellTrades = trades.filter(t =>
-        t.tradeType === 'SELL' || t.tradeType === 'DISPOSITION'
+        t.tradeType === 'SELL' || t.tradeType === 'DISPOSITION' || t.transactionCode === 'S'
       );
 
       if (sellTrades.length >= 3) {

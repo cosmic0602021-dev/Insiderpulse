@@ -4036,12 +4036,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Classify as buy or sell based on trade type and transaction code
+        // Only pure Purchase (P) = BUY, pure Sale (S) = SELL
         const isBuy = trade.tradeType === 'BUY' ||
                       trade.tradeType === 'PURCHASE' ||
-                      trade.tradeType === 'GRANT' ||
-                      trade.transactionCode === 'P' ||
-                      trade.transactionCode === 'A' ||
-                      (trade.shares && trade.shares > 0);
+                      trade.transactionCode === 'P';
 
         if (isBuy) {
           metrics.totalBuyValue += tradeValue;
@@ -4084,10 +4082,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalTrades = metrics.buyCount + metrics.sellCount;
 
         // Calculate average price per share of BUY trades only (not all trades)
+        // Only pure Purchase (P) transactions
         const buyTrades = metrics.trades.filter(t =>
           t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' ||
-          t.tradeType === 'GRANT' || t.transactionCode === 'P' ||
-          t.transactionCode === 'A'
+          t.transactionCode === 'P'
         );
         const totalBuyPricePerShare = buyTrades.reduce((sum, t) => sum + (t.pricePerShare || 0), 0);
         metrics.avgTradeValue = buyTrades.length > 0 ? totalBuyPricePerShare / buyTrades.length : 0;
@@ -4207,10 +4205,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Insider 상세 정보 (매수자만, 이상한 이름 제외)
+        // Only pure Purchase (P) transactions
         const insiderDetails = metrics.trades
           .filter(t => {
-            const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' || t.tradeType === 'GRANT' ||
-                         t.transactionCode === 'P' || t.transactionCode === 'A';
+            const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' ||
+                         t.transactionCode === 'P';
 
             // 이상한 이름 패턴 필터링
             const suspiciousPatterns = [

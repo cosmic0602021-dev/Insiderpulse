@@ -426,7 +426,7 @@ class NewsCorrelationService {
 
     // 거래와 반대되는 뉴스 (매수했는데 부정적 뉴스 등)
     const contradictoryNews = afterTrade.filter(article => {
-      const isBuyTrade = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE';
+      const isBuyTrade = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.transactionCode === 'P';
       const isNegativeNews = article.sentiment === 'NEGATIVE';
       const isPositiveNews = article.sentiment === 'POSITIVE';
 
@@ -464,7 +464,7 @@ class NewsCorrelationService {
       return daysDiff > 0 && daysDiff <= 30;
     });
 
-    const isBuyTrade = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE';
+    const isBuyTrade = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.transactionCode === 'P';
     const matchingNews = postTradeNews.filter(article => {
       return (isBuyTrade && article.sentiment === 'POSITIVE') ||
              (!isBuyTrade && article.sentiment === 'NEGATIVE');

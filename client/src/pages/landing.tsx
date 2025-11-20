@@ -59,9 +59,11 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-2xl">
         <div className="container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
+            <img
+              src="/KakaoTalk_20251119_174042868.png"
+              alt="InsiderPulse"
+              className="h-8 w-auto object-contain"
+            />
             <span className="text-lg font-semibold text-white tracking-tight">InsiderPulse</span>
           </div>
 
@@ -355,9 +357,11 @@ export default function LandingPage() {
           </div>
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
+              <img
+                src="/KakaoTalk_20251119_174042868.png"
+                alt="InsiderPulse"
+                className="h-7 w-auto object-contain"
+              />
               <span className="text-base font-semibold tracking-tight text-white">InsiderPulse</span>
             </div>
             <p className="text-sm text-slate-500">

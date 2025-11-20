@@ -213,8 +213,8 @@ class InsiderCredibilityService {
       const threeMonthPrice = daysElapsed >= 90 ? currentPrice : priceAtTrade;
       const sixMonthPrice = daysElapsed >= 180 ? currentPrice : priceAtTrade;
 
-      // 매수/매도 여부 판단
-      const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.tradeType === 'GRANT';
+      // 매수/매도 여부 판단 (순수 Purchase만)
+      const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.transactionCode === 'P';
 
       const outcome: TradeOutcome = {
         tradeId: trade.id,
@@ -273,7 +273,7 @@ class InsiderCredibilityService {
     const priceAtTrade = trade.pricePerShare || 0;
     if (priceAtTrade === 0) return 50;
 
-    const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.tradeType === 'GRANT';
+    const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE' || trade.transactionCode === 'P';
 
     // 각 기간별 성과를 점수로 변환
     const oneMonthReturn = ((oneMonth - priceAtTrade) / priceAtTrade) * 100;
