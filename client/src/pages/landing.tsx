@@ -69,15 +69,7 @@ export default function LandingPage() {
 
           {/* Navigation with Stripe-style CTA */}
           <div className="flex items-center gap-4">
-            <a href="https://www.producthunt.com/products/insiderpulse?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-insiderpulse" target="_blank" rel="noopener noreferrer">
-              <img
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1040430&theme=light&t=1763643157393"
-                alt="InsiderPulse - Real-time insider trading tracker | Product Hunt"
-                style={{ width: '250px', height: '54px' }}
-                width="250"
-                height="54"
-              />
-            </a>
+            {/* Removed: Product Hunt badge */}
           </div>
         </div>
       </header>

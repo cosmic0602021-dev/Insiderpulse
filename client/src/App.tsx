@@ -112,9 +112,12 @@ function AppContent() {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <header className="flex items-center justify-between p-2 sm:p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <SidebarTrigger data-testid="button-sidebar-toggle" className="flex-shrink-0" />
-              <div className="text-xs sm:text-sm text-muted-foreground truncate hidden sm:block">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 dark:from-purple-400 dark:via-blue-400 dark:to-cyan-400 bg-clip-text text-transparent tracking-tight">
+                InsiderPulse
+              </h1>
+              <div className="text-xs sm:text-sm text-muted-foreground truncate hidden md:block">
                 {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString(
                   language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
                 )}
