@@ -541,8 +541,10 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.tradesLast30Days': 'trades in last 30 days',
     'ranking.avgBuyPrice': 'Avg Buy Price',
     'ranking.avgTradeValue': 'Avg Buy Price', // Legacy support
+    'ranking.currentPrice': 'Current Price',
     'ranking.simultaneousBuyers': 'Simultaneous Buyers',
     'ranking.netBuying': 'Net Buying',
+    'ranking.totalBuyAmount': 'Total Buy Amount',
     'ranking.loading': 'Loading stock rankings...',
     'ranking.noData': 'No ranking data available',
     'ranking.refreshData': 'Refresh Data',
@@ -1694,8 +1696,10 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.tradesLast30Days': '최근 30일 거래',
     'ranking.avgBuyPrice': '평균 매수가',
     'ranking.avgTradeValue': '평균 매수가', // Legacy support
+    'ranking.currentPrice': '현재가',
     'ranking.simultaneousBuyers': '동시 매수자',
     'ranking.netBuying': '순매수',
+    'ranking.totalBuyAmount': '총 매수 금액',
     'ranking.loading': '주식 순위를 불러오는 중...',
     'ranking.noData': '순위 데이터가 없습니다',
     'ranking.refreshData': '데이터 새로고침',
@@ -2629,8 +2633,10 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.tradesLast30Days': '過去30日の取引',
     'ranking.avgBuyPrice': '平均購入価格',
     'ranking.avgTradeValue': '平均購入価格', // Legacy support
+    'ranking.currentPrice': '現在価格',
     'ranking.simultaneousBuyers': '同時購入者',
     'ranking.netBuying': 'ネット買い',
+    'ranking.totalBuyAmount': '総購入金額',
     'ranking.loading': '株式ランキングを読み込み中...',
     'ranking.noData': 'ランキングデータがありません',
     'ranking.refreshData': 'データを更新',
@@ -3415,8 +3421,10 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.tradesLast30Days': '过去30天交易',
     'ranking.avgBuyPrice': '平均购买价格',
     'ranking.avgTradeValue': '平均购买价格', // Legacy support
+    'ranking.currentPrice': '当前价格',
     'ranking.simultaneousBuyers': '同时购买者',
     'ranking.netBuying': '净买入',
+    'ranking.totalBuyAmount': '总购买金额',
     'ranking.loading': '正在加载股票排名...',
     'ranking.noData': '没有排名数据',
     'ranking.refreshData': '刷新数据',

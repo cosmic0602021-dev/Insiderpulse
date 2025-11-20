@@ -1760,8 +1760,10 @@ const translations = {
     "ranking.avgBuyPrice": "Avg Buy Price",
     "ranking.avgTradeValue": "Avg Buy Price",
     // Legacy support
+    "ranking.currentPrice": "Current Price",
     "ranking.simultaneousBuyers": "Simultaneous Buyers",
     "ranking.netBuying": "Net Buying",
+    "ranking.totalBuyAmount": "Total Buy Amount",
     "ranking.loading": "Loading stock rankings...",
     "ranking.noData": "No ranking data available",
     "ranking.refreshData": "Refresh Data",
@@ -2867,8 +2869,10 @@ const translations = {
     "ranking.avgBuyPrice": "평균 매수가",
     "ranking.avgTradeValue": "평균 매수가",
     // Legacy support
+    "ranking.currentPrice": "현재가",
     "ranking.simultaneousBuyers": "동시 매수자",
     "ranking.netBuying": "순매수",
+    "ranking.totalBuyAmount": "총 매수 금액",
     "ranking.loading": "주식 순위를 불러오는 중...",
     "ranking.noData": "순위 데이터가 없습니다",
     "ranking.refreshData": "데이터 새로고침",
@@ -3752,8 +3756,10 @@ const translations = {
     "ranking.avgBuyPrice": "平均購入価格",
     "ranking.avgTradeValue": "平均購入価格",
     // Legacy support
+    "ranking.currentPrice": "現在価格",
     "ranking.simultaneousBuyers": "同時購入者",
     "ranking.netBuying": "ネット買い",
+    "ranking.totalBuyAmount": "総購入金額",
     "ranking.loading": "株式ランキングを読み込み中...",
     "ranking.noData": "ランキングデータがありません",
     "ranking.refreshData": "データを更新",
@@ -4498,8 +4504,10 @@ const translations = {
     "ranking.avgBuyPrice": "平均购买价格",
     "ranking.avgTradeValue": "平均购买价格",
     // Legacy support
+    "ranking.currentPrice": "当前价格",
     "ranking.simultaneousBuyers": "同时购买者",
     "ranking.netBuying": "净买入",
+    "ranking.totalBuyAmount": "总购买金额",
     "ranking.loading": "正在加载股票排名...",
     "ranking.noData": "没有排名数据",
     "ranking.refreshData": "刷新数据",
@@ -11425,7 +11433,7 @@ function Ranking() {
       " ET"
     ] }),
     /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => {
-      var _a, _b;
+      var _a;
       const isLocked = !isPremium && index < 3;
       return /* @__PURE__ */ jsxs(
         Card,
@@ -11541,33 +11549,36 @@ function Ranking() {
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10", children: [
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" }),
-                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium", children: ((_a = item.insiders) == null ? void 0 : _a.length) || 0 }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.simultaneousBuyers") })
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" }),
+                  /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" }),
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
                     /* @__PURE__ */ jsxs("p", { className: "text-xs sm:text-sm font-medium truncate", children: [
                       "$",
-                      item.avgTradeValue.toFixed(2),
+                      item.avgTradeValue.toFixed(2)
+                    ] }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgBuyPrice") })
+                  ] })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
+                  /* @__PURE__ */ jsx(TrendingUp, { className: "h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" }),
+                  /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+                    /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: item.currentPrice ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                      "$",
+                      item.currentPrice.toFixed(2),
                       item.priceChangePercent !== void 0 && /* @__PURE__ */ jsxs("span", { className: `ml-1 text-[10px] ${item.priceChangePercent > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`, children: [
                         "(",
                         item.priceChangePercent > 0 ? "+" : "",
                         item.priceChangePercent.toFixed(1),
                         "%)"
                       ] })
-                    ] }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.avgBuyPrice") })
+                    ] }) : /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: "N/A" }) }),
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.currentPrice") })
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2", children: [
-                  /* @__PURE__ */ jsx("div", { className: "h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-blue-500 flex-shrink-0" }),
+                  /* @__PURE__ */ jsx(DollarSign, { className: "h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" }),
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
                     /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm font-medium truncate", children: formatCurrency(item.netBuying) }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.netBuying") })
+                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground truncate", children: t("ranking.totalBuyAmount") })
                   ] })
                 ] })
               ] }),
@@ -11577,7 +11588,7 @@ function Ranking() {
                   " ",
                   formatTimeAgo(item.lastTradeDate)
                 ] }),
-                ((_b = item.enhancedTrade) == null ? void 0 : _b.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
+                ((_a = item.enhancedTrade) == null ? void 0 : _a.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
                   var _a2;
                   const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
                   const percentChange = priceChange / item.enhancedTrade.pricePerShare * 100;
@@ -11601,7 +11612,11 @@ function Ranking() {
                 })()
               ] }),
               item.insiders && item.insiders.length > 0 ? /* @__PURE__ */ jsxs("div", { className: "mt-4 border-t pt-4", children: [
-                /* @__PURE__ */ jsx("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400", children: t("ranking.simultaneousBuyers").replace("{count}", item.insiders.length.toString()) }),
+                /* @__PURE__ */ jsxs("h4", { className: "text-base font-semibold mb-3 text-purple-700 dark:text-purple-400 flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx(Activity, { className: "h-4 w-4" }),
+                  t("ranking.simultaneousBuyers"),
+                  /* @__PURE__ */ jsx("span", { className: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full text-sm", children: item.insiders.length })
+                ] }),
                 /* @__PURE__ */ jsx("div", { className: "space-y-3", children: item.insiders.slice(0, 4).map((insider, index2) => {
                   var _a2;
                   return /* @__PURE__ */ jsxs(

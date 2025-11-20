@@ -551,39 +551,47 @@ export default function Ranking() {
 
               {/* Bottom section - Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t relative z-10">
-                {/* 1. Simultaneous Buyers */}
+                {/* 1. Avg Buy Price */}
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium">{item.insiders?.length || 0}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t('ranking.simultaneousBuyers')}</p>
-                  </div>
-                </div>
-
-                {/* 2. Avg Buy Price with % change */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium truncate">
                       ${item.avgTradeValue.toFixed(2)}
-                      {item.priceChangePercent !== undefined && (
-                        <span className={`ml-1 text-[10px] ${
-                          item.priceChangePercent > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          ({item.priceChangePercent > 0 ? '+' : ''}{item.priceChangePercent.toFixed(1)}%)
-                        </span>
-                      )}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.avgBuyPrice')}</p>
                   </div>
                 </div>
 
-                {/* 3. Net Buying */}
+                {/* 2. Current Price with % change from avg buy price */}
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-blue-500 flex-shrink-0" />
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium truncate">
+                      {item.currentPrice ? (
+                        <>
+                          ${item.currentPrice.toFixed(2)}
+                          {item.priceChangePercent !== undefined && (
+                            <span className={`ml-1 text-[10px] ${
+                              item.priceChangePercent > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              ({item.priceChangePercent > 0 ? '+' : ''}{item.priceChangePercent.toFixed(1)}%)
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">N/A</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{t('ranking.currentPrice')}</p>
+                  </div>
+                </div>
+
+                {/* 3. Total Buy Amount */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t('ranking.netBuying')}</p>
+                    <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
                   </div>
                 </div>
               </div>
@@ -629,8 +637,12 @@ export default function Ranking() {
               {/* 내부자 상세 정보 섹션 */}
               {item.insiders && item.insiders.length > 0 ? (
                 <div className="mt-4 border-t pt-4">
-                  <h4 className="text-base font-semibold mb-3 text-purple-700 dark:text-purple-400">
-                    {t('ranking.simultaneousBuyers').replace('{count}', item.insiders.length.toString())}
+                  <h4 className="text-base font-semibold mb-3 text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    {t('ranking.simultaneousBuyers')}
+                    <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full text-sm">
+                      {item.insiders.length}
+                    </span>
                   </h4>
                   <div className="space-y-3">
                     {item.insiders.slice(0, 4).map((insider, index) => (
