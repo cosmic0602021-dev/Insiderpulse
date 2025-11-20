@@ -1772,6 +1772,8 @@ const translations = {
     "ranking.unlockButton": "Unlock Top Rankings",
     "ranking.recommendationReason": "Recommendation Reason:",
     "ranking.recommendationReasonNetBuying": "Recommendation Reason: Net Buying",
+    "ranking.recommendationSimple": "{count} insiders buying",
+    "ranking.recommendationSimpleSingle": "Large purchase {amount}",
     "ranking.buySell": "Buy / Sell",
     "ranking.recentTrade": "Recent Trade:",
     "ranking.buyPrice": "Buy Price",
@@ -2881,6 +2883,8 @@ const translations = {
     "ranking.unlockButton": "상위 순위 잠금 해제",
     "ranking.recommendationReason": "추천 이유:",
     "ranking.recommendationReasonNetBuying": "추천 이유: 순매수",
+    "ranking.recommendationSimple": "{count}명 내부자 매수",
+    "ranking.recommendationSimpleSingle": "대량 매수 {amount}",
     "ranking.buySell": "매수 / 매도",
     "ranking.recentTrade": "최근 거래:",
     "ranking.buyPrice": "매수 가격",
@@ -3768,6 +3772,8 @@ const translations = {
     "ranking.unlockButton": "トップランキングのロック解除",
     "ranking.recommendationReason": "推奨理由:",
     "ranking.recommendationReasonNetBuying": "推奨理由: 純買い",
+    "ranking.recommendationSimple": "{count}人のインサイダーが購入",
+    "ranking.recommendationSimpleSingle": "大量購入 {amount}",
     "ranking.buySell": "買い / 売り",
     "ranking.recentTrade": "最近の取引:",
     "ranking.buyPrice": "購入価格",
@@ -4516,6 +4522,8 @@ const translations = {
     "ranking.unlockButton": "解锁顶级排名",
     "ranking.recommendationReason": "推荐理由:",
     "ranking.recommendationReasonNetBuying": "推荐理由: 净买入",
+    "ranking.recommendationSimple": "{count}位内部人士购买",
+    "ranking.recommendationSimpleSingle": "大量购买 {amount}",
     "ranking.buySell": "买入 / 卖出",
     "ranking.recentTrade": "最近交易:",
     "ranking.buyPrice": "买入价格",
@@ -11433,7 +11441,7 @@ function Ranking() {
       " ET"
     ] }),
     /* @__PURE__ */ jsx("div", { className: "space-y-4", children: data == null ? void 0 : data.rankings.map((item, index) => {
-      var _a;
+      var _a, _b, _c;
       const isLocked = !isPremium && index < 3;
       return /* @__PURE__ */ jsxs(
         Card,
@@ -11525,17 +11533,7 @@ function Ranking() {
                   /* @__PURE__ */ jsxs("div", { className: "min-w-0 flex-1", children: [
                     /* @__PURE__ */ jsx("h3", { className: "text-base sm:text-xl font-semibold truncate", "data-testid": `text-ticker-${item.ticker.toLowerCase()}`, children: item.ticker }),
                     /* @__PURE__ */ jsx("p", { className: "text-xs sm:text-sm text-muted-foreground truncate", "data-testid": `text-company-${item.ticker.toLowerCase()}`, children: item.companyName }),
-                    item.patternSignals && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full", children: [
-                      t("ranking.recommendationReason"),
-                      " ",
-                      item.patternSignals
-                    ] }) }),
-                    !item.patternSignals && item.netBuying > 0 && /* @__PURE__ */ jsx("div", { className: "mt-2 flex items-center gap-2 flex-wrap", children: /* @__PURE__ */ jsxs(Badge, { variant: "secondary", className: "text-xs bg-green-100 text-green-700 border-green-200", children: [
-                      t("ranking.recommendationReasonNetBuying"),
-                      " $",
-                      (item.netBuying / 1e6).toFixed(1),
-                      "M"
-                    ] }) })
+                    /* @__PURE__ */ jsx("div", { className: "mt-2 max-w-full overflow-hidden", children: /* @__PURE__ */ jsx(Badge, { variant: "secondary", className: "text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700 truncate max-w-full inline-block", children: (((_a = item.insiders) == null ? void 0 : _a.length) || 0) > 1 ? t("ranking.recommendationSimple").replace("{count}", (((_b = item.insiders) == null ? void 0 : _b.length) || 0).toString()) : t("ranking.recommendationSimpleSingle").replace("{amount}", `$${(item.netBuying / 1e6).toFixed(1)}M`) }) })
                   ] })
                 ] }),
                 /* @__PURE__ */ jsx("div", { className: "flex items-center flex-shrink-0", children: /* @__PURE__ */ jsx(
@@ -11589,7 +11587,7 @@ function Ranking() {
                   " ",
                   formatTimeAgo(item.lastTradeDate)
                 ] }),
-                ((_a = item.enhancedTrade) == null ? void 0 : _a.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
+                ((_c = item.enhancedTrade) == null ? void 0 : _c.currentPrice) && item.enhancedTrade.pricePerShare && (() => {
                   var _a2;
                   const priceChange = item.enhancedTrade.currentPrice - item.enhancedTrade.pricePerShare;
                   const percentChange = priceChange / item.enhancedTrade.pricePerShare * 100;

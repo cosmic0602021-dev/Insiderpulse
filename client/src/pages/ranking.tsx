@@ -519,22 +519,15 @@ export default function Ranking() {
                     <p className="text-xs sm:text-sm text-muted-foreground truncate" data-testid={`text-company-${item.ticker.toLowerCase()}`}>
                       {item.companyName}
                     </p>
-                    {/* 🔍 패턴 기반 추천 이유 표시 */}
-                    {item.patternSignals && (
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200 break-words max-w-full">
-                          {t('ranking.recommendationReason')} {item.patternSignals}
-                        </Badge>
-                      </div>
-                    )}
-                    {/* 패턴이 없는 경우 기본 추천 이유 */}
-                    {!item.patternSignals && item.netBuying > 0 && (
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                          {t('ranking.recommendationReasonNetBuying')} ${(item.netBuying/1000000).toFixed(1)}M
-                        </Badge>
-                      </div>
-                    )}
+                    {/* 추천 이유 (단순화) */}
+                    <div className="mt-2 max-w-full overflow-hidden">
+                      <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700 truncate max-w-full inline-block">
+                        {(item.insiders?.length || 0) > 1
+                          ? t('ranking.recommendationSimple').replace('{count}', (item.insiders?.length || 0).toString())
+                          : t('ranking.recommendationSimpleSingle').replace('{amount}', `$${(item.netBuying/1000000).toFixed(1)}M`)
+                        }
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
