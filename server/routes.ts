@@ -649,47 +649,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (!user.stripeSubscriptionId) {
-        return res.status(400).json({
-          success: false,
-          message: '구독 정보를 찾을 수 없습니다'
-        });
-      }
-
       // Check if already canceled
-      if (user.subscriptionStatus === 'canceled') {
+      if (user.subscriptionStatus === 'canceled' || user.subscriptionStatus === 'inactive') {
         return res.status(400).json({
           success: false,
           message: '이미 해지된 구독입니다'
         });
       }
 
-      // Cancel subscription in Stripe (cancel at period end)
-      let subscription;
-      try {
-        subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
-          cancel_at_period_end: true
+      // Check if user has any active subscription or trial to cancel
+      if (user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing') {
+        return res.status(400).json({
+          success: false,
+          message: '활성 구독이 없습니다'
         });
-      } catch (stripeError: any) {
-        console.error('❌ Stripe API error:', stripeError);
-
-        // Handle specific Stripe errors
-        if (stripeError.type === 'StripeInvalidRequestError') {
-          return res.status(400).json({
-            success: false,
-            message: '유효하지 않은 구독 정보입니다'
-          });
-        }
-
-        throw stripeError;
       }
 
-      console.log(`💳 Cancelled subscription for user ${userId}: ${user.stripeSubscriptionId}`);
+      let periodEnd: Date;
 
-      // Get the period end date from Stripe
-      const periodEnd = subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
-        : new Date();
+      // Handle Stripe subscription cancellation
+      if (user.stripeSubscriptionId) {
+        let subscription;
+        try {
+          subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
+            cancel_at_period_end: true
+          });
+        } catch (stripeError: any) {
+          console.error('❌ Stripe API error:', stripeError);
+
+          // Handle specific Stripe errors
+          if (stripeError.type === 'StripeInvalidRequestError') {
+            return res.status(400).json({
+              success: false,
+              message: '유효하지 않은 구독 정보입니다'
+            });
+          }
+
+          throw stripeError;
+        }
+
+        console.log(`💳 Cancelled Stripe subscription for user ${userId}: ${user.stripeSubscriptionId}`);
+
+        // Get the period end date from Stripe
+        periodEnd = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000)
+          : new Date();
+      } else {
+        // Handle legacy trial cancellation (no Stripe subscription)
+        console.log(`💳 Cancelled legacy trial for user ${userId}`);
+
+        // Use trial expiry date or current date
+        periodEnd = user.trialExpiresAt || user.subscriptionEndDate || new Date();
+      }
 
       // Update database - set to "canceled" status but keep access until period end
       await db.update(users)

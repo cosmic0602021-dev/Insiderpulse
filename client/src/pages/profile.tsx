@@ -94,10 +94,11 @@ export default function ProfilePage() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!user?.stripeSubscriptionId) {
+    // Check if user has active subscription or trial to cancel
+    if (!user?.subscriptionStatus || (user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing')) {
       toast({
         title: '오류',
-        description: '구독 정보를 찾을 수 없습니다.',
+        description: '활성 구독이 없습니다.',
         variant: 'destructive',
       });
       return;
