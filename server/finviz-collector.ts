@@ -1,5 +1,6 @@
 import { storage } from './storage';
 import type { InsertInsiderTrade } from '@shared/schema';
+import { validateAndCorrectTicker } from './ticker-validator';
 
 // Break circular dependency - broadcaster function will be injected
 let broadcaster: ((event: string, data: any) => void) | null = null;
@@ -206,9 +207,9 @@ export class FinvizCollector {
           
           // Try multiple patterns to extract ticker
           const patterns = [
-            /^([A-Z]{1,5})(?:\s|,|$)/,     // Start of cell, followed by space/comma/end
-            /\b([A-Z]{2,5})\b/,            // Word boundaries, 2-5 chars
-            /([A-Z]{1,5})(?:\s*-\s*)/      // Ticker followed by dash (common format)
+            /^([A-Z]{1,5})(?:\s|,|$)/,           // Start of cell, followed by space/comma/end
+            /(?:^|\s)([A-Z]{2,5})(?:\s|$|,|-)/,  // No word boundary - handles F&G correctly
+            /([A-Z]{1,5})(?:\s*-\s*)/            // Ticker followed by dash (common format)
           ];
           
           for (const pattern of patterns) {
@@ -220,10 +221,19 @@ export class FinvizCollector {
           }
         }
       }
-      
+
       // If no ticker found, skip this row
       if (!ticker) {
         return null;
+      }
+
+      // Validate and correct ticker using company name from firstCell
+      if (firstCellText) {
+        const validation = validateAndCorrectTicker(ticker, firstCellText);
+        if (!validation.isValid && validation.correctedTicker) {
+          console.log(`🔧 [Finviz] Correcting ticker: ${ticker} → ${validation.correctedTicker} for "${firstCellText}"`);
+          ticker = validation.correctedTicker;
+        }
       }
       
       // Extract cell texts

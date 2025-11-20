@@ -46,6 +46,10 @@ export class StockPriceService {
     'BANK OF AMERICA': 'BAC',
     'WELLS FARGO': 'WFC',
     'GOLDMAN SACHS': 'GS',
+    'F&G ANNUITIES': 'FG',
+    'F&G ANNUITIES & LIFE': 'FG',
+    'F&G LIFE': 'FG',
+    'F&G': 'FG',
   };
 
   async getStockPrice(ticker: string): Promise<any> {

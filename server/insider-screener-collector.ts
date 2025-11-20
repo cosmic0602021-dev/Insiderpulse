@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { validateAndCorrectTicker } from './ticker-validator';
 
 interface InsiderScreenerTrade {
   id: string;
@@ -148,7 +149,7 @@ export class InsiderScreenerCollector {
 
       // 추가 거래 패턴 검색 (다른 회사들)
       const tradePatterns = [
-        /\b[A-Z]{2,5}\b.*?\d+.*?shares?.*?\$[\d,]+/gi,
+        /(?:^|\s)([A-Z]{2,5})(?:\s|$|,|-).*?\d+.*?shares?.*?\$[\d,]+/gi,  // No word boundary - handles F&G correctly
         /sold?\s+\d+.*?shares?.*?\$[\d,]+/gi,
         /bought?\s+\d+.*?shares?.*?\$[\d,]+/gi
       ];

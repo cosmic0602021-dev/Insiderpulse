@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@shared/schema";
 import { eq, desc, count, sum, avg, sql, inArray, gte, lte, and } from "drizzle-orm";
 import type { IStorage } from "./storage";
+import { validateAndCorrectTicker } from './ticker-validator';
 
 export const db = drizzle(process.env.DATABASE_URL!);
 
@@ -87,9 +88,19 @@ export class DatabaseStorage implements IStorage {
 
   async createInsiderTrade(insertTrade: InsertInsiderTrade): Promise<InsiderTrade> {
     try {
+      // Validate and correct ticker before insert (last line of defense)
+      let correctedTicker = insertTrade.ticker;
+      if (insertTrade.ticker && insertTrade.companyName) {
+        const validation = validateAndCorrectTicker(insertTrade.ticker, insertTrade.companyName);
+        if (!validation.isValid && validation.correctedTicker) {
+          console.log(`🔧 [Storage] Correcting ticker: ${insertTrade.ticker} → ${validation.correctedTicker} for "${insertTrade.companyName}"`);
+          correctedTicker = validation.correctedTicker;
+        }
+      }
+
       const result = await db.insert(insiderTrades).values({
         ...insertTrade,
-        ticker: insertTrade.ticker || null,
+        ticker: correctedTicker || null,
         aiAnalysis: insertTrade.aiAnalysis || null,
         significanceScore: insertTrade.significanceScore || 50,
         signalType: insertTrade.signalType || 'HOLD',
