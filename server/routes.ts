@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 5. Validate coupon code (case-insensitive)
-      const validCoupons = ['tosslove', 'stocktwitslove', 'redditlove', 'naverlove', 'kiwilove'];
+      const validCoupons = ['tosslove', 'stocktwitslove', 'redditlove', 'naverlove', 'kiwilove', 'producthunt'];
       const normalizedCoupon = couponCode.toLowerCase().trim();
 
       if (!validCoupons.includes(normalizedCoupon)) {
