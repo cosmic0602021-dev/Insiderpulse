@@ -36,6 +36,7 @@ import ProfilePage from "@/pages/profile";
 import TerminalSidebar from "@/components/terminal-ui/Sidebar";
 import ProfileView from '@/components/terminal-ui/ProfileView';
 import TerminalSettingsView from '@/components/terminal-ui/SettingsView';
+import TopStocksTerminal from '@/pages/top-stocks-terminal';
 import { View } from "@/components/terminal-ui/types";
 import { TRANSLATIONS } from "@/lib/translations";
 
@@ -263,7 +264,7 @@ function AppContent() {
               <LiveTradingTerminal />
             )}
             {activeView === View.TOP_STOCKS && (
-              <Ranking />
+              <TopStocksTerminal />
             )}
             {activeView === View.PROFILE && (
               <ProfileView lang={terminalLang} />

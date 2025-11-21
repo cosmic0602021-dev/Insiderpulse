@@ -12,10 +12,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
   const t = TRANSLATIONS[lang].settings;
 
   const languages: { code: Language; label: string }[] = [
-    { code: 'EN', label: 'English' },
-    { code: 'KO', label: '한국어' },
-    { code: 'JA', label: '日本語' },
-    { code: 'ZH', label: '中文' },
+    { code: 'en', label: 'English' },
+    { code: 'ko', label: '한국어' },
+    { code: 'ja', label: '日本語' },
+    { code: 'zh', label: '中文' },
   ];
 
   return (

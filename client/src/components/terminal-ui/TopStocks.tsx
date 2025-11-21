@@ -124,7 +124,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                                     <div className="text-sm font-bold text-neutral-300 group-hover/row:text-white transition-colors">{buyer.name}</div>
                                     <span className="bg-emerald-900/20 text-emerald-500 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">Buy Only</span>
                                 </div>
-                                <span className="text-xs text-neutral-500 mt-1">{tData[buyer.relation] || buyer.relation}</span>
+                                <span className="text-xs text-neutral-500 mt-1">{(tData as any)[buyer.relation] || buyer.relation}</span>
                             </div>
                             
                             {/* Buy Price & Change - Col 3 */}
