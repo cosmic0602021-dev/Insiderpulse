@@ -145,9 +145,12 @@ export default function LiveTradingTerminal() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#050505]">
       <style>{`
-        @keyframes move-stripes {
+        @keyframes stripe-scroll {
           0% { background-position: 0 0; }
-          100% { background-position: 28px 0; }
+          100% { background-position: 40px 40px; }
+        }
+        .animate-stripe-scroll {
+          animation: stripe-scroll 20s linear infinite;
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
@@ -315,18 +318,29 @@ export default function LiveTradingTerminal() {
               ))}
             </div>
 
-            {/* Simple overlay with unlock button only (like og1.png) */}
-            <div className="absolute inset-0 bg-amber-600/5 flex items-center justify-center z-20">
-              {/* Grid pattern background */}
-              <div className="absolute inset-0 opacity-20" style={{
-                backgroundImage: 'linear-gradient(rgba(245, 158, 11, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(245, 158, 11, 0.1) 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}></div>
+            {/* Overlay with animated diagonal stripes (like og1.png) */}
+            <div className="absolute inset-0 flex items-center justify-center z-20 bg-gradient-to-b from-amber-900/10 to-amber-950/20">
+              {/* Base amber tint overlay */}
+              <div className="absolute inset-0 bg-amber-600/8"></div>
+              
+              {/* Animated diagonal stripe pattern */}
+              <div 
+                className="absolute inset-0 animate-stripe-scroll"
+                style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(245, 158, 11, 0.12) 15px, rgba(245, 158, 11, 0.12) 30px)',
+                }}
+              ></div>
+              
+              {/* Inner shadow effect */}
+              <div className="absolute inset-0 shadow-[inset_0_2px_20px_rgba(0,0,0,0.4)]"></div>
               
               <button 
                 onClick={handleUpgrade}
-                className="px-8 py-3 bg-amber-600 text-black text-sm font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors flex items-center gap-2 relative z-10"
+                className="px-10 py-4 bg-gradient-to-b from-neutral-900 to-black border-[3px] border-amber-500 text-amber-500 text-sm font-black uppercase tracking-[0.2em] hover:from-black hover:to-neutral-900 hover:border-amber-400 hover:text-amber-400 transition-all flex items-center gap-3 relative z-10 shadow-[0_0_30px_rgba(245,158,11,0.5),inset_0_1px_0_rgba(245,158,11,0.3)]"
                 data-testid="button-upgrade"
+                style={{
+                  textShadow: '0 0 10px rgba(245, 158, 11, 0.5)'
+                }}
               >
                 🔓 {t.upgradeAction}
               </button>
