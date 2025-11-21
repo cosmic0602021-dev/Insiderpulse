@@ -68,6 +68,8 @@ const EN = {
     position: 'Position / Relation',
     filingDate: 'Filing Date',
     shares: 'Shares',
+    share: 'sh',
+    volume: 'vol',
     verified: 'Verified by SEC',
     priceTrend: 'Price Trend',
     basePrice: 'Base Price',
@@ -241,6 +243,8 @@ const KO = {
     position: '직위 / 관계',
     filingDate: '공시 날짜',
     shares: '거래량',
+    share: '주',
+    volume: '거래량',
     verified: 'SEC 검증됨',
     priceTrend: '가격 추세',
     basePrice: '기준 가격',
@@ -368,6 +372,11 @@ const JA = {
     totalAmount: '総額',
     buyOnly: '買いのみ'
   },
+  modal: {
+    ...EN.modal,
+    share: '株',
+    volume: '出来高'
+  },
   sidebar: {
     ...EN.sidebar,
     live: 'ライブトレーディング',
@@ -419,6 +428,11 @@ const ZH = {
     shareCount: '股数',
     totalAmount: '总额',
     buyOnly: '仅买入'
+  },
+  modal: {
+    ...EN.modal,
+    share: '股',
+    volume: '成交量'
   },
   sidebar: {
     ...EN.sidebar,

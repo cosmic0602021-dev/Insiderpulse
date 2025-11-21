@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -187,7 +187,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.pricePerShare)}
-                <span className="text-[10px] text-neutral-600 ml-1">/ sh</span>
+                <span className="text-[10px] text-neutral-600 ml-1">/ {t('modal.share')}</span>
               </div>
             </div>
 
@@ -198,7 +198,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatNumber(trade.shares / 1000)}K
-                <span className="text-[10px] text-neutral-600 ml-1">vol</span>
+                <span className="text-[10px] text-neutral-600 ml-1">{t('modal.volume')}</span>
               </div>
             </div>
 
@@ -265,6 +265,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
+                      <CartesianGrid stroke="#999999" strokeDasharray="3 3" strokeOpacity={0.3} />
                       <XAxis 
                         dataKey="date" 
                         stroke="#666666" 

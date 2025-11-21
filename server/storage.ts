@@ -147,11 +147,13 @@ export class MemStorage implements IStorage {
     }
     
     // Sort by specified field - default to filedDate (최신 제출일순)
+    // 🔧 FIX: Guard against null createdAt by falling back to filedDate
     return trades
       .sort((a, b) => {
-        const dateA = new Date(sortBy === 'filedDate' ? a.filedDate : a.createdAt!);
-        const dateB = new Date(sortBy === 'filedDate' ? b.filedDate : b.createdAt!);
-        return dateB.getTime() - dateA.getTime();
+        // Use sortBy field, but fallback to filedDate if createdAt is null/missing
+        const dateA = new Date(sortBy === 'filedDate' ? a.filedDate : (a.createdAt || a.filedDate));
+        const dateB = new Date(sortBy === 'filedDate' ? b.filedDate : (b.createdAt || b.filedDate));
+        return dateB.getTime() - dateA.getTime(); // DESC order: newest first
       })
       .slice(offset, offset + limit);
   }
