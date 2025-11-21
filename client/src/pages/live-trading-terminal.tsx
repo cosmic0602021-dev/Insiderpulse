@@ -298,60 +298,67 @@ export default function LiveTradingTerminal() {
         {/* Locked Zone (Free Users) - Match image_1763699117351.png exactly */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
-            {/* Fixed Header matching screenshot exactly */}
-            <div className="sticky top-[45px] h-10 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center">
+            {/* Row 1: Header with both labels */}
+            <div className="sticky top-[45px] h-8 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center">
               <div className="flex items-center gap-1.5">
-                <AlertTriangle size={10} className="text-amber-600" />
-                <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-amber-600">
+                <AlertTriangle size={9} className="text-amber-600" />
+                <span className="text-[8px] font-mono uppercase tracking-[0.2em] text-amber-600">
                   {t.realtimeZone}
                 </span>
               </div>
-              <span className="text-[8px] text-amber-600/60 font-mono uppercase tracking-wider flex items-center gap-1">
-                <span className="text-amber-600/60">●</span>
+              <span className="text-[7px] text-amber-600/50 font-mono uppercase tracking-[0.25em] flex items-center gap-1">
+                <span className="text-amber-600/50">●</span>
                 {t.encryptedForOutsiders}
               </span>
             </div>
 
-            {/* Blurred content */}
-            <div className="blur-[2px] opacity-20 pointer-events-none select-none relative">
-              {filteredData.slice(0, 3).map((trade) => (
-                <div key={trade.id} className="relative">
-                  <TradeRow 
-                    trade={trade} 
-                    onClick={() => {}}
-                    tData={tData}
-                  />
-                  {/* Center badge per row */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[9px] text-neutral-500/60 font-mono uppercase tracking-wide flex items-center gap-1">
-                      <Lock size={7} className="text-neutral-500/60" />
-                      {t.signalEncrypted}
-                    </span>
+            {/* Rows 2-4: Blurred trades with watermarks */}
+            <div className="relative">
+              <div className="blur-[2px] opacity-25 pointer-events-none select-none">
+                {filteredData.slice(0, 3).map((trade, idx) => (
+                  <div key={trade.id} className="relative h-[52px] border-b border-neutral-800">
+                    <TradeRow 
+                      trade={trade} 
+                      onClick={() => {}}
+                      tData={tData}
+                    />
+                    {/* Row watermark - repeating header labels */}
+                    <div className="absolute inset-0 flex justify-between items-center px-4">
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle size={7} className="text-amber-600/40" />
+                        <span className="text-[7px] font-mono uppercase tracking-[0.2em] text-amber-600/40">
+                          {t.realtimeZone}
+                        </span>
+                      </div>
+                      <span className="text-[6px] text-amber-600/30 font-mono uppercase tracking-[0.25em] flex items-center gap-0.5">
+                        <span className="text-amber-600/30">●</span>
+                        {t.encryptedForOutsiders}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Backdrop overlay matching screenshot */}
-            <div className="absolute inset-0 flex items-end justify-center pb-8 z-20">
-              {/* Subtle amber gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/5 via-transparent to-black/20"></div>
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/5 via-transparent to-black/30 pointer-events-none"></div>
               
-              {/* Diagonal stripes - more subtle */}
+              {/* Diagonal stripes with animation */}
               <div 
-                className="absolute inset-0"
+                className="absolute inset-0 pointer-events-none animate-stripe-scroll"
                 style={{
-                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(245,158,11,0.03) 8px, rgba(245,158,11,0.03) 16px)'
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 4px, rgba(245,158,11,0.04) 4px, rgba(245,158,11,0.04) 8px)'
                 }}
               ></div>
-              
-              {/* Unlock CTA button - smaller and centered at bottom */}
+            </div>
+
+            {/* Row 5: Unlock button */}
+            <div className="h-14 flex items-center justify-center bg-gradient-to-b from-black/20 to-transparent">
               <button 
                 onClick={handleUpgrade}
-                className="relative px-6 h-9 bg-amber-600 text-black text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-amber-500 transition-colors flex items-center gap-1.5 font-mono z-10"
+                className="relative px-5 h-8 bg-amber-600 text-black text-[9px] font-bold uppercase tracking-[0.2em] hover:bg-amber-500 transition-all flex items-center gap-1.5 font-mono shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)]"
                 data-testid="button-upgrade"
               >
-                <Zap size={11} className="text-black fill-black" />
+                <Zap size={10} className="text-black fill-black" />
                 <span>{t.unlockRealtime}</span>
               </button>
             </div>

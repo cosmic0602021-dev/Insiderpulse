@@ -173,6 +173,16 @@ body {
   --shadow-2xl: 0px 2px 0px 0px hsl(210 15% 5% / 0.60);
 }
 
+/* Stripe scroll animation for lock overlay */
+@keyframes stripe-scroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 24px 0;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
