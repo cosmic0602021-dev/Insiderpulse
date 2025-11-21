@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
 import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Ticket, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
+import { apiRequest } from '@/lib/queryClient';
 
 interface ProfileViewProps {
   lang: Language;
@@ -10,28 +12,31 @@ interface ProfileViewProps {
   onRedeemCoupon?: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeemCoupon }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
   const t = TRANSLATIONS[lang].profile;
   const common = TRANSLATIONS[lang].common;
+  const { user } = useAuth();
 
   const [couponCode, setCouponCode] = useState('');
   const [couponStatus, setCouponStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   
-  // Initialize trial end date to 3 days from now (default trial length)
-  const [trialEndDate, setTrialEndDate] = useState(() => {
-      const date = new Date();
-      date.setDate(date.getDate() + 3);
-      return date;
-  });
+  const isPro = user?.subscriptionTier === 'insider_pro' || user?.subscriptionTier === 'insider';
+  const isTrialing = user?.subscriptionStatus === 'trialing';
+  const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing';
+  
+  const trialEndDate = user?.trialExpiresAt ? new Date(user.trialExpiresAt) : null;
+  const subscriptionEndDate = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+  const nextBillingDate = isTrialing ? trialEndDate : subscriptionEndDate;
 
-  // Timer state
-  const [timeLeft, setTimeLeft] = useState({ hours: 72, minutes: 0 });
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
 
-  // Timer Logic
   useEffect(() => {
+      if (!nextBillingDate) return;
+
       const timer = setInterval(() => {
           const now = new Date();
-          const diffMs = trialEndDate.getTime() - now.getTime();
+          const diffMs = nextBillingDate.getTime() - now.getTime();
           
           if (diffMs > 0) {
             const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -40,10 +45,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeem
           } else {
              setTimeLeft({ hours: 0, minutes: 0 });
           }
-      }, 1000 * 60); // Update every minute
+      }, 1000 * 60);
 
       return () => clearInterval(timer);
-  }, [trialEndDate]);
+  }, [nextBillingDate]);
 
   const handleRedeem = () => {
       if (!couponCode.trim()) {
@@ -51,24 +56,34 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeem
           return;
       }
 
-      // Simulate API call / Validation
-      setTimeout(() => {
-          // Extend trial by 3 days
-          const newEndDate = new Date(trialEndDate);
-          newEndDate.setDate(newEndDate.getDate() + 3);
-          setTrialEndDate(newEndDate);
-          
-          // Update display immediately
-          setTimeLeft(prev => ({ ...prev, hours: prev.hours + 72 }));
-          
-          setCouponStatus('success');
-          setCouponCode('');
-          
-          if (onRedeemCoupon) onRedeemCoupon();
+      setCouponStatus('success');
+      setCouponCode('');
+      
+      if (onRedeemCoupon) onRedeemCoupon();
 
-          // Reset status after 3 seconds
-          setTimeout(() => setCouponStatus('idle'), 3000);
-      }, 500);
+      setTimeout(() => setCouponStatus('idle'), 3000);
+  };
+
+  const handleManageStripe = async () => {
+      if (!user?.stripeCustomerId) {
+          setCouponStatus('error');
+          return;
+      }
+
+      setIsLoadingPortal(true);
+      try {
+          const response = await apiRequest('POST', '/api/create-portal-session', {});
+          const data = await response.json();
+          
+          if (data.url) {
+              window.location.href = data.url;
+          }
+      } catch (error) {
+          console.error('Failed to create portal session:', error);
+          setCouponStatus('error');
+      } finally {
+          setIsLoadingPortal(false);
+      }
   };
 
   return (
@@ -88,11 +103,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeem
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                         <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">{t.email}</div>
-                        <div className="text-neutral-300 mono font-medium">scottnim7777@gmail.com</div>
+                        <div className="text-neutral-300 mono font-medium">{user?.email || 'N/A'}</div>
                     </div>
                     <div>
                         <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">{t.joined}</div>
-                        <div className="text-neutral-300 mono font-medium">2025. 11. 4.</div>
+                        <div className="text-neutral-300 mono font-medium">
+                            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -112,41 +129,39 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeem
                             <span className={isPro ? "text-emerald-500" : "text-amber-500"}>{isPro ? '♛' : '♙'}</span>
                         </div>
                     </div>
-                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider border rounded-full ${isPro ? 'bg-emerald-900/30 text-emerald-500 border-emerald-900/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
-                        {isPro ? t.active : common.tierFree}
+                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider border rounded-full ${isActive ? 'bg-emerald-900/30 text-emerald-500 border-emerald-900/50' : 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
+                        {isActive ? (isTrialing ? 'TRIALING' : 'ACTIVE') : 'INACTIVE'}
                     </span>
                 </div>
 
-                {isPro && (
+                {isPro && isActive && (
                     <>
-                        <div className="flex justify-end mb-4">
-                             <div className="flex items-center gap-2 text-xs text-neutral-500">
-                                 <XCircle size={12} />
-                                 <span>Not using free trial</span>
-                             </div>
-                        </div>
-
-                        <div className="bg-neutral-900/50 p-6 rounded text-center border border-neutral-800 relative overflow-hidden group">
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-center gap-2 text-neutral-500 mb-2">
-                                    <Clock size={14} />
-                                    <span className="text-xs uppercase tracking-wider">{t.nextBilling}</span>
-                                </div>
-                                <div className="text-4xl md:text-5xl font-mono font-bold text-neutral-200 mb-2 transition-all duration-500">
-                                    {timeLeft.hours}<span className="text-neutral-600">:</span>{timeLeft.minutes.toString().padStart(2, '0')}<span className="text-sm text-neutral-600 ml-2 self-end mb-2">hours</span>
-                                </div>
-                                <div className="text-xs text-neutral-600 mono">{trialEndDate.toLocaleString()}</div>
+                        {isTrialing && (
+                            <div className="flex justify-end mb-4">
+                                 <div className="flex items-center gap-2 text-xs text-emerald-500">
+                                     <CheckCircle2 size={12} />
+                                     <span>Using free trial</span>
+                                 </div>
                             </div>
-                            {/* Subtle Progress Bar for time visual */}
-                             <div className="absolute bottom-0 left-0 h-1 bg-emerald-900/50 w-full">
-                                <div className="h-full bg-emerald-500/50 w-[80%]"></div>
-                            </div>
-                        </div>
+                        )}
 
-                        <button className="w-full mt-6 py-3 border border-rose-900/50 text-rose-500 bg-rose-900/10 hover:bg-rose-900/20 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                            <XCircle size={14} />
-                            {t.cancel}
-                        </button>
+                        {nextBillingDate && (
+                            <div className="bg-neutral-900/50 p-6 rounded text-center border border-neutral-800 relative overflow-hidden group">
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-center gap-2 text-neutral-500 mb-2">
+                                        <Clock size={14} />
+                                        <span className="text-xs uppercase tracking-wider">{t.nextBilling}</span>
+                                    </div>
+                                    <div className="text-4xl md:text-5xl font-mono font-bold text-neutral-200 mb-2 transition-all duration-500">
+                                        {timeLeft.hours}<span className="text-neutral-600">:</span>{timeLeft.minutes.toString().padStart(2, '0')}<span className="text-sm text-neutral-600 ml-2 self-end mb-2">hours</span>
+                                    </div>
+                                    <div className="text-xs text-neutral-600 mono">{nextBillingDate.toLocaleString()}</div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 h-1 bg-emerald-900/50 w-full">
+                                    <div className="h-full bg-emerald-500/50 w-[80%]"></div>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
                 
@@ -202,18 +217,33 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, isPro = false, onRedeem
             </div>
 
              {/* Payment Info */}
-             <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
-                <div className="flex items-center gap-3 mb-4 border-b border-neutral-800 pb-4">
-                    <CreditCard className="text-neutral-500" size={20} />
-                    <h2 className="text-lg font-bold text-neutral-300">{t.payment}</h2>
+             {user?.stripeCustomerId && (
+                 <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+                    <div className="flex items-center gap-3 mb-4 border-b border-neutral-800 pb-4">
+                        <CreditCard className="text-neutral-500" size={20} />
+                        <h2 className="text-lg font-bold text-neutral-300">{t.payment}</h2>
+                    </div>
+                    <p className="text-xs text-neutral-500 mb-6">Secure payment management via Stripe</p>
+                    
+                    <button 
+                        onClick={handleManageStripe}
+                        disabled={isLoadingPortal}
+                        className="w-full py-3 border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoadingPortal ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-neutral-300 border-t-transparent rounded-full animate-spin"></div>
+                                <span>LOADING...</span>
+                            </>
+                        ) : (
+                            <>
+                                <ExternalLink size={14} />
+                                {t.stripe}
+                            </>
+                        )}
+                    </button>
                 </div>
-                <p className="text-xs text-neutral-500 mb-6">Secure payment management via Stripe</p>
-                
-                <button className="w-full py-3 border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                    <ExternalLink size={14} />
-                    {t.stripe}
-                </button>
-            </div>
+             )}
         </div>
     </div>
   );

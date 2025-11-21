@@ -3,16 +3,12 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import ThemeToggle from "@/components/theme-toggle";
-import LanguageSelector from "@/components/language-selector";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { LanguageProvider, useLanguage } from "@/contexts/language-context";
+import { LanguageProvider, useLanguage, type Language } from "@/contexts/language-context";
 import { AccessProvider } from "@/contexts/access-context";
-import { AuthProvider } from "@/contexts/auth-context";
-import { AuthModal } from "@/components/auth-modal";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useState, useEffect } from "react";
+import { Globe, Shield, ShieldCheck, Menu, X } from 'lucide-react';
 import LanguageSelection from "@/pages/language-selection";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
@@ -37,6 +33,9 @@ import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin-dashboard";
 import LandingPage from "@/pages/landing";
 import ProfilePage from "@/pages/profile";
+import TerminalSidebar from "@/components/terminal-ui/Sidebar";
+import { View } from "@/components/terminal-ui/types";
+import { TRANSLATIONS } from "@/lib/translations";
 
 function PublicRouter() {
   return (
@@ -56,8 +55,6 @@ function PublicRouter() {
 }
 
 function AppRouter() {
-  const { t } = useLanguage();
-
   return (
     <Switch>
       <Route path="/trade/:tradeId" component={TradeDetail} />
@@ -79,9 +76,27 @@ function AppRouter() {
 }
 
 function AppContent() {
-  const { t, language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [activeView, setActiveView] = useState<View>(View.LIVE_TRADING);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Convert language format: 'en' -> 'en', 'ko' -> 'ko', etc.
+  const terminalLang = language as Language;
+  const t = TRANSLATIONS[terminalLang]?.common || TRANSLATIONS.en.common;
+
+  // Check if user is Pro (has active subscription or active trial)
+  const isPro = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing';
+
+  const languages: { code: Language; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'ko', label: '한국어' },
+    { code: 'ja', label: '日本語' },
+    { code: 'zh', label: '中文' },
+  ];
 
   useEffect(() => {
     const languageSelected = localStorage.getItem('language-selected');
@@ -91,6 +106,40 @@ function AppContent() {
       setHasSelectedLanguage(true);
     }
   }, []);
+
+  // Map View to route paths
+  const handleViewChange = (view: View) => {
+    setActiveView(view);
+    setIsMobileMenuOpen(false);
+    
+    switch (view) {
+      case View.LIVE_TRADING:
+        setLocation('/dashboard');
+        break;
+      case View.TOP_STOCKS:
+        setLocation('/ranking');
+        break;
+      case View.PROFILE:
+        setLocation('/profile');
+        break;
+      case View.SETTINGS:
+        setLocation('/settings');
+        break;
+    }
+  };
+
+  // Sync activeView with current location
+  useEffect(() => {
+    if (location.startsWith('/dashboard') || location.startsWith('/trades')) {
+      setActiveView(View.LIVE_TRADING);
+    } else if (location.startsWith('/ranking')) {
+      setActiveView(View.TOP_STOCKS);
+    } else if (location.startsWith('/profile')) {
+      setActiveView(View.PROFILE);
+    } else if (location.startsWith('/settings')) {
+      setActiveView(View.SETTINGS);
+    }
+  }, [location]);
 
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location);
@@ -103,39 +152,116 @@ function AppContent() {
     return <PublicRouter />;
   }
 
-  const style = {
-    "--sidebar-width": "18rem",
-    "--sidebar-width-icon": "4rem",
+  const handleTriggerAction = () => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+    } else {
+      // Navigate to premium checkout for upgrade
+      setLocation('/premium-checkout');
+    }
   };
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full overflow-hidden">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <header className="flex items-center justify-between p-2 sm:p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="flex-shrink-0" />
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 dark:from-purple-400 dark:via-blue-400 dark:to-cyan-400 bg-clip-text text-transparent tracking-tight">
-                InsiderPulse
-              </h1>
-              <div className="text-xs sm:text-sm text-muted-foreground truncate hidden md:block">
-                {t('dashboard.lastUpdated')}: {new Date().toLocaleTimeString(
-                  language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US'
-                )}
-              </div>
+    <div className="flex h-screen w-screen bg-[#050505] text-neutral-300 font-sans overflow-hidden">
+      
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#050505] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.5)] border-r border-neutral-800' : '-translate-x-full'}`}>
+        <TerminalSidebar 
+          activeView={activeView} 
+          onChangeView={handleViewChange} 
+          lang={terminalLang} 
+          isPro={isPro}
+          isAuthenticated={isAuthenticated}
+          onLoginClick={() => openAuthModal('login')}
+          onLogout={logout}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
+        />
+      </div>
+      
+      <div className="flex-1 flex flex-col relative bg-[#050505] w-full min-w-0">
+        {/* Top Bar Status - Minimalist Terminal Header */}
+        <div className="h-10 border-b border-neutral-900 flex items-center justify-between px-4 md:px-6 text-[10px] tracking-widest text-neutral-600 uppercase select-none bg-[#050505] relative z-30">
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Mobile Menu Toggle */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden text-neutral-400 hover:text-white transition-colors"
+              data-testid="button-mobile-menu"
+            >
+              <Menu size={16} />
+            </button>
+
+            <span className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isPro ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+              <span className="hidden sm:inline">SYSTEM: {isPro ? t.systemPro : t.systemFree}</span>
+              <span className="sm:hidden">{isPro ? t.tierPro : t.tierFree}</span>
+            </span>
+            <span className="hidden md:inline">LATENCY: {isPro ? t.latencyPro : t.latencyFree}</span>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6 mono">
+            {/* Tier Toggle / Status */}
+            <button 
+              onClick={handleTriggerAction}
+              className={`flex items-center gap-2 transition-colors ${isPro ? 'text-emerald-500' : 'text-amber-600 hover:text-amber-500'}`}
+              data-testid="button-upgrade-status"
+            >
+              {isPro ? <ShieldCheck size={10} /> : <Shield size={10} />}
+              <span className="hidden sm:inline">{isPro ? t.licenseActive : t.licenseFree}</span>
+            </button>
+
+            {/* Language Selector */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-2 hover:text-neutral-300 transition-colors focus:outline-none"
+                data-testid="button-language-selector"
+              >
+                <Globe size={10} />
+                <span className="text-neutral-400">{language.toUpperCase()}</span>
+              </button>
+
+              {showLangMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowLangMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-24 bg-[#0a0a0a] border border-neutral-800 shadow-xl flex flex-col py-1 z-50">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setLanguage(lang.code);
+                          setShowLangMenu(false);
+                        }}
+                        className={`px-3 py-2 text-left text-[10px] hover:bg-neutral-900 transition-colors ${language === lang.code ? 'text-emerald-500' : 'text-neutral-400'}`}
+                        data-testid={`button-language-${lang.code}`}
+                      >
+                        {lang.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <LanguageSelector />
-              <ThemeToggle />
-            </div>
-          </header>
-          <main className="flex-1 overflow-x-hidden overflow-y-auto w-full">
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden relative w-full">
+          <main className="h-full overflow-x-hidden overflow-y-auto w-full">
             <AppRouter />
           </main>
         </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
 
@@ -166,7 +292,6 @@ export default function App() {
           <AccessProvider>
             <TooltipProvider>
               <AppContent />
-              <AuthModal />
               <PWAInstallPrompt />
               <Toaster />
             </TooltipProvider>

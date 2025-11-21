@@ -16,6 +16,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ lang, onClose, on
   
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
 
+  const handleUpgradeClick = () => {
+    onClose();
+    window.location.href = '/premium-checkout';
+  };
+
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/95 backdrop-blur-sm animate-in fade-in duration-300">
       
@@ -135,7 +140,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ lang, onClose, on
                     </div>
 
                     <button 
-                        onClick={onUpgrade}
+                        onClick={handleUpgradeClick}
                         className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 mt-auto"
                     >
                         <div className="w-4 h-4 border-2 border-black rounded-full border-t-transparent animate-spin hidden"></div>

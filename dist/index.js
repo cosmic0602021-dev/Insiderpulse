@@ -270,6 +270,73 @@ var init_schema = __esm({
   }
 });
 
+// server/ticker-validator.ts
+function validateAndCorrectTicker(ticker, companyName) {
+  if (!ticker || !companyName) {
+    return {
+      isValid: false,
+      reason: "Missing ticker or company name",
+      confidence: "high"
+    };
+  }
+  const corrections = TICKER_CORRECTIONS[ticker];
+  if (corrections) {
+    for (const [pattern, correctTicker] of Object.entries(corrections)) {
+      if (companyName.includes(pattern)) {
+        console.log(`\u{1F527} Ticker correction: ${ticker} \u2192 ${correctTicker} (${companyName})`);
+        return {
+          isValid: false,
+          correctedTicker: correctTicker,
+          reason: `Ticker conflict resolved: ${ticker} \u2192 ${correctTicker} for ${companyName}`,
+          confidence: "high"
+        };
+      }
+    }
+  }
+  if (!/^[A-Z]{1,5}$/.test(ticker)) {
+    return {
+      isValid: false,
+      reason: `Invalid ticker format: ${ticker}`,
+      confidence: "high"
+    };
+  }
+  return {
+    isValid: true,
+    confidence: "high"
+  };
+}
+var TICKER_CORRECTIONS;
+var init_ticker_validator = __esm({
+  "server/ticker-validator.ts"() {
+    "use strict";
+    TICKER_CORRECTIONS = {
+      "MSC": {
+        "MSC Industrial": "MSM"
+        // MSC Industrial Direct → MSM
+      },
+      "CB": {
+        "CB Financial": "CBFV"
+        // CB Financial Services → CBFV (not Chubb which is also CB)
+      },
+      "G": {
+        "F&G Annuities": "FG",
+        // F&G Annuities & Life → FG (not Genpact which is G)
+        "F&G Life": "FG"
+        // Alternative name for F&G
+      },
+      "R": {
+        "H&R Block": "HRB"
+        // H&R Block → HRB (not R which is Ryder System)
+      },
+      "T": {
+        "S&T Bancorp": "STBA"
+        // S&T Bancorp → STBA (not T which is AT&T)
+      }
+      // Add more as we discover them
+    };
+  }
+});
+
 // server/db-storage.ts
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, desc, sum, sql as sql2, inArray, gte, lte, and as and2 } from "drizzle-orm";
@@ -278,6 +345,7 @@ var init_db_storage = __esm({
   "server/db-storage.ts"() {
     "use strict";
     init_schema();
+    init_ticker_validator();
     db = drizzle(process.env.DATABASE_URL);
     DatabaseStorage = class {
       // User methods
@@ -328,9 +396,17 @@ var init_db_storage = __esm({
       }
       async createInsiderTrade(insertTrade) {
         try {
+          let correctedTicker = insertTrade.ticker;
+          if (insertTrade.ticker && insertTrade.companyName) {
+            const validation = validateAndCorrectTicker(insertTrade.ticker, insertTrade.companyName);
+            if (!validation.isValid && validation.correctedTicker) {
+              console.log(`\u{1F527} [Storage] Correcting ticker: ${insertTrade.ticker} \u2192 ${validation.correctedTicker} for "${insertTrade.companyName}"`);
+              correctedTicker = validation.correctedTicker;
+            }
+          }
           const result = await db.insert(insiderTrades).values({
             ...insertTrade,
-            ticker: insertTrade.ticker || null,
+            ticker: correctedTicker || null,
             aiAnalysis: insertTrade.aiAnalysis || null,
             significanceScore: insertTrade.significanceScore || 50,
             signalType: insertTrade.signalType || "HOLD",
@@ -1029,7 +1105,11 @@ var init_stock_price_service = __esm({
           "JPMORGAN CHASE": "JPM",
           "BANK OF AMERICA": "BAC",
           "WELLS FARGO": "WFC",
-          "GOLDMAN SACHS": "GS"
+          "GOLDMAN SACHS": "GS",
+          "F&G ANNUITIES": "FG",
+          "F&G ANNUITIES & LIFE": "FG",
+          "F&G LIFE": "FG",
+          "F&G": "FG"
         };
       }
       async getStockPrice(ticker) {
@@ -2477,65 +2557,6 @@ var init_mega_sec_bulk_collector = __esm({
       }
     };
     megaSecBulkCollector = new MegaSecBulkCollector();
-  }
-});
-
-// server/ticker-validator.ts
-function validateAndCorrectTicker(ticker, companyName) {
-  if (!ticker || !companyName) {
-    return {
-      isValid: false,
-      reason: "Missing ticker or company name",
-      confidence: "high"
-    };
-  }
-  const corrections = TICKER_CORRECTIONS[ticker];
-  if (corrections) {
-    for (const [pattern, correctTicker] of Object.entries(corrections)) {
-      if (companyName.includes(pattern)) {
-        console.log(`\u{1F527} Ticker correction: ${ticker} \u2192 ${correctTicker} (${companyName})`);
-        return {
-          isValid: false,
-          correctedTicker: correctTicker,
-          reason: `Ticker conflict resolved: ${ticker} \u2192 ${correctTicker} for ${companyName}`,
-          confidence: "high"
-        };
-      }
-    }
-  }
-  if (!/^[A-Z]{1,5}$/.test(ticker)) {
-    return {
-      isValid: false,
-      reason: `Invalid ticker format: ${ticker}`,
-      confidence: "high"
-    };
-  }
-  return {
-    isValid: true,
-    confidence: "high"
-  };
-}
-var TICKER_CORRECTIONS;
-var init_ticker_validator = __esm({
-  "server/ticker-validator.ts"() {
-    "use strict";
-    TICKER_CORRECTIONS = {
-      "MSC": {
-        "MSC Industrial": "MSM"
-        // MSC Industrial Direct → MSM
-      },
-      "CB": {
-        "CB Financial": "CBFV"
-        // CB Financial Services → CBFV (not Chubb which is also CB)
-      },
-      "G": {
-        "F&G Annuities": "FG",
-        // F&G Annuities & Life → FG (not Genpact which is G)
-        "F&G Life": "FG"
-        // Alternative name for F&G
-      }
-      // Add more as we discover them
-    };
   }
 });
 
@@ -4385,6 +4406,7 @@ var init_finviz_collector = __esm({
   "server/finviz-collector.ts"() {
     "use strict";
     init_storage();
+    init_ticker_validator();
     broadcaster2 = null;
     FinvizCollector = class {
       constructor() {
@@ -4515,8 +4537,8 @@ var init_finviz_collector = __esm({
               const patterns = [
                 /^([A-Z]{1,5})(?:\s|,|$)/,
                 // Start of cell, followed by space/comma/end
-                /\b([A-Z]{2,5})\b/,
-                // Word boundaries, 2-5 chars
+                /(?:^|\s)([A-Z]{2,5})(?:\s|$|,|-)/,
+                // No word boundary - handles F&G correctly
                 /([A-Z]{1,5})(?:\s*-\s*)/
                 // Ticker followed by dash (common format)
               ];
@@ -4531,6 +4553,13 @@ var init_finviz_collector = __esm({
           }
           if (!ticker) {
             return null;
+          }
+          if (firstCellText) {
+            const validation = validateAndCorrectTicker(ticker, firstCellText);
+            if (!validation.isValid && validation.correctedTicker) {
+              console.log(`\u{1F527} [Finviz] Correcting ticker: ${ticker} \u2192 ${validation.correctedTicker} for "${firstCellText}"`);
+              ticker = validation.correctedTicker;
+            }
           }
           const cells = this.extractCellTexts(row);
           if (cells.length < 9) {
@@ -5631,7 +5660,8 @@ var init_insider_screener_collector = __esm({
           trades.push(...dennisHiggsTrades);
           console.log(`\u{1F3AF} Dennis Higgs EFR \uAC70\uB798 ${dennisHiggsTrades.length}\uAC1C \uCD94\uAC00`);
           const tradePatterns = [
-            /\b[A-Z]{2,5}\b.*?\d+.*?shares?.*?\$[\d,]+/gi,
+            /(?:^|\s)([A-Z]{2,5})(?:\s|$|,|-).*?\d+.*?shares?.*?\$[\d,]+/gi,
+            // No word boundary - handles F&G correctly
             /sold?\s+\d+.*?shares?.*?\$[\d,]+/gi,
             /bought?\s+\d+.*?shares?.*?\$[\d,]+/gi
           ];
@@ -7277,7 +7307,7 @@ var init_pattern_detection_service = __esm({
         for (const [ticker, trades] of tradesByTicker) {
           if (trades.length < 3) continue;
           const buyTrades = trades.filter(
-            (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.tradeType === "GRANT"
+            (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P"
           );
           if (buyTrades.length >= 3) {
             const uniqueTraders = new Set(buyTrades.map((t) => t.traderName));
@@ -7301,7 +7331,7 @@ var init_pattern_detection_service = __esm({
             }
           }
           const sellTrades = trades.filter(
-            (t) => t.tradeType === "SELL" || t.tradeType === "DISPOSITION"
+            (t) => t.tradeType === "SELL" || t.tradeType === "DISPOSITION" || t.transactionCode === "S"
           );
           if (sellTrades.length >= 3) {
             const uniqueTraders = new Set(sellTrades.map((t) => t.traderName));
@@ -8238,7 +8268,7 @@ var init_news_correlation_service = __esm({
           return daysDiff <= 14 && article.relevanceScore >= 70;
         });
         const contradictoryNews = afterTrade.filter((article) => {
-          const isBuyTrade = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE";
+          const isBuyTrade = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.transactionCode === "P";
           const isNegativeNews = article.sentiment === "NEGATIVE";
           const isPositiveNews = article.sentiment === "POSITIVE";
           return isBuyTrade && isNegativeNews || !isBuyTrade && isPositiveNews;
@@ -8266,7 +8296,7 @@ var init_news_correlation_service = __esm({
           const daysDiff = (newsDate.getTime() - tradeDate.getTime()) / (1e3 * 60 * 60 * 24);
           return daysDiff > 0 && daysDiff <= 30;
         });
-        const isBuyTrade = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE";
+        const isBuyTrade = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.transactionCode === "P";
         const matchingNews = postTradeNews.filter((article) => {
           return isBuyTrade && article.sentiment === "POSITIVE" || !isBuyTrade && article.sentiment === "NEGATIVE";
         });
@@ -8524,7 +8554,7 @@ var init_insider_credibility_service = __esm({
           const oneMonthPrice = daysElapsed >= 30 ? currentPrice : priceAtTrade;
           const threeMonthPrice = daysElapsed >= 90 ? currentPrice : priceAtTrade;
           const sixMonthPrice = daysElapsed >= 180 ? currentPrice : priceAtTrade;
-          const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.tradeType === "GRANT";
+          const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.transactionCode === "P";
           const outcome = {
             tradeId: trade.id,
             ticker,
@@ -8578,7 +8608,7 @@ var init_insider_credibility_service = __esm({
       calculateTimingScore(trade, oneMonth, threeMonth, sixMonth) {
         const priceAtTrade = trade.pricePerShare || 0;
         if (priceAtTrade === 0) return 50;
-        const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.tradeType === "GRANT";
+        const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.transactionCode === "P";
         const oneMonthReturn = (oneMonth - priceAtTrade) / priceAtTrade * 100;
         const threeMonthReturn = (threeMonth - priceAtTrade) / priceAtTrade * 100;
         const sixMonthReturn = (sixMonth - priceAtTrade) / priceAtTrade * 100;
@@ -10887,7 +10917,7 @@ async function registerRoutes(app2) {
           message: "\uCFE0\uD3F0\uC740 \uBB34\uB8CC\uCCB4\uD5D8 \uAE30\uAC04 \uC911\uC5D0\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
         });
       }
-      const validCoupons = ["tosslove", "stocktwitslove", "redditlove", "naverlove", "kiwilove"];
+      const validCoupons = ["tosslove", "stocktwitslove", "redditlove", "naverlove", "kiwilove", "producthunt"];
       const normalizedCoupon = couponCode.toLowerCase().trim();
       if (!validCoupons.includes(normalizedCoupon)) {
         return res.status(400).json({
@@ -10984,35 +11014,41 @@ async function registerRoutes(app2) {
           message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
         });
       }
-      if (!user2.stripeSubscriptionId) {
-        return res.status(400).json({
-          success: false,
-          message: "\uAD6C\uB3C5 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"
-        });
-      }
-      if (user2.subscriptionStatus === "canceled") {
+      if (user2.subscriptionStatus === "canceled" || user2.subscriptionStatus === "inactive") {
         return res.status(400).json({
           success: false,
           message: "\uC774\uBBF8 \uD574\uC9C0\uB41C \uAD6C\uB3C5\uC785\uB2C8\uB2E4"
         });
       }
-      let subscription;
-      try {
-        subscription = await stripe2.subscriptions.update(user2.stripeSubscriptionId, {
-          cancel_at_period_end: true
+      if (user2.subscriptionStatus !== "active" && user2.subscriptionStatus !== "trialing") {
+        return res.status(400).json({
+          success: false,
+          message: "\uD65C\uC131 \uAD6C\uB3C5\uC774 \uC5C6\uC2B5\uB2C8\uB2E4"
         });
-      } catch (stripeError) {
-        console.error("\u274C Stripe API error:", stripeError);
-        if (stripeError.type === "StripeInvalidRequestError") {
-          return res.status(400).json({
-            success: false,
-            message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAD6C\uB3C5 \uC815\uBCF4\uC785\uB2C8\uB2E4"
-          });
-        }
-        throw stripeError;
       }
-      console.log(`\u{1F4B3} Cancelled subscription for user ${userId}: ${user2.stripeSubscriptionId}`);
-      const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1e3) : /* @__PURE__ */ new Date();
+      let periodEnd;
+      if (user2.stripeSubscriptionId) {
+        let subscription;
+        try {
+          subscription = await stripe2.subscriptions.update(user2.stripeSubscriptionId, {
+            cancel_at_period_end: true
+          });
+        } catch (stripeError) {
+          console.error("\u274C Stripe API error:", stripeError);
+          if (stripeError.type === "StripeInvalidRequestError") {
+            return res.status(400).json({
+              success: false,
+              message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uAD6C\uB3C5 \uC815\uBCF4\uC785\uB2C8\uB2E4"
+            });
+          }
+          throw stripeError;
+        }
+        console.log(`\u{1F4B3} Cancelled Stripe subscription for user ${userId}: ${user2.stripeSubscriptionId}`);
+        periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1e3) : /* @__PURE__ */ new Date();
+      } else {
+        console.log(`\u{1F4B3} Cancelled legacy trial for user ${userId}`);
+        periodEnd = user2.trialExpiresAt || user2.subscriptionEndDate || /* @__PURE__ */ new Date();
+      }
       await db4.update(users).set({
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
@@ -13381,7 +13417,7 @@ async function registerRoutes(app2) {
         if (!metrics.lastTradeDate || tradeDate > metrics.lastTradeDate) {
           metrics.lastTradeDate = tradeDate;
         }
-        const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.tradeType === "GRANT" || trade.transactionCode === "P" || trade.transactionCode === "A" || trade.shares && trade.shares > 0;
+        const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE" || trade.transactionCode === "P";
         if (isBuy) {
           metrics.totalBuyValue += tradeValue;
           metrics.buyCount++;
@@ -13414,7 +13450,7 @@ async function registerRoutes(app2) {
       const rankings = await Promise.all(Array.from(tickerMetrics.values()).map(async (metrics) => {
         const totalTrades = metrics.buyCount + metrics.sellCount;
         const buyTrades = metrics.trades.filter(
-          (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.tradeType === "GRANT" || t.transactionCode === "P" || t.transactionCode === "A"
+          (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P"
         );
         const totalBuyPricePerShare = buyTrades.reduce((sum2, t) => sum2 + (t.pricePerShare || 0), 0);
         metrics.avgTradeValue = buyTrades.length > 0 ? totalBuyPricePerShare / buyTrades.length : 0;
@@ -13489,7 +13525,7 @@ async function registerRoutes(app2) {
           (pattern) => pattern.ticker.toUpperCase() === metrics.ticker.toUpperCase()
         );
         const insiderDetails = metrics.trades.filter((t) => {
-          const isBuy = t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.tradeType === "GRANT" || t.transactionCode === "P" || t.transactionCode === "A";
+          const isBuy = t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P";
           const suspiciousPatterns = [
             /instruments?/i,
             /apparatus/i,

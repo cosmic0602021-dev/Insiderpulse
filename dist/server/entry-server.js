@@ -7,20 +7,18 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Crown, Settings as Settings$1, Power, LogIn, Activity, LayoutDashboard, User, Sun, Moon, ChevronRight, Check, Circle, Zap, Smartphone, Share2, Plus, CheckCircle, Mail, AlertCircle, Loader2, ArrowLeft, Lock, Globe, ArrowRight, ShieldCheck, TrendingUp, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Camera, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Star, Wifi, WifiOff, Shield, AlertTriangle, RefreshCw, Monitor, Languages, Palette, CreditCard, BellOff, Building2, Users, PieChart, Sliders, Unlock, ArrowDown, Sparkles, Database, Download, Timer, CheckCircle2, XCircle, UserCheck, Terminal, FileText, Hash, Ticket } from "lucide-react";
+import { X, Bell, Zap, Smartphone, Share2, Plus, Check, TrendingUp, DollarSign, ChevronDown, ChevronUp, ExternalLink, Minus, TrendingDown, Filter, Search, Calendar, SortDesc, Bookmark, Loader2, Camera, User, BarChart3, Clock, Brain, Target, Calculator, Newspaper, Star, Wifi, WifiOff, Shield, AlertTriangle, AlertCircle, RefreshCw, Sun, Moon, Monitor, Languages, Palette, CreditCard, BellOff, ArrowLeft, Building2, Activity, Users, PieChart, Sliders, Lock, Unlock, ArrowDown, Sparkles, Database, Download, Crown, Mail, Timer, CheckCircle, ArrowRight, CheckCircle2, XCircle, UserCheck, Terminal, FileText, Hash, ShieldCheck, Ticket, LayoutDashboard, Settings as Settings$1, Power, LogIn, Menu, Globe } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Slot } from "@radix-ui/react-slot";
-import * as SeparatorPrimitive from "@radix-ui/react-separator";
-import * as SheetPrimitive from "@radix-ui/react-dialog";
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import * as LabelPrimitive from "@radix-ui/react-label";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import html2canvas from "html2canvas";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip as Tooltip$1, ReferenceArea, ReferenceLine, ReferenceDot, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceArea, ReferenceLine, ReferenceDot, Line, PieChart as PieChart$1, Pie, Cell, BarChart, Bar, AreaChart, Area, Legend, ComposedChart, ScatterChart, Scatter } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { ko, ja, zhCN, enUS } from "date-fns/locale";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
@@ -664,8 +662,6 @@ function Toaster() {
   ] });
 }
 const TooltipProvider = TooltipPrimitive.Provider;
-const Tooltip = TooltipPrimitive.Root;
-const TooltipTrigger = TooltipPrimitive.Trigger;
 const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }, ref) => /* @__PURE__ */ jsx(
   TooltipPrimitive.Content,
   {
@@ -679,563 +675,6 @@ const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }
   }
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    var _a;
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    const onChange = (e) => setIsMobile("matches" in e ? e.matches : e.matches);
-    setIsMobile(mql.matches);
-    (_a = mql.addEventListener) == null ? void 0 : _a.call(mql, "change", onChange);
-    return () => {
-      var _a2;
-      return (_a2 = mql.removeEventListener) == null ? void 0 : _a2.call(mql, "change", onChange);
-    };
-  }, [breakpoint]);
-  return isMobile;
-}
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground border border-primary-border",
-        destructive: "bg-destructive text-destructive-foreground border border-destructive-border",
-        outline: (
-          // Shows the background color of whatever card / sidebar / accent background it is inside of.
-          // Inherits the current text color.
-          " border [border-color:var(--button-outline)]  shadow-xs active:shadow-none "
-        ),
-        secondary: "border bg-secondary text-secondary-foreground border border-secondary-border ",
-        // Add a transparent border so that when someone toggles a border on later, it doesn't shift layout/size.
-        ghost: "border border-transparent"
-      },
-      // Heights are set as "min" heights, because sometimes Ai will place large amount of content
-      // inside buttons. With a min-height they will look appropriate with small amounts of content,
-      // but will expand to fit large amounts of content.
-      size: {
-        default: "min-h-9 px-4 py-2",
-        sm: "min-h-8 rounded-md px-3 text-xs",
-        lg: "min-h-10 rounded-md px-8",
-        icon: "h-9 w-9"
-      }
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default"
-    }
-  }
-);
-const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return /* @__PURE__ */ jsx(
-      Comp,
-      {
-        className: cn(buttonVariants({ variant, size, className })),
-        ref,
-        ...props
-      }
-    );
-  }
-);
-Button.displayName = "Button";
-const Input = React.forwardRef(
-  ({ className, type, ...props }, ref) => {
-    return /* @__PURE__ */ jsx(
-      "input",
-      {
-        type,
-        className: cn(
-          "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          className
-        ),
-        ref,
-        ...props
-      }
-    );
-  }
-);
-Input.displayName = "Input";
-const Separator = React.forwardRef(
-  ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
-    SeparatorPrimitive.Root,
-    {
-      ref,
-      decorative,
-      orientation,
-      className: cn(
-        "shrink-0 bg-border",
-        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
-        className
-      ),
-      ...props
-    }
-  )
-);
-Separator.displayName = SeparatorPrimitive.Root.displayName;
-const Sheet = SheetPrimitive.Root;
-const SheetPortal = SheetPrimitive.Portal;
-const SheetOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  SheetPrimitive.Overlay,
-  {
-    className: cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    ),
-    ...props,
-    ref
-  }
-));
-SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
-const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
-  {
-    variants: {
-      side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom: "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
-        right: "inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"
-      }
-    },
-    defaultVariants: {
-      side: "right"
-    }
-  }
-);
-const SheetContent = React.forwardRef(({ side = "right", className, children, ...props }, ref) => /* @__PURE__ */ jsxs(SheetPortal, { children: [
-  /* @__PURE__ */ jsx(SheetOverlay, {}),
-  /* @__PURE__ */ jsxs(
-    SheetPrimitive.Content,
-    {
-      ref,
-      className: cn(sheetVariants({ side }), className),
-      ...props,
-      children: [
-        children,
-        /* @__PURE__ */ jsxs(SheetPrimitive.Close, { className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary", children: [
-          /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
-          /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Close" })
-        ] })
-      ]
-    }
-  )
-] }));
-SheetContent.displayName = SheetPrimitive.Content.displayName;
-const SheetHeader = ({
-  className,
-  ...props
-}) => /* @__PURE__ */ jsx(
-  "div",
-  {
-    className: cn(
-      "flex flex-col space-y-2 text-center sm:text-left",
-      className
-    ),
-    ...props
-  }
-);
-SheetHeader.displayName = "SheetHeader";
-const SheetTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  SheetPrimitive.Title,
-  {
-    ref,
-    className: cn("text-lg font-semibold text-foreground", className),
-    ...props
-  }
-));
-SheetTitle.displayName = SheetPrimitive.Title.displayName;
-const SheetDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  SheetPrimitive.Description,
-  {
-    ref,
-    className: cn("text-sm text-muted-foreground", className),
-    ...props
-  }
-));
-SheetDescription.displayName = SheetPrimitive.Description.displayName;
-function Skeleton({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      className: cn("animate-pulse rounded-md bg-muted", className),
-      ...props
-    }
-  );
-}
-const SIDEBAR_COOKIE_NAME = "sidebar_state";
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = "16rem";
-const SIDEBAR_WIDTH_MOBILE = "18rem";
-const SIDEBAR_WIDTH_ICON = "3rem";
-const SIDEBAR_KEYBOARD_SHORTCUT = "b";
-const SidebarContext = React.createContext(null);
-function useSidebar() {
-  const context = React.useContext(SidebarContext);
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider.");
-  }
-  return context;
-}
-function SidebarProvider({
-  defaultOpen = true,
-  open: openProp,
-  onOpenChange: setOpenProp,
-  className,
-  style,
-  children,
-  ...props
-}) {
-  const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = React.useState(false);
-  const [_open, _setOpen] = React.useState(defaultOpen);
-  const open = openProp ?? _open;
-  const setOpen = React.useCallback(
-    (value) => {
-      const openState = typeof value === "function" ? value(open) : value;
-      if (setOpenProp) {
-        setOpenProp(openState);
-      } else {
-        _setOpen(openState);
-      }
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-    },
-    [setOpenProp, open]
-  );
-  const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open2) => !open2) : setOpen((open2) => !open2);
-  }, [isMobile, setOpen, setOpenMobile]);
-  React.useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
-  const state = open ? "expanded" : "collapsed";
-  const contextValue = React.useMemo(
-    () => ({
-      state,
-      open,
-      setOpen,
-      isMobile,
-      openMobile,
-      setOpenMobile,
-      toggleSidebar
-    }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-  );
-  return /* @__PURE__ */ jsx(SidebarContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsx(TooltipProvider, { delayDuration: 0, children: /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-wrapper",
-      style: {
-        "--sidebar-width": SIDEBAR_WIDTH,
-        "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-        ...style
-      },
-      className: cn(
-        "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
-        className
-      ),
-      ...props,
-      children
-    }
-  ) }) });
-}
-function Sidebar({
-  side = "left",
-  variant = "sidebar",
-  collapsible = "offcanvas",
-  className,
-  children,
-  ...props
-}) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
-  if (collapsible === "none") {
-    return /* @__PURE__ */ jsx(
-      "div",
-      {
-        "data-slot": "sidebar",
-        className: cn(
-          "bg-sidebar text-sidebar-foreground flex h-full w-[var(--sidebar-width)] flex-col",
-          className
-        ),
-        ...props,
-        children
-      }
-    );
-  }
-  if (isMobile) {
-    return /* @__PURE__ */ jsx(Sheet, { open: openMobile, onOpenChange: setOpenMobile, ...props, children: /* @__PURE__ */ jsxs(
-      SheetContent,
-      {
-        "data-sidebar": "sidebar",
-        "data-slot": "sidebar",
-        "data-mobile": "true",
-        className: "bg-sidebar text-sidebar-foreground w-[var(--sidebar-width)] p-0 [&>button]:hidden",
-        style: {
-          "--sidebar-width": SIDEBAR_WIDTH_MOBILE
-        },
-        side,
-        children: [
-          /* @__PURE__ */ jsxs(SheetHeader, { className: "sr-only", children: [
-            /* @__PURE__ */ jsx(SheetTitle, { children: "Sidebar" }),
-            /* @__PURE__ */ jsx(SheetDescription, { children: "Displays the mobile sidebar." })
-          ] }),
-          /* @__PURE__ */ jsx("div", { className: "flex h-full w-full flex-col", children })
-        ]
-      }
-    ) });
-  }
-  return /* @__PURE__ */ jsxs(
-    "div",
-    {
-      className: "group peer text-sidebar-foreground hidden md:block",
-      "data-state": state,
-      "data-collapsible": state === "collapsed" ? collapsible : "",
-      "data-variant": variant,
-      "data-side": side,
-      "data-slot": "sidebar",
-      children: [
-        /* @__PURE__ */ jsx(
-          "div",
-          {
-            "data-slot": "sidebar-gap",
-            className: cn(
-              "relative w-[var(--sidebar-width)] bg-transparent transition-[width] duration-200 ease-linear",
-              "group-data-[collapsible=offcanvas]:w-0",
-              "group-data-[side=right]:rotate-180",
-              variant === "floating" || variant === "inset" ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+var(--spacing-4))]" : "group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)]"
-            )
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          "div",
-          {
-            "data-slot": "sidebar-container",
-            className: cn(
-              "fixed inset-y-0 z-10 hidden h-svh w-[var(--sidebar-width)] transition-[left,right,width] duration-200 ease-linear md:flex",
-              side === "left" ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]" : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-              // Adjust the padding for floating and inset variants.
-              variant === "floating" || variant === "inset" ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+var(--spacing-4)+2px)]" : "group-data-[collapsible=icon]:w-[var(--sidebar-width-icon)] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-              className
-            ),
-            ...props,
-            children: /* @__PURE__ */ jsx(
-              "div",
-              {
-                "data-sidebar": "sidebar",
-                "data-slot": "sidebar-inner",
-                className: "bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm",
-                children
-              }
-            )
-          }
-        )
-      ]
-    }
-  );
-}
-function SidebarTrigger({
-  className,
-  onClick,
-  ...props
-}) {
-  const { toggleSidebar } = useSidebar();
-  return /* @__PURE__ */ jsxs(
-    Button,
-    {
-      "data-sidebar": "trigger",
-      "data-slot": "sidebar-trigger",
-      variant: "ghost",
-      size: "icon",
-      className: cn("h-7 w-7", className),
-      onClick: (event) => {
-        onClick == null ? void 0 : onClick(event);
-        toggleSidebar();
-      },
-      ...props,
-      children: [
-        /* @__PURE__ */ jsx("svg", { className: "h-4 w-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", children: /* @__PURE__ */ jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M4 6h16M4 12h16M4 18h16" }) }),
-        /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Toggle Sidebar" })
-      ]
-    }
-  );
-}
-function SidebarHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-header",
-      "data-sidebar": "header",
-      className: cn("flex flex-col gap-2 p-2", className),
-      ...props
-    }
-  );
-}
-function SidebarFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-footer",
-      "data-sidebar": "footer",
-      className: cn("flex flex-col gap-2 p-2", className),
-      ...props
-    }
-  );
-}
-function SidebarContent({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-content",
-      "data-sidebar": "content",
-      className: cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function SidebarGroup({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-group",
-      "data-sidebar": "group",
-      className: cn("relative flex w-full min-w-0 flex-col p-2", className),
-      ...props
-    }
-  );
-}
-function SidebarGroupLabel({
-  className,
-  asChild = false,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "div";
-  return /* @__PURE__ */ jsx(
-    Comp,
-    {
-      "data-slot": "sidebar-group-label",
-      "data-sidebar": "group-label",
-      className: cn(
-        "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:h-4 [&>svg]:w-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-        className
-      ),
-      ...props
-    }
-  );
-}
-function SidebarGroupContent({
-  className,
-  ...props
-}) {
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      "data-slot": "sidebar-group-content",
-      "data-sidebar": "group-content",
-      className: cn("w-full text-sm", className),
-      ...props
-    }
-  );
-}
-function SidebarMenu({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "ul",
-    {
-      "data-slot": "sidebar-menu",
-      "data-sidebar": "menu",
-      className: cn("flex w-full min-w-0 flex-col gap-1", className),
-      ...props
-    }
-  );
-}
-function SidebarMenuItem({ className, ...props }) {
-  return /* @__PURE__ */ jsx(
-    "li",
-    {
-      "data-slot": "sidebar-menu-item",
-      "data-sidebar": "menu-item",
-      className: cn("group/menu-item relative", className),
-      ...props
-    }
-  );
-}
-const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        outline: "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]"
-      },
-      size: {
-        default: "h-8 text-sm",
-        sm: "h-7 text-xs",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!"
-      }
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default"
-    }
-  }
-);
-function SidebarMenuButton({
-  asChild = false,
-  isActive = false,
-  variant = "default",
-  size = "default",
-  tooltip,
-  className,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "button";
-  const { isMobile, state } = useSidebar();
-  const button = /* @__PURE__ */ jsx(
-    Comp,
-    {
-      "data-slot": "sidebar-menu-button",
-      "data-sidebar": "menu-button",
-      "data-size": size,
-      "data-active": isActive,
-      className: cn(sidebarMenuButtonVariants({ variant, size }), className),
-      ...props
-    }
-  );
-  if (!tooltip) {
-    return button;
-  }
-  if (typeof tooltip === "string") {
-    tooltip = {
-      children: tooltip
-    };
-  }
-  return /* @__PURE__ */ jsxs(Tooltip, { children: [
-    /* @__PURE__ */ jsx(TooltipTrigger, { asChild: true, children: button }),
-    /* @__PURE__ */ jsx(
-      TooltipContent,
-      {
-        side: "right",
-        align: "center",
-        hidden: state !== "collapsed" || isMobile,
-        ...tooltip
-      }
-    )
-  ] });
-}
 const translations = {
   en: {
     // Navigation
@@ -4795,6 +4234,154 @@ const useLanguage = () => {
   }
   return context;
 };
+function PWAInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const { t, language } = useLanguage();
+  const [location2] = useLocation();
+  useEffect(() => {
+    if (location2 !== "/trades") {
+      return;
+    }
+    const cardRegistered = localStorage.getItem("card-registered") === "true";
+    if (!cardRegistered) {
+      return;
+    }
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    const isInstalled = localStorage.getItem("pwa-installed") === "true";
+    const isDismissed = localStorage.getItem("pwa-prompt-dismissed") === "true";
+    if (isStandalone) {
+      localStorage.setItem("pwa-installed", "true");
+      return;
+    }
+    if (isInstalled || isDismissed) {
+      return;
+    }
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 3e3);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    const isIOS2 = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if ((isIOS2 || isSafari) && !isStandalone && !isDismissed) {
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 3e3);
+    }
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
+  }, [location2]);
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      setShowPrompt(false);
+      return;
+    }
+    try {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("User accepted the install prompt");
+        localStorage.setItem("pwa-installed", "true");
+      }
+      setDeferredPrompt(null);
+      setShowPrompt(false);
+    } catch (error) {
+      console.error("Error installing PWA:", error);
+    }
+  };
+  const handleDismiss = () => {
+    setShowPrompt(false);
+  };
+  if (!showPrompt) return null;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const benefits = [
+    {
+      icon: /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5" }),
+      title: t("pwa.benefits.notifications.title"),
+      description: t("pwa.benefits.notifications.description")
+    },
+    {
+      icon: /* @__PURE__ */ jsx(Zap, { className: "h-5 w-5" }),
+      title: t("pwa.benefits.fast.title"),
+      description: t("pwa.benefits.fast.description")
+    },
+    {
+      icon: /* @__PURE__ */ jsx(Smartphone, { className: "h-5 w-5" }),
+      title: t("pwa.benefits.access.title"),
+      description: t("pwa.benefits.access.description")
+    }
+  ];
+  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+    /* @__PURE__ */ jsx(
+      "div",
+      {
+        className: "fixed inset-0 z-50 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200",
+        onClick: handleDismiss
+      }
+    ),
+    /* @__PURE__ */ jsx("div", { className: "fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300", children: /* @__PURE__ */ jsx("div", { className: "mx-auto max-w-md px-4 pb-safe", children: /* @__PURE__ */ jsxs("div", { className: "relative overflow-hidden rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50", children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: handleDismiss,
+          className: "absolute right-3 top-3 z-10 rounded-full p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all",
+          "aria-label": "Close",
+          children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
+        }
+      ),
+      /* @__PURE__ */ jsxs("div", { className: "p-5", children: [
+        /* @__PURE__ */ jsxs("div", { className: "mb-5 text-center", children: [
+          /* @__PURE__ */ jsx("div", { className: "mb-3 flex justify-center", children: /* @__PURE__ */ jsx(
+            "img",
+            {
+              src: "/insiderpulse_logo2.png",
+              alt: "InsiderPulse",
+              className: "h-16 w-16 rounded-xl object-contain"
+            }
+          ) }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-gray-900 dark:text-white mb-2", children: t("pwa.prompt.title") }),
+          /* @__PURE__ */ jsx("div", { className: "inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg", children: /* @__PURE__ */ jsx("p", { className: "text-base font-bold text-white", children: t("pwa.prompt.subtitle") }) })
+        ] }),
+        /* @__PURE__ */ jsx("div", { className: "mb-4 space-y-2", children: benefits.map((benefit, index) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            className: "flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5",
+            children: [
+              /* @__PURE__ */ jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-500/20", children: /* @__PURE__ */ jsx("div", { className: "text-blue-600 dark:text-blue-400", children: benefit.icon }) }),
+              /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
+                /* @__PURE__ */ jsx("h4", { className: "text-sm font-medium text-gray-900 dark:text-white", children: benefit.title }),
+                /* @__PURE__ */ jsx("p", { className: "text-xs text-gray-600 dark:text-gray-400 truncate", children: benefit.description })
+              ] })
+            ]
+          },
+          index
+        )) }),
+        isIOS && /* @__PURE__ */ jsxs("div", { className: "mb-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 border-2 border-blue-400 shadow-xl", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-2", children: [
+            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Share2, { className: "h-6 w-6 text-white" }) }),
+            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Plus, { className: "h-6 w-6 text-white" }) })
+          ] }),
+          /* @__PURE__ */ jsx("p", { className: "text-lg font-bold text-white leading-snug", children: t("pwa.ios.instruction") })
+        ] }),
+        !isIOS && /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: handleInstall,
+            className: "w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/40 transition-all hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.02]",
+            children: t("pwa.button.install")
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "absolute -right-16 -top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" }),
+      /* @__PURE__ */ jsx("div", { className: "absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" })
+    ] }) }) })
+  ] });
+}
 const API_BASE_URL = "/api";
 class ApiClient {
   constructor() {
@@ -5143,638 +4730,6 @@ function useAuth() {
   }
   return context;
 }
-function hasPremiumAccess(user) {
-  if (!user) {
-    return false;
-  }
-  const isPro = user.subscriptionTier === "insider" || user.subscriptionTier === "insider_pro";
-  const now = /* @__PURE__ */ new Date();
-  const hasValidStatus = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled";
-  const hasActiveAccess = hasValidStatus && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
-  console.log("[SUBSCRIPTION UTILS] hasPremiumAccess check:", {
-    email: user.email,
-    tier: user.subscriptionTier,
-    status: user.subscriptionStatus,
-    endDate: user.subscriptionEndDate,
-    isPro,
-    hasValidStatus,
-    hasActiveAccess,
-    result: isPro && hasActiveAccess
-  });
-  return isPro && hasActiveAccess;
-}
-function getSubscriptionDisplayName(tier) {
-  if (!tier || tier === "free" || tier === "outsider") {
-    return "Outsider";
-  }
-  if (tier === "insider" || tier === "insider_pro") {
-    return "Insider";
-  }
-  return "Outsider";
-}
-function getStatusDisplayName(status) {
-  switch (status) {
-    case "active":
-      return "활성";
-    case "trialing":
-      return "무료체험 중";
-    case "canceled":
-      return "취소됨 (기간 내 사용 가능)";
-    case "inactive":
-      return "비활성";
-    default:
-      return "비활성";
-  }
-}
-const getMenuItems = () => [
-  {
-    title: "Live Trading",
-    url: "/trades",
-    icon: Activity,
-    key: "live-trades"
-  },
-  {
-    title: "Top Stocks",
-    url: "/ranking",
-    icon: LayoutDashboard,
-    key: "ranking"
-  },
-  {
-    title: "Profile",
-    url: "/profile",
-    icon: User,
-    key: "profile"
-  }
-];
-function AppSidebar() {
-  var _a;
-  const [location2] = useLocation();
-  useLanguage();
-  const { user, logout, isAuthenticated, openAuthModal } = useAuth();
-  const [, navigate2] = useLocation();
-  const [watchlist, setWatchlist] = useState([]);
-  const isPro = user ? hasPremiumAccess(user) : false;
-  useEffect(() => {
-    const loadWatchlist = () => {
-      try {
-        const saved = localStorage.getItem("watchlist");
-        if (saved) {
-          setWatchlist(JSON.parse(saved));
-        }
-      } catch (error) {
-        console.error("Failed to load watchlist:", error);
-      }
-    };
-    loadWatchlist();
-    const handleStorageChange = (e) => {
-      if (e.key === "watchlist" && e.newValue) {
-        try {
-          setWatchlist(JSON.parse(e.newValue));
-        } catch (error) {
-          console.error("Failed to parse watchlist from storage event:", error);
-        }
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    const handleWatchlistUpdate = () => {
-      loadWatchlist();
-    };
-    window.addEventListener("watchlistUpdate", handleWatchlistUpdate);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("watchlistUpdate", handleWatchlistUpdate);
-    };
-  }, []);
-  const handleRemoveFromWatchlist = (ticker) => {
-    const updated = watchlist.filter((item) => item.ticker !== ticker);
-    setWatchlist(updated);
-    localStorage.setItem("watchlist", JSON.stringify(updated));
-    window.dispatchEvent(new Event("watchlistUpdate"));
-  };
-  const handleToggleAlert = (e, ticker, companyName) => {
-    e.stopPropagation();
-    try {
-      const savedAlerts = localStorage.getItem("insiderAlerts");
-      const alerts = savedAlerts ? JSON.parse(savedAlerts) : [];
-      const existingAlertIndex = alerts.findIndex(
-        (alert2) => alert2.ticker === ticker && alert2.type === "COMPANY"
-      );
-      if (existingAlertIndex >= 0) {
-        alerts[existingAlertIndex].isActive = !alerts[existingAlertIndex].isActive;
-        localStorage.setItem("insiderAlerts", JSON.stringify(alerts));
-      } else {
-        const newAlert = {
-          id: Date.now().toString(),
-          type: "COMPANY",
-          condition: "equals",
-          value: companyName,
-          ticker,
-          isActive: true,
-          name: `${companyName} (${ticker}) 거래 알림`,
-          createdAt: (/* @__PURE__ */ new Date()).toISOString()
-        };
-        alerts.push(newAlert);
-        localStorage.setItem("insiderAlerts", JSON.stringify(alerts));
-      }
-      window.dispatchEvent(new Event("watchlistUpdate"));
-    } catch (error) {
-      console.error("Failed to toggle alert:", error);
-    }
-  };
-  const isAlertActive = (ticker) => {
-    try {
-      const savedAlerts = localStorage.getItem("insiderAlerts");
-      if (!savedAlerts) return false;
-      const alerts = JSON.parse(savedAlerts);
-      const alert2 = alerts.find((a) => a.ticker === ticker && a.type === "COMPANY");
-      return (alert2 == null ? void 0 : alert2.isActive) || false;
-    } catch (error) {
-      return false;
-    }
-  };
-  const handleLogout = () => {
-    logout();
-    navigate2("/");
-  };
-  const handleLoginClick = () => {
-    if (openAuthModal) {
-      openAuthModal("login");
-    } else {
-      navigate2("/login");
-    }
-  };
-  const menuItems = getMenuItems();
-  return /* @__PURE__ */ jsxs(Sidebar, { "data-testid": "app-sidebar", className: "bg-[#050505] border-r border-neutral-900", children: [
-    /* @__PURE__ */ jsx(SidebarHeader, { className: "p-6 border-b border-neutral-900", children: /* @__PURE__ */ jsxs("div", { children: [
-      /* @__PURE__ */ jsxs("h1", { className: "text-xl font-black text-neutral-200 tracking-tighter uppercase", children: [
-        "Insider",
-        /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: "Pulse" })
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "flex items-center gap-2 mt-1", children: /* @__PURE__ */ jsx("span", { className: "text-[9px] bg-neutral-900 text-neutral-500 px-1 py-0.5 font-mono", children: "SIGNAL_PRO_V2.4" }) })
-    ] }) }),
-    /* @__PURE__ */ jsxs(SidebarContent, { className: "bg-[#050505]", children: [
-      /* @__PURE__ */ jsxs(SidebarGroup, { children: [
-        /* @__PURE__ */ jsx(SidebarGroupLabel, { className: "text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest", children: "Modules" }),
-        /* @__PURE__ */ jsx(SidebarGroupContent, { className: "px-2", children: /* @__PURE__ */ jsx(SidebarMenu, { children: menuItems.map((item) => /* @__PURE__ */ jsx(SidebarMenuItem, { children: /* @__PURE__ */ jsx(
-          SidebarMenuButton,
-          {
-            asChild: true,
-            "data-active": location2 === item.url,
-            "data-testid": `sidebar-nav-${item.key}`,
-            className: `w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 rounded-none ${location2 === item.url ? "bg-neutral-900/50 text-neutral-200 border-neutral-500" : "text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20"}`,
-            children: /* @__PURE__ */ jsxs(Link, { href: item.url, children: [
-              /* @__PURE__ */ jsx(item.icon, { size: 14 }),
-              /* @__PURE__ */ jsx("span", { className: "uppercase tracking-wide", children: item.title })
-            ] })
-          }
-        ) }, item.key)) }) })
-      ] }),
-      /* @__PURE__ */ jsxs(SidebarGroup, { children: [
-        /* @__PURE__ */ jsxs(SidebarGroupLabel, { className: "text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest mt-8", children: [
-          "Watchlist (",
-          watchlist.length,
-          ")"
-        ] }),
-        /* @__PURE__ */ jsx(SidebarGroupContent, { children: /* @__PURE__ */ jsx("div", { className: "px-4 py-4 border border-neutral-900/50 mx-2 bg-neutral-900/20", children: watchlist.length === 0 ? /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-neutral-600 font-mono text-center", children: [
-          "No stocks tracked.",
-          /* @__PURE__ */ jsx("br", {}),
-          "Add from Live Trading."
-        ] }) : /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-          watchlist.slice(0, 5).map((item) => /* @__PURE__ */ jsxs(
-            "div",
-            {
-              className: "group flex items-center justify-between p-2 hover:bg-neutral-900/40 cursor-pointer transition-colors",
-              onClick: () => navigate2("/trades"),
-              children: [
-                /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
-                  /* @__PURE__ */ jsx("span", { className: "text-xs font-bold text-neutral-300 font-mono", children: item.ticker }),
-                  /* @__PURE__ */ jsx("p", { className: "text-[9px] text-neutral-600 truncate", children: item.companyName })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity", children: [
-                  /* @__PURE__ */ jsx(
-                    "button",
-                    {
-                      className: `p-1 ${isAlertActive(item.ticker) ? "text-emerald-500" : "text-neutral-600 hover:text-neutral-400"}`,
-                      onClick: (e) => handleToggleAlert(e, item.ticker, item.companyName),
-                      children: /* @__PURE__ */ jsx(Bell, { size: 10, className: isAlertActive(item.ticker) ? "fill-current" : "" })
-                    }
-                  ),
-                  /* @__PURE__ */ jsx(
-                    "button",
-                    {
-                      className: "p-1 text-neutral-600 hover:text-rose-500",
-                      onClick: (e) => {
-                        e.stopPropagation();
-                        handleRemoveFromWatchlist(item.ticker);
-                      },
-                      children: /* @__PURE__ */ jsx(X, { size: 10 })
-                    }
-                  )
-                ] })
-              ]
-            },
-            item.ticker
-          )),
-          watchlist.length > 5 && /* @__PURE__ */ jsxs("p", { className: "text-[9px] text-neutral-600 text-center mt-2", children: [
-            "+",
-            watchlist.length - 5,
-            " more"
-          ] })
-        ] }) }) })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs(SidebarFooter, { className: "p-4 border-t border-neutral-900 bg-[#080808]", children: [
-      isAuthenticated && user ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 px-3 py-2 mb-2 border border-neutral-900 bg-[#050505]", children: [
-          /* @__PURE__ */ jsx("div", { className: `w-2 h-2 rounded-full ${isPro ? "bg-emerald-900" : "bg-amber-900"}` }),
-          /* @__PURE__ */ jsxs("div", { className: "overflow-hidden flex-1", children: [
-            /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-400 truncate font-mono", children: ((_a = user.email) == null ? void 0 : _a.split("@")[0]) || "USER" }),
-            /* @__PURE__ */ jsx("div", { className: `text-[9px] uppercase font-bold ${isPro ? "text-emerald-700" : "text-amber-700"}`, children: isPro ? "INSIDER PRO" : "OUTSIDER" })
-          ] })
-        ] }),
-        !isPro && /* @__PURE__ */ jsx(
-          Button,
-          {
-            className: "w-full mb-3 bg-amber-600 hover:bg-amber-500 text-black text-[10px] font-bold uppercase tracking-widest py-2",
-            asChild: true,
-            "data-testid": "button-upgrade-premium",
-            children: /* @__PURE__ */ jsxs(Link, { href: "/premium-checkout", children: [
-              /* @__PURE__ */ jsx(Crown, { size: 12, className: "mr-2" }),
-              "Upgrade to Insider"
-            ] })
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-2 text-neutral-600 mt-3", children: [
-          /* @__PURE__ */ jsx(Link, { href: "/settings", children: /* @__PURE__ */ jsx(
-            "button",
-            {
-              className: `hover:text-neutral-300 transition-colors ${location2 === "/settings" ? "text-white" : ""}`,
-              children: /* @__PURE__ */ jsx(Settings$1, { size: 14 })
-            }
-          ) }),
-          /* @__PURE__ */ jsx("button", { onClick: handleLogout, className: "hover:text-rose-500 transition-colors", children: /* @__PURE__ */ jsx(Power, { size: 14 }) })
-        ] })
-      ] }) : /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-2", children: [
-        /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-500 font-mono uppercase", children: "Guest Access" }),
-        /* @__PURE__ */ jsxs(
-          "button",
-          {
-            onClick: handleLoginClick,
-            className: "flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wide border border-emerald-900/30 bg-emerald-900/10 px-3 py-1.5 rounded hover:bg-emerald-900/20 transition-colors",
-            children: [
-              /* @__PURE__ */ jsx(LogIn, { size: 12 }),
-              "Login"
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "mt-3 flex items-center gap-2 text-[9px] text-neutral-700 px-2", children: [
-        /* @__PURE__ */ jsx("div", { className: "w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse" }),
-        /* @__PURE__ */ jsx("span", { className: "font-mono uppercase tracking-wider", children: "Live feed active" })
-      ] })
-    ] })
-  ] });
-}
-function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const shouldBeDark = savedTheme === "dark" || !savedTheme && systemPrefersDark;
-    setIsDark(shouldBeDark);
-    updateTheme(shouldBeDark);
-  }, []);
-  const updateTheme = (dark) => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-  const toggleTheme = () => {
-    const newTheme = !isDark;
-    console.log("Theme toggled to:", newTheme ? "dark" : "light");
-    setIsDark(newTheme);
-    updateTheme(newTheme);
-    localStorage.setItem("theme", newTheme ? "dark" : "light");
-  };
-  return /* @__PURE__ */ jsxs(
-    Button,
-    {
-      variant: "ghost",
-      size: "icon",
-      onClick: toggleTheme,
-      className: "h-9 w-9",
-      "data-testid": "button-theme-toggle",
-      children: [
-        isDark ? /* @__PURE__ */ jsx(Sun, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx(Moon, { className: "h-4 w-4" }),
-        /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Toggle theme" })
-      ]
-    }
-  );
-}
-const DropdownMenu = DropdownMenuPrimitive.Root;
-const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
-const DropdownMenuSubTrigger = React.forwardRef(({ className, inset, children, ...props }, ref) => /* @__PURE__ */ jsxs(
-  DropdownMenuPrimitive.SubTrigger,
-  {
-    ref,
-    className: cn(
-      "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-      inset && "pl-8",
-      className
-    ),
-    ...props,
-    children: [
-      children,
-      /* @__PURE__ */ jsx(ChevronRight, { className: "ml-auto" })
-    ]
-  }
-));
-DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;
-const DropdownMenuSubContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  DropdownMenuPrimitive.SubContent,
-  {
-    ref,
-    className: cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
-      className
-    ),
-    ...props
-  }
-));
-DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
-const DropdownMenuContent = React.forwardRef(({ className, sideOffset = 4, ...props }, ref) => /* @__PURE__ */ jsx(DropdownMenuPrimitive.Portal, { children: /* @__PURE__ */ jsx(
-  DropdownMenuPrimitive.Content,
-  {
-    ref,
-    sideOffset,
-    className: cn(
-      "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
-      className
-    ),
-    ...props
-  }
-) }));
-DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
-const DropdownMenuItem = React.forwardRef(({ className, inset, ...props }, ref) => /* @__PURE__ */ jsx(
-  DropdownMenuPrimitive.Item,
-  {
-    ref,
-    className: cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-      inset && "pl-8",
-      className
-    ),
-    ...props
-  }
-));
-DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
-const DropdownMenuCheckboxItem = React.forwardRef(({ className, children, checked, ...props }, ref) => /* @__PURE__ */ jsxs(
-  DropdownMenuPrimitive.CheckboxItem,
-  {
-    ref,
-    className: cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    ),
-    checked,
-    ...props,
-    children: [
-      /* @__PURE__ */ jsx("span", { className: "absolute left-2 flex h-3.5 w-3.5 items-center justify-center", children: /* @__PURE__ */ jsx(DropdownMenuPrimitive.ItemIndicator, { children: /* @__PURE__ */ jsx(Check, { className: "h-4 w-4" }) }) }),
-      children
-    ]
-  }
-));
-DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
-const DropdownMenuRadioItem = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(
-  DropdownMenuPrimitive.RadioItem,
-  {
-    ref,
-    className: cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    ),
-    ...props,
-    children: [
-      /* @__PURE__ */ jsx("span", { className: "absolute left-2 flex h-3.5 w-3.5 items-center justify-center", children: /* @__PURE__ */ jsx(DropdownMenuPrimitive.ItemIndicator, { children: /* @__PURE__ */ jsx(Circle, { className: "h-2 w-2 fill-current" }) }) }),
-      children
-    ]
-  }
-));
-DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
-const DropdownMenuLabel = React.forwardRef(({ className, inset, ...props }, ref) => /* @__PURE__ */ jsx(
-  DropdownMenuPrimitive.Label,
-  {
-    ref,
-    className: cn(
-      "px-2 py-1.5 text-sm font-semibold",
-      inset && "pl-8",
-      className
-    ),
-    ...props
-  }
-));
-DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName;
-const DropdownMenuSeparator = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  DropdownMenuPrimitive.Separator,
-  {
-    ref,
-    className: cn("-mx-1 my-1 h-px bg-muted", className),
-    ...props
-  }
-));
-DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
-const languageOptions = [
-  { value: "en", label: "English", flag: "🇺🇸" },
-  { value: "ko", label: "한국어", flag: "🇰🇷" },
-  { value: "ja", label: "日本語", flag: "🇯🇵" },
-  { value: "zh", label: "中文", flag: "🇨🇳" }
-];
-function LanguageSelector() {
-  const { language, setLanguage } = useLanguage();
-  const currentLanguage = languageOptions.find((opt) => opt.value === language);
-  const handleLanguageChange = (newLanguage) => {
-    console.log("Language changed to:", newLanguage);
-    setLanguage(newLanguage);
-  };
-  return /* @__PURE__ */ jsxs(DropdownMenu, { children: [
-    /* @__PURE__ */ jsx(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ jsxs(
-      Button,
-      {
-        variant: "ghost",
-        size: "icon",
-        className: "h-9 w-9",
-        "data-testid": "button-language-selector",
-        children: [
-          /* @__PURE__ */ jsx("span", { className: "text-lg", role: "img", "aria-label": currentLanguage == null ? void 0 : currentLanguage.label, children: (currentLanguage == null ? void 0 : currentLanguage.flag) || "🌐" }),
-          /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Select language" })
-        ]
-      }
-    ) }),
-    /* @__PURE__ */ jsx(DropdownMenuContent, { align: "end", className: "w-40", children: languageOptions.map((option) => /* @__PURE__ */ jsxs(
-      DropdownMenuItem,
-      {
-        onClick: () => handleLanguageChange(option.value),
-        className: `flex items-center gap-3 cursor-pointer ${language === option.value ? "bg-accent" : ""}`,
-        "data-testid": `language-option-${option.value}`,
-        children: [
-          /* @__PURE__ */ jsx("span", { className: "text-lg", role: "img", "aria-label": option.label, children: option.flag }),
-          /* @__PURE__ */ jsx("span", { className: "font-medium", children: option.label })
-        ]
-      },
-      option.value
-    )) })
-  ] });
-}
-function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showPrompt, setShowPrompt] = useState(false);
-  const { t, language } = useLanguage();
-  const [location2] = useLocation();
-  useEffect(() => {
-    if (location2 !== "/trades") {
-      return;
-    }
-    const cardRegistered = localStorage.getItem("card-registered") === "true";
-    if (!cardRegistered) {
-      return;
-    }
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    const isInstalled = localStorage.getItem("pwa-installed") === "true";
-    const isDismissed = localStorage.getItem("pwa-prompt-dismissed") === "true";
-    if (isStandalone) {
-      localStorage.setItem("pwa-installed", "true");
-      return;
-    }
-    if (isInstalled || isDismissed) {
-      return;
-    }
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setTimeout(() => {
-        setShowPrompt(true);
-      }, 3e3);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    const isIOS2 = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if ((isIOS2 || isSafari) && !isStandalone && !isDismissed) {
-      setTimeout(() => {
-        setShowPrompt(true);
-      }, 3e3);
-    }
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
-  }, [location2]);
-  const handleInstall = async () => {
-    if (!deferredPrompt) {
-      setShowPrompt(false);
-      return;
-    }
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        console.log("User accepted the install prompt");
-        localStorage.setItem("pwa-installed", "true");
-      }
-      setDeferredPrompt(null);
-      setShowPrompt(false);
-    } catch (error) {
-      console.error("Error installing PWA:", error);
-    }
-  };
-  const handleDismiss = () => {
-    setShowPrompt(false);
-  };
-  if (!showPrompt) return null;
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const benefits = [
-    {
-      icon: /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5" }),
-      title: t("pwa.benefits.notifications.title"),
-      description: t("pwa.benefits.notifications.description")
-    },
-    {
-      icon: /* @__PURE__ */ jsx(Zap, { className: "h-5 w-5" }),
-      title: t("pwa.benefits.fast.title"),
-      description: t("pwa.benefits.fast.description")
-    },
-    {
-      icon: /* @__PURE__ */ jsx(Smartphone, { className: "h-5 w-5" }),
-      title: t("pwa.benefits.access.title"),
-      description: t("pwa.benefits.access.description")
-    }
-  ];
-  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
-    /* @__PURE__ */ jsx(
-      "div",
-      {
-        className: "fixed inset-0 z-50 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200",
-        onClick: handleDismiss
-      }
-    ),
-    /* @__PURE__ */ jsx("div", { className: "fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300", children: /* @__PURE__ */ jsx("div", { className: "mx-auto max-w-md px-4 pb-safe", children: /* @__PURE__ */ jsxs("div", { className: "relative overflow-hidden rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50", children: [
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          onClick: handleDismiss,
-          className: "absolute right-3 top-3 z-10 rounded-full p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all",
-          "aria-label": "Close",
-          children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
-        }
-      ),
-      /* @__PURE__ */ jsxs("div", { className: "p-5", children: [
-        /* @__PURE__ */ jsxs("div", { className: "mb-5 text-center", children: [
-          /* @__PURE__ */ jsx("div", { className: "mb-3 flex justify-center", children: /* @__PURE__ */ jsx(
-            "img",
-            {
-              src: "/insiderpulse_logo2.png",
-              alt: "InsiderPulse",
-              className: "h-16 w-16 rounded-xl object-contain"
-            }
-          ) }),
-          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-gray-900 dark:text-white mb-2", children: t("pwa.prompt.title") }),
-          /* @__PURE__ */ jsx("div", { className: "inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg", children: /* @__PURE__ */ jsx("p", { className: "text-base font-bold text-white", children: t("pwa.prompt.subtitle") }) })
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "mb-4 space-y-2", children: benefits.map((benefit, index) => /* @__PURE__ */ jsxs(
-          "div",
-          {
-            className: "flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5",
-            children: [
-              /* @__PURE__ */ jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-500/20", children: /* @__PURE__ */ jsx("div", { className: "text-blue-600 dark:text-blue-400", children: benefit.icon }) }),
-              /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
-                /* @__PURE__ */ jsx("h4", { className: "text-sm font-medium text-gray-900 dark:text-white", children: benefit.title }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs text-gray-600 dark:text-gray-400 truncate", children: benefit.description })
-              ] })
-            ]
-          },
-          index
-        )) }),
-        isIOS && /* @__PURE__ */ jsxs("div", { className: "mb-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 border-2 border-blue-400 shadow-xl", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-2", children: [
-            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Share2, { className: "h-6 w-6 text-white" }) }),
-            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Plus, { className: "h-6 w-6 text-white" }) })
-          ] }),
-          /* @__PURE__ */ jsx("p", { className: "text-lg font-bold text-white leading-snug", children: t("pwa.ios.instruction") })
-        ] }),
-        !isIOS && /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: handleInstall,
-            className: "w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/40 transition-all hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.02]",
-            children: t("pwa.button.install")
-          }
-        )
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "absolute -right-16 -top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" }),
-      /* @__PURE__ */ jsx("div", { className: "absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" })
-    ] }) }) })
-  ] });
-}
 const AccessContext = createContext(void 0);
 function AccessProvider({ children }) {
   const [accessLevel, setAccessLevel] = useState(null);
@@ -5885,462 +4840,6 @@ function useAccess() {
     throw new Error("useAccess must be used within an AccessProvider");
   }
   return context;
-}
-const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-);
-const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  LabelPrimitive.Root,
-  {
-    ref,
-    className: cn(labelVariants(), className),
-    ...props
-  }
-));
-Label.displayName = LabelPrimitive.Root.displayName;
-const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
-  {
-    variants: {
-      variant: {
-        default: "bg-background text-foreground",
-        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive"
-      }
-    },
-    defaultVariants: {
-      variant: "default"
-    }
-  }
-);
-const Alert = React.forwardRef(({ className, variant, ...props }, ref) => /* @__PURE__ */ jsx(
-  "div",
-  {
-    ref,
-    role: "alert",
-    className: cn(alertVariants({ variant }), className),
-    ...props
-  }
-));
-Alert.displayName = "Alert";
-const AlertTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "h5",
-  {
-    ref,
-    className: cn("mb-1 font-medium leading-none tracking-tight", className),
-    ...props
-  }
-));
-AlertTitle.displayName = "AlertTitle";
-const AlertDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  "div",
-  {
-    ref,
-    className: cn("text-sm [&_p]:leading-relaxed", className),
-    ...props
-  }
-));
-AlertDescription.displayName = "AlertDescription";
-function AuthModal() {
-  const [, navigate2] = useLocation();
-  const { showAuthModal, authModalMode, login, closeAuthModal } = useAuth();
-  const { t } = useLanguage();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [mode, setMode] = useState(authModalMode);
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const inputRefs = useRef([]);
-  useEffect(() => {
-    setMode(authModalMode);
-  }, [authModalMode]);
-  useEffect(() => {
-    if (!showAuthModal) {
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setError("");
-      setCode(["", "", "", "", "", ""]);
-      setVerificationSuccess(false);
-    }
-  }, [showAuthModal]);
-  useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1e3);
-      return () => clearTimeout(timer);
-    }
-  }, [resendCooldown]);
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!email || !password) {
-      setError(t("auth.login.errorRequired"));
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await apiClient.login(email, password);
-      if (response.success && response.user && response.token) {
-        login(response.user, response.token);
-        closeAuthModal();
-      } else {
-        setError(response.message || t("auth.login.errorFailed"));
-      }
-    } catch (err) {
-      setError(err.message || t("auth.login.errorFailed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    setError("");
-    if (!email || !password || !confirmPassword) {
-      setError(t("auth.signup.errorAllFields"));
-      return;
-    }
-    if (password.length < 8) {
-      setError(t("auth.signup.errorPasswordLength"));
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t("auth.signup.errorPasswordMatch"));
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError(t("auth.signup.errorInvalidEmail"));
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await apiClient.signup(email, password);
-      if (response.success) {
-        setMode("verify");
-        setCode(["", "", "", "", "", ""]);
-        setTimeout(() => {
-          var _a;
-          (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
-        }, 100);
-      } else {
-        setError(response.message || t("auth.signup.errorFailed"));
-      }
-    } catch (err) {
-      setError(err.message || t("auth.signup.errorFailed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleCodeChange = (index, value) => {
-    var _a;
-    if (!/^\d*$/.test(value)) return;
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
-    if (value && index < 5) {
-      (_a = inputRefs.current[index + 1]) == null ? void 0 : _a.focus();
-    }
-  };
-  const handleCodeKeyDown = (index, e) => {
-    var _a;
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      (_a = inputRefs.current[index - 1]) == null ? void 0 : _a.focus();
-    }
-  };
-  const handleCodePaste = (e) => {
-    var _a;
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    const newCode = [...code];
-    pastedData.split("").forEach((digit, index) => {
-      if (index < 6) {
-        newCode[index] = digit;
-      }
-    });
-    setCode(newCode);
-    const nextEmptyIndex = newCode.findIndex((c) => !c);
-    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
-    (_a = inputRefs.current[focusIndex]) == null ? void 0 : _a.focus();
-  };
-  const handleVerifyCode = async (e) => {
-    e == null ? void 0 : e.preventDefault();
-    setError("");
-    const codeString = code.join("");
-    if (codeString.length !== 6) {
-      setError(t("auth.verifyCode.errorEnterAll"));
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/auth/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: codeString })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setVerificationSuccess(true);
-        setTimeout(async () => {
-          try {
-            const loginResponse = await apiClient.login(email, password);
-            if (loginResponse.success && loginResponse.user && loginResponse.token) {
-              login(loginResponse.user, loginResponse.token);
-              closeAuthModal();
-            }
-          } catch (err) {
-            console.error("Auto-login failed:", err);
-            closeAuthModal();
-          }
-        }, 1500);
-      } else {
-        setError(data.message || t("auth.verifyCode.errorFailed"));
-      }
-    } catch (err) {
-      setError(err.message || t("auth.verifyCode.errorFailed"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleResendCode = async () => {
-    var _a;
-    if (resendCooldown > 0) return;
-    setIsResending(true);
-    setError("");
-    try {
-      const response = await fetch("/api/auth/resend-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setResendCooldown(60);
-        setCode(["", "", "", "", "", ""]);
-        (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
-      } else {
-        setError(data.message || t("auth.verifyCode.errorResend"));
-      }
-    } catch (err) {
-      setError(err.message || t("auth.verifyCode.errorResend"));
-    } finally {
-      setIsResending(false);
-    }
-  };
-  useEffect(() => {
-    if (mode === "verify" && code.every((digit) => digit !== "") && !isLoading) {
-      handleVerifyCode();
-    }
-  }, [code, mode, isLoading]);
-  if (!showAuthModal) return null;
-  return /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6 relative", children: [
-    /* @__PURE__ */ jsx(
-      "button",
-      {
-        onClick: closeAuthModal,
-        className: "absolute top-4 right-4 text-neutral-600 hover:text-white transition-colors",
-        children: /* @__PURE__ */ jsx(X, { className: "h-5 w-5" })
-      }
-    ),
-    verificationSuccess ? /* @__PURE__ */ jsxs("div", { className: "space-y-6 py-12 text-center", children: [
-      /* @__PURE__ */ jsx("div", { className: "flex justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-16 h-16 rounded-full bg-emerald-900/50 border border-emerald-900 flex items-center justify-center", children: /* @__PURE__ */ jsx(CheckCircle, { className: "h-8 w-8 text-emerald-500" }) }) }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 mb-2 uppercase tracking-wide", children: t("auth.verifyCode.successTitle") }),
-        /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-sm font-mono", children: t("auth.verifyCode.successDesc") })
-      ] })
-    ] }) : mode === "verify" ? (
-      /* Verification Code View */
-      /* @__PURE__ */ jsxs(Fragment$1, { children: [
-        /* @__PURE__ */ jsxs("div", { className: "text-center mb-8", children: [
-          /* @__PURE__ */ jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 mb-4", children: /* @__PURE__ */ jsx(Mail, { className: "h-8 w-8 text-emerald-600" }) }),
-          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide", children: t("auth.verifyCode.title") }),
-          /* @__PURE__ */ jsxs("p", { className: "text-sm text-neutral-500 font-mono", children: [
-            /* @__PURE__ */ jsx("strong", { className: "text-neutral-300", children: email }),
-            t("auth.verifyCode.subtitle"),
-            /* @__PURE__ */ jsx("br", {}),
-            t("auth.verifyCode.enterCode")
-          ] })
-        ] }),
-        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
-          /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
-          /* @__PURE__ */ jsx(AlertDescription, { children: error })
-        ] }),
-        /* @__PURE__ */ jsxs("form", { onSubmit: handleVerifyCode, className: "space-y-6", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex justify-center gap-2", children: code.map((digit, index) => /* @__PURE__ */ jsx(
-            "input",
-            {
-              ref: (el) => inputRefs.current[index] = el,
-              type: "text",
-              inputMode: "numeric",
-              pattern: "\\d*",
-              maxLength: 1,
-              value: digit,
-              onChange: (e) => handleCodeChange(index, e.target.value),
-              onKeyDown: (e) => handleCodeKeyDown(index, e),
-              onPaste: handleCodePaste,
-              disabled: isLoading,
-              className: "w-12 h-14 text-center text-2xl font-bold font-mono border border-neutral-800 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#0a0a0a] text-neutral-200",
-              autoFocus: index === 0
-            },
-            index
-          )) }),
-          /* @__PURE__ */ jsx("p", { className: "text-center text-sm text-neutral-600 font-mono", children: t("auth.verifyCode.codeValid") }),
-          /* @__PURE__ */ jsx(
-            Button,
-            {
-              type: "submit",
-              className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs",
-              disabled: isLoading || code.join("").length !== 6,
-              children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
-                t("auth.verifyCode.verifying")
-              ] }) : t("auth.verifyCode.verify")
-            }
-          ),
-          /* @__PURE__ */ jsx("div", { className: "text-center", children: /* @__PURE__ */ jsx(
-            "button",
-            {
-              type: "button",
-              onClick: handleResendCode,
-              disabled: resendCooldown > 0 || isResending,
-              className: "text-sm text-emerald-600 hover:text-emerald-500 font-medium disabled:text-neutral-600 disabled:cursor-not-allowed font-mono",
-              children: isResending ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsx(Loader2, { className: "inline h-3 w-3 animate-spin mr-1" }),
-                t("auth.verifyCode.resending")
-              ] }) : resendCooldown > 0 ? t("auth.verifyCode.resendIn", { seconds: resendCooldown }) : t("auth.verifyCode.resendCode")
-            }
-          ) }),
-          /* @__PURE__ */ jsx("div", { className: "text-center pt-4 border-t border-neutral-800", children: /* @__PURE__ */ jsxs(
-            "button",
-            {
-              type: "button",
-              onClick: () => setMode("signup"),
-              className: "text-sm text-neutral-500 hover:text-neutral-300 inline-flex items-center gap-1 font-mono",
-              children: [
-                /* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }),
-                t("auth.verifyCode.backToSignup")
-              ]
-            }
-          ) })
-        ] })
-      ] })
-    ) : (
-      /* Login/Signup Form View */
-      /* @__PURE__ */ jsxs(Fragment$1, { children: [
-        /* @__PURE__ */ jsxs("div", { className: "mb-8 text-center", children: [
-          /* @__PURE__ */ jsx("div", { className: "w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6", children: /* @__PURE__ */ jsx(Lock, { className: "h-6 w-6 text-emerald-600" }) }),
-          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide", children: mode === "login" ? t("auth.login.title") : t("auth.signup.title") }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 font-mono", children: mode === "login" ? t("auth.login.subtitle") : t("auth.signup.subtitle") })
-        ] }),
-        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
-          /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
-          /* @__PURE__ */ jsx(AlertDescription, { children: error })
-        ] }),
-        /* @__PURE__ */ jsxs("form", { onSubmit: mode === "login" ? handleLogin : handleSignup, className: "space-y-6", children: [
-          /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsx(Label, { htmlFor: "email", className: "text-neutral-400 text-xs uppercase tracking-wider", children: t("auth.login.email") }),
-            /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-              /* @__PURE__ */ jsx(Globe, { size: 14, className: "absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" }),
-              /* @__PURE__ */ jsx(
-                Input,
-                {
-                  id: "email",
-                  type: "email",
-                  placeholder: t("auth.login.emailPlaceholder"),
-                  value: email,
-                  onChange: (e) => setEmail(e.target.value),
-                  disabled: isLoading,
-                  className: "bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
-                }
-              )
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ jsx(Label, { htmlFor: "password", className: "text-neutral-400 text-xs uppercase tracking-wider", children: t("auth.login.password") }),
-              mode === "login" && /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "text-[10px] text-neutral-500 hover:text-neutral-300",
-                  onClick: () => {
-                    closeAuthModal();
-                    navigate2("/forgot-password");
-                  },
-                  children: t("auth.login.forgotPassword")
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-              /* @__PURE__ */ jsx(Lock, { size: 14, className: "absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" }),
-              /* @__PURE__ */ jsx(
-                Input,
-                {
-                  id: "password",
-                  type: "password",
-                  placeholder: t("auth.login.passwordPlaceholder"),
-                  value: password,
-                  onChange: (e) => setPassword(e.target.value),
-                  disabled: isLoading,
-                  className: "bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
-                }
-              )
-            ] })
-          ] }),
-          mode === "signup" && /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsx(Label, { htmlFor: "confirmPassword", className: "text-neutral-400 text-xs uppercase tracking-wider", children: t("auth.signup.confirmPassword") }),
-            /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-              /* @__PURE__ */ jsx(Lock, { size: 14, className: "absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" }),
-              /* @__PURE__ */ jsx(
-                Input,
-                {
-                  id: "confirmPassword",
-                  type: "password",
-                  placeholder: t("auth.login.passwordPlaceholder"),
-                  value: confirmPassword,
-                  onChange: (e) => setConfirmPassword(e.target.value),
-                  disabled: isLoading,
-                  className: "bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
-                }
-              )
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx(
-            Button,
-            {
-              type: "submit",
-              className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs mt-2",
-              disabled: isLoading,
-              children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
-                mode === "login" ? t("auth.login.signingIn") : t("auth.signup.creating")
-              ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                mode === "login" ? t("auth.login.button") : t("auth.signup.button"),
-                /* @__PURE__ */ jsx(ArrowRight, { size: 14, className: "ml-2" })
-              ] })
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "mt-8 flex justify-between items-center border-t border-neutral-800 pt-6", children: [
-          /* @__PURE__ */ jsx(
-            "button",
-            {
-              onClick: () => setMode(mode === "login" ? "signup" : "login"),
-              className: "text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold",
-              children: mode === "login" ? t("auth.login.noAccount") : t("auth.signup.haveAccount")
-            }
-          ),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-neutral-700", children: [
-            /* @__PURE__ */ jsx(ShieldCheck, { size: 12 }),
-            /* @__PURE__ */ jsx("span", { className: "text-[9px] font-mono", children: "AES-256" })
-          ] })
-        ] })
-      ] })
-    )
-  ] }) });
 }
 function LanguageSelection({ onLanguageSelected }) {
   const { setLanguage } = useLanguage();
@@ -6511,6 +5010,69 @@ function DashboardStats({ stats }) {
     ] }, index);
   }) });
 }
+const Input = React.forwardRef(
+  ({ className, type, ...props }, ref) => {
+    return /* @__PURE__ */ jsx(
+      "input",
+      {
+        type,
+        className: cn(
+          "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className
+        ),
+        ref,
+        ...props
+      }
+    );
+  }
+);
+Input.displayName = "Input";
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover-elevate active-elevate-2",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground border border-primary-border",
+        destructive: "bg-destructive text-destructive-foreground border border-destructive-border",
+        outline: (
+          // Shows the background color of whatever card / sidebar / accent background it is inside of.
+          // Inherits the current text color.
+          " border [border-color:var(--button-outline)]  shadow-xs active:shadow-none "
+        ),
+        secondary: "border bg-secondary text-secondary-foreground border border-secondary-border ",
+        // Add a transparent border so that when someone toggles a border on later, it doesn't shift layout/size.
+        ghost: "border border-transparent"
+      },
+      // Heights are set as "min" heights, because sometimes Ai will place large amount of content
+      // inside buttons. With a min-height they will look appropriate with small amounts of content,
+      // but will expand to fit large amounts of content.
+      size: {
+        default: "min-h-9 px-4 py-2",
+        sm: "min-h-8 rounded-md px-3 text-xs",
+        lg: "min-h-10 rounded-md px-8",
+        icon: "h-9 w-9"
+      }
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default"
+    }
+  }
+);
+const Button = React.forwardRef(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return /* @__PURE__ */ jsx(
+      Comp,
+      {
+        className: cn(buttonVariants({ variant, size, className })),
+        ref,
+        ...props
+      }
+    );
+  }
+);
+Button.displayName = "Button";
 const badgeVariants = cva(
   // Whitespace-nowrap: Badges should never wrap.
   "whitespace-nowrap inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover-elevate ",
@@ -7411,7 +5973,7 @@ function TradeDetailModal({
                             }
                           ),
                           /* @__PURE__ */ jsx(
-                            Tooltip$1,
+                            Tooltip,
                             {
                               contentStyle: {
                                 backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -7912,6 +6474,48 @@ function TradeDetailModal({
     }
   );
 }
+const alertVariants = cva(
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  {
+    variants: {
+      variant: {
+        default: "bg-background text-foreground",
+        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive"
+      }
+    },
+    defaultVariants: {
+      variant: "default"
+    }
+  }
+);
+const Alert = React.forwardRef(({ className, variant, ...props }, ref) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    ref,
+    role: "alert",
+    className: cn(alertVariants({ variant }), className),
+    ...props
+  }
+));
+Alert.displayName = "Alert";
+const AlertTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "h5",
+  {
+    ref,
+    className: cn("mb-1 font-medium leading-none tracking-tight", className),
+    ...props
+  }
+));
+AlertTitle.displayName = "AlertTitle";
+const AlertDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    ref,
+    className: cn("text-sm [&_p]:leading-relaxed", className),
+    ...props
+  }
+));
+AlertDescription.displayName = "AlertDescription";
 function useWebSocket(url) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState(null);
@@ -8539,6 +7143,35 @@ function Dashboard() {
     )
   ] }) });
 }
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+);
+const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  LabelPrimitive.Root,
+  {
+    ref,
+    className: cn(labelVariants(), className),
+    ...props
+  }
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+const Separator = React.forwardRef(
+  ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
+    SeparatorPrimitive.Root,
+    {
+      ref,
+      decorative,
+      orientation,
+      className: cn(
+        "shrink-0 bg-border",
+        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+        className
+      ),
+      ...props
+    }
+  )
+);
+Separator.displayName = SeparatorPrimitive.Root.displayName;
 const Switch = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   SwitchPrimitives.Root,
   {
@@ -8778,7 +7411,7 @@ function Settings() {
       document.documentElement.classList.remove("dark");
     }
   };
-  const languageOptions2 = [
+  const languageOptions = [
     { value: "en", label: t("settings.language.english"), flag: "🇺🇸" },
     { value: "ko", label: t("settings.language.korean"), flag: "🇰🇷" },
     { value: "ja", label: t("settings.language.japanese"), flag: "🇯🇵" },
@@ -8849,7 +7482,7 @@ function Settings() {
         /* @__PURE__ */ jsx(Label, { htmlFor: "language-select", children: t("placeholder.preferredLanguage") }),
         /* @__PURE__ */ jsxs(Select, { value: language, onValueChange: (value) => setLanguage(value), children: [
           /* @__PURE__ */ jsx(SelectTrigger, { id: "language-select", "data-testid": "select-language", children: /* @__PURE__ */ jsx(SelectValue, {}) }),
-          /* @__PURE__ */ jsx(SelectContent, { children: languageOptions2.map((option) => /* @__PURE__ */ jsx(SelectItem, { value: option.value, "data-testid": `option-language-${option.value}`, children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(SelectContent, { children: languageOptions.map((option) => /* @__PURE__ */ jsx(SelectItem, { value: option.value, "data-testid": `option-language-${option.value}`, children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx("span", { children: option.flag }),
             /* @__PURE__ */ jsx("span", { children: option.label })
           ] }) }, option.value)) })
@@ -8997,6 +7630,18 @@ function Settings() {
     /* @__PURE__ */ jsx("div", { className: "flex justify-end", children: /* @__PURE__ */ jsx(Button, { "data-testid": "button-save-settings", children: t("general.save") }) })
   ] });
 }
+function Skeleton({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx(
+    "div",
+    {
+      className: cn("animate-pulse rounded-md bg-muted", className),
+      ...props
+    }
+  );
+}
 const PriceComparisonChart = memo(function PriceComparisonChart2({
   tradePrice,
   currentPrice,
@@ -9063,7 +7708,7 @@ const PriceComparisonChart = memo(function PriceComparisonChart2({
             className: "text-muted-foreground"
           }
         ),
-        /* @__PURE__ */ jsx(Tooltip$1, { content: /* @__PURE__ */ jsx(CustomTooltip, {}) }),
+        /* @__PURE__ */ jsx(Tooltip, { content: /* @__PURE__ */ jsx(CustomTooltip, {}) }),
         /* @__PURE__ */ jsx(
           Line,
           {
@@ -9318,7 +7963,7 @@ const StockHistoryChart = memo(function StockHistoryChart2({
             tickFormatter: (value) => `$${value.toFixed(2)}`
           }
         ),
-        /* @__PURE__ */ jsx(Tooltip$1, { content: /* @__PURE__ */ jsx(CustomTooltip, {}) }),
+        /* @__PURE__ */ jsx(Tooltip, { content: /* @__PURE__ */ jsx(CustomTooltip, {}) }),
         /* @__PURE__ */ jsx(
           Line,
           {
@@ -9794,7 +8439,7 @@ function Analytics() {
               }
             ),
             /* @__PURE__ */ jsx(
-              Tooltip$1,
+              Tooltip,
               {
                 formatter: (value, name) => {
                   var _a;
@@ -9833,7 +8478,7 @@ function Analytics() {
           /* @__PURE__ */ jsx(XAxis, { dataKey: "month", tick: { fontSize: 12 } }),
           /* @__PURE__ */ jsx(YAxis, { tick: { fontSize: 12 } }),
           /* @__PURE__ */ jsx(
-            Tooltip$1,
+            Tooltip,
             {
               formatter: (value, name) => [
                 `${value} trades`,
@@ -10443,6 +9088,49 @@ function TrialExpiredBanner({ onUpgrade }) {
       }
     )
   ] }) });
+}
+function hasPremiumAccess(user) {
+  if (!user) {
+    return false;
+  }
+  const isPro = user.subscriptionTier === "insider" || user.subscriptionTier === "insider_pro";
+  const now = /* @__PURE__ */ new Date();
+  const hasValidStatus = user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing" || user.subscriptionStatus === "canceled";
+  const hasActiveAccess = hasValidStatus && (!user.subscriptionEndDate || new Date(user.subscriptionEndDate) > now);
+  console.log("[SUBSCRIPTION UTILS] hasPremiumAccess check:", {
+    email: user.email,
+    tier: user.subscriptionTier,
+    status: user.subscriptionStatus,
+    endDate: user.subscriptionEndDate,
+    isPro,
+    hasValidStatus,
+    hasActiveAccess,
+    result: isPro && hasActiveAccess
+  });
+  return isPro && hasActiveAccess;
+}
+function getSubscriptionDisplayName(tier) {
+  if (!tier || tier === "free" || tier === "outsider") {
+    return "Outsider";
+  }
+  if (tier === "insider" || tier === "insider_pro") {
+    return "Insider";
+  }
+  return "Outsider";
+}
+function getStatusDisplayName(status) {
+  switch (status) {
+    case "active":
+      return "활성";
+    case "trialing":
+      return "무료체험 중";
+    case "canceled":
+      return "취소됨 (기간 내 사용 가능)";
+    case "inactive":
+      return "비활성";
+    default:
+      return "비활성";
+  }
 }
 function TrialExpiringAlert({ hoursLeft, onDismiss, onUpgrade }) {
   const { t } = useLanguage();
@@ -13397,7 +12085,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(XAxis, { dataKey: "week", stroke: "#9CA3AF", fontSize: 10 }),
               /* @__PURE__ */ jsx(YAxis, { hide: true }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13440,7 +12128,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(XAxis, { type: "number", hide: true }),
               /* @__PURE__ */ jsx(YAxis, { dataKey: "name", type: "category", stroke: "#9CA3AF", fontSize: 10, width: 60 }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13614,7 +12302,7 @@ const EnhancedInsiderTradingDashboard = () => {
                 ),
                 /* @__PURE__ */ jsx(YAxis, { stroke: "#9CA3AF", fontSize: 12, domain: [40, 100] }),
                 /* @__PURE__ */ jsx(
-                  Tooltip$1,
+                  Tooltip,
                   {
                     content: /* @__PURE__ */ jsx(
                       CustomTooltip,
@@ -13790,7 +12478,7 @@ const EnhancedInsiderTradingDashboard = () => {
                 }
               ),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13820,7 +12508,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(XAxis, { dataKey: "week", stroke: "#9CA3AF", fontSize: 12 }),
               /* @__PURE__ */ jsx(YAxis, { domain: [80, 100], stroke: "#9CA3AF", fontSize: 12 }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13858,7 +12546,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(XAxis, { type: "number", stroke: "#9CA3AF", fontSize: 12 }),
               /* @__PURE__ */ jsx(YAxis, { dataKey: "type", type: "category", stroke: "#9CA3AF", fontSize: 10, width: 80 }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13892,7 +12580,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(YAxis, { yAxisId: "left", stroke: "#9CA3AF", fontSize: 12 }),
               /* @__PURE__ */ jsx(YAxis, { yAxisId: "right", orientation: "right", stroke: "#9CA3AF", fontSize: 12 }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -13927,7 +12615,7 @@ const EnhancedInsiderTradingDashboard = () => {
               /* @__PURE__ */ jsx(XAxis, { dataKey: "x", name: "리스크", stroke: "#9CA3AF", fontSize: 12, domain: [0, 10] }),
               /* @__PURE__ */ jsx(YAxis, { dataKey: "y", name: "수익률", stroke: "#9CA3AF", fontSize: 12, domain: [-10, 10] }),
               /* @__PURE__ */ jsx(
-                Tooltip$1,
+                Tooltip,
                 {
                   contentStyle: {
                     backgroundColor: "#1F2937",
@@ -14077,7 +12765,7 @@ const EnhancedInsiderTradingDashboard = () => {
                 /* @__PURE__ */ jsx(XAxis, { dataKey: "category", stroke: "#9CA3AF", fontSize: 10 }),
                 /* @__PURE__ */ jsx(YAxis, { stroke: "#9CA3AF", fontSize: 12 }),
                 /* @__PURE__ */ jsx(
-                  Tooltip$1,
+                  Tooltip,
                   {
                     contentStyle: {
                       backgroundColor: "#1F2937",
@@ -16923,7 +15611,7 @@ function AdminDashboard() {
           ),
           /* @__PURE__ */ jsx(YAxis, {}),
           /* @__PURE__ */ jsx(
-            Tooltip$1,
+            Tooltip,
             {
               labelFormatter: (value) => new Date(value).toLocaleDateString("ko-KR")
             }
@@ -16966,7 +15654,7 @@ function AdminDashboard() {
               ].map((entry, index) => /* @__PURE__ */ jsx(Cell, { fill: entry.color }, `cell-${index}`))
             }
           ),
-          /* @__PURE__ */ jsx(Tooltip$1, {}),
+          /* @__PURE__ */ jsx(Tooltip, {}),
           /* @__PURE__ */ jsx(Legend, {})
         ] }) }) })
       ] })
@@ -17002,7 +15690,7 @@ function AdminDashboard() {
           /* @__PURE__ */ jsx(XAxis, { type: "number" }),
           /* @__PURE__ */ jsx(YAxis, { dataKey: "stage", type: "category", width: 150 }),
           /* @__PURE__ */ jsx(
-            Tooltip$1,
+            Tooltip,
             {
               formatter: (value, name) => {
                 if (name === "count") return [value, "Users"];
@@ -17085,7 +15773,7 @@ function AdminDashboard() {
           ),
           /* @__PURE__ */ jsx(YAxis, {}),
           /* @__PURE__ */ jsx(
-            Tooltip$1,
+            Tooltip,
             {
               labelFormatter: (value) => new Date(value).toLocaleDateString("ko-KR"),
               formatter: (value, name) => {
@@ -17127,7 +15815,7 @@ function AdminDashboard() {
             /* @__PURE__ */ jsx(CartesianGrid, { strokeDasharray: "3 3" }),
             /* @__PURE__ */ jsx(XAxis, { type: "number" }),
             /* @__PURE__ */ jsx(YAxis, { dataKey: "countryName", type: "category", width: 100, tick: { fontSize: 12 } }),
-            /* @__PURE__ */ jsx(Tooltip$1, {}),
+            /* @__PURE__ */ jsx(Tooltip, {}),
             /* @__PURE__ */ jsx(Legend, {}),
             /* @__PURE__ */ jsx(Bar, { dataKey: "sessions", fill: "#8b5cf6", name: "Sessions" })
           ] }) }) : /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center h-[300px] text-muted-foreground", children: "No geographic data available yet" })
@@ -17999,6 +16687,105 @@ function ProfilePage() {
     ] }) })
   ] });
 }
+var View = /* @__PURE__ */ ((View2) => {
+  View2["LIVE_TRADING"] = "LIVE_TRADING";
+  View2["TOP_STOCKS"] = "TOP_STOCKS";
+  View2["PROFILE"] = "PROFILE";
+  View2["SETTINGS"] = "SETTINGS";
+  return View2;
+})(View || {});
+const Sidebar = ({ activeView, onChangeView, lang, isPro, isAuthenticated, onLoginClick, onLogout, onCloseMobile }) => {
+  const t = TRANSLATIONS[lang].sidebar;
+  const common = TRANSLATIONS[lang].common;
+  return /* @__PURE__ */ jsxs("div", { className: "w-64 h-full bg-[#050505] border-r border-neutral-900 flex flex-col", children: [
+    /* @__PURE__ */ jsxs("div", { className: "p-6 border-b border-neutral-900 flex items-center justify-between", children: [
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsxs("h1", { className: "text-xl font-black text-neutral-200 tracking-tighter uppercase", children: [
+          "Insider",
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: "Pulse" })
+        ] }),
+        /* @__PURE__ */ jsx("div", { className: "flex items-center gap-2 mt-1", children: /* @__PURE__ */ jsx("span", { className: "text-[9px] bg-neutral-900 text-neutral-500 px-1 py-0.5", children: "SIGNAL_PRO_V2.4" }) })
+      ] }),
+      onCloseMobile && /* @__PURE__ */ jsx("button", { onClick: onCloseMobile, className: "md:hidden text-neutral-600 hover:text-white transition-colors", children: /* @__PURE__ */ jsx(X, { size: 20 }) })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "flex-1 px-2 py-6 space-y-1", children: [
+      /* @__PURE__ */ jsx("div", { className: "text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest", children: t.modules }),
+      /* @__PURE__ */ jsx(
+        NavButton,
+        {
+          active: activeView === View.LIVE_TRADING,
+          onClick: () => onChangeView(View.LIVE_TRADING),
+          icon: /* @__PURE__ */ jsx(Activity, { size: 14 }),
+          label: t.live
+        }
+      ),
+      /* @__PURE__ */ jsx(
+        NavButton,
+        {
+          active: activeView === View.TOP_STOCKS,
+          onClick: () => onChangeView(View.TOP_STOCKS),
+          icon: /* @__PURE__ */ jsx(LayoutDashboard, { size: 14 }),
+          label: t.analysis
+        }
+      ),
+      /* @__PURE__ */ jsx(
+        NavButton,
+        {
+          active: activeView === View.PROFILE,
+          onClick: () => onChangeView(View.PROFILE),
+          icon: /* @__PURE__ */ jsx(User, { size: 14 }),
+          label: t.config
+        }
+      ),
+      /* @__PURE__ */ jsx("div", { className: "mt-8 text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest", children: t.watched }),
+      /* @__PURE__ */ jsx("div", { className: "px-4 py-4 border border-neutral-900/50 mx-2 bg-neutral-900/20", children: /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-600 mono text-center", children: t.noData }) })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "p-4 border-t border-neutral-900 bg-[#080808]", children: isAuthenticated ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 px-3 py-2 mb-2 border border-neutral-900 bg-[#050505]", children: [
+        /* @__PURE__ */ jsx("div", { className: `w-2 h-2 rounded-full ${isPro ? "bg-emerald-900" : "bg-amber-900"}` }),
+        /* @__PURE__ */ jsxs("div", { className: "overflow-hidden", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-400 truncate mono", children: "USER_ID: 7777" }),
+          /* @__PURE__ */ jsx("div", { className: `text-[9px] uppercase font-bold ${isPro ? "text-emerald-700" : "text-amber-700"}`, children: isPro ? common.tierPro : common.tierFree })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-2 text-neutral-600 mt-3", children: [
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => onChangeView(View.SETTINGS),
+            className: `hover:text-neutral-300 transition-colors ${activeView === View.SETTINGS ? "text-white" : ""}`,
+            children: /* @__PURE__ */ jsx(Settings$1, { size: 14 })
+          }
+        ),
+        /* @__PURE__ */ jsx("button", { onClick: onLogout, className: "hover:text-rose-900 transition-colors", children: /* @__PURE__ */ jsx(Power, { size: 14 }) })
+      ] })
+    ] }) : /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-2", children: [
+      /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-500 mono uppercase", children: "Guest Access" }),
+      /* @__PURE__ */ jsxs(
+        "button",
+        {
+          onClick: onLoginClick,
+          className: "flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wide border border-emerald-900/30 bg-emerald-900/10 px-3 py-1.5 rounded hover:bg-emerald-900/20 transition-colors",
+          children: [
+            /* @__PURE__ */ jsx(LogIn, { size: 12 }),
+            "Login"
+          ]
+        }
+      )
+    ] }) })
+  ] });
+};
+const NavButton = ({ active, onClick, icon, label }) => /* @__PURE__ */ jsxs(
+  "button",
+  {
+    onClick,
+    className: `w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 ${active ? "bg-neutral-900/50 text-neutral-200 border-neutral-500" : "text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20"}`,
+    children: [
+      icon,
+      /* @__PURE__ */ jsx("span", { className: "uppercase tracking-wide", children: label })
+    ]
+  }
+);
 function PublicRouter() {
   return /* @__PURE__ */ jsxs(Switch$1, { children: [
     /* @__PURE__ */ jsx(Route, { path: "/", component: LandingPage }),
@@ -18014,7 +16801,6 @@ function PublicRouter() {
   ] });
 }
 function AppRouter() {
-  useLanguage();
   return /* @__PURE__ */ jsxs(Switch$1, { children: [
     /* @__PURE__ */ jsx(Route, { path: "/trade/:tradeId", component: TradeDetail }),
     /* @__PURE__ */ jsx(Route, { path: "/trades", component: LiveTrading }),
@@ -18033,9 +16819,23 @@ function AppRouter() {
   ] });
 }
 function AppContent() {
-  const { t, language } = useLanguage();
+  var _a;
+  const { language, setLanguage } = useLanguage();
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
-  const [location2] = useLocation();
+  const [location2, setLocation] = useLocation();
+  const [activeView, setActiveView] = useState(View.LIVE_TRADING);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const terminalLang = language;
+  const t = ((_a = TRANSLATIONS[terminalLang]) == null ? void 0 : _a.common) || TRANSLATIONS.en.common;
+  const isPro = (user == null ? void 0 : user.subscriptionStatus) === "active" || (user == null ? void 0 : user.subscriptionStatus) === "trialing";
+  const languages = [
+    { code: "en", label: "English" },
+    { code: "ko", label: "한국어" },
+    { code: "ja", label: "日本語" },
+    { code: "zh", label: "中文" }
+  ];
   useEffect(() => {
     const languageSelected = localStorage.getItem("language-selected");
     const savedLanguage = localStorage.getItem("language");
@@ -18043,6 +16843,35 @@ function AppContent() {
       setHasSelectedLanguage(true);
     }
   }, []);
+  const handleViewChange = (view) => {
+    setActiveView(view);
+    setIsMobileMenuOpen(false);
+    switch (view) {
+      case View.LIVE_TRADING:
+        setLocation("/dashboard");
+        break;
+      case View.TOP_STOCKS:
+        setLocation("/ranking");
+        break;
+      case View.PROFILE:
+        setLocation("/profile");
+        break;
+      case View.SETTINGS:
+        setLocation("/settings");
+        break;
+    }
+  };
+  useEffect(() => {
+    if (location2.startsWith("/dashboard") || location2.startsWith("/trades")) {
+      setActiveView(View.LIVE_TRADING);
+    } else if (location2.startsWith("/ranking")) {
+      setActiveView(View.TOP_STOCKS);
+    } else if (location2.startsWith("/profile")) {
+      setActiveView(View.PROFILE);
+    } else if (location2.startsWith("/settings")) {
+      setActiveView(View.SETTINGS);
+    }
+  }, [location2]);
   const publicPaths = ["/", "/signup", "/login", "/forgot-password", "/reset-password", "/verify-code", "/verify-email", "/start-trial", "/premium-checkout"];
   const isPublicRoute = publicPaths.includes(location2);
   if (!hasSelectedLanguage && !isPublicRoute) {
@@ -18051,33 +16880,113 @@ function AppContent() {
   if (isPublicRoute) {
     return /* @__PURE__ */ jsx(PublicRouter, {});
   }
-  const style = {
-    "--sidebar-width": "18rem",
-    "--sidebar-width-icon": "4rem"
+  const handleTriggerAction = () => {
+    if (!isAuthenticated) {
+      openAuthModal("login");
+    } else {
+      setLocation("/premium-checkout");
+    }
   };
-  return /* @__PURE__ */ jsx(SidebarProvider, { style, children: /* @__PURE__ */ jsxs("div", { className: "flex h-screen w-full overflow-hidden", children: [
-    /* @__PURE__ */ jsx(AppSidebar, {}),
-    /* @__PURE__ */ jsxs("div", { className: "flex flex-col flex-1 min-w-0 overflow-hidden", children: [
-      /* @__PURE__ */ jsxs("header", { className: "flex items-center justify-between p-2 sm:p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 min-w-0", children: [
-          /* @__PURE__ */ jsx(SidebarTrigger, { "data-testid": "button-sidebar-toggle", className: "flex-shrink-0" }),
-          /* @__PURE__ */ jsx("h1", { className: "text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 dark:from-purple-400 dark:via-blue-400 dark:to-cyan-400 bg-clip-text text-transparent tracking-tight", children: "InsiderPulse" }),
-          /* @__PURE__ */ jsxs("div", { className: "text-xs sm:text-sm text-muted-foreground truncate hidden md:block", children: [
-            t("dashboard.lastUpdated"),
-            ": ",
-            (/* @__PURE__ */ new Date()).toLocaleTimeString(
-              language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US"
-            )
+  return /* @__PURE__ */ jsxs("div", { className: "flex h-screen w-screen bg-[#050505] text-neutral-300 font-sans overflow-hidden", children: [
+    isMobileMenuOpen && /* @__PURE__ */ jsx(
+      "div",
+      {
+        className: "fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden animate-in fade-in duration-200",
+        onClick: () => setIsMobileMenuOpen(false)
+      }
+    ),
+    /* @__PURE__ */ jsx("div", { className: `fixed inset-y-0 left-0 z-50 w-64 bg-[#050505] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.5)] border-r border-neutral-800" : "-translate-x-full"}`, children: /* @__PURE__ */ jsx(
+      Sidebar,
+      {
+        activeView,
+        onChangeView: handleViewChange,
+        lang: terminalLang,
+        isPro,
+        isAuthenticated,
+        onLoginClick: () => openAuthModal("login"),
+        onLogout: logout,
+        onCloseMobile: () => setIsMobileMenuOpen(false)
+      }
+    ) }),
+    /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col relative bg-[#050505] w-full min-w-0", children: [
+      /* @__PURE__ */ jsxs("div", { className: "h-10 border-b border-neutral-900 flex items-center justify-between px-4 md:px-6 text-[10px] tracking-widest text-neutral-600 uppercase select-none bg-[#050505] relative z-30", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4 md:gap-6", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setIsMobileMenuOpen(true),
+              className: "md:hidden text-neutral-400 hover:text-white transition-colors",
+              "data-testid": "button-mobile-menu",
+              children: /* @__PURE__ */ jsx(Menu, { size: 16 })
+            }
+          ),
+          /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx("span", { className: `w-1.5 h-1.5 rounded-full animate-pulse ${isPro ? "bg-emerald-500" : "bg-amber-500"}` }),
+            /* @__PURE__ */ jsxs("span", { className: "hidden sm:inline", children: [
+              "SYSTEM: ",
+              isPro ? t.systemPro : t.systemFree
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "sm:hidden", children: isPro ? t.tierPro : t.tierFree })
+          ] }),
+          /* @__PURE__ */ jsxs("span", { className: "hidden md:inline", children: [
+            "LATENCY: ",
+            isPro ? t.latencyPro : t.latencyFree
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 sm:gap-2 flex-shrink-0", children: [
-          /* @__PURE__ */ jsx(LanguageSelector, {}),
-          /* @__PURE__ */ jsx(ThemeToggle, {})
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4 md:gap-6 mono", children: [
+          /* @__PURE__ */ jsxs(
+            "button",
+            {
+              onClick: handleTriggerAction,
+              className: `flex items-center gap-2 transition-colors ${isPro ? "text-emerald-500" : "text-amber-600 hover:text-amber-500"}`,
+              "data-testid": "button-upgrade-status",
+              children: [
+                isPro ? /* @__PURE__ */ jsx(ShieldCheck, { size: 10 }) : /* @__PURE__ */ jsx(Shield, { size: 10 }),
+                /* @__PURE__ */ jsx("span", { className: "hidden sm:inline", children: isPro ? t.licenseActive : t.licenseFree })
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+            /* @__PURE__ */ jsxs(
+              "button",
+              {
+                onClick: () => setShowLangMenu(!showLangMenu),
+                className: "flex items-center gap-2 hover:text-neutral-300 transition-colors focus:outline-none",
+                "data-testid": "button-language-selector",
+                children: [
+                  /* @__PURE__ */ jsx(Globe, { size: 10 }),
+                  /* @__PURE__ */ jsx("span", { className: "text-neutral-400", children: language.toUpperCase() })
+                ]
+              }
+            ),
+            showLangMenu && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(
+                "div",
+                {
+                  className: "fixed inset-0 z-40",
+                  onClick: () => setShowLangMenu(false)
+                }
+              ),
+              /* @__PURE__ */ jsx("div", { className: "absolute right-0 top-full mt-2 w-24 bg-[#0a0a0a] border border-neutral-800 shadow-xl flex flex-col py-1 z-50", children: languages.map((lang) => /* @__PURE__ */ jsx(
+                "button",
+                {
+                  onClick: () => {
+                    setLanguage(lang.code);
+                    setShowLangMenu(false);
+                  },
+                  className: `px-3 py-2 text-left text-[10px] hover:bg-neutral-900 transition-colors ${language === lang.code ? "text-emerald-500" : "text-neutral-400"}`,
+                  "data-testid": `button-language-${lang.code}`,
+                  children: lang.label
+                },
+                lang.code
+              )) })
+            ] })
+          ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("main", { className: "flex-1 overflow-x-hidden overflow-y-auto w-full", children: /* @__PURE__ */ jsx(AppRouter, {}) })
+      /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-hidden relative w-full", children: /* @__PURE__ */ jsx("main", { className: "h-full overflow-x-hidden overflow-y-auto w-full", children: /* @__PURE__ */ jsx(AppRouter, {}) }) })
     ] })
-  ] }) });
+  ] });
 }
 function App() {
   useEffect(() => {
@@ -18093,7 +17002,6 @@ function App() {
   }, []);
   return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsx(LanguageProvider, { children: /* @__PURE__ */ jsx(AccessProvider, { children: /* @__PURE__ */ jsxs(TooltipProvider, { children: [
     /* @__PURE__ */ jsx(AppContent, {}),
-    /* @__PURE__ */ jsx(AuthModal, {}),
     /* @__PURE__ */ jsx(PWAInstallPrompt, {}),
     /* @__PURE__ */ jsx(Toaster, {})
   ] }) }) }) }) });

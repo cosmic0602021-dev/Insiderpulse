@@ -350,7 +350,7 @@ export default function LiveTradingTerminal() {
       {/* Trade Detail Modal */}
       {selectedTrade && (
         <TradeDetailModal
-          trade={selectedTrade}
+          trade={selectedTrade as any}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
         />

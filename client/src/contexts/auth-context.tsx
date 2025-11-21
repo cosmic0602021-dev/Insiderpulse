@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log('✅ Token is valid, restoring session');
             console.log('   📊 User tier:', verifyResponse.user.subscriptionTier);
             console.log('   📊 User status:', verifyResponse.user.subscriptionStatus);
-            setUser(verifyResponse.user);
+            setUser(verifyResponse.user as User);
             setToken(savedToken);
             // Update stored user info in case it changed
             localStorage.setItem('authUser', JSON.stringify(verifyResponse.user));
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('   📊 Subscription tier:', verifyResponse.user.subscriptionTier);
         console.log('   📊 Subscription status:', verifyResponse.user.subscriptionStatus);
 
-        setUser(verifyResponse.user);
+        setUser(verifyResponse.user as User);
         setToken(savedToken);
         localStorage.setItem('authUser', JSON.stringify(verifyResponse.user));
         return true;
