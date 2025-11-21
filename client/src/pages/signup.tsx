@@ -1,20 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, Mail, UserPlus, Sparkles, Lock, TrendingUp, Shield, Zap, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, Mail, CheckCircle, ArrowLeft, Lock, Globe, ShieldCheck, ArrowRight, Fingerprint, Database, Scan, Target, Crosshair, Activity } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
-const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
-const logoDark = '/insiderpulse_logo1.png';
+import { TRANSLATIONS } from '@/lib/translations';
+
+interface RadarTarget {
+  id: number;
+  x: number;
+  y: number;
+  type: 'buy' | 'sell' | 'neutral';
+  label?: string;
+}
 
 export default function SignupPage() {
   const [, navigate] = useLocation();
-  const { t } = useLanguage();
   const { login } = useAuth();
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+  const t = TRANSLATIONS[langKey].auth;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,6 +34,11 @@ export default function SignupPage() {
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Radar animation states
+  const [logs, setLogs] = useState<string[]>([]);
+  const [targets, setTargets] = useState<RadarTarget[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Cooldown timer for resend
   useEffect(() => {
@@ -43,28 +55,110 @@ export default function SignupPage() {
     }
   }, [code, mode, isLoading]);
 
+  // Financial/Insider specific boot sequence
+  useEffect(() => {
+    const bootSequence = [
+      "ESTABLISHING_SEC_UPLINK...",
+      "HANDSHAKE_EDGAR_DB: [OK]",
+      "LOADING_INSTITUTIONAL_LEDGERS...",
+      "FILTERING_10B5-1_PLANS (NOISE_REDUCTION)...",
+      "LOADING_INSIDER_PROFILES_V2.4...",
+      "QUANT_MODEL_INIT: ALPHA_SCORE",
+      "CROSS_REFERENCING_DARK_POOLS...",
+      "ENCRYPTING_SESSION_KEYS...",
+      "TERMINAL_READY."
+    ];
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < bootSequence.length) {
+        setLogs(prev => [...prev, `> ${bootSequence[currentIndex]}`]);
+        currentIndex++;
+      } else {
+        if (Math.random() > 0.7) {
+          const commands = [
+            "SCANNING_FORM_4: NVDA [CEO_BUY]",
+            "DETECTING_CLUSTER_BUYING: BIOTECH_SECTOR",
+            "ANALYZING_FILING: 0001193125-24-123456",
+            "SENTIMENT_ANALYSIS: BULLISH_DIVERGENCE",
+            "WHALE_ALERT: $5.2M PURCHASE DETECTED",
+            "UPDATING_REAL_TIME_PRICE_TARGETS..."
+          ];
+          const cmd = commands[Math.floor(Math.random() * commands.length)];
+          setLogs(prev => {
+            const newLogs = [...prev, `> ${cmd}`];
+            return newLogs.slice(-8);
+          });
+        }
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-scroll logs
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  // Dynamic Radar Targets System
+  useEffect(() => {
+    const spawnInterval = setInterval(() => {
+      if (document.hidden) return;
+
+      const id = Date.now();
+      const angle = Math.random() * 2 * Math.PI;
+      const r = Math.sqrt(Math.random()) * 40;
+      const x = 50 + r * Math.cos(angle);
+      const y = 50 + r * Math.sin(angle);
+
+      const typeRand = Math.random();
+      let type: RadarTarget['type'] = 'neutral';
+      let label = '';
+
+      if (typeRand > 0.85) {
+        type = 'buy';
+        label = `CEO BUY +$${(Math.random() * 10).toFixed(1)}M`;
+      } else if (typeRand > 0.75) {
+        type = 'sell';
+        label = 'WHALE DUMP';
+      }
+
+      const newTarget = { id, x, y, type, label };
+      setTargets(prev => [...prev, newTarget]);
+
+      setTimeout(() => {
+        setTargets(prev => prev.filter(t => t.id !== id));
+      }, 3000);
+    }, 800);
+
+    return () => clearInterval(spawnInterval);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!email || !password || !confirmPassword) {
-      setError(t('auth.signup.errorAllFields'));
+      setError('All fields are required');
       return;
     }
 
     if (password.length < 8) {
-      setError(t('auth.signup.errorPasswordLength'));
+      setError('Password must be at least 8 characters');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError(t('auth.signup.errorPasswordMatch'));
+      setError('Passwords do not match');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError(t('auth.signup.errorInvalidEmail'));
+      setError('Invalid email address');
       return;
     }
 
@@ -72,16 +166,13 @@ export default function SignupPage() {
 
     try {
       await apiClient.signup(email, password);
-
-      // Switch to verification mode instead of navigating away
       setMode('verify');
       setCode(['', '', '', '', '', '']);
-      // Focus first input after a brief delay to ensure render
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 100);
     } catch (err: any) {
-      setError(err.message || t('auth.signup.errorFailed'));
+      setError(err.message || 'Signup failed');
     } finally {
       setIsLoading(false);
     }
@@ -89,13 +180,10 @@ export default function SignupPage() {
 
   // Handle verification code input change
   const handleCodeChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return; // Only allow digits
-
+    if (!/^\d*$/.test(value)) return;
     const newCode = [...code];
-    newCode[index] = value.slice(-1); // Only take last character
+    newCode[index] = value.slice(-1);
     setCode(newCode);
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -113,16 +201,10 @@ export default function SignupPage() {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     const newCode = [...code];
-
     pastedData.split('').forEach((digit, index) => {
-      if (index < 6) {
-        newCode[index] = digit;
-      }
+      if (index < 6) newCode[index] = digit;
     });
-
     setCode(newCode);
-
-    // Focus last filled input or first empty
     const nextEmptyIndex = newCode.findIndex(c => !c);
     const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
     inputRefs.current[focusIndex]?.focus();
@@ -132,10 +214,9 @@ export default function SignupPage() {
   const handleVerifyCode = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError('');
-
     const codeString = code.join('');
     if (codeString.length !== 6) {
-      setError(t('auth.verifyCode.errorEnterAll'));
+      setError('Please enter all 6 digits');
       return;
     }
 
@@ -152,7 +233,6 @@ export default function SignupPage() {
 
       if (data.success) {
         setMode('success');
-        // Auto-login after successful verification
         setTimeout(async () => {
           try {
             const loginResponse = await apiClient.login(email, password);
@@ -162,15 +242,14 @@ export default function SignupPage() {
             }
           } catch (err) {
             console.error('Auto-login failed:', err);
-            // Redirect to login page if auto-login fails
             navigate('/login');
           }
         }, 1500);
       } else {
-        setError(data.message || t('auth.verifyCode.errorFailed'));
+        setError(data.message || 'Verification failed');
       }
     } catch (err: any) {
-      setError(err.message || t('auth.verifyCode.errorFailed'));
+      setError(err.message || 'Verification failed');
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +258,6 @@ export default function SignupPage() {
   // Resend verification code
   const handleResendCode = async () => {
     if (resendCooldown > 0) return;
-
     setIsResending(true);
     setError('');
 
@@ -197,296 +275,388 @@ export default function SignupPage() {
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
-        setError(data.message || t('auth.verifyCode.errorResend'));
+        setError(data.message || 'Failed to resend code');
       }
     } catch (err: any) {
-      setError(err.message || t('auth.verifyCode.errorResend'));
+      setError(err.message || 'Failed to resend code');
     } finally {
       setIsResending(false);
     }
   };
 
-  return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      {/* Left side - Hero */}
-      <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 p-12">
-        <div>
-          <img src={logoDark} alt="InsiderPulse" className="h-10 w-auto mb-16" />
+  // Success View
+  if (mode === 'success') {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-[#030303] text-neutral-300 font-mono">
+        <div className="bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6">
+          <div className="space-y-6 py-12 text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-900/50 border border-emerald-900 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-emerald-500" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-neutral-200 mb-2 uppercase tracking-wide">Verification Complete</h3>
+              <p className="text-neutral-500 text-sm font-mono">Logging you in...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="space-y-6 max-w-md">
-            <h1 className="text-4xl font-bold text-white leading-tight">
-              {t('auth.signup.heroTitle')}
-            </h1>
-            <p className="text-lg text-slate-400">
-              {t('auth.signup.heroDesc')}
+  // Verification Code View
+  if (mode === 'verify') {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-[#030303] text-neutral-300 font-mono">
+        <div className="bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 mb-4">
+              <Mail className="h-8 w-8 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide">Verify Email</h2>
+            <p className="text-sm text-neutral-500 font-mono">
+              Check <strong className="text-neutral-300">{email}</strong><br />
+              Enter 6-digit verification code
             </p>
           </div>
 
-          <div className="mt-16 space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-pink-500/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-pink-500" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white">{t('auth.login.realtimeData')}</h3>
-                <p className="text-sm text-slate-400">{t('auth.login.realtimeDesc')}</p>
-              </div>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleVerifyCode} className="space-y-6">
+            <div className="flex justify-center gap-2">
+              {code.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => (inputRefs.current[index] = el)}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleCodeChange(index, e.target.value)}
+                  onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                  onPaste={handleCodePaste}
+                  disabled={isLoading}
+                  className="w-12 h-14 text-center text-2xl font-bold font-mono border border-neutral-800 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#0a0a0a] text-neutral-200"
+                  autoFocus={index === 0}
+                />
+              ))}
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-cyan-500/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-cyan-500" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white">{t('auth.login.verifiedInfo')}</h3>
-                <p className="text-sm text-slate-400">{t('auth.login.verifiedDesc')}</p>
-              </div>
+            <button
+              type="submit"
+              className="w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs transition-all flex items-center justify-center gap-2"
+              disabled={isLoading || code.join('').length !== 6}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                'Verify Code'
+              )}
+            </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={resendCooldown > 0 || isResending}
+                className="text-sm text-emerald-600 hover:text-emerald-500 font-medium disabled:text-neutral-600 disabled:cursor-not-allowed font-mono"
+              >
+                {isResending ? (
+                  <>
+                    <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+                    Resending...
+                  </>
+                ) : resendCooldown > 0 ? (
+                  `Resend in ${resendCooldown}s`
+                ) : (
+                  'Resend Code'
+                )}
+              </button>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded bg-violet-500/10 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-violet-500" />
+            <div className="text-center pt-4 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setMode('signup')}
+                className="text-sm text-neutral-500 hover:text-neutral-300 inline-flex items-center gap-1 font-mono"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Signup
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-screen h-screen flex bg-[#030303] text-neutral-300 overflow-hidden font-mono selection:bg-emerald-900 selection:text-emerald-50">
+      <style>{`
+        @keyframes radar-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blip {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes lock-on {
+            0% { width: 40px; height: 40px; opacity: 0; transform: scale(1.5); }
+            20% { opacity: 1; }
+            100% { width: 24px; height: 24px; opacity: 1; transform: scale(1); }
+        }
+        @keyframes scan-bar {
+            0% { left: -50%; }
+            100% { left: 150%; }
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      {/* Left Panel: Visuals */}
+      <div className="hidden lg:flex w-2/3 relative flex-col justify-between p-16 bg-[#020202] border-r border-neutral-900 overflow-hidden">
+        {/* Background Tech Grid */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+          <div className="absolute inset-0 bg-radial-gradient(circle at 30% 50%, #05966908 0%, transparent 50%)"></div>
+        </div>
+
+        {/* Brand Header */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex gap-1">
+              <div className="w-1 h-4 bg-emerald-600"></div>
+              <div className="w-1 h-4 bg-emerald-800/50"></div>
+              <div className="w-1 h-4 bg-emerald-900/30"></div>
+            </div>
+            <span className="text-[10px] font-bold tracking-[0.3em] text-emerald-500 uppercase animate-pulse">
+              DETECTING_SMART_MONEY_FLOW
+            </span>
+          </div>
+          <h1 className="text-6xl font-black tracking-tighter text-white mb-2 uppercase leading-none">
+            Insider<span className="text-neutral-700">Pulse</span>
+          </h1>
+          <p className="text-neutral-500 text-xs tracking-widest uppercase mt-2 flex items-center gap-2">
+            <Database size={12} />
+            SEC Form 4 Intelligence Platform
+          </p>
+        </div>
+
+        {/* Center Graphic: Signal Capture Radar */}
+        <div className="relative z-10 flex-1 flex items-center justify-center">
+          <div className="relative w-[500px] h-[500px] flex items-center justify-center">
+            <div className="absolute inset-0 border border-neutral-800/30 rounded-full"></div>
+            <div className="absolute inset-[15%] border border-neutral-800/50 rounded-full border-dashed opacity-50"></div>
+            <div className="absolute inset-[35%] border border-neutral-800 rounded-full"></div>
+            <div className="absolute inset-[48%] border border-emerald-900/30 rounded-full"></div>
+
+            <div className="absolute w-full h-[1px] bg-neutral-900"></div>
+            <div className="absolute h-full w-[1px] bg-neutral-900"></div>
+
+            <div className="absolute w-full h-full rounded-full animate-[radar-spin_4s_linear_infinite] origin-center bg-[conic-gradient(from_0deg,transparent_0deg,transparent_270deg,rgba(16,185,129,0.1)_360deg)]"></div>
+
+            <div className="absolute w-12 h-12 bg-[#050505] border border-emerald-900/50 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] z-20">
+              <Target size={20} className="text-emerald-600 animate-pulse" />
+            </div>
+
+            {/* Dynamic Targets */}
+            {targets.map(target => (
+              <div
+                key={target.id}
+                className="absolute w-0 h-0 flex items-center justify-center"
+                style={{ left: `${target.x}%`, top: `${target.y}%` }}
+              >
+                {target.type === 'buy' && (
+                  <>
+                    <div className="absolute border-2 border-emerald-500/50 rounded-sm animate-[lock-on_0.5s_forwards]"></div>
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_10px_#10b981] animate-[pulse_1s_infinite]"></div>
+                    {target.label && (
+                      <div className="absolute left-4 top-0 bg-emerald-900/90 text-[9px] text-emerald-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-emerald-500/30 animate-[fade-in_0.3s_ease-out]">
+                        {target.label}
+                      </div>
+                    )}
+                    <div className="absolute h-[1px] w-16 bg-emerald-800/50 rotate-45 origin-top-left top-0 left-0 -z-10 opacity-50"></div>
+                  </>
+                )}
+
+                {target.type === 'sell' && (
+                  <>
+                    <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_#f43f5e]"></div>
+                    <div className="absolute w-8 h-8 border border-rose-900/50 rounded-full animate-[ping_1.5s_infinite]"></div>
+                    {target.label && (
+                      <div className="absolute right-4 top-0 bg-rose-900/90 text-[9px] text-rose-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-rose-500/30 animate-[fade-in_0.3s_ease-out]">
+                        {target.label}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {target.type === 'neutral' && (
+                  <div className="w-1 h-1 bg-neutral-600 rounded-full animate-pulse opacity-50"></div>
+                )}
               </div>
-              <div>
-                <h3 className="font-semibold text-white">{t('auth.login.smartAlerts')}</h3>
-                <p className="text-sm text-slate-400">{t('auth.login.smartAlertsDesc')}</p>
+            ))}
+
+            {/* Scanning Info UI */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full">
+              <div className="flex items-center gap-2 text-[9px] text-emerald-500 tracking-[0.2em] uppercase font-bold">
+                <Activity size={12} className="animate-bounce" />
+                Tracking Signals
+              </div>
+              <div className="w-32 h-0.5 bg-neutral-800 overflow-hidden rounded-full relative">
+                <div className="absolute top-0 h-full bg-emerald-500 w-16 animate-[scan-bar_2s_linear_infinite] shadow-[0_0_8px_#10b981] opacity-80"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="text-xs text-slate-500">
-          © 2024 InsiderPulse. All rights reserved.
+        {/* Terminal Logs */}
+        <div className="relative z-10 bg-black/50 border-t border-neutral-900 backdrop-blur-sm pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider">
+              <Scan size={12} />
+              <span>System Log</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-emerald-700 animate-pulse">
+              <Crosshair size={12} />
+              <span>LIVE FEED</span>
+            </div>
+          </div>
+          <div ref={scrollRef} className="h-24 overflow-hidden font-mono text-[10px] space-y-1.5 opacity-80">
+            {logs.map((log, i) => (
+              <div key={i} className="text-neutral-400 truncate border-l border-neutral-800 pl-2">
+                <span className="text-neutral-600 mr-2">{(new Date().getTime() + i).toString().slice(-6)}</span>
+                {log}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Right side - Form */}
-      <div className="flex items-center justify-center p-4 bg-white dark:bg-slate-950">
-        <div className="w-full max-w-md">
-          {/* Success View */}
-          {mode === 'success' ? (
-            <div className="space-y-6 py-12 text-center" data-testid="success-message">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                  {t('auth.verifyCode.successTitle')}
-                </h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  {t('auth.verifyCode.successDesc')}
-                </p>
-              </div>
+      {/* Right Panel: Form */}
+      <div className="w-full lg:w-1/3 flex items-center justify-center bg-[#050505] relative z-20 border-l border-neutral-900">
+        {/* Mobile Branding */}
+        <div className="absolute top-8 left-8 lg:hidden">
+          <span className="font-bold text-white tracking-tight text-lg">INSIDERPULSE</span>
+        </div>
+
+        <div className="w-full max-w-sm px-8">
+          <div className="mb-10 text-center">
+            <div className="w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+              <Lock size={24} className="text-emerald-600" />
             </div>
-          ) : mode === 'verify' ? (
-            /* Verification Code View */
-            <>
-              <div className="mb-6">
-                <div className="mb-3 flex justify-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500">
-                    <Mail className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center">
-                  {t('auth.verifyCode.title')}
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400 text-center text-sm">
-                  <strong>{email}</strong>{t('auth.verifyCode.subtitle')}<br />
-                  {t('auth.verifyCode.enterCode')}
-                </p>
-              </div>
+            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight uppercase">
+              {t.createAccount}
+            </h2>
+            <p className="text-neutral-500 text-xs font-mono leading-relaxed max-w-[240px] mx-auto">
+              Initialize new institutional account.
+            </p>
+          </div>
 
-              {error && (
-                <Alert variant="destructive" className="mb-4" data-testid="alert-error">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <form onSubmit={handleVerifyCode} className="space-y-6">
-                <div className="flex justify-center gap-2">
-                  {code.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(el) => (inputRefs.current[index] = el)}
-                      type="text"
-                      inputMode="numeric"
-                      pattern="\d*"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(index, e.target.value)}
-                      onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                      onPaste={handleCodePaste}
-                      disabled={isLoading}
-                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      autoFocus={index === 0}
-                    />
-                  ))}
-                </div>
-
-                <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-                  {t('auth.verifyCode.codeValid')}
-                </p>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium"
-                  disabled={isLoading || code.join('').length !== 6}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('auth.verifyCode.verifying')}
-                    </>
-                  ) : (
-                    t('auth.verifyCode.verify')
-                  )}
-                </Button>
-
-                {/* Resend */}
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleResendCode}
-                    disabled={resendCooldown > 0 || isResending}
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 font-medium disabled:text-slate-400 disabled:cursor-not-allowed"
-                  >
-                    {isResending ? (
-                      <>
-                        <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
-                        {t('auth.verifyCode.resending')}
-                      </>
-                    ) : resendCooldown > 0 ? (
-                      t('auth.verifyCode.resendIn', { seconds: resendCooldown })
-                    ) : (
-                      t('auth.verifyCode.resendCode')
-                    )}
-                  </button>
-                </div>
-
-                {/* Back Button */}
-                <div className="text-center pt-4 border-t">
-                  <button
-                    type="button"
-                    onClick={() => setMode('signup')}
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    {t('auth.verifyCode.backToSignup')}
-                  </button>
-                </div>
-              </form>
-            </>
-          ) : (
-            /* Signup Form View */
-            <>
-              <div className="mb-6">
-                <div className="mb-3 flex justify-center">
-                  <img src={logoLight} alt="InsiderPulse" className="h-64 w-auto block dark:hidden" />
-                  <img src={logoDark} alt="InsiderPulse" className="h-64 w-auto hidden dark:block" />
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                  {t('auth.signup.title')}
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400">
-                  {t('auth.signup.subtitle')}
-                </p>
-              </div>
-            </>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
-          {mode === 'signup' && (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              {error && (
-                <Alert variant="destructive" data-testid="alert-error">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('auth.signup.email')}
-                </Label>
-                <Input
-                  id="email"
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="group">
+              <div className="relative flex items-center">
+                <Globe size={14} className="absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" />
+                <input
                   type="email"
-                  placeholder={t('auth.login.emailPlaceholder')}
+                  className="block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono"
+                  placeholder="ENTER_EMAIL_ADDRESS"
+                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  required
-                  className="h-10"
                   data-testid="input-email"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('auth.signup.password')}
-                </Label>
-                <Input
-                  id="password"
+            <div className="group">
+              <div className="relative flex items-center">
+                <Lock size={14} className="absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" />
+                <input
                   type="password"
-                  placeholder={t('auth.login.passwordPlaceholder')}
+                  className="block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono"
+                  placeholder="ENTER_PASSWORD"
+                  id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  required
-                  className="h-10"
                   data-testid="input-password"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t('auth.signup.confirmPassword')}
-                </Label>
-                <Input
-                  id="confirmPassword"
+            <div className="group">
+              <div className="relative flex items-center">
+                <Fingerprint size={14} className="absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" />
+                <input
                   type="password"
-                  placeholder={t('auth.login.passwordPlaceholder')}
+                  className="block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono"
+                  placeholder="CONFIRM_CREDENTIALS"
+                  id="confirm"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
-                  required
-                  className="h-10"
                   data-testid="input-confirm-password"
                 />
               </div>
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium"
-                disabled={isLoading}
-                data-testid="button-signup"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('auth.signup.creating')}
-                  </>
-                ) : (
-                  t('auth.signup.button')
-                )}
-              </Button>
+            <button
+              type="submit"
+              className="w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-4 text-xs transition-all flex items-center justify-center gap-2 mt-4 group shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              disabled={isLoading}
+              data-testid="button-signup"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  CREATING...
+                </>
+              ) : (
+                <>
+                  <span>{t.register}</span>
+                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </form>
 
-              <div className="text-center text-sm">
-                <span className="text-slate-600 dark:text-slate-400">{t('auth.signup.haveAccount')}</span>{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  className="text-purple-600 dark:text-purple-400 font-medium hover:underline"
-                  data-testid="button-login"
-                >
-                  {t('auth.signup.signIn')}
-                </button>
-              </div>
-            </form>
-          )}
+          <div className="mt-10 flex justify-between items-center border-t border-neutral-900 pt-6">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold"
+              data-testid="button-login"
+            >
+              {t.hasAccount}
+            </button>
+
+            <div className="flex items-center gap-2 text-neutral-700">
+              <ShieldCheck size={12} />
+              <span className="text-[9px] font-mono">AES-256 ENCRYPTION</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

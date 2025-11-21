@@ -2,11 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import TopStocks from '@/components/terminal-ui/TopStocks';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
+import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { type Language } from '@/lib/translations';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
 
 interface RankingInsider {
@@ -52,10 +54,20 @@ interface RankingResponse {
 export default function TopStocksTerminal() {
   const { language } = useLanguage();
   const { accessLevel } = useAccess();
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const isPro = accessLevel?.hasRealtimeAccess || false;
+
+  const handleUpgrade = () => {
+    if (!isAuthenticated) {
+      navigate('/signup');
+    } else {
+      navigate('/premium-checkout');
+    }
+  };
   
   const handleSelectTrade = (trade: any) => {
     // Convert the trade object to InsiderTrade format
@@ -174,10 +186,11 @@ export default function TopStocksTerminal() {
 
   return (
     <>
-      <TopStocks 
+      <TopStocks
         data={stockRecommendations}
         lang={language as Language}
         isPro={isPro}
+        onUpgrade={handleUpgrade}
         onSelectTrade={handleSelectTrade}
       />
       {selectedTrade && (

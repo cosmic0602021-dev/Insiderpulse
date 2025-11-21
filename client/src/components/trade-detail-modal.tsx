@@ -211,7 +211,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 {t.totalValue.toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
-                {formatCurrency(trade.totalValue)}
+                {formatCurrency(trade.totalValue, false)}
               </div>
             </div>
           </div>

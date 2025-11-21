@@ -39,6 +39,7 @@ import TerminalSettingsView from '@/components/terminal-ui/SettingsView';
 import TopStocksTerminal from '@/pages/top-stocks-terminal';
 import { View } from "@/components/terminal-ui/types";
 import { TRANSLATIONS } from "@/lib/translations";
+import { AuthModal } from "@/components/auth-modal";
 
 function PublicRouter() {
   return (
@@ -306,6 +307,7 @@ export default function App() {
           <AccessProvider>
             <TooltipProvider>
               <AppContent />
+              <AuthModal />
               <PWAInstallPrompt />
               <Toaster />
             </TooltipProvider>

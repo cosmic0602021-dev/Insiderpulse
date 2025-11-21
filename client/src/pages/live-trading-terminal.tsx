@@ -434,9 +434,9 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
   const ActionIcon = isBuy ? ArrowUpRight : ArrowDownLeft;
 
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="grid grid-cols-5 md:grid-cols-9 gap-x-2 md:gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
+      className="grid grid-cols-5 md:grid-cols-9 gap-x-3 md:gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
       data-testid={`trade-row-${trade.ticker}`}
     >
       {/* Ticker + Company */}
@@ -459,7 +459,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
       <div className="flex items-center justify-end">
         <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBorder} ${typeClass} ${typeBg} rounded-sm inline-flex items-center gap-1`}>
           <ActionIcon size={10} className={typeClass} />
-          {tData[trade.type] || trade.type}
+          <span className="hidden md:inline">{tData[trade.type] || trade.type}</span>
         </span>
       </div>
 
@@ -475,7 +475,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
 
       {/* Value */}
       <div className="flex items-center justify-end">
-        <span className="text-neutral-300 font-mono">{formatCurrency(trade.value)}</span>
+        <span className="text-neutral-300 font-mono">{formatCurrency(trade.value, false)}</span>
       </div>
 
       {/* Impact */}

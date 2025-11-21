@@ -477,8 +477,13 @@ export const TRANSLATIONS = {
   zh: ZH
 };
 
-export function formatCurrency(val: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(val);
+export function formatCurrency(val: number, showDecimals: boolean = true): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: showDecimals ? 2 : 0,
+    minimumFractionDigits: showDecimals ? 2 : 0
+  }).format(val);
 }
 
 export function formatNumber(val: number): string {
