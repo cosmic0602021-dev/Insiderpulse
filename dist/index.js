@@ -337,12 +337,497 @@ var init_ticker_validator = __esm({
   }
 });
 
+// server/historical-analytics.ts
+import { eq, and as and2, gte, lte, desc, sql as sql2 } from "drizzle-orm";
+var HistoricalAnalyticsService, historicalAnalyticsService;
+var init_historical_analytics = __esm({
+  "server/historical-analytics.ts"() {
+    "use strict";
+    init_db_storage();
+    init_schema();
+    HistoricalAnalyticsService = class {
+      /**
+       * Get a trader's historical success rate based on past trades
+       */
+      async getTraderHistory(traderName, ticker) {
+        const conditions = [eq(insiderTrades.traderName, traderName)];
+        if (ticker) {
+          conditions.push(eq(insiderTrades.ticker, ticker));
+        }
+        const pastTrades = await db.select().from(insiderTrades).where(and2(...conditions)).orderBy(desc(insiderTrades.filedDate)).limit(50);
+        if (pastTrades.length === 0) {
+          return {
+            totalTrades: 0,
+            successfulTrades: 0,
+            successRate: 50,
+            // Default to neutral
+            avgReturn: 0,
+            trades: []
+          };
+        }
+        const tradesWithReturns = await Promise.all(
+          pastTrades.map(async (trade) => {
+            if (!trade.ticker) {
+              return {
+                id: trade.id,
+                ticker: trade.ticker || "N/A",
+                tradeType: trade.tradeType,
+                filedDate: trade.filedDate,
+                priceAtTrade: trade.pricePerShare,
+                return1Week: null,
+                return2Week: null,
+                return1Month: null
+              };
+            }
+            const returns = await this.calculateReturnsAfterTrade(
+              trade.ticker,
+              trade.filedDate,
+              trade.pricePerShare
+            );
+            return {
+              id: trade.id,
+              ticker: trade.ticker,
+              tradeType: trade.tradeType,
+              filedDate: trade.filedDate,
+              priceAtTrade: trade.pricePerShare,
+              ...returns
+            };
+          })
+        );
+        const tradesWithValidReturns = tradesWithReturns.filter((t) => t.return1Month !== null);
+        const successfulTrades = tradesWithValidReturns.filter((trade) => {
+          const isBuy = trade.tradeType.toUpperCase().includes("BUY");
+          const return1M = trade.return1Month || 0;
+          return isBuy ? return1M > 0 : return1M < 0;
+        });
+        const avgReturn = tradesWithValidReturns.length > 0 ? tradesWithValidReturns.reduce((sum2, t) => sum2 + (t.return1Month || 0), 0) / tradesWithValidReturns.length : 0;
+        const successRate = tradesWithValidReturns.length > 0 ? successfulTrades.length / tradesWithValidReturns.length * 100 : 50;
+        return {
+          totalTrades: pastTrades.length,
+          successfulTrades: successfulTrades.length,
+          successRate: Math.round(successRate),
+          avgReturn: Math.round(avgReturn * 100) / 100,
+          trades: tradesWithReturns
+        };
+      }
+      /**
+       * Calculate price returns after a trade at different time intervals
+       */
+      async calculateReturnsAfterTrade(ticker, tradeDate, tradePrice) {
+        const date1Week = new Date(tradeDate);
+        date1Week.setDate(date1Week.getDate() + 7);
+        const date2Week = new Date(tradeDate);
+        date2Week.setDate(date2Week.getDate() + 14);
+        const date1Month = new Date(tradeDate);
+        date1Month.setMonth(date1Month.getMonth() + 1);
+        const priceHistory = await db.select().from(stockPriceHistory).where(
+          and2(
+            eq(stockPriceHistory.ticker, ticker.toUpperCase()),
+            gte(stockPriceHistory.date, tradeDate.toISOString().split("T")[0]),
+            lte(stockPriceHistory.date, date1Month.toISOString().split("T")[0])
+          )
+        ).orderBy(stockPriceHistory.date);
+        if (priceHistory.length === 0) {
+          return { return1Week: null, return2Week: null, return1Month: null };
+        }
+        const getClosestPrice = (targetDate) => {
+          const targetStr = targetDate.toISOString().split("T")[0];
+          let closest = priceHistory.find((p) => p.date >= targetStr);
+          if (!closest && priceHistory.length > 0) {
+            closest = priceHistory[priceHistory.length - 1];
+          }
+          return closest ? parseFloat(closest.close) : null;
+        };
+        const price1Week = getClosestPrice(date1Week);
+        const price2Week = getClosestPrice(date2Week);
+        const price1Month = getClosestPrice(date1Month);
+        const calculateReturn = (futurePrice) => {
+          if (futurePrice === null || tradePrice === 0) return null;
+          return (futurePrice - tradePrice) / tradePrice * 100;
+        };
+        return {
+          return1Week: calculateReturn(price1Week),
+          return2Week: calculateReturn(price2Week),
+          return1Month: calculateReturn(price1Month)
+        };
+      }
+      /**
+       * Calculate price targets based on historical performance of similar trades
+       */
+      async calculateHistoricalPriceTargets(ticker, tradeType, totalValue, traderTitle) {
+        const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
+          (title) => traderTitle.toLowerCase().includes(title.toLowerCase())
+        );
+        const isBuy = tradeType.toUpperCase().includes("BUY");
+        const sixMonthsAgo = /* @__PURE__ */ new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        let similarTrades = await db.select().from(insiderTrades).where(
+          and2(
+            eq(insiderTrades.ticker, ticker),
+            lte(insiderTrades.filedDate, sixMonthsAgo)
+            // Only past trades that have had time to mature
+          )
+        ).orderBy(desc(insiderTrades.filedDate)).limit(30);
+        if (similarTrades.length < 10) {
+          const minValue = totalValue * 0.5;
+          const maxValue = totalValue * 1.5;
+          const expandedTrades = await db.select().from(insiderTrades).where(
+            and2(
+              gte(insiderTrades.totalValue, minValue),
+              lte(insiderTrades.totalValue, maxValue),
+              lte(insiderTrades.filedDate, sixMonthsAgo)
+            )
+          ).orderBy(desc(insiderTrades.filedDate)).limit(50);
+          const existingIds = new Set(similarTrades.map((t) => t.id));
+          for (const trade of expandedTrades) {
+            if (!existingIds.has(trade.id)) {
+              similarTrades.push(trade);
+              existingIds.add(trade.id);
+            }
+            if (similarTrades.length >= 30) break;
+          }
+        }
+        if (similarTrades.length === 0) {
+          if (isBuy) {
+            return {
+              conservative: isExecutive ? 5 : 3,
+              realistic: isExecutive ? 12 : 7,
+              optimistic: isExecutive ? 25 : 15,
+              sampleSize: 0,
+              avgReturn: 0
+            };
+          } else {
+            return {
+              conservative: -3,
+              realistic: -7,
+              optimistic: -15,
+              sampleSize: 0,
+              avgReturn: 0
+            };
+          }
+        }
+        const returns = [];
+        for (const trade of similarTrades) {
+          if (!trade.ticker) continue;
+          const result = await this.calculateReturnsAfterTrade(
+            trade.ticker,
+            trade.filedDate,
+            trade.pricePerShare
+          );
+          if (result.return1Month !== null) {
+            const tradeIsBuy = trade.tradeType.toUpperCase().includes("BUY");
+            if (tradeIsBuy === isBuy) {
+              returns.push(result.return1Month);
+            }
+          }
+        }
+        if (returns.length === 0) {
+          if (isBuy) {
+            return {
+              conservative: isExecutive ? 5 : 3,
+              realistic: isExecutive ? 12 : 7,
+              optimistic: isExecutive ? 25 : 15,
+              sampleSize: 0,
+              avgReturn: 0
+            };
+          } else {
+            return {
+              conservative: -3,
+              realistic: -7,
+              optimistic: -15,
+              sampleSize: 0,
+              avgReturn: 0
+            };
+          }
+        }
+        returns.sort((a, b) => a - b);
+        const percentile = (arr, p) => {
+          const index = p / 100 * (arr.length - 1);
+          const lower = Math.floor(index);
+          const upper = Math.ceil(index);
+          if (lower === upper) return arr[lower];
+          return arr[lower] * (upper - index) + arr[upper] * (index - lower);
+        };
+        const avgReturn = returns.reduce((sum2, r) => sum2 + r, 0) / returns.length;
+        return {
+          conservative: Math.round(percentile(returns, 25) * 100) / 100,
+          realistic: Math.round(percentile(returns, 50) * 100) / 100,
+          optimistic: Math.round(percentile(returns, 75) * 100) / 100,
+          sampleSize: returns.length,
+          avgReturn: Math.round(avgReturn * 100) / 100
+        };
+      }
+      /**
+       * Calculate optimal time horizon based on historical peak analysis
+       */
+      async calculateOptimalTimeHorizon(ticker, tradeType, totalValue) {
+        const isBuy = tradeType.toUpperCase().includes("BUY");
+        const sixMonthsAgo = /* @__PURE__ */ new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        const pastTrades = await db.select().from(insiderTrades).where(
+          and2(
+            eq(insiderTrades.ticker, ticker),
+            lte(insiderTrades.filedDate, sixMonthsAgo)
+          )
+        ).orderBy(desc(insiderTrades.filedDate)).limit(20);
+        if (pastTrades.length === 0) {
+          const isLargeTrade = totalValue > 1e6;
+          return {
+            recommended: isLargeTrade ? "1-2 weeks" : "2-4 weeks",
+            avgDaysToPeak: isLargeTrade ? 10 : 21,
+            sampleSize: 0
+          };
+        }
+        const daysToPeaks = [];
+        for (const trade of pastTrades) {
+          if (!trade.ticker) continue;
+          const daysResult = await this.findDaysToPeak(
+            trade.ticker,
+            trade.filedDate,
+            trade.pricePerShare,
+            isBuy
+          );
+          if (daysResult !== null) {
+            daysToPeaks.push(daysResult);
+          }
+        }
+        if (daysToPeaks.length === 0) {
+          const isLargeTrade = totalValue > 1e6;
+          return {
+            recommended: isLargeTrade ? "1-2 weeks" : "2-4 weeks",
+            avgDaysToPeak: isLargeTrade ? 10 : 21,
+            sampleSize: 0
+          };
+        }
+        const avgDays = daysToPeaks.reduce((sum2, d) => sum2 + d, 0) / daysToPeaks.length;
+        let recommended;
+        if (avgDays <= 5) {
+          recommended = "3-5 days";
+        } else if (avgDays <= 7) {
+          recommended = "5-7 days";
+        } else if (avgDays <= 14) {
+          recommended = "1-2 weeks";
+        } else if (avgDays <= 21) {
+          recommended = "2-3 weeks";
+        } else if (avgDays <= 30) {
+          recommended = "3-4 weeks";
+        } else {
+          recommended = "4-6 weeks";
+        }
+        return {
+          recommended,
+          avgDaysToPeak: Math.round(avgDays),
+          sampleSize: daysToPeaks.length
+        };
+      }
+      /**
+       * Find the number of days until peak return after a trade
+       */
+      async findDaysToPeak(ticker, tradeDate, tradePrice, isBuy) {
+        const endDate = new Date(tradeDate);
+        endDate.setMonth(endDate.getMonth() + 2);
+        const priceHistory = await db.select().from(stockPriceHistory).where(
+          and2(
+            eq(stockPriceHistory.ticker, ticker.toUpperCase()),
+            gte(stockPriceHistory.date, tradeDate.toISOString().split("T")[0]),
+            lte(stockPriceHistory.date, endDate.toISOString().split("T")[0])
+          )
+        ).orderBy(stockPriceHistory.date);
+        if (priceHistory.length === 0) return null;
+        let peakIndex = 0;
+        let peakReturn = 0;
+        for (let i = 0; i < priceHistory.length; i++) {
+          const price = parseFloat(priceHistory[i].close);
+          const returnPct = (price - tradePrice) / tradePrice * 100;
+          if (isBuy) {
+            if (returnPct > peakReturn) {
+              peakReturn = returnPct;
+              peakIndex = i;
+            }
+          } else {
+            if (returnPct < peakReturn) {
+              peakReturn = returnPct;
+              peakIndex = i;
+            }
+          }
+        }
+        const peakDate = new Date(priceHistory[peakIndex].date);
+        const daysToPeak = Math.ceil((peakDate.getTime() - tradeDate.getTime()) / (1e3 * 60 * 60 * 24));
+        return Math.max(1, daysToPeak);
+      }
+      /**
+       * Detect cluster buying/selling activity
+       */
+      async detectClusterActivity(ticker, tradeDate, tradeType) {
+        const sevenDaysAgo = new Date(tradeDate);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const isBuy = tradeType.toUpperCase().includes("BUY");
+        const recentTrades = await db.select().from(insiderTrades).where(
+          and2(
+            eq(insiderTrades.ticker, ticker),
+            gte(insiderTrades.filedDate, sevenDaysAgo),
+            lte(insiderTrades.filedDate, tradeDate)
+          )
+        );
+        const sameDirectionTrades = recentTrades.filter((t) => {
+          const tIsBuy = t.tradeType.toUpperCase().includes("BUY");
+          return tIsBuy === isBuy;
+        });
+        const uniqueTraders = [...new Set(sameDirectionTrades.map((t) => t.traderName))];
+        const totalValue = sameDirectionTrades.reduce((sum2, t) => sum2 + t.totalValue, 0);
+        return {
+          isCluster: uniqueTraders.length >= 2,
+          count: uniqueTraders.length,
+          traders: uniqueTraders,
+          totalValue
+        };
+      }
+      /**
+       * Calculate enhanced risk assessment using historical data
+       */
+      async calculateHistoricalRisk(ticker, tradeType, totalValue, traderName, priceVariance, filedDate) {
+        let riskScore = 50;
+        const traderHistory = await this.getTraderHistory(traderName);
+        let traderSuccessRate = null;
+        if (traderHistory.totalTrades >= 3) {
+          traderSuccessRate = traderHistory.successRate;
+          if (traderSuccessRate > 70) riskScore -= 15;
+          else if (traderSuccessRate < 40) riskScore += 15;
+        }
+        const clusterActivity = await this.detectClusterActivity(ticker, filedDate, tradeType);
+        if (clusterActivity.isCluster) {
+          riskScore -= 10;
+        }
+        let priceVarianceRisk = false;
+        if (priceVariance && Math.abs(priceVariance) > 10) {
+          priceVarianceRisk = true;
+          riskScore += 20;
+        }
+        const sectorTrend = await this.analyzeSectorTrend(ticker);
+        const isBuy = tradeType.toUpperCase().includes("BUY");
+        if (isBuy && sectorTrend === "BEARISH") riskScore += 10;
+        if (!isBuy && sectorTrend === "BULLISH") riskScore += 10;
+        const isLargeTrade = totalValue > 1e6;
+        if (isLargeTrade && !isBuy) riskScore += 10;
+        let calculatedRiskLevel;
+        if (riskScore > 70) {
+          calculatedRiskLevel = "HIGH";
+        } else if (riskScore < 40) {
+          calculatedRiskLevel = "LOW";
+        } else {
+          calculatedRiskLevel = "MEDIUM";
+        }
+        return {
+          traderSuccessRate,
+          clusterActivity,
+          priceVarianceRisk,
+          sectorTrend,
+          calculatedRiskLevel,
+          riskScore
+        };
+      }
+      /**
+       * Analyze sector/ticker trend based on recent insider activity
+       */
+      async analyzeSectorTrend(ticker) {
+        const thirtyDaysAgo = /* @__PURE__ */ new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const recentTrades = await db.select().from(insiderTrades).where(
+          and2(
+            eq(insiderTrades.ticker, ticker),
+            gte(insiderTrades.filedDate, thirtyDaysAgo)
+          )
+        );
+        if (recentTrades.length < 2) return "NEUTRAL";
+        const buys = recentTrades.filter((t) => t.tradeType.toUpperCase().includes("BUY"));
+        const sells = recentTrades.filter((t) => t.tradeType.toUpperCase().includes("SELL"));
+        const buyValue = buys.reduce((sum2, t) => sum2 + t.totalValue, 0);
+        const sellValue = sells.reduce((sum2, t) => sum2 + t.totalValue, 0);
+        if (buyValue > sellValue * 1.5) return "BULLISH";
+        if (sellValue > buyValue * 1.5) return "BEARISH";
+        return "NEUTRAL";
+      }
+      /**
+       * Generate data-driven insights based on historical analysis
+       */
+      async generateDataDrivenInsights(ticker, tradeType, totalValue, traderName, traderTitle, filedDate) {
+        const insights = [];
+        const traderHistory = await this.getTraderHistory(traderName);
+        let traderTrackRecord = null;
+        if (traderHistory.totalTrades >= 3) {
+          const successCount = traderHistory.successfulTrades;
+          const totalCount = traderHistory.trades.filter((t) => t.return1Month !== null).length;
+          if (totalCount > 0) {
+            traderTrackRecord = `${traderName} has ${traderHistory.successRate}% success rate on ${totalCount} past trades`;
+            insights.push(traderTrackRecord);
+          }
+        }
+        const clusterActivity = await this.detectClusterActivity(ticker, filedDate, tradeType);
+        let clusterInfo = null;
+        if (clusterActivity.isCluster) {
+          const isBuy = tradeType.toUpperCase().includes("BUY");
+          clusterInfo = `${clusterActivity.count} insiders ${isBuy ? "buying" : "selling"} ${ticker} in past 7 days`;
+          insights.push(clusterInfo);
+        }
+        const avgTradeSize = await this.getAverageTradeSize(ticker);
+        let sizeComparison = null;
+        if (avgTradeSize > 0) {
+          const sizeRatio = totalValue / avgTradeSize;
+          if (sizeRatio > 2) {
+            sizeComparison = `Trade ${sizeRatio.toFixed(1)}x larger than average for ${ticker}`;
+            insights.push(sizeComparison);
+          } else if (sizeRatio < 0.5) {
+            sizeComparison = `Trade ${(1 / sizeRatio).toFixed(1)}x smaller than average for ${ticker}`;
+            insights.push(sizeComparison);
+          }
+        }
+        const priceTargets = await this.calculateHistoricalPriceTargets(ticker, tradeType, totalValue, traderTitle);
+        let historicalPerformance = null;
+        if (priceTargets.sampleSize >= 5) {
+          historicalPerformance = `Similar trades averaged ${priceTargets.avgReturn > 0 ? "+" : ""}${priceTargets.avgReturn}% return (${priceTargets.sampleSize} samples)`;
+          insights.push(historicalPerformance);
+        }
+        if (insights.length < 2) {
+          const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
+            (title) => traderTitle.toLowerCase().includes(title.toLowerCase())
+          );
+          if (isExecutive) {
+            insights.push(`Executive-level ${tradeType.toLowerCase()} transaction from ${traderTitle}`);
+          }
+          const isLargeTrade = totalValue > 1e6;
+          if (isLargeTrade) {
+            insights.push(`Trade value of $${(totalValue / 1e6).toFixed(1)}M indicates high conviction`);
+          }
+        }
+        return {
+          insights,
+          traderTrackRecord,
+          clusterInfo,
+          sizeComparison,
+          historicalPerformance
+        };
+      }
+      /**
+       * Get average trade size for a ticker
+       */
+      async getAverageTradeSize(ticker) {
+        const result = await db.select({
+          avgValue: sql2`avg(${insiderTrades.totalValue})`
+        }).from(insiderTrades).where(eq(insiderTrades.ticker, ticker));
+        return result[0]?.avgValue || 0;
+      }
+    };
+    historicalAnalyticsService = new HistoricalAnalyticsService();
+  }
+});
+
 // server/ai-analysis.ts
 import OpenAI from "openai";
 var openai, AIAnalysisService, aiAnalysisService;
 var init_ai_analysis = __esm({
   "server/ai-analysis.ts"() {
     "use strict";
+    init_historical_analytics();
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     AIAnalysisService = class {
       constructor() {
@@ -392,7 +877,7 @@ var init_ai_analysis = __esm({
           } else {
             console.error("AI analysis failed:", error);
           }
-          return this.generateFallbackAnalysis(tradeData);
+          return await this.generateFallbackAnalysis(tradeData);
         }
       }
       buildAnalysisPrompt(tradeData) {
@@ -446,7 +931,13 @@ Provide analysis in this exact JSON format:
   "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
   "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
   "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
-  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " and recent news" : ""}>"
+  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " and recent news" : ""}>",
+  "priceTargets": {
+    "conservative": <percentage as number, e.g., 3 for +3%>,
+    "realistic": <percentage as number>,
+    "optimistic": <percentage as number>
+  },
+  "timeHorizon": "<specific time frame like '1-2 weeks' or '2-4 weeks'>"
 }
 
 Guidelines:
@@ -455,6 +946,8 @@ Guidelines:
 - keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " incorporating recent news context" : ""}
 - riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
 - recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? " considering both trade data and news sentiment" : ""}
+- priceTargets: Realistic percentage gains/losses based on trade significance. For BUY signals: conservative 2-5%, realistic 5-12%, optimistic 10-25%. For SELL: use negative percentages.
+- timeHorizon: Be realistic for insider trading momentum. Large executive buys: "1-2 weeks". Cluster buying: "3-7 days". Small trades: "2-4 weeks". Most insider signals play out within 1 month, NOT 3-6 months.
 `;
       }
       validateAnalysisResult(result) {
@@ -467,31 +960,133 @@ Guidelines:
             "Market timing may provide investment signal"
           ],
           riskLevel: ["LOW", "MEDIUM", "HIGH"].includes(result.riskLevel) ? result.riskLevel : "MEDIUM",
-          recommendation: typeof result.recommendation === "string" ? result.recommendation : "Monitor for additional insider activity before making investment decisions"
+          recommendation: typeof result.recommendation === "string" ? result.recommendation : "Monitor for additional insider activity before making investment decisions",
+          priceTargets: {
+            conservative: result.priceTargets?.conservative || 3,
+            realistic: result.priceTargets?.realistic || 7,
+            optimistic: result.priceTargets?.optimistic || 15
+          },
+          timeHorizon: typeof result.timeHorizon === "string" ? result.timeHorizon : "2-4 weeks"
         };
       }
-      generateFallbackAnalysis(tradeData) {
+      async generateFallbackAnalysis(tradeData) {
         const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
           (title) => tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
         );
         const isLargeTrade = tradeData.totalValue > 1e6;
         const isBuy = tradeData.tradeType === "BUY";
+        const filedDate = tradeData.filedDate || /* @__PURE__ */ new Date();
         let significanceScore = 50;
         if (isExecutive) significanceScore += 20;
         if (isLargeTrade) significanceScore += 15;
         if (tradeData.ownershipPercentage > 1) significanceScore += 10;
         const signalType = isBuy && isExecutive ? "BUY" : !isBuy && isLargeTrade ? "SELL" : "HOLD";
-        return {
-          significanceScore: Math.min(100, significanceScore),
-          signalType,
-          keyInsights: [
+        try {
+          const historicalPriceTargets = await historicalAnalyticsService.calculateHistoricalPriceTargets(
+            tradeData.ticker,
+            tradeData.tradeType,
+            tradeData.totalValue,
+            tradeData.traderTitle
+          );
+          const historicalTimeHorizon = await historicalAnalyticsService.calculateOptimalTimeHorizon(
+            tradeData.ticker,
+            tradeData.tradeType,
+            tradeData.totalValue
+          );
+          const historicalRisk = await historicalAnalyticsService.calculateHistoricalRisk(
+            tradeData.ticker,
+            tradeData.tradeType,
+            tradeData.totalValue,
+            tradeData.traderName,
+            null,
+            // priceVariance not available here
+            filedDate
+          );
+          const dataInsights = await historicalAnalyticsService.generateDataDrivenInsights(
+            tradeData.ticker,
+            tradeData.tradeType,
+            tradeData.totalValue,
+            tradeData.traderName,
+            tradeData.traderTitle,
+            filedDate
+          );
+          if (historicalRisk.traderSuccessRate !== null) {
+            if (historicalRisk.traderSuccessRate > 70) significanceScore += 10;
+            else if (historicalRisk.traderSuccessRate < 40) significanceScore -= 10;
+          }
+          if (historicalRisk.clusterActivity.isCluster) {
+            significanceScore += 5;
+          }
+          const priceTargets = historicalPriceTargets.sampleSize >= 5 ? {
+            conservative: historicalPriceTargets.conservative,
+            realistic: historicalPriceTargets.realistic,
+            optimistic: historicalPriceTargets.optimistic
+          } : this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
+          const timeHorizon = historicalTimeHorizon.sampleSize >= 3 ? historicalTimeHorizon.recommended : this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
+          const keyInsights = dataInsights.insights.length >= 2 ? dataInsights.insights.slice(0, 3) : [
             `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
             `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
             `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
-          ],
-          riskLevel: isLargeTrade && !isBuy ? "HIGH" : isExecutive && isBuy ? "LOW" : "MEDIUM",
-          recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`
-        };
+          ];
+          return {
+            significanceScore: Math.min(100, Math.max(1, significanceScore)),
+            signalType,
+            keyInsights,
+            riskLevel: historicalRisk.calculatedRiskLevel,
+            recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`,
+            priceTargets,
+            timeHorizon
+          };
+        } catch (error) {
+          console.error("Historical analysis failed, using simple fallback:", error);
+          const priceTargets = this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
+          const timeHorizon = this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
+          return {
+            significanceScore: Math.min(100, significanceScore),
+            signalType,
+            keyInsights: [
+              `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
+              `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
+              `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
+            ],
+            riskLevel: isLargeTrade && !isBuy ? "HIGH" : isExecutive && isBuy ? "LOW" : "MEDIUM",
+            recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`,
+            priceTargets,
+            timeHorizon
+          };
+        }
+      }
+      getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, totalValue) {
+        const isMediumTrade = totalValue > 1e5;
+        if (isBuy) {
+          if (isExecutive && isLargeTrade) {
+            return { conservative: 5, realistic: 12, optimistic: 25 };
+          } else if (isExecutive || isLargeTrade) {
+            return { conservative: 3, realistic: 8, optimistic: 18 };
+          } else if (isMediumTrade) {
+            return { conservative: 2, realistic: 5, optimistic: 12 };
+          } else {
+            return { conservative: 1, realistic: 3, optimistic: 8 };
+          }
+        } else {
+          if (isLargeTrade) {
+            return { conservative: -3, realistic: -8, optimistic: -15 };
+          } else {
+            return { conservative: -1, realistic: -3, optimistic: -7 };
+          }
+        }
+      }
+      getDefaultTimeHorizon(isExecutive, isLargeTrade, totalValue) {
+        const isMediumTrade = totalValue > 1e5;
+        if (isExecutive && isLargeTrade) {
+          return "1-2 weeks";
+        } else if (isExecutive || isLargeTrade) {
+          return "2-3 weeks";
+        } else if (isMediumTrade) {
+          return "2-4 weeks";
+        } else {
+          return "3-4 weeks";
+        }
       }
     };
     aiAnalysisService = new AIAnalysisService();
@@ -500,7 +1095,7 @@ Guidelines:
 
 // server/db-storage.ts
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq, desc, sum, sql as sql2, inArray, gte, lte, and as and2 } from "drizzle-orm";
+import { eq as eq2, desc as desc2, sum, sql as sql3, inArray as inArray2, gte as gte2, lte as lte2, and as and3 } from "drizzle-orm";
 var db, DatabaseStorage;
 var init_db_storage = __esm({
   "server/db-storage.ts"() {
@@ -512,11 +1107,11 @@ var init_db_storage = __esm({
     DatabaseStorage = class {
       // User methods
       async getUser(id) {
-        const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+        const result = await db.select().from(users).where(eq2(users.id, id)).limit(1);
         return result[0];
       }
       async getUserByEmail(email) {
-        const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        const result = await db.select().from(users).where(eq2(users.email, email)).limit(1);
         return result[0];
       }
       async createUser(insertUser) {
@@ -527,33 +1122,33 @@ var init_db_storage = __esm({
       async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy) {
         const conditions = [];
         if (verifiedOnly) {
-          conditions.push(eq(insiderTrades.isVerified, true));
+          conditions.push(eq2(insiderTrades.isVerified, true));
         }
         const filterField = filterBy || sortBy;
         if (fromDate) {
           const dateField = filterField === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
-          conditions.push(gte(dateField, new Date(fromDate)));
+          conditions.push(gte2(dateField, new Date(fromDate)));
         }
         if (toDate) {
           const dateField = filterField === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
-          conditions.push(lte(dateField, new Date(toDate)));
+          conditions.push(lte2(dateField, new Date(toDate)));
         }
         if (transactionTypes && transactionTypes.length > 0) {
-          conditions.push(inArray(insiderTrades.tradeType, transactionTypes));
+          conditions.push(inArray2(insiderTrades.tradeType, transactionTypes));
         }
         let query = db.select().from(insiderTrades);
         if (conditions.length > 0) {
-          query = query.where(and2(...conditions));
+          query = query.where(and3(...conditions));
         }
         const sortField = sortBy === "filedDate" ? insiderTrades.filedDate : insiderTrades.createdAt;
-        const result = await query.orderBy(desc(sortField)).limit(limit).offset(offset);
+        const result = await query.orderBy(desc2(sortField)).limit(limit).offset(offset);
         return result;
       }
       async getVerifiedInsiderTrades(limit = 20, offset = 0) {
         return this.getInsiderTrades(limit, offset, true);
       }
       async getInsiderTradeById(id) {
-        const result = await db.select().from(insiderTrades).where(eq(insiderTrades.id, id)).limit(1);
+        const result = await db.select().from(insiderTrades).where(eq2(insiderTrades.id, id)).limit(1);
         return result[0];
       }
       async createInsiderTrade(insertTrade) {
@@ -590,7 +1185,7 @@ var init_db_storage = __esm({
         } catch (error) {
           if (error?.code === "23505" || error?.constraint === "insider_trades_accession_number_unique") {
             console.log(`\u26A0\uFE0F Duplicate accession number ${insertTrade.accessionNumber}, fetching existing record`);
-            const existing = await db.select().from(insiderTrades).where(eq(insiderTrades.accessionNumber, insertTrade.accessionNumber)).limit(1);
+            const existing = await db.select().from(insiderTrades).where(eq2(insiderTrades.accessionNumber, insertTrade.accessionNumber)).limit(1);
             if (existing[0]) {
               return existing[0];
             }
@@ -618,11 +1213,13 @@ var init_db_storage = __esm({
               significanceScore: analysis.significanceScore,
               keyInsights: analysis.keyInsights,
               riskLevel: analysis.riskLevel,
-              recommendation: analysis.recommendation
+              recommendation: analysis.recommendation,
+              priceTargets: analysis.priceTargets,
+              timeHorizon: analysis.timeHorizon
             },
             significanceScore: analysis.significanceScore,
             signalType: analysis.signalType
-          }).where(eq(insiderTrades.id, trade.id));
+          }).where(eq2(insiderTrades.id, trade.id));
           console.log(`\u2705 AI analysis generated for trade ${trade.id} (${trade.ticker})`);
         } catch (error) {
           console.error(`\u274C AI analysis failed for trade ${trade.id}:`, error.message);
@@ -650,14 +1247,14 @@ var init_db_storage = __esm({
               marketPrice: insertTrade.marketPrice || null,
               priceVariance: insertTrade.priceVariance || null,
               secFilingUrl: insertTrade.secFilingUrl || null
-            }).where(eq(insiderTrades.accessionNumber, insertTrade.accessionNumber)).returning();
+            }).where(eq2(insiderTrades.accessionNumber, insertTrade.accessionNumber)).returning();
             return result[0];
           }
           throw error;
         }
       }
       async updateInsiderTrade(id, updates) {
-        const result = await db.update(insiderTrades).set(updates).where(eq(insiderTrades.id, id)).returning();
+        const result = await db.update(insiderTrades).set(updates).where(eq2(insiderTrades.id, id)).returning();
         return result[0];
       }
       async getTradingStats(verifiedOnly = true) {
@@ -666,16 +1263,16 @@ var init_db_storage = __esm({
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const conditions = [
-          gte(insiderTrades.createdAt, today),
-          lte(insiderTrades.createdAt, tomorrow)
+          gte2(insiderTrades.createdAt, today),
+          lte2(insiderTrades.createdAt, tomorrow)
         ];
         if (verifiedOnly) {
-          conditions.push(eq(insiderTrades.isVerified, true));
+          conditions.push(eq2(insiderTrades.isVerified, true));
         }
         const todayStats = await db.select({
-          count: sql2`count(*)`,
+          count: sql3`count(*)`,
           totalVolume: sum(insiderTrades.totalValue)
-        }).from(insiderTrades).where(and2(...conditions));
+        }).from(insiderTrades).where(and3(...conditions));
         return {
           todayTrades: todayStats[0]?.count || 0,
           totalVolume: Number(todayStats[0]?.totalVolume) || 0
@@ -683,7 +1280,7 @@ var init_db_storage = __esm({
       }
       // Stock price methods
       async getStockPrice(ticker) {
-        const result = await db.select().from(stockPrices).where(eq(stockPrices.ticker, ticker.toUpperCase())).limit(1);
+        const result = await db.select().from(stockPrices).where(eq2(stockPrices.ticker, ticker.toUpperCase())).limit(1);
         return result[0];
       }
       async upsertStockPrice(price) {
@@ -702,8 +1299,8 @@ var init_db_storage = __esm({
               changePercent: price.changePercent,
               volume: price.volume,
               marketCap: price.marketCap,
-              lastUpdated: sql2`NOW()`
-            }).where(eq(stockPrices.ticker, price.ticker.toUpperCase())).returning();
+              lastUpdated: sql3`NOW()`
+            }).where(eq2(stockPrices.ticker, price.ticker.toUpperCase())).returning();
             return result[0];
           }
           throw error;
@@ -712,18 +1309,18 @@ var init_db_storage = __esm({
       async getStockPrices(tickers) {
         if (tickers.length === 0) return [];
         const upperTickers = tickers.map((t) => t.toUpperCase());
-        const result = await db.select().from(stockPrices).where(inArray(stockPrices.ticker, upperTickers));
+        const result = await db.select().from(stockPrices).where(inArray2(stockPrices.ticker, upperTickers));
         return result;
       }
       // Stock price history methods
       async getStockPriceHistory(ticker, fromDate, toDate) {
         const upperTicker = ticker.toUpperCase();
-        let query = db.select().from(stockPriceHistory).where(eq(stockPriceHistory.ticker, upperTicker)).orderBy(desc(stockPriceHistory.date));
+        let query = db.select().from(stockPriceHistory).where(eq2(stockPriceHistory.ticker, upperTicker)).orderBy(desc2(stockPriceHistory.date));
         if (fromDate && toDate) {
-          const { gte: gte3 } = await import("drizzle-orm");
-          const { lte: lte2 } = await import("drizzle-orm");
+          const { gte: gte4 } = await import("drizzle-orm");
+          const { lte: lte3 } = await import("drizzle-orm");
           query = query.where(
-            sql2`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
+            sql3`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
           );
         }
         return query;
@@ -744,7 +1341,7 @@ var init_db_storage = __esm({
               close: history.close,
               volume: history.volume
             }).where(
-              sql2`${stockPriceHistory.ticker} = ${history.ticker.toUpperCase()} AND ${stockPriceHistory.date} = ${history.date}`
+              sql3`${stockPriceHistory.ticker} = ${history.ticker.toUpperCase()} AND ${stockPriceHistory.date} = ${history.date}`
             ).returning();
             return result[0];
           }
@@ -754,7 +1351,7 @@ var init_db_storage = __esm({
       async getStockPriceHistoryRange(ticker, fromDate, toDate) {
         const upperTicker = ticker.toUpperCase();
         const result = await db.select().from(stockPriceHistory).where(
-          sql2`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
+          sql3`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
         ).orderBy(stockPriceHistory.date);
         return result;
       }
@@ -762,13 +1359,13 @@ var init_db_storage = __esm({
       async getAlerts(userId) {
         let query = db.select().from(alerts);
         if (userId) {
-          query = query.where(eq(alerts.userId, userId));
+          query = query.where(eq2(alerts.userId, userId));
         }
-        const result = await query.orderBy(desc(alerts.createdAt));
+        const result = await query.orderBy(desc2(alerts.createdAt));
         return result;
       }
       async getAlertById(id) {
-        const result = await db.select().from(alerts).where(eq(alerts.id, id)).limit(1);
+        const result = await db.select().from(alerts).where(eq2(alerts.id, id)).limit(1);
         return result[0];
       }
       async createAlert(insertAlert) {
@@ -776,26 +1373,26 @@ var init_db_storage = __esm({
         return result[0];
       }
       async updateAlert(id, updates) {
-        const result = await db.update(alerts).set(updates).where(eq(alerts.id, id)).returning();
+        const result = await db.update(alerts).set(updates).where(eq2(alerts.id, id)).returning();
         return result[0];
       }
       async deleteAlert(id) {
-        const result = await db.delete(alerts).where(eq(alerts.id, id));
+        const result = await db.delete(alerts).where(eq2(alerts.id, id));
         return result.rowCount > 0;
       }
       async triggerAlert(id) {
-        await db.update(alerts).set({ lastTriggered: sql2`NOW()` }).where(eq(alerts.id, id));
+        await db.update(alerts).set({ lastTriggered: sql3`NOW()` }).where(eq2(alerts.id, id));
       }
       // Efficient duplicate checking methods
       async existsByAccessionNumber(accessionNumber) {
-        const result = await db.select({ count: sql2`count(*)` }).from(insiderTrades).where(eq(insiderTrades.accessionNumber, accessionNumber));
+        const result = await db.select({ count: sql3`count(*)` }).from(insiderTrades).where(eq2(insiderTrades.accessionNumber, accessionNumber));
         return (result[0]?.count || 0) > 0;
       }
       async existsByAccessionNumbers(accessionNumbers) {
         if (accessionNumbers.length === 0) {
           return /* @__PURE__ */ new Set();
         }
-        const result = await db.select({ accessionNumber: insiderTrades.accessionNumber }).from(insiderTrades).where(inArray(insiderTrades.accessionNumber, accessionNumbers));
+        const result = await db.select({ accessionNumber: insiderTrades.accessionNumber }).from(insiderTrades).where(inArray2(insiderTrades.accessionNumber, accessionNumbers));
         return new Set(result.map((row) => row.accessionNumber));
       }
       // HOT/WARM/COLD Data Layer Methods
@@ -810,17 +1407,17 @@ var init_db_storage = __esm({
         const twoYearsAgo = /* @__PURE__ */ new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
         const result = await db.select().from(insiderTrades).where(
-          and2(
-            lte(insiderTrades.filedDate, threeMonthsAgo),
-            gte(insiderTrades.filedDate, twoYearsAgo)
+          and3(
+            lte2(insiderTrades.filedDate, threeMonthsAgo),
+            gte2(insiderTrades.filedDate, twoYearsAgo)
           )
-        ).orderBy(desc(insiderTrades.filedDate)).limit(limit).offset(offset);
+        ).orderBy(desc2(insiderTrades.filedDate)).limit(limit).offset(offset);
         return result;
       }
       async getColdTrades(limit = 20, offset = 0) {
         const twoYearsAgo = /* @__PURE__ */ new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        const result = await db.select().from(insiderTrades).where(lte(insiderTrades.filedDate, twoYearsAgo)).orderBy(desc(insiderTrades.filedDate)).limit(limit).offset(offset);
+        const result = await db.select().from(insiderTrades).where(lte2(insiderTrades.filedDate, twoYearsAgo)).orderBy(desc2(insiderTrades.filedDate)).limit(limit).offset(offset);
         return result;
       }
       async organizeDataLayers() {
@@ -828,14 +1425,14 @@ var init_db_storage = __esm({
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         const twoYearsAgo = /* @__PURE__ */ new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        const hotResult = await db.select({ count: sql2`count(*)` }).from(insiderTrades).where(gte(insiderTrades.filedDate, threeMonthsAgo));
-        const warmResult = await db.select({ count: sql2`count(*)` }).from(insiderTrades).where(
-          and2(
-            lte(insiderTrades.filedDate, threeMonthsAgo),
-            gte(insiderTrades.filedDate, twoYearsAgo)
+        const hotResult = await db.select({ count: sql3`count(*)` }).from(insiderTrades).where(gte2(insiderTrades.filedDate, threeMonthsAgo));
+        const warmResult = await db.select({ count: sql3`count(*)` }).from(insiderTrades).where(
+          and3(
+            lte2(insiderTrades.filedDate, threeMonthsAgo),
+            gte2(insiderTrades.filedDate, twoYearsAgo)
           )
         );
-        const coldResult = await db.select({ count: sql2`count(*)` }).from(insiderTrades).where(lte(insiderTrades.filedDate, twoYearsAgo));
+        const coldResult = await db.select({ count: sql3`count(*)` }).from(insiderTrades).where(lte2(insiderTrades.filedDate, twoYearsAgo));
         return {
           hot: hotResult[0]?.count || 0,
           warm: warmResult[0]?.count || 0,
@@ -847,7 +1444,7 @@ var init_db_storage = __esm({
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
         const twoYearsAgo = /* @__PURE__ */ new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        const result = await db.select().from(insiderTrades).orderBy(desc(insiderTrades.filedDate)).limit(limit).offset(offset);
+        const result = await db.select().from(insiderTrades).orderBy(desc2(insiderTrades.filedDate)).limit(limit).offset(offset);
         return result;
       }
     };
@@ -5223,7 +5820,7 @@ var init_data_collection_api = __esm({
 });
 
 // server/admin-metrics-service.ts
-import { sql as sql3, gte as gte2, eq as eq2 } from "drizzle-orm";
+import { sql as sql4, gte as gte3, eq as eq3 } from "drizzle-orm";
 var AdminMetricsService, adminMetricsService;
 var init_admin_metrics_service = __esm({
   "server/admin-metrics-service.ts"() {
@@ -5285,7 +5882,7 @@ var init_admin_metrics_service = __esm({
           subscriptionTier: users.subscriptionTier,
           trialActivatedAt: users.trialActivatedAt,
           trialExpiresAt: users.trialExpiresAt
-        }).from(users).orderBy(sql3`${users.createdAt} DESC`).limit(limit);
+        }).from(users).orderBy(sql4`${users.createdAt} DESC`).limit(limit);
         const now = /* @__PURE__ */ new Date();
         return usersList.map((user2) => {
           let status = "free";
@@ -5308,7 +5905,7 @@ var init_admin_metrics_service = __esm({
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const usersLast30Days = await db.select({
           createdAt: users.createdAt
-        }).from(users).where(gte2(users.createdAt, thirtyDaysAgo)).orderBy(users.createdAt);
+        }).from(users).where(gte3(users.createdAt, thirtyDaysAgo)).orderBy(users.createdAt);
         const dailyCounts = {};
         usersLast30Days.forEach((user2) => {
           if (user2.createdAt) {
@@ -5389,7 +5986,7 @@ var init_admin_metrics_service = __esm({
           subscriptionTier: users.subscriptionTier,
           subscriptionStartDate: users.subscriptionStartDate,
           createdAt: users.createdAt
-        }).from(users).where(eq2(users.subscriptionStatus, "active"));
+        }).from(users).where(eq3(users.subscriptionStatus, "active"));
         const totalPaidUsers = paidUsers.length;
         const INSIDER_PRO_MONTHLY_PRICE = 14;
         const mrr = totalPaidUsers * INSIDER_PRO_MONTHLY_PRICE;
@@ -9090,7 +9687,7 @@ var init_data_integrity_service = __esm({
 
 // server/subscription-service.ts
 import { drizzle as drizzle3 } from "drizzle-orm/neon-http";
-import { eq as eq3 } from "drizzle-orm";
+import { eq as eq4 } from "drizzle-orm";
 import Stripe from "stripe";
 function canAccessRealtimeData(accessLevel) {
   return accessLevel.canAccessRealtime;
@@ -9122,7 +9719,7 @@ async function syncSubscriptionFromStripe(user2) {
         // Keep as active even if Stripe says "canceled" but still valid
         subscriptionEndDate: stripePeriodEnd,
         subscriptionTier: "insider_pro"
-      }).where(eq3(users.id, user2.id));
+      }).where(eq4(users.id, user2.id));
       return true;
     }
     if (stripePeriodEnd <= now) {
@@ -9130,7 +9727,7 @@ async function syncSubscriptionFromStripe(user2) {
       await db3.update(users).set({
         subscriptionStatus: "inactive",
         subscriptionEndDate: stripePeriodEnd
-      }).where(eq3(users.id, user2.id));
+      }).where(eq4(users.id, user2.id));
       return false;
     }
     console.log(`[Stripe Sync] \u26A0\uFE0F Unexpected Stripe status "${subscription.status}" for user ${user2.id}, keeping DB unchanged`);
@@ -9142,7 +9739,7 @@ async function syncSubscriptionFromStripe(user2) {
 }
 async function getUserAccessLevel(userId) {
   let user2 = await db3.query.users.findFirst({
-    where: eq3(users.id, userId)
+    where: eq4(users.id, userId)
   });
   if (!user2) {
     return {
@@ -9162,7 +9759,7 @@ async function getUserAccessLevel(userId) {
     const syncedSuccessfully = await syncSubscriptionFromStripe(user2);
     if (syncedSuccessfully) {
       const updatedUser = await db3.query.users.findFirst({
-        where: eq3(users.id, userId)
+        where: eq4(users.id, userId)
       });
       if (updatedUser) {
         user2 = updatedUser;
@@ -9186,7 +9783,7 @@ async function getUserAccessLevel(userId) {
 }
 async function activateTrial(userId) {
   const user2 = await db3.query.users.findFirst({
-    where: eq3(users.id, userId)
+    where: eq4(users.id, userId)
   });
   if (!user2) {
     return { success: false, message: "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" };
@@ -9212,7 +9809,7 @@ async function activateTrial(userId) {
     trialExpiresAt: expiresAt,
     hasUsedTrial: true,
     subscriptionStatus: "trialing"
-  }).where(eq3(users.id, userId));
+  }).where(eq4(users.id, userId));
   console.log(`\u2705 Trial activated for user ${userId}, expires at ${expiresAt}`);
   return {
     success: true,
@@ -9223,7 +9820,7 @@ async function activateTrial(userId) {
 async function checkExpiredTrials() {
   const now = /* @__PURE__ */ new Date();
   const expiredTrialUsers = await db3.query.users.findMany({
-    where: (users2, { and: and4, lt, isNotNull, or, isNull: isNull2 }) => and4(
+    where: (users2, { and: and5, lt, isNotNull, or, isNull: isNull2 }) => and5(
       lt(users2.trialExpiresAt, now),
       isNotNull(users2.trialExpiresAt),
       or(
@@ -9240,7 +9837,7 @@ async function markTrialNotificationSent(userId) {
     lastTrialNotificationSent: /* @__PURE__ */ new Date(),
     subscriptionStatus: "inactive"
     // Move back to inactive after trial
-  }).where(eq3(users.id, userId));
+  }).where(eq4(users.id, userId));
 }
 async function upgradeToInsiderPro(userId, stripeCustomerId, stripeSubscriptionId, subscriptionEndDate) {
   const now = /* @__PURE__ */ new Date();
@@ -9252,7 +9849,7 @@ async function upgradeToInsiderPro(userId, stripeCustomerId, stripeSubscriptionI
     stripeSubscriptionId,
     subscriptionStartDate: now,
     subscriptionEndDate: endDate
-  }).where(eq3(users.id, userId));
+  }).where(eq4(users.id, userId));
   console.log(`\u2705 User ${userId} upgraded to Insider Pro until ${endDate}`);
 }
 async function cancelSubscription(userId, periodEndDate) {
@@ -9262,7 +9859,7 @@ async function cancelSubscription(userId, periodEndDate) {
   await db3.update(users).set({
     subscriptionStatus: status,
     subscriptionEndDate: endDate
-  }).where(eq3(users.id, userId));
+  }).where(eq4(users.id, userId));
   if (periodEndDate && periodEndDate > now) {
     console.log(`\u26A0\uFE0F Subscription will end for user ${userId} at ${periodEndDate} (keeping active status until then)`);
   } else {
@@ -10030,7 +10627,7 @@ var auto_scheduler_exports = {};
 __export(auto_scheduler_exports, {
   autoScheduler: () => autoScheduler
 });
-import { eq as eq4 } from "drizzle-orm";
+import { eq as eq5 } from "drizzle-orm";
 var AutoScheduler, autoScheduler;
 var init_auto_scheduler = __esm({
   "server/auto-scheduler.ts"() {
@@ -10145,7 +10742,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq4(collectionRuns.id, runId));
+          }).where(eq5(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] OpenInsider collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("OpenInsider", processedCount, duration);
@@ -10157,7 +10754,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq4(collectionRuns.id, runId));
+            }).where(eq5(collectionRuns.id, runId));
           }
           this.openInsiderFailures++;
           if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -10188,7 +10785,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq4(collectionRuns.id, runId));
+          }).where(eq5(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] MarketBeat collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("MarketBeat", processedCount, duration);
@@ -10200,7 +10797,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq4(collectionRuns.id, runId));
+            }).where(eq5(collectionRuns.id, runId));
           }
           this.marketBeatFailures++;
           if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -10263,7 +10860,7 @@ var init_auto_scheduler = __esm({
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date(),
             metadata: { totalTrades: trades.length }
-          }).where(eq4(collectionRuns.id, runId));
+          }).where(eq5(collectionRuns.id, runId));
           console.log(`
 \u2705 [AUTO] SEC RSS Collection Complete`);
           console.log(`   \u23F1\uFE0F Duration: ${duration}ms`);
@@ -10284,7 +10881,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq4(collectionRuns.id, runId));
+            }).where(eq5(collectionRuns.id, runId));
           }
           this.secRssFailures++;
           if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -10600,7 +11197,7 @@ import express from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { eq as eq5 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 import { z as z3 } from "zod";
 import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
@@ -10690,7 +11287,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -10713,7 +11310,7 @@ async function registerRoutes(app2) {
             await db4.update(users).set({
               subscriptionStatus: existingSub.status === "canceled" ? "canceled" : "inactive",
               stripeSubscriptionId: null
-            }).where(eq5(users.id, userId));
+            }).where(eq6(users.id, userId));
           } else if (existingSub.cancel_at_period_end && (existingSub.status === "active" || existingSub.status === "trialing")) {
             console.log(`\u26A0\uFE0F Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
@@ -10722,11 +11319,11 @@ async function registerRoutes(app2) {
           await db4.update(users).set({
             subscriptionStatus: "inactive",
             stripeSubscriptionId: null
-          }).where(eq5(users.id, userId));
+          }).where(eq6(users.id, userId));
         }
       }
       const updatedUser = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!updatedUser) {
         return res.status(404).json({
@@ -10752,13 +11349,13 @@ async function registerRoutes(app2) {
           } else {
             console.error(`\u26A0\uFE0F Unexpected Stripe error, will create new customer:`, error);
           }
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq5(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer ID from database for user ${userId}`);
           customerId = null;
         }
       } else if (customerId) {
         console.warn(`\u26A0\uFE0F Invalid customer ID format: "${customerId}", will create new one`);
-        await db4.update(users).set({ stripeCustomerId: null }).where(eq5(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
         customerId = null;
       }
       if (customerId) {
@@ -10781,7 +11378,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq5(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
         console.log(`\u{1F4BE} Created fresh Stripe customer for user ${userId} (Link removed)`);
       }
       if (customerId) {
@@ -10803,7 +11400,7 @@ async function registerRoutes(app2) {
           }
         } catch (error) {
           console.error(`\u274C Failed to check subscriptions for customer ${customerId}:`, error.message);
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq5(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
           return res.status(400).json({
             error: "\uACB0\uC81C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.",
             details: "Customer validation failed"
@@ -10871,6 +11468,10 @@ async function registerRoutes(app2) {
               userId
             }
           },
+          // Disable automatic tax to remove "세금별도" text
+          automatic_tax: {
+            enabled: false
+          },
           success_url: `${process.env.FRONTEND_URL || "http://localhost:5000"}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.FRONTEND_URL || "http://localhost:5000"}/premium-checkout?canceled=true`,
           metadata: {
@@ -10885,7 +11486,7 @@ async function registerRoutes(app2) {
       } catch (error) {
         console.error(`\u274C Failed to create checkout session:`, error.message);
         if (error.message?.includes("customer") || error.code === "resource_missing") {
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq5(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer from database`);
         }
         return res.status(500).json({
@@ -10940,7 +11541,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11013,7 +11614,7 @@ async function registerRoutes(app2) {
         usedCoupons: newUsedCoupons,
         couponExtensionDays: newExtensionDays,
         lastCouponUsedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(users.id, userId));
+      }).where(eq6(users.id, userId));
       console.log(`\u2705 Coupon "${normalizedCoupon}" redeemed by ${user2.email}, trial extended to ${newTrialExpiresAt}`);
       return res.status(200).json({
         success: true,
@@ -11043,7 +11644,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11089,7 +11690,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
-      }).where(eq5(users.id, userId));
+      }).where(eq6(users.id, userId));
       res.json({
         success: true,
         message: "\uAD6C\uB3C5\uC774 \uD574\uC9C0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
@@ -11113,7 +11714,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2 || !user2.stripeCustomerId) {
         return res.status(404).json({
@@ -11190,7 +11791,7 @@ async function registerRoutes(app2) {
         if (customerId && subscriptionId) {
           try {
             let user2 = await db4.query.users.findFirst({
-              where: eq5(users.stripeCustomerId, customerId)
+              where: eq6(users.stripeCustomerId, customerId)
             });
             if (!user2) {
               console.log(`\u26A0\uFE0F User not found by Stripe customer ID ${customerId}, trying email fallback...`);
@@ -11198,7 +11799,7 @@ async function registerRoutes(app2) {
               if (customer && !customer.deleted && customer.email) {
                 console.log(`\u{1F50D} Searching for user by email: ${customer.email}`);
                 user2 = await db4.query.users.findFirst({
-                  where: eq5(users.email, customer.email)
+                  where: eq6(users.email, customer.email)
                 });
                 if (user2) {
                   console.log(`\u2705 Found user by email fallback: ${customer.email}`);
@@ -11229,7 +11830,7 @@ async function registerRoutes(app2) {
                 subscriptionStartDate: new Date(subscription.created * 1e3),
                 subscriptionEndDate: periodEnd,
                 hasUsedTrial: true
-              }).where(eq5(users.id, user2.id));
+              }).where(eq6(users.id, user2.id));
               console.log(`\u2705 [Webhook Success] User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
               console.log(`\u{1F4CA} [Webhook Success] Details: userId=${user2.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
@@ -11255,7 +11856,7 @@ async function registerRoutes(app2) {
         console.log("\u{1F504} Subscription updated:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq5(users.stripeSubscriptionId, subscription.id)
+            where: eq6(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             if (subscription.cancel_at_period_end) {
@@ -11263,14 +11864,14 @@ async function registerRoutes(app2) {
               await db4.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq5(users.id, user2.id));
+              }).where(eq6(users.id, user2.id));
               console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === "active") {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
               await db4.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq5(users.id, user2.id));
+              }).where(eq6(users.id, user2.id));
               console.log(`\u2705 Subscription reactivated for user ${user2.email}`);
             }
           }
@@ -11284,7 +11885,7 @@ async function registerRoutes(app2) {
         console.log("\u274C Subscription deleted:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq5(users.stripeSubscriptionId, subscription.id)
+            where: eq6(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const periodEnd = new Date(subscription.current_period_end * 1e3);
@@ -11302,7 +11903,7 @@ async function registerRoutes(app2) {
         if (invoice.subscription) {
           try {
             const user2 = await db4.query.users.findFirst({
-              where: eq5(users.stripeSubscriptionId, invoice.subscription)
+              where: eq6(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               const subscription = await stripe2.subscriptions.retrieve(invoice.subscription);
@@ -11314,7 +11915,7 @@ async function registerRoutes(app2) {
                 updates.subscriptionStatus = "active";
                 console.log(`\u2705 Trial ended, subscription now active for user ${user2.email}`);
               }
-              await db4.update(users).set(updates).where(eq5(users.id, user2.id));
+              await db4.update(users).set(updates).where(eq6(users.id, user2.id));
               console.log(`\u{1F4B3} Renewed subscription for user ${user2.email} until ${periodEnd}`);
             }
           } catch (error) {
@@ -11329,7 +11930,7 @@ async function registerRoutes(app2) {
         if (invoice.subscription) {
           try {
             const user2 = await db4.query.users.findFirst({
-              where: eq5(users.stripeSubscriptionId, invoice.subscription)
+              where: eq6(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               console.log(`\u26A0\uFE0F Payment failed for user ${user2.email} - Stripe will retry automatically`);
@@ -11346,7 +11947,7 @@ async function registerRoutes(app2) {
         console.log("\u23F0 Trial ending soon for subscription:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq5(users.stripeSubscriptionId, subscription.id)
+            where: eq6(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const trialEnd = new Date(subscription.trial_end * 1e3);
@@ -11373,7 +11974,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F50D} Syncing subscription for email: ${email}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11419,7 +12020,7 @@ async function registerRoutes(app2) {
         subscriptionStatus: activeSubscription.status,
         subscriptionEndDate,
         subscriptionStartDate: new Date(activeSubscription.created * 1e3)
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       console.log(`\u2705 Database updated for user ${email}`);
       return res.json({
         success: true,
@@ -11446,7 +12047,7 @@ async function registerRoutes(app2) {
   app2.get("/api/admin/check-production-db", protectAdminEndpoint, async (req, res) => {
     try {
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, "user_1762200564967_t6whya")
+        where: eq6(users.id, "user_1762200564967_t6whya")
       });
       res.json({
         userFound: !!user2,
@@ -11493,7 +12094,7 @@ async function registerRoutes(app2) {
             continue;
           }
           const user2 = await db4.query.users.findFirst({
-            where: eq5(users.email, customer.email)
+            where: eq6(users.email, customer.email)
           });
           if (!user2) {
             console.warn(`\u26A0\uFE0F No database user for email ${customer.email}`);
@@ -11511,7 +12112,7 @@ async function registerRoutes(app2) {
             subscriptionStatus: subscription.status,
             subscriptionEndDate,
             subscriptionStartDate: new Date(subscription.created * 1e3)
-          }).where(eq5(users.id, user2.id));
+          }).where(eq6(users.id, user2.id));
           console.log(`\u2705 Synced ${customer.email}`);
           results.synced++;
         } catch (error) {
@@ -11557,7 +12158,7 @@ async function registerRoutes(app2) {
         });
       }
       const existingUser = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       if (existingUser) {
         if (existingUser.emailVerified) {
@@ -11576,7 +12177,7 @@ async function registerRoutes(app2) {
           password: hashedPassword2,
           verificationCode: verificationCode2,
           verificationCodeExpires: verificationCodeExpires2
-        }).where(eq5(users.email, email)).returning();
+        }).where(eq6(users.email, email)).returning();
         console.log("\u2705 User updated with new verification code:", {
           id: updatedUser[0].id,
           email: updatedUser[0].email
@@ -11654,7 +12255,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email}, ID: ${user2.id})` : "No");
       if (user2) {
@@ -11750,7 +12351,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       if (!user2) {
         console.log("\u26A0\uFE0F User not found, but returning success for security");
@@ -11769,7 +12370,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       console.log("\u2705 Reset token saved to database");
       try {
         console.log("\u{1F4E7} Attempting to send password reset email...");
@@ -11823,7 +12424,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, decoded.email)
+        where: eq6(users.email, decoded.email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11848,7 +12449,7 @@ async function registerRoutes(app2) {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       console.log("\u2705 Password reset successful for:", decoded.email);
       res.json({
         success: true,
@@ -11888,14 +12489,14 @@ async function registerRoutes(app2) {
       console.log("\u{1F50D} Looking for user with email:", decoded.email);
       const user2 = await db4.query.users.findFirst({
         where: and(
-          eq5(users.email, decoded.email),
-          eq5(users.verificationToken, token)
+          eq6(users.email, decoded.email),
+          eq6(users.verificationToken, token)
         )
       });
       if (!user2) {
         console.log("\u274C User not found with email and token combo");
         const userByEmail = await db4.query.users.findFirst({
-          where: eq5(users.email, decoded.email)
+          where: eq6(users.email, decoded.email)
         });
         if (userByEmail) {
           console.log("\u26A0\uFE0F User exists but token mismatch");
@@ -11928,7 +12529,7 @@ async function registerRoutes(app2) {
         emailVerified: true,
         verificationToken: null,
         verificationTokenExpires: null
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       console.log("\u2705 Email verified successfully for:", user2.email);
       res.json({
         success: true,
@@ -11953,7 +12554,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -11988,7 +12589,7 @@ async function registerRoutes(app2) {
         emailVerified: true,
         verificationCode: null,
         verificationCodeExpires: null
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       console.log("\u2705 Email verified successfully with code:", email);
       res.json({
         success: true,
@@ -12013,7 +12614,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.email, email)
+        where: eq6(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -12035,7 +12636,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         verificationCode,
         verificationCodeExpires
-      }).where(eq5(users.id, user2.id));
+      }).where(eq6(users.id, user2.id));
       try {
         await emailNotificationService.sendVerificationCode(email, verificationCode);
         console.log("\u{1F4E7} New verification code sent to:", email);
@@ -12068,7 +12669,7 @@ async function registerRoutes(app2) {
       const decoded = jwt.verify(token, JWT_SECRET);
       console.log(`\u{1F510} [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, decoded.userId)
+        where: eq6(users.id, decoded.userId)
       });
       if (!user2) {
         console.log(`\u274C [/api/auth/verify] User not found for userId: ${decoded.userId}`);
@@ -12162,7 +12763,7 @@ async function registerRoutes(app2) {
       if (uniqueTickers.length > 0) {
         try {
           const prices = await db4.query.stockPrices.findMany({
-            where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
+            where: (stockPrices2, { inArray: inArray3 }) => inArray3(stockPrices2.ticker, uniqueTickers),
             columns: {
               ticker: true,
               currentPrice: true,
@@ -12284,7 +12885,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F4B3} Creating SetupIntent for trial user: ${userId}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -12331,7 +12932,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq5(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
         console.log(`\u2705 Created Stripe customer for user ${userId}: ${customerId}`);
       }
       const setupIntent = await stripe2.setupIntents.create({
@@ -12380,7 +12981,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F3AF} Activating trial with card for user: ${userId}, plan: ${planType}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -12435,7 +13036,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq5(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
         console.log(`\u2705 Created Stripe customer: ${customerId}`);
       }
       await stripe2.paymentMethods.attach(paymentMethodId, {
@@ -12475,7 +13076,7 @@ async function registerRoutes(app2) {
         subscriptionEndDate: subscriptionEnd,
         hasUsedTrial: false
         // No trial used - immediate billing
-      }).where(eq5(users.id, userId));
+      }).where(eq6(users.id, userId));
       console.log(`\u2705 Subscription created for user ${userId} - billing immediately`);
       const subscriptionMessage = "\uAD6C\uB3C5\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uACB0\uC81C \uC644\uB8CC \uD6C4 \uC989\uC2DC \uD504\uB9AC\uBBF8\uC5C4 \uAE30\uB2A5\uC744 \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
       res.json({
@@ -12506,7 +13107,7 @@ async function registerRoutes(app2) {
       console.log(`\u{1F511} [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
       const accessLevel = await subscriptionService.getUserAccessLevel(userId);
       const user2 = await db4.query.users.findFirst({
-        where: eq5(users.id, userId)
+        where: eq6(users.id, userId)
       });
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
@@ -12610,7 +13211,7 @@ async function registerRoutes(app2) {
       const tradeId = req.params.id;
       const language = req.query.language || "en";
       const trade = await db4.query.insiderTrades.findFirst({
-        where: eq5(insiderTrades.id, tradeId)
+        where: eq6(insiderTrades.id, tradeId)
       });
       if (!trade) {
         return res.status(404).json({ error: "Trade not found" });
@@ -12723,6 +13324,8 @@ async function registerRoutes(app2) {
         pricePerShare: trade.pricePerShare,
         totalValue: trade.totalValue,
         ownershipPercentage: trade.ownershipPercentage || 0,
+        filedDate: trade.filedDate,
+        // Pass filedDate for historical analysis
         recentNews: recentNews.length > 0 ? recentNews : void 0
       });
       const t = (key) => {
@@ -12867,10 +13470,12 @@ async function registerRoutes(app2) {
         })(),
         actionableRecommendation: `${analysis.signalType} ${t("signal")} - ${analysis.recommendation}`,
         priceTargets: {
-          conservative: trade.pricePerShare * 0.95,
-          realistic: trade.pricePerShare * 1.05,
-          optimistic: trade.pricePerShare * 1.15,
-          timeHorizon: t("timeHorizon")
+          // Use AI-generated percentage targets to calculate actual price targets
+          conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
+          realistic: trade.pricePerShare * (1 + analysis.priceTargets.realistic / 100),
+          optimistic: trade.pricePerShare * (1 + analysis.priceTargets.optimistic / 100),
+          timeHorizon: analysis.timeHorizon
+          // Use AI-generated time horizon instead of hardcoded value
         },
         riskAssessment: {
           level: analysis.riskLevel,
@@ -12882,7 +13487,7 @@ async function registerRoutes(app2) {
           reasoning: analysis.keyInsights[0] || t("analyzingMarket")
         },
         catalysts: analysis.keyInsights,
-        timeHorizon: t("timeHorizon"),
+        timeHorizon: analysis.timeHorizon,
         confidence: analysis.significanceScore,
         newsAnalysis
       };
@@ -12914,7 +13519,7 @@ async function registerRoutes(app2) {
         await db4.update(insiderTrades).set({
           comprehensiveAnalysis,
           analysisGeneratedAt: /* @__PURE__ */ new Date()
-        }).where(eq5(insiderTrades.id, tradeId));
+        }).where(eq6(insiderTrades.id, tradeId));
         console.log(`\u{1F4BE} Cached analysis saved to database for trade ${tradeId}`);
       } catch (cacheError) {
         console.error("\u26A0\uFE0F Failed to cache analysis (continuing):", cacheError);
@@ -13468,7 +14073,7 @@ async function registerRoutes(app2) {
       const stockPriceMap = /* @__PURE__ */ new Map();
       if (uniqueTickers.length > 0) {
         const prices = await db4.query.stockPrices.findMany({
-          where: (stockPrices2, { inArray: inArray2 }) => inArray2(stockPrices2.ticker, uniqueTickers),
+          where: (stockPrices2, { inArray: inArray3 }) => inArray3(stockPrices2.ticker, uniqueTickers),
           columns: {
             ticker: true,
             currentPrice: true,
@@ -13585,7 +14190,9 @@ async function registerRoutes(app2) {
           pricePerShare: t.pricePerShare,
           totalValue: t.totalValue,
           date: t.filedDate,
-          tradeType: t.tradeType
+          tradeType: t.tradeType,
+          secFilingUrl: t.secFilingUrl,
+          accessionNumber: t.accessionNumber
         })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         const stockPriceData = stockPriceMap.get(metrics.ticker);
         const currentPrice = stockPriceData?.price;
@@ -16274,13 +16881,13 @@ __export(cron_jobs_exports, {
 import cron from "node-cron";
 import Stripe3 from "stripe";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
     try {
       const insiderProUsers = await db5.query.users.findMany({
-        where: eq6(users.subscriptionTier, "insider_pro")
+        where: eq7(users.subscriptionTier, "insider_pro")
       });
       console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
       let syncedCount = 0;
@@ -16311,7 +16918,7 @@ function startSubscriptionSyncJob() {
             await db5.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq6(users.id, user2.id));
+            }).where(eq7(users.id, user2.id));
             console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
             syncedCount++;
           } else if (dbStatusMismatch || dbEndDateMismatch) {
@@ -16325,7 +16932,7 @@ function startSubscriptionSyncJob() {
             await db5.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq6(users.id, user2.id));
+            }).where(eq7(users.id, user2.id));
             syncedCount++;
           } else {
             console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
@@ -16353,8 +16960,8 @@ function startTrialExpirationCheckJob() {
     try {
       const now = /* @__PURE__ */ new Date();
       const expiredTrialUsers = await db5.query.users.findMany({
-        where: (users2, { and: and4, lt, eq: eq7, isNotNull }) => and4(
-          eq7(users2.subscriptionStatus, "trialing"),
+        where: (users2, { and: and5, lt, eq: eq8, isNotNull }) => and5(
+          eq8(users2.subscriptionStatus, "trialing"),
           isNotNull(users2.trialExpiresAt),
           lt(users2.trialExpiresAt, now)
         )
@@ -16364,7 +16971,7 @@ function startTrialExpirationCheckJob() {
         for (const user2 of expiredTrialUsers) {
           await db5.update(users).set({
             subscriptionStatus: "inactive"
-          }).where(eq6(users.id, user2.id));
+          }).where(eq7(users.id, user2.id));
           console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
         }
       }
@@ -16382,8 +16989,8 @@ function startSubscriptionExpirationCheckJob() {
     try {
       const now = /* @__PURE__ */ new Date();
       const expiredSubscriptions = await db5.query.users.findMany({
-        where: (users2, { and: and4, eq: eq7, isNotNull, lt }) => and4(
-          eq7(users2.subscriptionStatus, "active"),
+        where: (users2, { and: and5, eq: eq8, isNotNull, lt }) => and5(
+          eq8(users2.subscriptionStatus, "active"),
           isNotNull(users2.subscriptionEndDate),
           lt(users2.subscriptionEndDate, now)
         ),
@@ -16396,7 +17003,7 @@ function startSubscriptionExpirationCheckJob() {
           try {
             await db5.update(users).set({
               subscriptionStatus: "inactive"
-            }).where(eq6(users.id, user2.id));
+            }).where(eq7(users.id, user2.id));
             console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
           } catch (updateError) {
             console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);

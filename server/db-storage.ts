@@ -166,7 +166,9 @@ export class DatabaseStorage implements IStorage {
             significanceScore: analysis.significanceScore,
             keyInsights: analysis.keyInsights,
             riskLevel: analysis.riskLevel,
-            recommendation: analysis.recommendation
+            recommendation: analysis.recommendation,
+            priceTargets: analysis.priceTargets,
+            timeHorizon: analysis.timeHorizon
           },
           significanceScore: analysis.significanceScore,
           signalType: analysis.signalType

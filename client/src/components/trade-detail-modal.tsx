@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
@@ -29,35 +29,119 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     // Use existing aiAnalysis from trade if available
     if (trade.aiAnalysis && typeof trade.aiAnalysis === 'object' && 'signal' in trade.aiAnalysis) {
       const ai = trade.aiAnalysis as any;
+      // Calculate price targets from percentage values
+      const conservativePct = ai.priceTargets?.conservative || 3;
+      const realisticPct = ai.priceTargets?.realistic || 7;
+      const optimisticPct = ai.priceTargets?.optimistic || 15;
+
       return {
         signal: (ai.signal || 'BUY') as 'BUY' | 'SELL' | 'HOLD',
-        confidence: ai.significanceScore || 97,
-        insight: (ai.keyInsights?.[0] || 'Analyzing insider trading patterns...') as string,
+        confidence: ai.significanceScore || 75,
+        insight: (ai.keyInsights?.[0] || t.insightSmallBuy) as string,
         priceTargets: {
-          conservative: trade.pricePerShare * 1.05,
-          realistic: trade.pricePerShare * 1.19,
-          optimistic: trade.pricePerShare * 1.43
+          conservative: trade.pricePerShare * (1 + conservativePct / 100),
+          realistic: trade.pricePerShare * (1 + realisticPct / 100),
+          optimistic: trade.pricePerShare * (1 + optimisticPct / 100)
         },
-        riskLevel: (ai.riskLevel || 'LOW') as string,
-        timeHorizon: '3-6 MONTHS'
+        riskLevel: (ai.riskLevel === 'LOW' ? t.riskLow : ai.riskLevel === 'MEDIUM' ? t.riskMedium : t.riskHigh) as string,
+        timeHorizon: ai.timeHorizon || '2-4 weeks'
       };
     }
     
-    // Fallback defaults
+    // Fallback defaults - generate dynamic insight based on trade data
     const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'Buy';
+    const traderTitle = trade.traderTitle?.toLowerCase() || '';
+    const totalValue = trade.totalValue || (trade.shares * trade.pricePerShare);
+
+    // Generate insight based on trade characteristics using translations
+    let insight = '';
+    if (traderTitle.includes('ceo') || traderTitle.includes('president')) {
+      insight = isBuy ? t.insightCeoBuy : t.insightCeoSell;
+    } else if (traderTitle.includes('cfo')) {
+      insight = isBuy ? t.insightCfoBuy : t.insightCfoSell;
+    } else if (traderTitle.includes('director')) {
+      insight = isBuy ? t.insightDirectorBuy : t.insightDirectorSell;
+    } else if (totalValue > 1000000) {
+      insight = isBuy ? t.insightLargeBuy : t.insightLargeSell;
+    } else if (totalValue > 100000) {
+      insight = isBuy ? t.insightMediumBuy : t.insightMediumSell;
+    } else {
+      insight = isBuy ? t.insightSmallBuy : t.insightSmallSell;
+    }
+
+    // Generate realistic price targets and time horizon based on trade characteristics
+    const isExecutive = traderTitle.includes('ceo') || traderTitle.includes('cfo') ||
+                        traderTitle.includes('president') || traderTitle.includes('director');
+    const isLargeTrade = totalValue > 1000000;
+    const isMediumTrade = totalValue > 100000;
+
+    let priceTargets;
+    let timeHorizon;
+
+    if (isBuy) {
+      if (isExecutive && isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.05,
+          realistic: trade.pricePerShare * 1.12,
+          optimistic: trade.pricePerShare * 1.25
+        };
+        timeHorizon = '1-2 weeks';
+      } else if (isExecutive || isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.03,
+          realistic: trade.pricePerShare * 1.08,
+          optimistic: trade.pricePerShare * 1.18
+        };
+        timeHorizon = '2-3 weeks';
+      } else if (isMediumTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.02,
+          realistic: trade.pricePerShare * 1.05,
+          optimistic: trade.pricePerShare * 1.12
+        };
+        timeHorizon = '2-4 weeks';
+      } else {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.01,
+          realistic: trade.pricePerShare * 1.03,
+          optimistic: trade.pricePerShare * 1.08
+        };
+        timeHorizon = '3-4 weeks';
+      }
+    } else {
+      // SELL signals - negative targets
+      if (isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 0.97,
+          realistic: trade.pricePerShare * 0.92,
+          optimistic: trade.pricePerShare * 0.85
+        };
+        timeHorizon = '1-2 weeks';
+      } else {
+        priceTargets = {
+          conservative: trade.pricePerShare * 0.99,
+          realistic: trade.pricePerShare * 0.97,
+          optimistic: trade.pricePerShare * 0.93
+        };
+        timeHorizon = '2-3 weeks';
+      }
+    }
+
+    // Calculate confidence based on trade characteristics
+    let confidence = 50;
+    if (isExecutive) confidence += 20;
+    if (isLargeTrade) confidence += 15;
+    else if (isMediumTrade) confidence += 8;
+
     return {
       signal: isBuy ? 'BUY' as const : 'SELL' as const,
-      confidence: 97,
-      insight: 'Merger discussions rumored in industry reports.',
-      priceTargets: {
-        conservative: trade.pricePerShare * 1.05,
-        realistic: trade.pricePerShare * 1.19,
-        optimistic: trade.pricePerShare * 1.43
-      },
-      riskLevel: 'LOW',
-      timeHorizon: '3-6 MONTHS'
+      confidence: Math.min(95, confidence),
+      insight,
+      priceTargets,
+      riskLevel: isLargeTrade && !isBuy ? t.riskHigh : isExecutive && isBuy ? t.riskLow : t.riskMedium,
+      timeHorizon
     };
-  }, [trade]);
+  }, [trade, t]);
 
   // Generate simplified 14-day price history aligned with filing date
   const priceHistory = useMemo(() => {
@@ -98,13 +182,13 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     return data;
   }, [trade]);
 
-  // Mock news
+  // Mock news with translations
   const news = useMemo(() => [
-    { title: 'Company reports strong quarterly earnings', sentiment: 'POSITIVE' as const },
-    { title: 'New product line announced for Q2', sentiment: 'POSITIVE' as const },
-    { title: 'Market volatility affects sector', sentiment: 'NEUTRAL' as const },
-    { title: 'Analyst upgrades price target', sentiment: 'POSITIVE' as const }
-  ], []);
+    { title: t.newsEarnings, sentiment: 'POSITIVE' as const },
+    { title: t.newsProduct, sentiment: 'POSITIVE' as const },
+    { title: t.newsVolatility, sentiment: 'NEUTRAL' as const },
+    { title: t.newsAnalyst, sentiment: 'POSITIVE' as const }
+  ], [t]);
 
   if (!trade) return null;
 
@@ -246,7 +330,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               {/* Chart Section - Responsive width */}
               <div className="flex-1 p-3 flex flex-col">
                 <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
+                  <ComposedChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
                       {/* Strong gradient effect with unique ID to avoid conflicts */}
                       <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -308,14 +392,16 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         }}
                       />
                       {/* Gradient area under market price with unique ID reference */}
-                      <Area 
-                        type="monotone" 
+                      <Area
+                        type="monotone"
                         dataKey="marketPrice"
                         fill={`url(#${gradientId})`}
+                        fillOpacity={1}
                         stroke="none"
                         isAnimationActive={true}
                         animationDuration={4000}
                         animationEasing="ease-out"
+                        baseLine={0}
                       />
                       {/* Market price line with 4s animation */}
                       <Line 
@@ -337,7 +423,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         stroke="#0a0a0a"
                         strokeWidth={1.5}
                       />
-                    </LineChart>
+                  </ComposedChart>
                   </ResponsiveContainer>
 
                 {/* Price Footer */}
@@ -514,14 +600,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   </div>
                   <div className="flex items-center gap-1.5 text-amber-500">
                     <AlertTriangle size={12} />
-                    <span className="text-xs font-bold">{aiAnalysis?.riskLevel || 'LOW'}</span>
+                    <span className="text-xs font-bold">{aiAnalysis?.riskLevel || t.riskLow}</span>
                   </div>
                 </div>
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
                     {t.timeHorizon.toUpperCase()}
                   </div>
-                  <div className="text-xs text-neutral-300 font-mono">{aiAnalysis?.timeHorizon || '3-6 MONTHS'}</div>
+                  <div className="text-xs text-neutral-300 font-mono">{aiAnalysis?.timeHorizon || t.timeHorizon36}</div>
                 </div>
               </div>
             </div>

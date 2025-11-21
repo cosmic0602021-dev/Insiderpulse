@@ -96,7 +96,30 @@ const EN = {
     generated: 'Report Generated',
     showDetails: 'Show Details',
     hideDetails: 'Hide Details',
-    expandNews: 'Expand News'
+    expandNews: 'Expand News',
+    // AI Insights
+    insightCeoBuy: 'CEO-level purchase signals strong confidence in company direction.',
+    insightCeoSell: 'Executive sale may indicate portfolio rebalancing or personal financial planning.',
+    insightCfoBuy: 'CFO purchase suggests positive outlook on company financials and valuation.',
+    insightCfoSell: 'CFO transaction likely routine diversification given insider position.',
+    insightDirectorBuy: 'Board director accumulation indicates institutional confidence in growth trajectory.',
+    insightDirectorSell: 'Director sale appears to be scheduled disposition under 10b5-1 plan.',
+    insightLargeBuy: 'Large-scale insider purchase exceeding $1M demonstrates high conviction.',
+    insightLargeSell: 'Significant insider sale may reflect profit-taking at current valuations.',
+    insightMediumBuy: 'Substantial insider buying activity detected in recent filings.',
+    insightMediumSell: 'Moderate insider selling consistent with typical executive compensation patterns.',
+    insightSmallBuy: 'Insider accumulation pattern suggests positive internal sentiment.',
+    insightSmallSell: 'Routine insider transaction within normal trading parameters.',
+    // News items
+    newsEarnings: 'Company reports strong quarterly earnings',
+    newsProduct: 'New product line announced for Q2',
+    newsVolatility: 'Market volatility affects sector',
+    newsAnalyst: 'Analyst upgrades price target',
+    // Risk levels & Time horizon
+    riskLow: 'LOW',
+    riskMedium: 'MEDIUM',
+    riskHigh: 'HIGH',
+    timeHorizon36: '3-6 MONTHS'
   },
   profile: {
     header: 'User Profile',
@@ -274,7 +297,30 @@ const KO = {
     generated: '보고서 생성됨',
     showDetails: '자세히 보기',
     hideDetails: '접기',
-    expandNews: '뉴스 펼쳐보기'
+    expandNews: '뉴스 펼쳐보기',
+    // AI Insights
+    insightCeoBuy: 'CEO급 매수로 회사 방향에 대한 강한 확신을 보여줍니다.',
+    insightCeoSell: '임원 매도는 포트폴리오 재조정 또는 개인 재무 계획을 나타낼 수 있습니다.',
+    insightCfoBuy: 'CFO 매수는 회사 재무 및 가치에 대한 긍정적 전망을 시사합니다.',
+    insightCfoSell: 'CFO 거래는 내부자 포지션에 따른 일상적 분산투자로 보입니다.',
+    insightDirectorBuy: '이사회 이사의 매집은 성장 궤도에 대한 기관 신뢰를 나타냅니다.',
+    insightDirectorSell: '이사 매도는 10b5-1 계획에 따른 예정된 처분으로 보입니다.',
+    insightLargeBuy: '100만 달러를 초과하는 대규모 내부자 매수는 높은 확신을 보여줍니다.',
+    insightLargeSell: '대규모 내부자 매도는 현재 가치에서의 차익 실현을 반영할 수 있습니다.',
+    insightMediumBuy: '최근 제출 서류에서 상당한 내부자 매수 활동이 감지되었습니다.',
+    insightMediumSell: '적당한 내부자 매도는 일반적인 임원 보상 패턴과 일치합니다.',
+    insightSmallBuy: '내부자 매집 패턴은 긍정적인 내부 심리를 시사합니다.',
+    insightSmallSell: '정상적인 거래 범위 내의 일상적인 내부자 거래입니다.',
+    // News items
+    newsEarnings: '회사가 강한 분기 실적을 발표했습니다',
+    newsProduct: 'Q2에 새로운 제품 라인 발표',
+    newsVolatility: '시장 변동성이 섹터에 영향',
+    newsAnalyst: '애널리스트가 목표가를 상향 조정',
+    // Risk levels & Time horizon
+    riskLow: '낮음',
+    riskMedium: '보통',
+    riskHigh: '높음',
+    timeHorizon36: '3-6개월'
   },
   profile: {
     header: '사용자 프로필',

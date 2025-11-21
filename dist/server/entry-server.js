@@ -2,12 +2,12 @@ import { jsx, jsxs, Fragment as Fragment$1 } from "react/jsx-runtime";
 import { renderToString } from "react-dom/server";
 import { parse } from "regexparam";
 import * as React from "react";
-import { createContext, forwardRef, isValidElement, cloneElement, createElement, useContext, useRef, Fragment, useState, useEffect, useMemo, memo, useCallback } from "react";
+import { createContext, forwardRef, isValidElement, cloneElement, createElement, useContext, useRef, Fragment, useState, useEffect, useId, useMemo, memo, useCallback } from "react";
 import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, Share2, Plus, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Download, Search, Lock, ArrowUpRight, ArrowDownLeft, Sparkles, RefreshCw, Shield, CreditCard, Mail, AlertCircle, Loader2, ArrowLeft, CheckCircle2, XCircle, Terminal, ArrowRight, FileText, Hash, ShieldCheck, Building2, Activity, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Globe, Monitor, BellOff, ScanLine, EyeOff, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -17,12 +17,11 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Area, Line, ReferenceDot, ComposedChart, BarChart, Bar, Cell } from "recharts";
+import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Area, Line, ReferenceDot, LineChart, BarChart, Bar, Cell } from "recharts";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { formatDistanceToNow } from "date-fns";
 import { ko, ja, zhCN, enUS } from "date-fns/locale";
 import "html2canvas";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
@@ -4239,7 +4238,7 @@ const useLanguage = () => {
 function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [location2] = useLocation();
   useEffect(() => {
     if (location2 !== "/trades") {
@@ -4298,22 +4297,23 @@ function PWAInstallPrompt() {
   };
   const handleDismiss = () => {
     setShowPrompt(false);
+    localStorage.setItem("pwa-prompt-dismissed", "true");
   };
   if (!showPrompt) return null;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const benefits = [
     {
-      icon: /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5" }),
+      icon: /* @__PURE__ */ jsx(Bell, { className: "h-4 w-4" }),
       title: t("pwa.benefits.notifications.title"),
       description: t("pwa.benefits.notifications.description")
     },
     {
-      icon: /* @__PURE__ */ jsx(Zap, { className: "h-5 w-5" }),
+      icon: /* @__PURE__ */ jsx(Zap, { className: "h-4 w-4" }),
       title: t("pwa.benefits.fast.title"),
       description: t("pwa.benefits.fast.description")
     },
     {
-      icon: /* @__PURE__ */ jsx(Smartphone, { className: "h-5 w-5" }),
+      icon: /* @__PURE__ */ jsx(Smartphone, { className: "h-4 w-4" }),
       title: t("pwa.benefits.access.title"),
       description: t("pwa.benefits.access.description")
     }
@@ -4322,65 +4322,71 @@ function PWAInstallPrompt() {
     /* @__PURE__ */ jsx(
       "div",
       {
-        className: "fixed inset-0 z-50 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200",
+        className: "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
         onClick: handleDismiss
       }
     ),
-    /* @__PURE__ */ jsx("div", { className: "fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300", children: /* @__PURE__ */ jsx("div", { className: "mx-auto max-w-md px-4 pb-safe", children: /* @__PURE__ */ jsxs("div", { className: "relative overflow-hidden rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50", children: [
+    /* @__PURE__ */ jsx("div", { className: "fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300", children: /* @__PURE__ */ jsx("div", { className: "mx-auto max-w-md px-4 pb-4", children: /* @__PURE__ */ jsxs("div", { className: "relative overflow-hidden bg-[#080808] border border-neutral-800 shadow-[0_0_50px_rgba(0,0,0,0.9)]", children: [
       /* @__PURE__ */ jsx(
         "button",
         {
           onClick: handleDismiss,
-          className: "absolute right-3 top-3 z-10 rounded-full p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all",
+          className: "absolute right-3 top-3 z-10 p-1.5 text-neutral-500 hover:text-white transition-colors",
           "aria-label": "Close",
           children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
         }
       ),
+      /* @__PURE__ */ jsxs("div", { className: "p-6 border-b border-neutral-900 text-center bg-[#0a0a0a]", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex justify-center mb-4", children: /* @__PURE__ */ jsxs("div", { className: "w-12 h-12 bg-neutral-900 rounded-full flex items-center justify-center border border-neutral-800 relative", children: [
+          /* @__PURE__ */ jsx("div", { className: "absolute inset-0 rounded-full border border-emerald-900 animate-ping opacity-20" }),
+          /* @__PURE__ */ jsx(ShieldCheck, { size: 24, className: "text-emerald-500" })
+        ] }) }),
+        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-white tracking-tight uppercase mb-2", children: t("pwa.prompt.title") }),
+        /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-500 font-mono", children: t("pwa.prompt.subtitle") })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "p-5", children: [
-        /* @__PURE__ */ jsxs("div", { className: "mb-5 text-center", children: [
-          /* @__PURE__ */ jsx("div", { className: "mb-3 flex justify-center", children: /* @__PURE__ */ jsx(
-            "img",
-            {
-              src: "/insiderpulse_logo2.png",
-              alt: "InsiderPulse",
-              className: "h-16 w-16 rounded-xl object-contain"
-            }
-          ) }),
-          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-gray-900 dark:text-white mb-2", children: t("pwa.prompt.title") }),
-          /* @__PURE__ */ jsx("div", { className: "inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg", children: /* @__PURE__ */ jsx("p", { className: "text-base font-bold text-white", children: t("pwa.prompt.subtitle") }) })
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "mb-4 space-y-2", children: benefits.map((benefit, index) => /* @__PURE__ */ jsxs(
+        /* @__PURE__ */ jsx("div", { className: "mb-5 space-y-2", children: benefits.map((benefit, index) => /* @__PURE__ */ jsxs(
           "div",
           {
-            className: "flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5",
+            className: "flex items-center gap-3 p-3 bg-neutral-900/50 border border-neutral-800",
             children: [
-              /* @__PURE__ */ jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-500/20", children: /* @__PURE__ */ jsx("div", { className: "text-blue-600 dark:text-blue-400", children: benefit.icon }) }),
+              /* @__PURE__ */ jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center bg-emerald-900/30 border border-emerald-900/50", children: /* @__PURE__ */ jsx("div", { className: "text-emerald-500", children: benefit.icon }) }),
               /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [
-                /* @__PURE__ */ jsx("h4", { className: "text-sm font-medium text-gray-900 dark:text-white", children: benefit.title }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs text-gray-600 dark:text-gray-400 truncate", children: benefit.description })
+                /* @__PURE__ */ jsx("h4", { className: "text-xs font-bold text-neutral-200 uppercase tracking-wide", children: benefit.title }),
+                /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 font-mono truncate", children: benefit.description })
               ] })
             ]
           },
           index
         )) }),
-        isIOS && /* @__PURE__ */ jsxs("div", { className: "mb-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 p-4 border-2 border-blue-400 shadow-xl", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-2", children: [
-            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Share2, { className: "h-6 w-6 text-white" }) }),
-            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm", children: /* @__PURE__ */ jsx(Plus, { className: "h-6 w-6 text-white" }) })
+        isIOS && /* @__PURE__ */ jsxs("div", { className: "mb-5 p-4 bg-neutral-900/30 border border-neutral-800", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-3", children: [
+            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center bg-emerald-900/30 border border-emerald-900/50", children: /* @__PURE__ */ jsx(Share2, { className: "h-5 w-5 text-emerald-500" }) }),
+            /* @__PURE__ */ jsx("div", { className: "flex items-center", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-600 mx-2", children: "→" }) }),
+            /* @__PURE__ */ jsx("div", { className: "flex h-10 w-10 items-center justify-center bg-emerald-900/30 border border-emerald-900/50", children: /* @__PURE__ */ jsx(Plus, { className: "h-5 w-5 text-emerald-500" }) })
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "text-lg font-bold text-white leading-snug", children: t("pwa.ios.instruction") })
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-300 font-mono leading-relaxed", children: t("pwa.ios.instruction") })
         ] }),
-        !isIOS && /* @__PURE__ */ jsx(
+        !isIOS && /* @__PURE__ */ jsxs(
           "button",
           {
             onClick: handleInstall,
-            className: "w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/40 transition-all hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.02]",
-            children: t("pwa.button.install")
+            className: "w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx(Download, { size: 14 }),
+              t("pwa.button.install")
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: handleDismiss,
+            className: "w-full mt-3 text-center text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors uppercase tracking-wider font-mono",
+            children: "나중에 하기"
           }
         )
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "absolute -right-16 -top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" }),
-      /* @__PURE__ */ jsx("div", { className: "absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" })
+      ] })
     ] }) }) })
   ] });
 }
@@ -5308,7 +5314,30 @@ const EN = {
     generated: "Report Generated",
     showDetails: "Show Details",
     hideDetails: "Hide Details",
-    expandNews: "Expand News"
+    expandNews: "Expand News",
+    // AI Insights
+    insightCeoBuy: "CEO-level purchase signals strong confidence in company direction.",
+    insightCeoSell: "Executive sale may indicate portfolio rebalancing or personal financial planning.",
+    insightCfoBuy: "CFO purchase suggests positive outlook on company financials and valuation.",
+    insightCfoSell: "CFO transaction likely routine diversification given insider position.",
+    insightDirectorBuy: "Board director accumulation indicates institutional confidence in growth trajectory.",
+    insightDirectorSell: "Director sale appears to be scheduled disposition under 10b5-1 plan.",
+    insightLargeBuy: "Large-scale insider purchase exceeding $1M demonstrates high conviction.",
+    insightLargeSell: "Significant insider sale may reflect profit-taking at current valuations.",
+    insightMediumBuy: "Substantial insider buying activity detected in recent filings.",
+    insightMediumSell: "Moderate insider selling consistent with typical executive compensation patterns.",
+    insightSmallBuy: "Insider accumulation pattern suggests positive internal sentiment.",
+    insightSmallSell: "Routine insider transaction within normal trading parameters.",
+    // News items
+    newsEarnings: "Company reports strong quarterly earnings",
+    newsProduct: "New product line announced for Q2",
+    newsVolatility: "Market volatility affects sector",
+    newsAnalyst: "Analyst upgrades price target",
+    // Risk levels & Time horizon
+    riskLow: "LOW",
+    riskMedium: "MEDIUM",
+    riskHigh: "HIGH",
+    timeHorizon36: "3-6 MONTHS"
   },
   profile: {
     header: "User Profile",
@@ -5485,7 +5514,30 @@ const KO = {
     generated: "보고서 생성됨",
     showDetails: "자세히 보기",
     hideDetails: "접기",
-    expandNews: "뉴스 펼쳐보기"
+    expandNews: "뉴스 펼쳐보기",
+    // AI Insights
+    insightCeoBuy: "CEO급 매수로 회사 방향에 대한 강한 확신을 보여줍니다.",
+    insightCeoSell: "임원 매도는 포트폴리오 재조정 또는 개인 재무 계획을 나타낼 수 있습니다.",
+    insightCfoBuy: "CFO 매수는 회사 재무 및 가치에 대한 긍정적 전망을 시사합니다.",
+    insightCfoSell: "CFO 거래는 내부자 포지션에 따른 일상적 분산투자로 보입니다.",
+    insightDirectorBuy: "이사회 이사의 매집은 성장 궤도에 대한 기관 신뢰를 나타냅니다.",
+    insightDirectorSell: "이사 매도는 10b5-1 계획에 따른 예정된 처분으로 보입니다.",
+    insightLargeBuy: "100만 달러를 초과하는 대규모 내부자 매수는 높은 확신을 보여줍니다.",
+    insightLargeSell: "대규모 내부자 매도는 현재 가치에서의 차익 실현을 반영할 수 있습니다.",
+    insightMediumBuy: "최근 제출 서류에서 상당한 내부자 매수 활동이 감지되었습니다.",
+    insightMediumSell: "적당한 내부자 매도는 일반적인 임원 보상 패턴과 일치합니다.",
+    insightSmallBuy: "내부자 매집 패턴은 긍정적인 내부 심리를 시사합니다.",
+    insightSmallSell: "정상적인 거래 범위 내의 일상적인 내부자 거래입니다.",
+    // News items
+    newsEarnings: "회사가 강한 분기 실적을 발표했습니다",
+    newsProduct: "Q2에 새로운 제품 라인 발표",
+    newsVolatility: "시장 변동성이 섹터에 영향",
+    newsAnalyst: "애널리스트가 목표가를 상향 조정",
+    // Risk levels & Time horizon
+    riskLow: "낮음",
+    riskMedium: "보통",
+    riskHigh: "높음",
+    timeHorizon36: "3-6개월"
   },
   profile: {
     header: "사용자 프로필",
@@ -5684,8 +5736,13 @@ const TRANSLATIONS = {
   ja: JA,
   zh: ZH
 };
-function formatCurrency(val) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(val);
+function formatCurrency(val, showDecimals = true) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: showDecimals ? 2 : 0,
+    minimumFractionDigits: showDecimals ? 2 : 0
+  }).format(val);
 }
 function formatNumber(val) {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(val);
@@ -5697,40 +5754,112 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
   var _a, _b, _c;
   const { language } = useLanguage();
   const [newsExpanded, setNewsExpanded] = useState(true);
+  const gradientId = useId();
   const langKey = language.toLowerCase();
   const t = TRANSLATIONS[langKey].modal;
   const aiAnalysis = useMemo(() => {
-    var _a2;
+    var _a2, _b2, _c2, _d, _e;
     if (!trade) return null;
     if (trade.aiAnalysis && typeof trade.aiAnalysis === "object" && "signal" in trade.aiAnalysis) {
       const ai = trade.aiAnalysis;
+      const conservativePct = ((_a2 = ai.priceTargets) == null ? void 0 : _a2.conservative) || 3;
+      const realisticPct = ((_b2 = ai.priceTargets) == null ? void 0 : _b2.realistic) || 7;
+      const optimisticPct = ((_c2 = ai.priceTargets) == null ? void 0 : _c2.optimistic) || 15;
       return {
         signal: ai.signal || "BUY",
-        confidence: ai.significanceScore || 97,
-        insight: ((_a2 = ai.keyInsights) == null ? void 0 : _a2[0]) || "Analyzing insider trading patterns...",
+        confidence: ai.significanceScore || 75,
+        insight: ((_d = ai.keyInsights) == null ? void 0 : _d[0]) || t.insightSmallBuy,
         priceTargets: {
-          conservative: trade.pricePerShare * 1.05,
-          realistic: trade.pricePerShare * 1.19,
-          optimistic: trade.pricePerShare * 1.43
+          conservative: trade.pricePerShare * (1 + conservativePct / 100),
+          realistic: trade.pricePerShare * (1 + realisticPct / 100),
+          optimistic: trade.pricePerShare * (1 + optimisticPct / 100)
         },
-        riskLevel: ai.riskLevel || "LOW",
-        timeHorizon: "3-6 MONTHS"
+        riskLevel: ai.riskLevel === "LOW" ? t.riskLow : ai.riskLevel === "MEDIUM" ? t.riskMedium : t.riskHigh,
+        timeHorizon: ai.timeHorizon || "2-4 weeks"
       };
     }
     const isBuy2 = trade.tradeType === "BUY" || trade.tradeType === "Buy";
+    const traderTitle = ((_e = trade.traderTitle) == null ? void 0 : _e.toLowerCase()) || "";
+    const totalValue = trade.totalValue || trade.shares * trade.pricePerShare;
+    let insight = "";
+    if (traderTitle.includes("ceo") || traderTitle.includes("president")) {
+      insight = isBuy2 ? t.insightCeoBuy : t.insightCeoSell;
+    } else if (traderTitle.includes("cfo")) {
+      insight = isBuy2 ? t.insightCfoBuy : t.insightCfoSell;
+    } else if (traderTitle.includes("director")) {
+      insight = isBuy2 ? t.insightDirectorBuy : t.insightDirectorSell;
+    } else if (totalValue > 1e6) {
+      insight = isBuy2 ? t.insightLargeBuy : t.insightLargeSell;
+    } else if (totalValue > 1e5) {
+      insight = isBuy2 ? t.insightMediumBuy : t.insightMediumSell;
+    } else {
+      insight = isBuy2 ? t.insightSmallBuy : t.insightSmallSell;
+    }
+    const isExecutive = traderTitle.includes("ceo") || traderTitle.includes("cfo") || traderTitle.includes("president") || traderTitle.includes("director");
+    const isLargeTrade = totalValue > 1e6;
+    const isMediumTrade = totalValue > 1e5;
+    let priceTargets;
+    let timeHorizon;
+    if (isBuy2) {
+      if (isExecutive && isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.05,
+          realistic: trade.pricePerShare * 1.12,
+          optimistic: trade.pricePerShare * 1.25
+        };
+        timeHorizon = "1-2 weeks";
+      } else if (isExecutive || isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.03,
+          realistic: trade.pricePerShare * 1.08,
+          optimistic: trade.pricePerShare * 1.18
+        };
+        timeHorizon = "2-3 weeks";
+      } else if (isMediumTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.02,
+          realistic: trade.pricePerShare * 1.05,
+          optimistic: trade.pricePerShare * 1.12
+        };
+        timeHorizon = "2-4 weeks";
+      } else {
+        priceTargets = {
+          conservative: trade.pricePerShare * 1.01,
+          realistic: trade.pricePerShare * 1.03,
+          optimistic: trade.pricePerShare * 1.08
+        };
+        timeHorizon = "3-4 weeks";
+      }
+    } else {
+      if (isLargeTrade) {
+        priceTargets = {
+          conservative: trade.pricePerShare * 0.97,
+          realistic: trade.pricePerShare * 0.92,
+          optimistic: trade.pricePerShare * 0.85
+        };
+        timeHorizon = "1-2 weeks";
+      } else {
+        priceTargets = {
+          conservative: trade.pricePerShare * 0.99,
+          realistic: trade.pricePerShare * 0.97,
+          optimistic: trade.pricePerShare * 0.93
+        };
+        timeHorizon = "2-3 weeks";
+      }
+    }
+    let confidence = 50;
+    if (isExecutive) confidence += 20;
+    if (isLargeTrade) confidence += 15;
+    else if (isMediumTrade) confidence += 8;
     return {
       signal: isBuy2 ? "BUY" : "SELL",
-      confidence: 97,
-      insight: "Merger discussions rumored in industry reports.",
-      priceTargets: {
-        conservative: trade.pricePerShare * 1.05,
-        realistic: trade.pricePerShare * 1.19,
-        optimistic: trade.pricePerShare * 1.43
-      },
-      riskLevel: "LOW",
-      timeHorizon: "3-6 MONTHS"
+      confidence: Math.min(95, confidence),
+      insight,
+      priceTargets,
+      riskLevel: isLargeTrade && !isBuy2 ? t.riskHigh : isExecutive && isBuy2 ? t.riskLow : t.riskMedium,
+      timeHorizon
     };
-  }, [trade]);
+  }, [trade, t]);
   const priceHistory = useMemo(() => {
     if (!trade) return [];
     const filingDate = new Date(trade.filedDate);
@@ -5759,11 +5888,11 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
     return data;
   }, [trade]);
   const news = useMemo(() => [
-    { title: "Company reports strong quarterly earnings", sentiment: "POSITIVE" },
-    { title: "New product line announced for Q2", sentiment: "POSITIVE" },
-    { title: "Market volatility affects sector", sentiment: "NEUTRAL" },
-    { title: "Analyst upgrades price target", sentiment: "POSITIVE" }
-  ], []);
+    { title: t.newsEarnings, sentiment: "POSITIVE" },
+    { title: t.newsProduct, sentiment: "POSITIVE" },
+    { title: t.newsVolatility, sentiment: "NEUTRAL" },
+    { title: t.newsAnalyst, sentiment: "POSITIVE" }
+  ], [t]);
   if (!trade) return null;
   const isBuy = trade.tradeType === "BUY" || trade.tradeType === "Buy";
   const getSecFilingUrl = () => {
@@ -5817,7 +5946,7 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.totalValue.toUpperCase() }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency(trade.totalValue) })
+          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency(trade.totalValue, false) })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto", children: [
@@ -5837,12 +5966,11 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
             ] })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "flex-1 p-3 flex flex-col", children: [
-            /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 220, children: /* @__PURE__ */ jsxs(LineChart, { data: priceHistory, margin: { left: 10, right: 20, top: 10, bottom: 5 }, children: [
-              /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs("linearGradient", { id: "marketGradient", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: "#10b981", stopOpacity: 0.8 }),
-                /* @__PURE__ */ jsx("stop", { offset: "30%", stopColor: "#059669", stopOpacity: 0.6 }),
-                /* @__PURE__ */ jsx("stop", { offset: "60%", stopColor: "#047857", stopOpacity: 0.4 }),
-                /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: "#064e3b", stopOpacity: 0.1 })
+            /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 220, children: /* @__PURE__ */ jsxs(ComposedChart, { data: priceHistory, margin: { left: 10, right: 20, top: 10, bottom: 5 }, children: [
+              /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs("linearGradient", { id: gradientId, x1: "0", y1: "0", x2: "0", y2: "1", children: [
+                /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: "#10b981", stopOpacity: 0.6 }),
+                /* @__PURE__ */ jsx("stop", { offset: "50%", stopColor: "#059669", stopOpacity: 0.3 }),
+                /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: "#064e3b", stopOpacity: 0.05 })
               ] }) }),
               /* @__PURE__ */ jsx(CartesianGrid, { stroke: "#999999", strokeDasharray: "3 3", strokeOpacity: 0.3 }),
               /* @__PURE__ */ jsx(
@@ -5912,11 +6040,13 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
                 {
                   type: "monotone",
                   dataKey: "marketPrice",
-                  fill: "url(#marketGradient)",
+                  fill: `url(#${gradientId})`,
+                  fillOpacity: 1,
                   stroke: "none",
                   isAnimationActive: true,
                   animationDuration: 4e3,
-                  animationEasing: "ease-out"
+                  animationEasing: "ease-out",
+                  baseLine: 0
                 }
               ),
               /* @__PURE__ */ jsx(
@@ -6057,12 +6187,12 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
               /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.riskLevel.toUpperCase() }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-amber-500", children: [
                 /* @__PURE__ */ jsx(AlertTriangle, { size: 12 }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || "LOW" })
+                /* @__PURE__ */ jsx("span", { className: "text-xs font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-3", children: [
               /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.timeHorizon.toUpperCase() }),
-              /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-300 font-mono", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || "3-6 MONTHS" })
+              /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-300 font-mono", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || t.timeHorizon36 })
             ] })
           ] })
         ] })
@@ -6648,81 +6778,6 @@ memo(function StockHistoryChart2({
     ] })
   ] });
 });
-function StripeMeshGradient({
-  variant = "default",
-  opacity = 0.6,
-  animate = true,
-  className = ""
-}) {
-  const gradientVariants = {
-    default: {
-      gradient1: "radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 1) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 1) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 1) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 1) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 1) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 1) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 1) 0px, transparent 50%)"
-    },
-    purple: {
-      gradient1: "radial-gradient(at 40% 20%, hsla(270, 80%, 65%, 0.8) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 80% 0%, hsla(189, 100%, 78%, 0.6) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 0% 50%, hsla(355, 100%, 93%, 0.4) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 80% 80%, hsla(256, 96%, 67%, 0.7) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 0% 100%, hsla(45, 100%, 70%, 0.5) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 50% 50%, hsla(240, 70%, 50%, 0.3) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 100% 50%, hsla(280, 80%, 70%, 0.4) 0px, transparent 50%)"
-    },
-    blue: {
-      gradient1: "radial-gradient(at 30% 30%, hsla(210, 100%, 60%, 0.7) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 70% 70%, hsla(190, 100%, 70%, 0.6) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 50% 0%, hsla(220, 90%, 65%, 0.5) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 0% 80%, hsla(200, 100%, 75%, 0.4) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 100% 20%, hsla(230, 80%, 60%, 0.6) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 20% 100%, hsla(195, 100%, 80%, 0.5) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 80% 40%, hsla(215, 85%, 55%, 0.4) 0px, transparent 50%)"
-    },
-    warm: {
-      gradient1: "radial-gradient(at 50% 20%, hsla(45, 100%, 70%, 0.6) 0px, transparent 50%)",
-      gradient2: "radial-gradient(at 80% 80%, hsla(15, 90%, 65%, 0.5) 0px, transparent 50%)",
-      gradient3: "radial-gradient(at 20% 80%, hsla(355, 85%, 70%, 0.4) 0px, transparent 50%)",
-      gradient4: "radial-gradient(at 90% 30%, hsla(35, 100%, 75%, 0.7) 0px, transparent 50%)",
-      gradient5: "radial-gradient(at 10% 10%, hsla(25, 95%, 60%, 0.5) 0px, transparent 50%)",
-      gradient6: "radial-gradient(at 60% 90%, hsla(5, 80%, 65%, 0.4) 0px, transparent 50%)",
-      gradient7: "radial-gradient(at 40% 60%, hsla(40, 90%, 70%, 0.3) 0px, transparent 50%)"
-    }
-  };
-  const currentGradients = gradientVariants[variant];
-  const gradientString = Object.values(currentGradients).join(", ");
-  return /* @__PURE__ */ jsx(
-    "div",
-    {
-      className: `pointer-events-none fixed inset-0 z-0 ${animate ? "animate-mesh-gradient" : ""} ${className}`,
-      style: {
-        opacity,
-        background: gradientString,
-        filter: "blur(80px) saturate(150%)"
-      },
-      children: animate && /* @__PURE__ */ jsx("style", { dangerouslySetInnerHTML: { __html: `
-          @keyframes mesh-gradient {
-            0%, 100% {
-              transform: scale(1) translateY(0);
-            }
-            33% {
-              transform: scale(1.1) translateY(-10px);
-            }
-            66% {
-              transform: scale(0.95) translateY(10px);
-            }
-          }
-
-          .animate-mesh-gradient {
-            animation: mesh-gradient 20s ease-in-out infinite;
-          }
-        ` } })
-    }
-  );
-}
 function mapInsiderTradeToTerminal(trade) {
   return {
     id: trade.id,
@@ -6901,8 +6956,8 @@ function LiveTradingTerminal() {
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto relative custom-scrollbar", children: [
-      /* @__PURE__ */ jsx("div", { className: "fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 md:opacity-20" }),
-      /* @__PURE__ */ jsxs("div", { className: "sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3", children: [
+      /* @__PURE__ */ jsx("div", { className: "absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 z-0" }),
+      /* @__PURE__ */ jsxs("div", { className: "sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3", children: [
         /* @__PURE__ */ jsx("div", { className: "pl-2", children: t.table.ticker }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:block", children: t.table.insider }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:block", children: t.table.relation }),
@@ -7036,62 +7091,46 @@ function TradeRow({ trade, onClick, tData }) {
     "div",
     {
       onClick,
-      className: "grid grid-cols-5 md:grid-cols-9 gap-x-2 md:gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3",
+      className: "grid grid-cols-5 md:grid-cols-9 gap-x-3 md:gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3",
       "data-testid": `trade-row-${trade.ticker}`,
       children: [
         /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-0.5", children: [
           /* @__PURE__ */ jsx("span", { className: "font-mono font-semibold text-neutral-200 text-[13px] leading-[18px]", children: trade.ticker }),
-          /* @__PURE__ */ jsx("span", { className: "text-neutral-600 text-[11px] leading-none", children: trade.companyName })
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[11px] leading-none", children: trade.companyName })
         ] }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono text-[12px] font-medium truncate", children: trade.insider }) }),
-        /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-500 font-mono text-[12px] font-medium uppercase tracking-wider truncate", children: trade.relation }) }),
+        /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono text-[12px] font-medium uppercase tracking-wider truncate", children: trade.relation }) }),
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsxs("span", { className: `px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBorder} ${typeClass} ${typeBg} rounded-sm inline-flex items-center gap-1`, children: [
           /* @__PURE__ */ jsx(ActionIcon, { size: 10, className: typeClass }),
-          tData[trade.type] || trade.type
+          /* @__PURE__ */ jsx("span", { className: "hidden md:inline", children: tData[trade.type] || trade.type })
         ] }) }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency(trade.price) }) }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatNumber(trade.shares) }) }),
-        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency(trade.value) }) }),
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency(trade.value, false) }) }),
         /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-end", children: [
           trade.priceChange !== 0 && /* @__PURE__ */ jsxs("span", { className: `flex items-center gap-1 font-mono ${trade.priceChange > 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
             trade.priceChange > 0 ? /* @__PURE__ */ jsx(TrendingUp, { size: 10 }) : /* @__PURE__ */ jsx(TrendingDown, { size: 10 }),
             formatPercent(trade.priceChange)
           ] }),
-          trade.priceChange === 0 && /* @__PURE__ */ jsx("span", { className: "text-neutral-600 text-[10px]", children: "—" })
+          trade.priceChange === 0 && /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[10px]", children: "—" })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end pr-2", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-600 text-[10px] font-mono", children: timeAgo }) })
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end pr-2", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[10px] font-mono", children: timeAgo }) })
       ]
     }
   );
 }
-const Checkbox = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  CheckboxPrimitive.Root,
-  {
-    ref,
-    className: cn(
-      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-      className
-    ),
-    ...props,
-    children: /* @__PURE__ */ jsx(
-      CheckboxPrimitive.Indicator,
-      {
-        className: cn("flex items-center justify-center text-current"),
-        children: /* @__PURE__ */ jsx(Check, { className: "h-4 w-4" })
-      }
-    )
-  }
-));
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState("monthly");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const isSubmittingRef = useRef(false);
   const { toast: toast2 } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase();
+  const t = TRANSLATIONS[langKey].upgrade;
+  const common = TRANSLATIONS[langKey].common;
   useEffect(() => {
     if (user && (user.subscriptionTier === "insider_pro" || user.subscriptionTier === "insider") && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
       toast2({
@@ -7101,132 +7140,19 @@ function PremiumCheckout() {
       setTimeout(() => setLocation("/trades"), 1500);
     }
   }, [user, setLocation, toast2]);
-  const getLocalizedPlans = () => {
-    const features = {
-      ko: [
-        "실시간 내부자 거래 알림 (48시간 지연 없음)",
-        "순수 매수/매도 신호만 표시 (보조금, 옵션, 보상 제외)",
-        "AI 기반 거래 분석 & 예측",
-        "고급 패턴 감지 & 신호",
-        "임원 거래 추적 (CEO, CFO 등)",
-        "실시간 데이터 업데이트 & 푸시 알림",
-        "내부자 거래 성과 분석",
-        "독점 시장 인텔리전스 리포트"
-      ],
-      en: [
-        "Real-time insider trade alerts (no 48h delay)",
-        "Pure buy/sell signals only (no grants, options, awards)",
-        "AI-powered trade analysis & predictions",
-        "Advanced pattern detection & signals",
-        "Executive trade tracking (CEO, CFO, etc.)",
-        "Live data updates & push notifications",
-        "Historical insider performance analytics",
-        "Exclusive market intelligence reports"
-      ],
-      ja: [
-        "リアルタイムインサイダー取引アラート（48時間遅延なし）",
-        "純粋な買い/売りシグナルのみ（助成金、オプション、報酬を除く）",
-        "AI駆動の取引分析と予測",
-        "高度なパターン検出とシグナル",
-        "役員取引追跡（CEO、CFOなど）",
-        "ライブデータ更新とプッシュ通知",
-        "過去のインサイダーパフォーマンス分析",
-        "独占的な市場インテリジェンスレポート"
-      ],
-      zh: [
-        "实时内幕交易提醒（无48小时延迟）",
-        "仅纯粹买卖信号（不包括补助金、期权、奖励）",
-        "AI驱动的交易分析和预测",
-        "高级模式检测和信号",
-        "高管交易追踪（CEO、CFO等）",
-        "实时数据更新和推送通知",
-        "历史内幕交易绩效分析",
-        "独家市场情报报告"
-      ]
-    };
-    const intervals = {
-      ko: { month: "/월", year: "/년" },
-      en: { month: "/month", year: "/year" },
-      ja: { month: "/月", year: "/年" },
-      zh: { month: "/月", year: "/年" }
-    };
-    const billingIntervals = {
-      ko: { monthly: "월간 자동결제", yearly: "연간 자동결제" },
-      en: { monthly: "Monthly auto-renewal", yearly: "Yearly auto-renewal" },
-      ja: { monthly: "月次自動更新", yearly: "年次自動更新" },
-      zh: { monthly: "月度自动续费", yearly: "年度自动续费" }
-    };
-    return {
-      monthly: {
-        name: "Insider",
-        price: 14,
-        priceId: "price_1SPBb1Q9br8aQ595KTOAcBfO",
-        interval: intervals[language].month,
-        billingInterval: billingIntervals[language].monthly,
-        description: t("checkout.planDescription"),
-        features: features[language],
-        savings: null
-      },
-      yearly: {
-        name: "Insider",
-        price: 112,
-        originalPrice: 168,
-        priceId: "price_1SPBdLQ9br8aQ595n0dKEOLv",
-        interval: intervals[language].year,
-        billingInterval: billingIntervals[language].yearly,
-        pricePerMonth: 9.33,
-        description: t("checkout.planDescription"),
-        features: features[language],
-        savings: "Save 33% with annual billing",
-        discount: "33% OFF"
-      }
-    };
+  const plans = {
+    monthly: {
+      price: 14,
+      priceId: "price_1SPBb1Q9br8aQ595KTOAcBfO",
+      trialDays: 3
+    },
+    yearly: {
+      price: 112,
+      priceId: "price_1SPBdLQ9br8aQ595n0dKEOLv",
+      trialDays: 7
+    }
   };
-  const plans = getLocalizedPlans();
   const currentPlan = plans[selectedPlan];
-  const securityText = {
-    ko: {
-      title: "안전한 결제 & 자동 갱신",
-      description: (interval) => `모든 거래는 Stripe를 통해 암호화되고 안전하게 처리됩니다. 구독은 취소하실 때까지 ${interval}마다 자동으로 갱신됩니다. 언제든지 한 번의 클릭으로 취소 가능하며, 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.`,
-      interval: { monthly: "매월", yearly: "매년" }
-    },
-    en: {
-      title: "Secure Payment & Auto-Renewal",
-      description: (interval) => `All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew ${interval} until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period.`,
-      interval: { monthly: "every month", yearly: "every year" }
-    },
-    ja: {
-      title: "安全な決済と自動更新",
-      description: (interval) => `すべての取引は暗号化され、Stripeを通じて安全に処理されます。サブスクリプションはキャンセルするまで${interval}自動的に更新されます。いつでもワンクリックでキャンセルでき、請求期間の終了までアクセスを維持できます。`,
-      interval: { monthly: "毎月", yearly: "毎年" }
-    },
-    zh: {
-      title: "安全支付与自动续费",
-      description: (interval) => `所有交易都经过加密，并通过Stripe安全处理。您的订阅将${interval}自动续订，直到您取消为止。随时一键取消 - 您将保留访问权限直至计费周期结束。`,
-      interval: { monthly: "每月", yearly: "每年" }
-    }
-  };
-  const dataText = {
-    ko: {
-      title: "실제 SEC 데이터",
-      description: "SEC 서류에서 직접 가져온 데이터입니다. 가짜 데이터 없음 - 오직 실제 정보만 제공합니다."
-    },
-    en: {
-      title: "Real SEC Data",
-      description: "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence."
-    },
-    ja: {
-      title: "本物のSECデータ",
-      description: "すべてのデータはSECファイリングから直接取得されています。偽のデータはありません - 実際の実用的な情報のみです。"
-    },
-    zh: {
-      title: "真实SEC数据",
-      description: "所有数据直接来源于SEC文件。没有虚假数据 - 只有真实、可操作的情报。"
-    }
-  };
-  const trialDays = selectedPlan === "yearly" ? 7 : 3;
-  const trialPeriodKo = selectedPlan === "yearly" ? "7일" : "3일";
-  const trialPeriodEn = selectedPlan === "yearly" ? "7 days" : "3 days";
   const hasUsedTrial = (user == null ? void 0 : user.hasUsedTrial) || false;
   const showTrialInfo = !hasUsedTrial;
   const handleCheckout = async () => {
@@ -7239,11 +7165,9 @@ function PremiumCheckout() {
       return;
     }
     if (isSubmittingRef.current) {
-      console.log("⚠️ Already submitting, ignoring duplicate click");
       return;
     }
     if (!user) {
-      console.error("❌ No user found when attempting checkout");
       toast2({
         title: "로그인 필요",
         description: "구독하려면 먼저 로그인해주세요.",
@@ -7254,7 +7178,6 @@ function PremiumCheckout() {
     }
     const token = localStorage.getItem("authToken");
     if (!token) {
-      console.error("❌ No auth token found in localStorage");
       toast2({
         title: "세션 만료",
         description: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -7265,12 +7188,6 @@ function PremiumCheckout() {
     }
     isSubmittingRef.current = true;
     setIsProcessing(true);
-    console.log("🚀 Starting checkout process", {
-      userId: user.id,
-      email: user.email,
-      plan: selectedPlan,
-      priceId: currentPlan.priceId
-    });
     try {
       const response = await apiRequest("POST", "/api/create-subscription", {
         priceId: currentPlan.priceId
@@ -7280,15 +7197,12 @@ function PremiumCheckout() {
         throw new Error(errorData.error || `서버 오류: ${response.status}`);
       }
       const data = await response.json();
-      console.log("✅ Checkout session created:", data);
       if (data.url) {
-        console.log("🔗 Redirecting to Stripe Checkout:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("No checkout URL received");
       }
     } catch (error) {
-      console.error("❌ Error creating checkout session:", error);
       if (error.message && error.message.includes("이미 활성 구독이 있습니다")) {
         toast2({
           title: "이미 구독 중입니다",
@@ -7308,215 +7222,158 @@ function PremiumCheckout() {
     }
   };
   if (!authLoading && !user) {
-    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 flex items-center justify-center", children: /* @__PURE__ */ jsxs(Card, { className: "max-w-md w-full", children: [
-      /* @__PURE__ */ jsxs(CardHeader, { children: [
-        /* @__PURE__ */ jsx(CardTitle, { className: "text-center", children: "로그인 필요" }),
-        /* @__PURE__ */ jsx(CardDescription, { className: "text-center", children: "구독하려면 먼저 로그인해주세요" })
-      ] }),
-      /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx(
-        Button,
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-[#030303] flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#080808] border border-neutral-800 p-8 max-w-md w-full text-center", children: [
+      /* @__PURE__ */ jsx(ShieldCheck, { size: 48, className: "text-neutral-600 mx-auto mb-4" }),
+      /* @__PURE__ */ jsx("h2", { className: "text-xl font-bold text-white mb-2", children: "로그인 필요" }),
+      /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-sm mb-6", children: "구독하려면 먼저 로그인해주세요" }),
+      /* @__PURE__ */ jsx(
+        "button",
         {
           onClick: () => setLocation("/login?redirect=/premium-checkout"),
-          className: "w-full",
+          className: "w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-widest text-xs transition-all",
           children: "로그인 페이지로 이동"
         }
-      ) })
+      )
     ] }) });
   }
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen bg-[#0a0a0f] p-4 relative overflow-hidden", children: [
-    /* @__PURE__ */ jsx(StripeMeshGradient, { variant: "purple", opacity: 0.4, animate: true }),
-    /* @__PURE__ */ jsxs("div", { className: "max-w-5xl mx-auto relative z-10", children: [
-      /* @__PURE__ */ jsxs("div", { className: "text-center mb-16 mt-8", children: [
-        /* @__PURE__ */ jsxs(Badge, { className: "mb-8 px-4 py-2 text-xs font-medium\n                           bg-white/10 text-white border border-white/20\n                           backdrop-blur-xl rounded-full shadow-lg shadow-purple-500/10", children: [
-          /* @__PURE__ */ jsx(Sparkles, { className: "inline-block w-3 h-3 mr-2" }),
-          "Premium Subscription"
+  return /* @__PURE__ */ jsx("div", { className: "fixed inset-0 z-[60] overflow-y-auto bg-black/95 backdrop-blur-sm", children: /* @__PURE__ */ jsx("div", { className: "flex min-h-screen items-center justify-center p-4 md:p-6 py-10", children: /* @__PURE__ */ jsxs("div", { className: "relative w-full max-w-4xl bg-[#080808] border border-neutral-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden rounded-sm my-auto", children: [
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        onClick: () => setLocation("/trades"),
+        className: "absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors z-30 p-2 bg-black/50 rounded-full",
+        children: /* @__PURE__ */ jsx(X, { size: 20 })
+      }
+    ),
+    /* @__PURE__ */ jsxs("div", { className: "p-8 border-b border-neutral-900 text-center bg-[#0a0a0a]", children: [
+      /* @__PURE__ */ jsx("div", { className: "flex justify-center mb-4", children: /* @__PURE__ */ jsxs("div", { className: "w-12 h-12 bg-neutral-900 rounded-full flex items-center justify-center border border-neutral-800 relative", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 rounded-full border border-emerald-900 animate-ping opacity-20" }),
+        /* @__PURE__ */ jsx(ShieldCheck, { size: 24, className: "text-emerald-500" })
+      ] }) }),
+      /* @__PURE__ */ jsx("h2", { className: "text-3xl md:text-4xl font-bold text-white tracking-tight uppercase mb-2", children: t.header }),
+      /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-500 font-mono", children: t.subHeader })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "flex justify-center py-6 bg-[#080808]", children: /* @__PURE__ */ jsxs("div", { className: "bg-neutral-900 p-1 flex border border-neutral-800 relative", children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => setSelectedPlan("monthly"),
+          className: `px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${selectedPlan === "monthly" ? "bg-neutral-700 text-white" : "text-neutral-500 hover:text-neutral-300"}`,
+          children: t.monthly
+        }
+      ),
+      /* @__PURE__ */ jsxs(
+        "button",
+        {
+          onClick: () => setSelectedPlan("yearly"),
+          className: `px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${selectedPlan === "yearly" ? "bg-emerald-900 text-emerald-100" : "text-neutral-500 hover:text-neutral-300"}`,
+          children: [
+            t.yearly,
+            /* @__PURE__ */ jsx("span", { className: "text-[9px] bg-emerald-500 text-black px-1.5 py-0.5 font-bold uppercase", children: t.save })
+          ]
+        }
+      )
+    ] }) }),
+    /* @__PURE__ */ jsxs("div", { className: "flex flex-col md:flex-row border-t border-neutral-900", children: [
+      /* @__PURE__ */ jsxs("div", { className: "w-full md:w-1/2 p-8 border-r-0 md:border-r border-b md:border-b-0 border-neutral-900 bg-[#080808]", children: [
+        /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
+          /* @__PURE__ */ jsxs("div", { className: "text-xs text-neutral-500 uppercase tracking-wider mb-2 font-bold flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx(Zap, { size: 12, className: "text-emerald-500" }),
+            common.tierPro,
+            " ",
+            t.secData
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-end gap-2", children: [
+            /* @__PURE__ */ jsx("span", { className: "text-5xl font-black tracking-tighter text-emerald-500", children: selectedPlan === "monthly" ? t.priceMonthly : t.priceYearly }),
+            /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-sm font-mono mb-1", children: selectedPlan === "monthly" ? t.periodMonthly : t.periodYearly })
+          ] }),
+          selectedPlan === "yearly" && /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-500 mt-2 font-mono border-l-2 border-neutral-800 pl-2", children: "≈ $9/month (Save $56 annually)" })
         ] }),
-        /* @__PURE__ */ jsx("h1", { className: "text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight\n                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40", "data-testid": "text-checkout-title", children: t("checkout.title") }),
-        /* @__PURE__ */ jsx("p", { className: "text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed", children: showTrialInfo ? t("checkout.subtitle").replace("{days}", trialPeriodKo.split("일")[0]) : t("checkout.subtitle").replace("{days}", trialPeriodKo.split("일")[0]) })
+        /* @__PURE__ */ jsx("div", { className: "space-y-4", children: t.features.map((feat, i) => /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 text-sm text-neutral-300 group", children: [
+          /* @__PURE__ */ jsx("div", { className: "mt-0.5 w-4 h-4 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center group-hover:border-emerald-800 transition-colors", children: /* @__PURE__ */ jsx(Check, { size: 10, className: "text-emerald-500" }) }),
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-400 group-hover:text-neutral-200 transition-colors text-xs leading-relaxed", children: feat })
+        ] }, i)) })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "grid lg:grid-cols-2 gap-8 items-start", children: [
-        /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-          /* @__PURE__ */ jsx("div", { className: "flex justify-center mb-6", children: /* @__PURE__ */ jsxs("div", { className: "inline-flex rounded-lg bg-slate-800 p-1 border border-slate-700", children: [
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                onClick: () => setSelectedPlan("monthly"),
-                className: `px-6 py-3 rounded-md font-semibold transition-all ${selectedPlan === "monthly" ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg" : "text-slate-400 hover:text-white"}`,
-                children: t("checkout.monthly")
-              }
-            ),
-            /* @__PURE__ */ jsxs(
-              "button",
-              {
-                onClick: () => setSelectedPlan("yearly"),
-                className: `relative px-6 py-3 rounded-md font-semibold transition-all ${selectedPlan === "yearly" ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg" : "text-slate-400 hover:text-white"}`,
-                children: [
-                  t("checkout.yearly"),
-                  selectedPlan !== "yearly" && /* @__PURE__ */ jsx("span", { className: "absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full", children: t("checkout.yearlyDiscount") })
-                ]
-              }
-            )
-          ] }) }),
-          /* @__PURE__ */ jsxs(Card, { className: "border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900", children: [
-            /* @__PURE__ */ jsxs(CardHeader, { children: [
-              /* @__PURE__ */ jsx("div", { className: "flex items-center justify-between", children: /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
-                  /* @__PURE__ */ jsx(CardTitle, { className: "text-white text-2xl", children: currentPlan.name }),
-                  selectedPlan === "yearly" && /* @__PURE__ */ jsxs(Badge, { variant: "default", className: "bg-amber-500 text-slate-900 font-bold", children: [
-                    /* @__PURE__ */ jsx(Zap, { className: "w-3 h-3 mr-1" }),
-                    plans.yearly.discount
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsx(CardDescription, { className: "text-slate-300 text-base", children: currentPlan.description })
-              ] }) }),
-              /* @__PURE__ */ jsxs("div", { className: "mt-4", children: [
-                selectedPlan === "yearly" && /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2 mb-2", children: [
-                  /* @__PURE__ */ jsxs("span", { className: "text-2xl font-bold text-slate-500 line-through", children: [
-                    "$",
-                    plans.yearly.originalPrice
-                  ] }),
-                  /* @__PURE__ */ jsx("span", { className: "text-sm text-slate-400", children: "/year" })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-2", children: [
-                  /* @__PURE__ */ jsxs("span", { className: "text-5xl font-bold text-amber-500", children: [
-                    "$",
-                    currentPlan.price
-                  ] }),
-                  /* @__PURE__ */ jsx("span", { className: "text-xl text-slate-400", children: currentPlan.interval })
-                ] }),
-                selectedPlan === "yearly" && /* @__PURE__ */ jsxs("div", { className: "mt-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg", children: [
-                  /* @__PURE__ */ jsx("p", { className: "text-emerald-400 font-bold text-lg", children: "≈ $9/month" }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-emerald-300 mt-1", children: "Save $56 compared to monthly billing" })
-                ] }),
-                /* @__PURE__ */ jsxs("div", { className: "mt-3 flex items-center gap-2 text-sm text-slate-400", children: [
-                  /* @__PURE__ */ jsx(RefreshCw, { className: "w-4 h-4" }),
-                  /* @__PURE__ */ jsx("span", { children: currentPlan.billingInterval })
-                ] }),
-                currentPlan.savings && /* @__PURE__ */ jsx("div", { className: "mt-3 flex items-center gap-2", children: /* @__PURE__ */ jsx(Badge, { className: "bg-green-500/20 text-green-400 border-green-500/30", children: currentPlan.savings }) })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx(CardContent, { children: /* @__PURE__ */ jsx("ul", { className: "space-y-3", children: currentPlan.features.map((feature, index) => /* @__PURE__ */ jsxs("li", { className: "flex items-start gap-3 text-sm text-slate-200", children: [
-              /* @__PURE__ */ jsx(CheckCircle, { className: "w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" }),
-              /* @__PURE__ */ jsx("span", { children: feature })
-            ] }, index)) }) })
-          ] }),
-          showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx(Clock, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-base text-white", children: t("checkout.trialTitle").replace("{days}", trialDays.toString()) }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: t("checkout.trialDescription").replace("{days}", trialDays.toString()).replace("{price}", currentPlan.price.toString()).replace("{interval}", t("checkout.priceMonth")) })
-            ] })
-          ] }) }),
-          !showTrialInfo && /* @__PURE__ */ jsx("div", { className: "mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/30", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx(AlertTriangle, { className: "w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: "무료체험 이미 사용됨" }),
-              /* @__PURE__ */ jsxs("p", { className: "text-sm text-slate-300 mt-1", children: [
-                "무료체험은 계정당 1회만 제공됩니다. 결제 즉시 $",
-                currentPlan.price,
-                currentPlan.interval,
-                " 자동결제가 시작됩니다."
-              ] })
-            ] })
-          ] }) }),
-          /* @__PURE__ */ jsx("div", { className: "mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx(Shield, { className: "w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: securityText[language].title }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: securityText[language].description(securityText[language].interval[selectedPlan === "monthly" ? "monthly" : "yearly"]) })
-            ] })
-          ] }) }),
-          /* @__PURE__ */ jsx("div", { className: "mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
-            /* @__PURE__ */ jsx(TrendingUp, { className: "w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-sm text-white", children: dataText[language].title }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-300 mt-1", children: dataText[language].description })
-            ] })
-          ] }) })
+      /* @__PURE__ */ jsxs("div", { className: "w-full md:w-1/2 p-8 bg-[#050505] flex flex-col", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-6", children: [
+          /* @__PURE__ */ jsx(CreditCard, { size: 16, className: "text-neutral-500" }),
+          /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-neutral-300 uppercase tracking-wide", children: showTrialInfo ? t.trial : "즉시 결제" })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "flex flex-col items-center justify-start lg:pt-16", children: /* @__PURE__ */ jsxs(Card, { className: "w-full max-w-md", children: [
-          /* @__PURE__ */ jsxs(CardHeader, { children: [
-            /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx(CreditCard, { className: "h-5 w-5 text-primary" }),
-              showTrialInfo ? t("checkout.startTrial") : t("checkout.subscribeNow")
-            ] }),
-            /* @__PURE__ */ jsx(CardDescription, { children: showTrialInfo ? t("checkout.cardDescriptionTrial").replace("{days}", trialDays.toString()).replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) : t("checkout.cardDescriptionNoTrial").replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) })
+        /* @__PURE__ */ jsxs("div", { className: "bg-neutral-900/30 border border-neutral-800 p-6 rounded-sm mb-6 space-y-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
+            /* @__PURE__ */ jsx("span", { className: "text-neutral-500", children: t.secData }),
+            /* @__PURE__ */ jsxs("span", { className: "text-white font-bold", children: [
+              common.tierPro,
+              " (",
+              selectedPlan === "monthly" ? t.monthly : t.yearly,
+              ")"
+            ] })
           ] }),
-          /* @__PURE__ */ jsxs(CardContent, { className: "space-y-4", children: [
-            /* @__PURE__ */ jsxs("div", { className: "space-y-2 text-sm text-slate-600 dark:text-slate-400", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: t("checkout.planLabel") }),
-                /* @__PURE__ */ jsxs("span", { className: "font-semibold", children: [
-                  currentPlan.name,
-                  " (",
-                  selectedPlan === "monthly" ? t("checkout.monthly") : t("checkout.yearly"),
-                  ")"
-                ] })
-              ] }),
-              showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: t("checkout.freeTrialLabel") }),
-                /* @__PURE__ */ jsxs("span", { className: "font-semibold text-green-600 dark:text-green-400 text-base", children: [
-                  trialDays,
-                  t("checkout.trialTitle").replace("{days}", "").trim()
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                /* @__PURE__ */ jsx("span", { children: showTrialInfo ? t("checkout.afterTrialLabel") : t("checkout.priceLabel") }),
-                /* @__PURE__ */ jsx("span", { className: "font-semibold", children: t("checkout.priceWithTax").replace("{price}", currentPlan.price.toString()).replace("{interval}", selectedPlan === "monthly" ? t("checkout.priceMonth") : t("checkout.priceYear")) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between text-xs text-slate-500", children: [
-                /* @__PURE__ */ jsx("span", { children: t("checkout.billingCycleLabel") }),
-                /* @__PURE__ */ jsx("span", { children: selectedPlan === "monthly" ? t("checkout.billingMonthly") : t("checkout.billingYearly") })
+          showTrialInfo ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-neutral-500", children: "Free Trial" }),
+              /* @__PURE__ */ jsx("span", { className: "text-emerald-500 font-bold", children: selectedPlan === "monthly" ? t.trial3Badge : t.trial7Badge })
+            ] }),
+            /* @__PURE__ */ jsx("div", { className: "h-[1px] bg-neutral-800 my-2" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-neutral-500", children: "After Trial" }),
+              /* @__PURE__ */ jsx("span", { className: "text-white font-mono", children: selectedPlan === "monthly" ? t.afterTrial3 : t.afterTrial7 })
+            ] })
+          ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+            /* @__PURE__ */ jsx("div", { className: "h-[1px] bg-neutral-800 my-2" }),
+            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-neutral-500", children: "결제 금액" }),
+              /* @__PURE__ */ jsxs("span", { className: "text-white font-mono", children: [
+                "$",
+                currentPlan.price,
+                selectedPlan === "monthly" ? "/월" : "/년"
               ] })
             ] }),
-            showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 p-3 rounded-lg border bg-muted/50", children: [
-              /* @__PURE__ */ jsx(
-                Checkbox,
-                {
-                  id: "terms",
-                  checked: agreedToTerms,
-                  onCheckedChange: (checked) => setAgreedToTerms(checked === true),
-                  className: "mt-0.5"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "label",
-                {
-                  htmlFor: "terms",
-                  className: "text-xs text-muted-foreground leading-relaxed cursor-pointer",
-                  children: t("checkout.termsAgreement")
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsx(
-              Button,
-              {
-                onClick: handleCheckout,
-                className: "w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-6 text-lg",
-                disabled: isProcessing || showTrialInfo && !agreedToTerms,
-                "data-testid": "button-complete-payment",
-                children: isProcessing ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx("div", { className: "animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" }),
-                  "Processing..."
-                ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx(Shield, { className: "w-5 h-5 mr-2" }),
-                  showTrialInfo ? `Start ${trialPeriodEn} Free Trial` : "Subscribe Now"
-                ] })
-              }
-            ),
-            /* @__PURE__ */ jsx("p", { className: "text-xs text-center text-slate-500", children: showTrialInfo ? `You won't be charged for ${trialPeriodEn}. Cancel anytime during the trial.` : "안전한 Stripe 결제 시스템을 통해 처리됩니다." })
+            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-amber-500 mt-2", children: "* 무료체험 이미 사용됨 - 즉시 결제가 시작됩니다" })
           ] })
-        ] }) })
+        ] }),
+        showTrialInfo && /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 mb-6 p-3 bg-neutral-900/20 border border-neutral-900 rounded", children: [
+          /* @__PURE__ */ jsx("div", { className: "mt-0.5", children: /* @__PURE__ */ jsx(
+            "input",
+            {
+              type: "checkbox",
+              checked: agreedToTerms,
+              onChange: (e) => setAgreedToTerms(e.target.checked),
+              className: "accent-emerald-600 bg-neutral-900 border-neutral-700"
+            }
+          ) }),
+          /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 leading-relaxed", children: t.terms })
+        ] }),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: handleCheckout,
+            disabled: isProcessing || showTrialInfo && !agreedToTerms,
+            className: "w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 text-black font-bold uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:shadow-none flex items-center justify-center gap-2 mt-auto",
+            children: isProcessing ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(Loader2, { className: "w-4 h-4 animate-spin" }),
+              "Processing..."
+            ] }) : showTrialInfo ? selectedPlan === "monthly" ? t.trial3 : t.trial7 : "지금 구독하기"
+          }
+        ),
+        /* @__PURE__ */ jsxs("div", { className: "mt-4 flex items-center justify-center gap-2 text-[10px] text-neutral-600", children: [
+          /* @__PURE__ */ jsx(Lock, { size: 10 }),
+          t.secure
+        ] })
       ] })
-    ] })
-  ] });
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "bg-[#050505] border-t border-neutral-900 p-3 flex justify-center md:justify-between items-center text-[9px] text-neutral-600 uppercase tracking-wider px-8", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx(TrendingUp, { size: 10 }),
+      t.secDesc
+    ] }) })
+  ] }) }) });
 }
-const logoLight$3 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
-const logoDark$3 = "/insiderpulse_logo1.png";
 function SignupPage() {
   const [, navigate2] = useLocation();
-  const { t } = useLanguage();
   const { login } = useAuth();
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase();
+  const t = TRANSLATIONS[langKey].auth;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -7527,6 +7384,9 @@ function SignupPage() {
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef([]);
+  const [logs, setLogs] = useState([]);
+  const [targets, setTargets] = useState([]);
+  const scrollRef = useRef(null);
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1e3);
@@ -7538,24 +7398,92 @@ function SignupPage() {
       handleVerifyCode();
     }
   }, [code, mode, isLoading]);
+  useEffect(() => {
+    const bootSequence = [
+      "ESTABLISHING_SEC_UPLINK...",
+      "HANDSHAKE_EDGAR_DB: [OK]",
+      "LOADING_INSTITUTIONAL_LEDGERS...",
+      "FILTERING_10B5-1_PLANS (NOISE_REDUCTION)...",
+      "LOADING_INSIDER_PROFILES_V2.4...",
+      "QUANT_MODEL_INIT: ALPHA_SCORE",
+      "CROSS_REFERENCING_DARK_POOLS...",
+      "ENCRYPTING_SESSION_KEYS...",
+      "TERMINAL_READY."
+    ];
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < bootSequence.length) {
+        setLogs((prev) => [...prev, `> ${bootSequence[currentIndex]}`]);
+        currentIndex++;
+      } else {
+        if (Math.random() > 0.7) {
+          const commands = [
+            "SCANNING_FORM_4: NVDA [CEO_BUY]",
+            "DETECTING_CLUSTER_BUYING: BIOTECH_SECTOR",
+            "ANALYZING_FILING: 0001193125-24-123456",
+            "SENTIMENT_ANALYSIS: BULLISH_DIVERGENCE",
+            "WHALE_ALERT: $5.2M PURCHASE DETECTED",
+            "UPDATING_REAL_TIME_PRICE_TARGETS..."
+          ];
+          const cmd = commands[Math.floor(Math.random() * commands.length)];
+          setLogs((prev) => {
+            const newLogs = [...prev, `> ${cmd}`];
+            return newLogs.slice(-8);
+          });
+        }
+      }
+    }, 250);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+  useEffect(() => {
+    const spawnInterval = setInterval(() => {
+      if (document.hidden) return;
+      const id = Date.now();
+      const angle = Math.random() * 2 * Math.PI;
+      const r = Math.sqrt(Math.random()) * 40;
+      const x = 50 + r * Math.cos(angle);
+      const y = 50 + r * Math.sin(angle);
+      const typeRand = Math.random();
+      let type = "neutral";
+      let label = "";
+      if (typeRand > 0.85) {
+        type = "buy";
+        label = `CEO BUY +$${(Math.random() * 10).toFixed(1)}M`;
+      } else if (typeRand > 0.75) {
+        type = "sell";
+        label = "WHALE DUMP";
+      }
+      const newTarget = { id, x, y, type, label };
+      setTargets((prev) => [...prev, newTarget]);
+      setTimeout(() => {
+        setTargets((prev) => prev.filter((t2) => t2.id !== id));
+      }, 3e3);
+    }, 800);
+    return () => clearInterval(spawnInterval);
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email || !password || !confirmPassword) {
-      setError(t("auth.signup.errorAllFields"));
+      setError("All fields are required");
       return;
     }
     if (password.length < 8) {
-      setError(t("auth.signup.errorPasswordLength"));
+      setError("Password must be at least 8 characters");
       return;
     }
     if (password !== confirmPassword) {
-      setError(t("auth.signup.errorPasswordMatch"));
+      setError("Passwords do not match");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError(t("auth.signup.errorInvalidEmail"));
+      setError("Invalid email address");
       return;
     }
     setIsLoading(true);
@@ -7568,7 +7496,7 @@ function SignupPage() {
         (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
       }, 100);
     } catch (err) {
-      setError(err.message || t("auth.signup.errorFailed"));
+      setError(err.message || "Signup failed");
     } finally {
       setIsLoading(false);
     }
@@ -7595,9 +7523,7 @@ function SignupPage() {
     const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     const newCode = [...code];
     pastedData.split("").forEach((digit, index) => {
-      if (index < 6) {
-        newCode[index] = digit;
-      }
+      if (index < 6) newCode[index] = digit;
     });
     setCode(newCode);
     const nextEmptyIndex = newCode.findIndex((c) => !c);
@@ -7609,7 +7535,7 @@ function SignupPage() {
     setError("");
     const codeString = code.join("");
     if (codeString.length !== 6) {
-      setError(t("auth.verifyCode.errorEnterAll"));
+      setError("Please enter all 6 digits");
       return;
     }
     setIsLoading(true);
@@ -7635,10 +7561,10 @@ function SignupPage() {
           }
         }, 1500);
       } else {
-        setError(data.message || t("auth.verifyCode.errorFailed"));
+        setError(data.message || "Verification failed");
       }
     } catch (err) {
-      setError(err.message || t("auth.verifyCode.errorFailed"));
+      setError(err.message || "Verification failed");
     } finally {
       setIsLoading(false);
     }
@@ -7660,244 +7586,385 @@ function SignupPage() {
         setCode(["", "", "", "", "", ""]);
         (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
       } else {
-        setError(data.message || t("auth.verifyCode.errorResend"));
+        setError(data.message || "Failed to resend code");
       }
     } catch (err) {
-      setError(err.message || t("auth.verifyCode.errorResend"));
+      setError(err.message || "Failed to resend code");
     } finally {
       setIsResending(false);
     }
   };
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen grid md:grid-cols-2", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hidden md:flex flex-col justify-between bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 p-12", children: [
+  if (mode === "success") {
+    return /* @__PURE__ */ jsx("div", { className: "w-screen h-screen flex items-center justify-center bg-[#030303] text-neutral-300 font-mono", children: /* @__PURE__ */ jsx("div", { className: "bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6", children: /* @__PURE__ */ jsxs("div", { className: "space-y-6 py-12 text-center", children: [
+      /* @__PURE__ */ jsx("div", { className: "flex justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-16 h-16 rounded-full bg-emerald-900/50 border border-emerald-900 flex items-center justify-center", children: /* @__PURE__ */ jsx(CheckCircle, { className: "h-8 w-8 text-emerald-500" }) }) }),
       /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("img", { src: logoDark$3, alt: "InsiderPulse", className: "h-10 w-auto mb-16" }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-6 max-w-md", children: [
-          /* @__PURE__ */ jsx("h1", { className: "text-4xl font-bold text-white leading-tight", children: t("auth.signup.heroTitle") }),
-          /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: t("auth.signup.heroDesc") })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "mt-16 space-y-6", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-pink-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-pink-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.realtimeData") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.realtimeDesc") })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-cyan-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(Shield, { className: "h-6 w-6 text-cyan-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.verifiedInfo") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.verifiedDesc") })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-violet-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(Zap, { className: "h-6 w-6 text-violet-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.smartAlerts") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.smartAlertsDesc") })
-            ] })
-          ] })
+        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 mb-2 uppercase tracking-wide", children: "Verification Complete" }),
+        /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-sm font-mono", children: "Logging you in..." })
+      ] })
+    ] }) }) });
+  }
+  if (mode === "verify") {
+    return /* @__PURE__ */ jsx("div", { className: "w-screen h-screen flex items-center justify-center bg-[#030303] text-neutral-300 font-mono", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6", children: [
+      /* @__PURE__ */ jsxs("div", { className: "text-center mb-8", children: [
+        /* @__PURE__ */ jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 mb-4", children: /* @__PURE__ */ jsx(Mail, { className: "h-8 w-8 text-emerald-600" }) }),
+        /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide", children: "Verify Email" }),
+        /* @__PURE__ */ jsxs("p", { className: "text-sm text-neutral-500 font-mono", children: [
+          "Check ",
+          /* @__PURE__ */ jsx("strong", { className: "text-neutral-300", children: email }),
+          /* @__PURE__ */ jsx("br", {}),
+          "Enter 6-digit verification code"
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "text-xs text-slate-500", children: "© 2024 InsiderPulse. All rights reserved." })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center p-4 bg-white dark:bg-slate-950", children: /* @__PURE__ */ jsxs("div", { className: "w-full max-w-md", children: [
-      mode === "success" ? /* @__PURE__ */ jsxs("div", { className: "space-y-6 py-12 text-center", "data-testid": "success-message", children: [
-        /* @__PURE__ */ jsx("div", { className: "flex justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center", children: /* @__PURE__ */ jsx(CheckCircle, { className: "h-8 w-8 text-white" }) }) }),
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-slate-900 dark:text-white mb-2", children: t("auth.verifyCode.successTitle") }),
-          /* @__PURE__ */ jsx("p", { className: "text-slate-600 dark:text-slate-400", children: t("auth.verifyCode.successDesc") })
+      error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
+        /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
+        /* @__PURE__ */ jsx(AlertDescription, { children: error })
+      ] }),
+      /* @__PURE__ */ jsxs("form", { onSubmit: handleVerifyCode, className: "space-y-6", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex justify-center gap-2", children: code.map((digit, index) => /* @__PURE__ */ jsx(
+          "input",
+          {
+            ref: (el) => inputRefs.current[index] = el,
+            type: "text",
+            inputMode: "numeric",
+            pattern: "\\d*",
+            maxLength: 1,
+            value: digit,
+            onChange: (e) => handleCodeChange(index, e.target.value),
+            onKeyDown: (e) => handleCodeKeyDown(index, e),
+            onPaste: handleCodePaste,
+            disabled: isLoading,
+            className: "w-12 h-14 text-center text-2xl font-bold font-mono border border-neutral-800 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#0a0a0a] text-neutral-200",
+            autoFocus: index === 0
+          },
+          index
+        )) }),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "submit",
+            className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs transition-all flex items-center justify-center gap-2",
+            disabled: isLoading || code.join("").length !== 6,
+            children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }),
+              "Verifying..."
+            ] }) : "Verify Code"
+          }
+        ),
+        /* @__PURE__ */ jsx("div", { className: "text-center", children: /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            onClick: handleResendCode,
+            disabled: resendCooldown > 0 || isResending,
+            className: "text-sm text-emerald-600 hover:text-emerald-500 font-medium disabled:text-neutral-600 disabled:cursor-not-allowed font-mono",
+            children: isResending ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(Loader2, { className: "inline h-3 w-3 animate-spin mr-1" }),
+              "Resending..."
+            ] }) : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"
+          }
+        ) }),
+        /* @__PURE__ */ jsx("div", { className: "text-center pt-4 border-t border-neutral-800", children: /* @__PURE__ */ jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: () => setMode("signup"),
+            className: "text-sm text-neutral-500 hover:text-neutral-300 inline-flex items-center gap-1 font-mono",
+            children: [
+              /* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }),
+              "Back to Signup"
+            ]
+          }
+        ) })
+      ] })
+    ] }) });
+  }
+  return /* @__PURE__ */ jsxs("div", { className: "w-screen h-screen flex bg-[#030303] text-neutral-300 overflow-hidden font-mono selection:bg-emerald-900 selection:text-emerald-50", children: [
+    /* @__PURE__ */ jsx("style", { children: `
+        @keyframes radar-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blip {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes lock-on {
+            0% { width: 40px; height: 40px; opacity: 0; transform: scale(1.5); }
+            20% { opacity: 1; }
+            100% { width: 24px; height: 24px; opacity: 1; transform: scale(1); }
+        }
+        @keyframes scan-bar {
+            0% { left: -50%; }
+            100% { left: 150%; }
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+      ` }),
+    /* @__PURE__ */ jsxs("div", { className: "hidden lg:flex w-2/3 relative flex-col justify-between p-16 bg-[#020202] border-r border-neutral-900 overflow-hidden", children: [
+      /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 pointer-events-none z-0", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-radial-gradient(circle at 30% 50%, #05966908 0%, transparent 50%)" })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-4", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-600" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-800/50" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-900/30" })
+          ] }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold tracking-[0.3em] text-emerald-500 uppercase animate-pulse", children: "DETECTING_SMART_MONEY_FLOW" })
+        ] }),
+        /* @__PURE__ */ jsxs("h1", { className: "text-6xl font-black tracking-tighter text-white mb-2 uppercase leading-none", children: [
+          "Insider",
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-700", children: "Pulse" })
+        ] }),
+        /* @__PURE__ */ jsxs("p", { className: "text-neutral-500 text-xs tracking-widest uppercase mt-2 flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Database, { size: 12 }),
+          "SEC Form 4 Intelligence Platform"
         ] })
-      ] }) : mode === "verify" ? (
-        /* Verification Code View */
-        /* @__PURE__ */ jsxs(Fragment$1, { children: [
-          /* @__PURE__ */ jsxs("div", { className: "mb-6", children: [
-            /* @__PURE__ */ jsx("div", { className: "mb-3 flex justify-center", children: /* @__PURE__ */ jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500", children: /* @__PURE__ */ jsx(Mail, { className: "h-8 w-8 text-white" }) }) }),
-            /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center", children: t("auth.verifyCode.title") }),
-            /* @__PURE__ */ jsxs("p", { className: "text-slate-600 dark:text-slate-400 text-center text-sm", children: [
-              /* @__PURE__ */ jsx("strong", { children: email }),
-              t("auth.verifyCode.subtitle"),
-              /* @__PURE__ */ jsx("br", {}),
-              t("auth.verifyCode.enterCode")
-            ] })
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "relative z-10 flex-1 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "relative w-[500px] h-[500px] flex items-center justify-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 border border-neutral-800/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[15%] border border-neutral-800/50 rounded-full border-dashed opacity-50" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[35%] border border-neutral-800 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[48%] border border-emerald-900/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute h-full w-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-full rounded-full animate-[radar-spin_4s_linear_infinite] origin-center bg-[conic-gradient(from_0deg,transparent_0deg,transparent_270deg,rgba(16,185,129,0.1)_360deg)]" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-12 h-12 bg-[#050505] border border-emerald-900/50 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] z-20", children: /* @__PURE__ */ jsx(Target, { size: 20, className: "text-emerald-600 animate-pulse" }) }),
+        targets.map((target) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            className: "absolute w-0 h-0 flex items-center justify-center",
+            style: { left: `${target.x}%`, top: `${target.y}%` },
+            children: [
+              target.type === "buy" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "absolute border-2 border-emerald-500/50 rounded-sm animate-[lock-on_0.5s_forwards]" }),
+                /* @__PURE__ */ jsx("div", { className: "w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_10px_#10b981] animate-[pulse_1s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute left-4 top-0 bg-emerald-900/90 text-[9px] text-emerald-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-emerald-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label }),
+                /* @__PURE__ */ jsx("div", { className: "absolute h-[1px] w-16 bg-emerald-800/50 rotate-45 origin-top-left top-0 left-0 -z-10 opacity-50" })
+              ] }),
+              target.type === "sell" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_#f43f5e]" }),
+                /* @__PURE__ */ jsx("div", { className: "absolute w-8 h-8 border border-rose-900/50 rounded-full animate-[ping_1.5s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute right-4 top-0 bg-rose-900/90 text-[9px] text-rose-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-rose-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label })
+              ] }),
+              target.type === "neutral" && /* @__PURE__ */ jsx("div", { className: "w-1 h-1 bg-neutral-600 rounded-full animate-pulse opacity-50" })
+            ]
+          },
+          target.id
+        )),
+        /* @__PURE__ */ jsxs("div", { className: "absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[9px] text-emerald-500 tracking-[0.2em] uppercase font-bold", children: [
+            /* @__PURE__ */ jsx(Activity, { size: 12, className: "animate-bounce" }),
+            "Tracking Signals"
           ] }),
-          error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", "data-testid": "alert-error", children: [
-            /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
-            /* @__PURE__ */ jsx(AlertDescription, { children: error })
+          /* @__PURE__ */ jsx("div", { className: "w-32 h-0.5 bg-neutral-800 overflow-hidden rounded-full relative", children: /* @__PURE__ */ jsx("div", { className: "absolute top-0 h-full bg-emerald-500 w-16 animate-[scan-bar_2s_linear_infinite] shadow-[0_0_8px_#10b981] opacity-80" }) })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10 bg-black/50 border-t border-neutral-900 backdrop-blur-sm pt-4", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider", children: [
+            /* @__PURE__ */ jsx(Scan, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "System Log" })
           ] }),
-          /* @__PURE__ */ jsxs("form", { onSubmit: handleVerifyCode, className: "space-y-6", children: [
-            /* @__PURE__ */ jsx("div", { className: "flex justify-center gap-2", children: code.map((digit, index) => /* @__PURE__ */ jsx(
-              "input",
-              {
-                ref: (el) => inputRefs.current[index] = el,
-                type: "text",
-                inputMode: "numeric",
-                pattern: "\\d*",
-                maxLength: 1,
-                value: digit,
-                onChange: (e) => handleCodeChange(index, e.target.value),
-                onKeyDown: (e) => handleCodeKeyDown(index, e),
-                onPaste: handleCodePaste,
-                disabled: isLoading,
-                className: "w-12 h-14 text-center text-2xl font-bold border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-slate-800 text-slate-900 dark:text-white",
-                autoFocus: index === 0
-              },
-              index
-            )) }),
-            /* @__PURE__ */ jsx("p", { className: "text-center text-sm text-slate-500 dark:text-slate-400", children: t("auth.verifyCode.codeValid") }),
-            /* @__PURE__ */ jsx(
-              Button,
-              {
-                type: "submit",
-                className: "w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium",
-                disabled: isLoading || code.join("").length !== 6,
-                children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
-                  t("auth.verifyCode.verifying")
-                ] }) : t("auth.verifyCode.verify")
-              }
-            ),
-            /* @__PURE__ */ jsx("div", { className: "text-center", children: /* @__PURE__ */ jsx(
-              "button",
-              {
-                type: "button",
-                onClick: handleResendCode,
-                disabled: resendCooldown > 0 || isResending,
-                className: "text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 font-medium disabled:text-slate-400 disabled:cursor-not-allowed",
-                children: isResending ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-                  /* @__PURE__ */ jsx(Loader2, { className: "inline h-3 w-3 animate-spin mr-1" }),
-                  t("auth.verifyCode.resending")
-                ] }) : resendCooldown > 0 ? t("auth.verifyCode.resendIn", { seconds: resendCooldown }) : t("auth.verifyCode.resendCode")
-              }
-            ) }),
-            /* @__PURE__ */ jsx("div", { className: "text-center pt-4 border-t", children: /* @__PURE__ */ jsxs(
-              "button",
-              {
-                type: "button",
-                onClick: () => setMode("signup"),
-                className: "text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1",
-                children: [
-                  /* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }),
-                  t("auth.verifyCode.backToSignup")
-                ]
-              }
-            ) })
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-emerald-700 animate-pulse", children: [
+            /* @__PURE__ */ jsx(Crosshair, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "LIVE FEED" })
           ] })
-        ] })
-      ) : (
-        /* Signup Form View */
-        /* @__PURE__ */ jsx(Fragment$1, { children: /* @__PURE__ */ jsxs("div", { className: "mb-6", children: [
-          /* @__PURE__ */ jsxs("div", { className: "mb-3 flex justify-center", children: [
-            /* @__PURE__ */ jsx("img", { src: logoLight$3, alt: "InsiderPulse", className: "h-64 w-auto block dark:hidden" }),
-            /* @__PURE__ */ jsx("img", { src: logoDark$3, alt: "InsiderPulse", className: "h-64 w-auto hidden dark:block" })
-          ] }),
-          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-slate-900 dark:text-white mb-2", children: t("auth.signup.title") }),
-          /* @__PURE__ */ jsx("p", { className: "text-slate-600 dark:text-slate-400", children: t("auth.signup.subtitle") })
-        ] }) })
-      ),
-      mode === "signup" && /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "space-y-3", children: [
-        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", "data-testid": "alert-error", children: [
+        ] }),
+        /* @__PURE__ */ jsx("div", { ref: scrollRef, className: "h-24 overflow-hidden font-mono text-[10px] space-y-1.5 opacity-80", children: logs.map((log, i) => /* @__PURE__ */ jsxs("div", { className: "text-neutral-400 truncate border-l border-neutral-800 pl-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-600 mr-2", children: ((/* @__PURE__ */ new Date()).getTime() + i).toString().slice(-6) }),
+          log
+        ] }, i)) })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "w-full lg:w-1/3 flex items-center justify-center bg-[#050505] relative z-20 border-l border-neutral-900", children: [
+      /* @__PURE__ */ jsx("div", { className: "absolute top-8 left-8 lg:hidden", children: /* @__PURE__ */ jsx("span", { className: "font-bold text-white tracking-tight text-lg", children: "INSIDERPULSE" }) }),
+      /* @__PURE__ */ jsxs("div", { className: "w-full max-w-sm px-8", children: [
+        /* @__PURE__ */ jsxs("div", { className: "mb-10 text-center", children: [
+          /* @__PURE__ */ jsx("div", { className: "w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)]", children: /* @__PURE__ */ jsx(Lock, { size: 24, className: "text-emerald-600" }) }),
+          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-white mb-2 tracking-tight uppercase", children: t.createAccount }),
+          /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-xs font-mono leading-relaxed max-w-[240px] mx-auto", children: "Initialize new institutional account." })
+        ] }),
+        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
           /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
           /* @__PURE__ */ jsx(AlertDescription, { children: error })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-          /* @__PURE__ */ jsx(Label, { htmlFor: "email", className: "text-sm font-medium text-slate-700 dark:text-slate-300", children: t("auth.signup.email") }),
-          /* @__PURE__ */ jsx(
-            Input,
-            {
-              id: "email",
-              type: "email",
-              placeholder: t("auth.login.emailPlaceholder"),
-              value: email,
-              onChange: (e) => setEmail(e.target.value),
-              disabled: isLoading,
-              required: true,
-              className: "h-10",
-              "data-testid": "input-email"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-          /* @__PURE__ */ jsx(Label, { htmlFor: "password", className: "text-sm font-medium text-slate-700 dark:text-slate-300", children: t("auth.signup.password") }),
-          /* @__PURE__ */ jsx(
-            Input,
-            {
-              id: "password",
-              type: "password",
-              placeholder: t("auth.login.passwordPlaceholder"),
-              value: password,
-              onChange: (e) => setPassword(e.target.value),
-              disabled: isLoading,
-              required: true,
-              className: "h-10",
-              "data-testid": "input-password"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-          /* @__PURE__ */ jsx(Label, { htmlFor: "confirmPassword", className: "text-sm font-medium text-slate-700 dark:text-slate-300", children: t("auth.signup.confirmPassword") }),
-          /* @__PURE__ */ jsx(
-            Input,
-            {
-              id: "confirmPassword",
-              type: "password",
-              placeholder: t("auth.login.passwordPlaceholder"),
-              value: confirmPassword,
-              onChange: (e) => setConfirmPassword(e.target.value),
-              disabled: isLoading,
-              required: true,
-              className: "h-10",
-              "data-testid": "input-confirm-password"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsx(
-          Button,
-          {
-            type: "submit",
-            className: "w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium",
-            disabled: isLoading,
-            "data-testid": "button-signup",
-            children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-              /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
-              t("auth.signup.creating")
-            ] }) : t("auth.signup.button")
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "text-center text-sm", children: [
-          /* @__PURE__ */ jsx("span", { className: "text-slate-600 dark:text-slate-400", children: t("auth.signup.haveAccount") }),
-          " ",
+        /* @__PURE__ */ jsxs("form", { className: "space-y-6", onSubmit: handleSubmit, children: [
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Globe, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "email",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_EMAIL_ADDRESS",
+                id: "email",
+                value: email,
+                onChange: (e) => setEmail(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-email"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Lock, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "password",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_PASSWORD",
+                id: "password",
+                value: password,
+                onChange: (e) => setPassword(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-password"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Fingerprint, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "password",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "CONFIRM_CREDENTIALS",
+                id: "confirm",
+                value: confirmPassword,
+                onChange: (e) => setConfirmPassword(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-confirm-password"
+              }
+            )
+          ] }) }),
           /* @__PURE__ */ jsx(
             "button",
             {
-              type: "button",
-              onClick: () => navigate2("/login"),
-              className: "text-purple-600 dark:text-purple-400 font-medium hover:underline",
-              "data-testid": "button-login",
-              children: t("auth.signup.signIn")
+              type: "submit",
+              className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-4 text-xs transition-all flex items-center justify-center gap-2 mt-4 group shadow-[0_0_15px_rgba(16,185,129,0.1)]",
+              disabled: isLoading,
+              "data-testid": "button-signup",
+              children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }),
+                "CREATING..."
+              ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("span", { children: t.register }),
+                /* @__PURE__ */ jsx(ArrowRight, { size: 14, className: "group-hover:translate-x-1 transition-transform" })
+              ] })
             }
           )
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "mt-10 flex justify-between items-center border-t border-neutral-900 pt-6", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => navigate2("/login"),
+              className: "text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold",
+              "data-testid": "button-login",
+              children: t.hasAccount
+            }
+          ),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-neutral-700", children: [
+            /* @__PURE__ */ jsx(ShieldCheck, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { className: "text-[9px] font-mono", children: "AES-256 ENCRYPTION" })
+          ] })
         ] })
       ] })
-    ] }) })
+    ] })
   ] });
 }
-const logoLight$2 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
-const logoDark$2 = "/insiderpulse_logo1.png";
 function LoginPage() {
   const [, navigate2] = useLocation();
   const { login } = useAuth();
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase();
+  const t = TRANSLATIONS[langKey].auth;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [logs, setLogs] = useState([]);
+  const [targets, setTargets] = useState([]);
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    const bootSequence = [
+      "ESTABLISHING_SEC_UPLINK...",
+      "HANDSHAKE_EDGAR_DB: [OK]",
+      "LOADING_INSTITUTIONAL_LEDGERS...",
+      "FILTERING_10B5-1_PLANS (NOISE_REDUCTION)...",
+      "LOADING_INSIDER_PROFILES_V2.4...",
+      "QUANT_MODEL_INIT: ALPHA_SCORE",
+      "CROSS_REFERENCING_DARK_POOLS...",
+      "ENCRYPTING_SESSION_KEYS...",
+      "TERMINAL_READY."
+    ];
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < bootSequence.length) {
+        setLogs((prev) => [...prev, `> ${bootSequence[currentIndex]}`]);
+        currentIndex++;
+      } else {
+        if (Math.random() > 0.7) {
+          const commands = [
+            "SCANNING_FORM_4: NVDA [CEO_BUY]",
+            "DETECTING_CLUSTER_BUYING: BIOTECH_SECTOR",
+            "ANALYZING_FILING: 0001193125-24-123456",
+            "SENTIMENT_ANALYSIS: BULLISH_DIVERGENCE",
+            "WHALE_ALERT: $5.2M PURCHASE DETECTED",
+            "UPDATING_REAL_TIME_PRICE_TARGETS..."
+          ];
+          const cmd = commands[Math.floor(Math.random() * commands.length)];
+          setLogs((prev) => {
+            const newLogs = [...prev, `> ${cmd}`];
+            return newLogs.slice(-8);
+          });
+        }
+      }
+    }, 250);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+  useEffect(() => {
+    const spawnInterval = setInterval(() => {
+      if (document.hidden) return;
+      const id = Date.now();
+      const angle = Math.random() * 2 * Math.PI;
+      const r = Math.sqrt(Math.random()) * 40;
+      const x = 50 + r * Math.cos(angle);
+      const y = 50 + r * Math.sin(angle);
+      const typeRand = Math.random();
+      let type = "neutral";
+      let label = "";
+      if (typeRand > 0.85) {
+        type = "buy";
+        label = `CEO BUY +$${(Math.random() * 10).toFixed(1)}M`;
+      } else if (typeRand > 0.75) {
+        type = "sell";
+        label = "WHALE DUMP";
+      }
+      const newTarget = { id, x, y, type, label };
+      setTargets((prev) => [...prev, newTarget]);
+      setTimeout(() => {
+        setTargets((prev) => prev.filter((t2) => t2.id !== id));
+      }, 3e3);
+    }, 800);
+    return () => clearInterval(spawnInterval);
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email || !password) {
-      setError(t("auth.login.errorRequired"));
+      setError("Email and password are required");
       return;
     }
     setIsLoading(true);
@@ -7907,137 +7974,197 @@ function LoginPage() {
         login(response.user, response.token);
         navigate2("/trades");
       } else {
-        setError(response.message || t("auth.login.errorFailed"));
+        setError(response.message || "Login failed");
       }
     } catch (err) {
-      setError(err.message || t("auth.login.errorFailed"));
+      setError(err.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
-  return /* @__PURE__ */ jsxs("div", { className: "min-h-screen grid md:grid-cols-2", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hidden md:flex flex-col justify-between bg-slate-900 p-12", children: [
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("img", { src: logoDark$2, alt: "InsiderPulse", className: "h-10 w-auto mb-16" }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-6 max-w-md", children: [
-          /* @__PURE__ */ jsx("h1", { className: "text-4xl font-bold text-white leading-tight", children: t("auth.login.welcome") }),
-          /* @__PURE__ */ jsx("p", { className: "text-lg text-slate-400", children: t("auth.login.welcomeDesc") })
+  return /* @__PURE__ */ jsxs("div", { className: "w-screen h-screen flex bg-[#030303] text-neutral-300 overflow-hidden font-mono selection:bg-emerald-900 selection:text-emerald-50", children: [
+    /* @__PURE__ */ jsx("style", { children: `
+        @keyframes radar-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blip {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes lock-on {
+            0% { width: 40px; height: 40px; opacity: 0; transform: scale(1.5); }
+            20% { opacity: 1; }
+            100% { width: 24px; height: 24px; opacity: 1; transform: scale(1); }
+        }
+        @keyframes scan-bar {
+            0% { left: -50%; }
+            100% { left: 150%; }
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+      ` }),
+    /* @__PURE__ */ jsxs("div", { className: "hidden lg:flex w-2/3 relative flex-col justify-between p-16 bg-[#020202] border-r border-neutral-900 overflow-hidden", children: [
+      /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 pointer-events-none z-0", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-radial-gradient(circle at 30% 50%, #05966908 0%, transparent 50%)" })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-4", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-600" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-800/50" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-900/30" })
+          ] }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold tracking-[0.3em] text-emerald-500 uppercase animate-pulse", children: "DETECTING_SMART_MONEY_FLOW" })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "mt-16 space-y-6", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-emerald-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(TrendingUp, { className: "h-6 w-6 text-emerald-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.realtimeData") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.realtimeDesc") })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-blue-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(Shield, { className: "h-6 w-6 text-blue-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.verifiedInfo") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.verifiedDesc") })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4", children: [
-            /* @__PURE__ */ jsx("div", { className: "w-12 h-12 rounded bg-amber-500/10 flex items-center justify-center", children: /* @__PURE__ */ jsx(Zap, { className: "h-6 w-6 text-amber-500" }) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { className: "font-semibold text-white", children: t("auth.login.smartAlerts") }),
-              /* @__PURE__ */ jsx("p", { className: "text-sm text-slate-400", children: t("auth.login.smartAlertsDesc") })
-            ] })
-          ] })
+        /* @__PURE__ */ jsxs("h1", { className: "text-6xl font-black tracking-tighter text-white mb-2 uppercase leading-none", children: [
+          "Insider",
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-700", children: "Pulse" })
+        ] }),
+        /* @__PURE__ */ jsxs("p", { className: "text-neutral-500 text-xs tracking-widest uppercase mt-2 flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Database, { size: 12 }),
+          "SEC Form 4 Intelligence Platform"
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "text-xs text-slate-500", children: "© 2024 InsiderPulse. All rights reserved." })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center p-4 bg-white dark:bg-slate-950", children: /* @__PURE__ */ jsxs("div", { className: "w-full max-w-md", children: [
-      /* @__PURE__ */ jsxs("div", { className: "mb-6", children: [
-        /* @__PURE__ */ jsxs("div", { className: "mb-3 flex justify-center", children: [
-          /* @__PURE__ */ jsx("img", { src: logoLight$2, alt: "InsiderPulse", className: "h-64 w-auto block dark:hidden" }),
-          /* @__PURE__ */ jsx("img", { src: logoDark$2, alt: "InsiderPulse", className: "h-64 w-auto hidden dark:block" })
+      /* @__PURE__ */ jsx("div", { className: "relative z-10 flex-1 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "relative w-[500px] h-[500px] flex items-center justify-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 border border-neutral-800/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[15%] border border-neutral-800/50 rounded-full border-dashed opacity-50" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[35%] border border-neutral-800 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[48%] border border-emerald-900/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute h-full w-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-full rounded-full animate-[radar-spin_4s_linear_infinite] origin-center bg-[conic-gradient(from_0deg,transparent_0deg,transparent_270deg,rgba(16,185,129,0.1)_360deg)]" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-12 h-12 bg-[#050505] border border-emerald-900/50 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] z-20", children: /* @__PURE__ */ jsx(Target, { size: 20, className: "text-emerald-600 animate-pulse" }) }),
+        targets.map((target) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            className: "absolute w-0 h-0 flex items-center justify-center",
+            style: { left: `${target.x}%`, top: `${target.y}%` },
+            children: [
+              target.type === "buy" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "absolute border-2 border-emerald-500/50 rounded-sm animate-[lock-on_0.5s_forwards]" }),
+                /* @__PURE__ */ jsx("div", { className: "w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_10px_#10b981] animate-[pulse_1s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute left-4 top-0 bg-emerald-900/90 text-[9px] text-emerald-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-emerald-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label }),
+                /* @__PURE__ */ jsx("div", { className: "absolute h-[1px] w-16 bg-emerald-800/50 rotate-45 origin-top-left top-0 left-0 -z-10 opacity-50" })
+              ] }),
+              target.type === "sell" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_#f43f5e]" }),
+                /* @__PURE__ */ jsx("div", { className: "absolute w-8 h-8 border border-rose-900/50 rounded-full animate-[ping_1.5s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute right-4 top-0 bg-rose-900/90 text-[9px] text-rose-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-rose-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label })
+              ] }),
+              target.type === "neutral" && /* @__PURE__ */ jsx("div", { className: "w-1 h-1 bg-neutral-600 rounded-full animate-pulse opacity-50" })
+            ]
+          },
+          target.id
+        )),
+        /* @__PURE__ */ jsxs("div", { className: "absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[9px] text-emerald-500 tracking-[0.2em] uppercase font-bold", children: [
+            /* @__PURE__ */ jsx(Activity, { size: 12, className: "animate-bounce" }),
+            "Tracking Signals"
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "w-32 h-0.5 bg-neutral-800 overflow-hidden rounded-full relative", children: /* @__PURE__ */ jsx("div", { className: "absolute top-0 h-full bg-emerald-500 w-16 animate-[scan-bar_2s_linear_infinite] shadow-[0_0_8px_#10b981] opacity-80" }) })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10 bg-black/50 border-t border-neutral-900 backdrop-blur-sm pt-4", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider", children: [
+            /* @__PURE__ */ jsx(Scan, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "System Log" })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-emerald-700 animate-pulse", children: [
+            /* @__PURE__ */ jsx(Crosshair, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "LIVE FEED" })
+          ] })
         ] }),
-        /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-slate-900 dark:text-white mb-2", children: t("auth.login.title") }),
-        /* @__PURE__ */ jsx("p", { className: "text-slate-600 dark:text-slate-400", children: t("auth.login.subtitle") })
-      ] }),
-      /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "space-y-3", children: [
-        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", "data-testid": "alert-error", children: [
+        /* @__PURE__ */ jsx("div", { ref: scrollRef, className: "h-24 overflow-hidden font-mono text-[10px] space-y-1.5 opacity-80", children: logs.map((log, i) => /* @__PURE__ */ jsxs("div", { className: "text-neutral-400 truncate border-l border-neutral-800 pl-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-600 mr-2", children: ((/* @__PURE__ */ new Date()).getTime() + i).toString().slice(-6) }),
+          log
+        ] }, i)) })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "w-full lg:w-1/3 flex items-center justify-center bg-[#050505] relative z-20 border-l border-neutral-900", children: [
+      /* @__PURE__ */ jsx("div", { className: "absolute top-8 left-8 lg:hidden", children: /* @__PURE__ */ jsx("span", { className: "font-bold text-white tracking-tight text-lg", children: "INSIDERPULSE" }) }),
+      /* @__PURE__ */ jsxs("div", { className: "w-full max-w-sm px-8", children: [
+        /* @__PURE__ */ jsxs("div", { className: "mb-10 text-center", children: [
+          /* @__PURE__ */ jsx("div", { className: "w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)]", children: /* @__PURE__ */ jsx(Lock, { size: 24, className: "text-emerald-600" }) }),
+          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-white mb-2 tracking-tight uppercase", children: t.welcome }),
+          /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-xs font-mono leading-relaxed max-w-[240px] mx-auto", children: "Please authenticate to access real-time insider trading data streams." })
+        ] }),
+        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
           /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
           /* @__PURE__ */ jsx(AlertDescription, { children: error })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-          /* @__PURE__ */ jsx(Label, { htmlFor: "email", className: "text-sm font-medium text-slate-700 dark:text-slate-300", children: t("auth.login.email") }),
-          /* @__PURE__ */ jsx(
-            Input,
-            {
-              id: "email",
-              type: "email",
-              placeholder: t("auth.login.emailPlaceholder"),
-              value: email,
-              onChange: (e) => setEmail(e.target.value),
-              disabled: isLoading,
-              required: true,
-              className: "h-10",
-              "data-testid": "input-email"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-            /* @__PURE__ */ jsx(Label, { htmlFor: "password", className: "text-sm font-medium text-slate-700 dark:text-slate-300", children: t("auth.login.password") }),
+        /* @__PURE__ */ jsxs("form", { className: "space-y-6", onSubmit: handleSubmit, children: [
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Globe, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
             /* @__PURE__ */ jsx(
-              "button",
+              "input",
               {
-                type: "button",
-                className: "text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
-                onClick: () => navigate2("/forgot-password"),
-                "data-testid": "button-forgot-password",
-                children: t("auth.login.forgotPassword")
+                type: "email",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_EMAIL_ADDRESS",
+                id: "email",
+                value: email,
+                onChange: (e) => setEmail(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-email"
               }
             )
-          ] }),
-          /* @__PURE__ */ jsx(
-            Input,
-            {
-              id: "password",
-              type: "password",
-              placeholder: t("auth.login.passwordPlaceholder"),
-              value: password,
-              onChange: (e) => setPassword(e.target.value),
-              disabled: isLoading,
-              required: true,
-              className: "h-10",
-              "data-testid": "input-password"
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsx(
-          Button,
-          {
-            type: "submit",
-            className: "w-full h-10 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 font-medium",
-            disabled: isLoading,
-            "data-testid": "button-login",
-            children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-              /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
-              t("auth.login.signingIn")
-            ] }) : t("auth.login.button")
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "text-center text-sm", children: [
-          /* @__PURE__ */ jsx("span", { className: "text-slate-600 dark:text-slate-400", children: t("auth.login.noAccount") }),
-          " ",
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Lock, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "password",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_PASSWORD",
+                id: "password",
+                value: password,
+                onChange: (e) => setPassword(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-password"
+              }
+            )
+          ] }) }),
           /* @__PURE__ */ jsx(
             "button",
             {
-              type: "button",
-              onClick: () => navigate2("/signup"),
-              className: "text-slate-900 dark:text-white font-medium hover:underline",
-              "data-testid": "button-signup",
-              children: t("auth.login.signUp")
+              type: "submit",
+              className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-4 text-xs transition-all flex items-center justify-center gap-2 mt-4 group shadow-[0_0_15px_rgba(16,185,129,0.1)]",
+              disabled: isLoading,
+              "data-testid": "button-login",
+              children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }),
+                "LOGGING IN..."
+              ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("span", { children: t.submit }),
+                /* @__PURE__ */ jsx(ArrowRight, { size: 14, className: "group-hover:translate-x-1 transition-transform" })
+              ] })
             }
           )
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "mt-10 flex justify-between items-center border-t border-neutral-900 pt-6", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => navigate2("/signup"),
+              className: "text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold",
+              "data-testid": "button-signup",
+              children: t.noAccount
+            }
+          ),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-neutral-700", children: [
+            /* @__PURE__ */ jsx(ShieldCheck, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { className: "text-[9px] font-mono", children: "AES-256 ENCRYPTION" })
+          ] })
         ] })
       ] })
-    ] }) })
+    ] })
   ] });
 }
 const logoLight$1 = "/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png";
@@ -9926,12 +10053,13 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
       shares: buyer.shares,
       price: buyer.price,
       value: buyer.amount,
-      date: (/* @__PURE__ */ new Date()).toISOString(),
-      // Approx for display
-      filingDate: (/* @__PURE__ */ new Date()).toISOString(),
+      date: buyer.date || (/* @__PURE__ */ new Date()).toISOString(),
+      filingDate: buyer.date || (/* @__PURE__ */ new Date()).toISOString(),
       priceChange: buyer.priceChange,
       currentPrice: stock.currentPrice,
       isVerified: true,
+      secFilingUrl: buyer.secFilingUrl,
+      accessionNumber: buyer.accessionNumber,
       aiScore: 92,
       aiConfidence: 95,
       aiRecommendation: "Strong Buy",
@@ -10051,37 +10179,38 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-6 relative custom-scrollbar", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative mb-8", children: [
-        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-4 md:p-8 relative overflow-hidden text-center shadow-2xl m-4", children: [
+        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-start md:items-center justify-center rounded-sm border border-neutral-800/50 overflow-auto", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4", children: [
           /* @__PURE__ */ jsx("div", { className: "absolute top-0 left-0 right-0 h-1 bg-neutral-800", children: /* @__PURE__ */ jsx("div", { className: "h-full w-1/3 bg-amber-600 mx-auto" }) }),
-          /* @__PURE__ */ jsxs("div", { className: "mb-3 md:mb-6 mt-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-sm bg-neutral-900 border border-neutral-800 mb-3 md:mb-4", children: [
-              /* @__PURE__ */ jsx(ShieldCheck, { size: 24, className: "text-neutral-600 md:hidden" }),
-              /* @__PURE__ */ jsx(ShieldCheck, { size: 32, className: "text-neutral-600 hidden md:block" })
+          /* @__PURE__ */ jsxs("div", { className: "mb-3 md:mb-4 mt-2", children: [
+            /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-sm bg-neutral-900 border border-neutral-800 mb-2 md:mb-3", children: [
+              /* @__PURE__ */ jsx(ShieldCheck, { size: 20, className: "text-neutral-600 md:hidden" }),
+              /* @__PURE__ */ jsx(ShieldCheck, { size: 28, className: "text-neutral-600 hidden md:block" })
             ] }),
-            /* @__PURE__ */ jsx("h2", { className: "text-lg md:text-xl font-bold text-neutral-200 uppercase tracking-wider mb-2", children: t.restricted }),
-            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 md:px-3 py-1 uppercase tracking-widest", children: t.securityLevel })
+            /* @__PURE__ */ jsx("h2", { className: "text-base md:text-lg font-bold text-neutral-200 uppercase tracking-wider mb-1.5", children: t.restricted }),
+            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest", children: t.securityLevel })
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "space-y-3 md:space-y-4 mb-4 md:mb-8 border-t border-b border-neutral-900 py-3 md:py-6", children: /* @__PURE__ */ jsx("p", { className: "text-[11px] md:text-xs text-neutral-400 font-mono leading-relaxed", children: t.desc }) }),
+          /* @__PURE__ */ jsx("div", { className: "space-y-2 md:space-y-3 mb-3 md:mb-5 border-t border-b border-neutral-900 py-2.5 md:py-4", children: /* @__PURE__ */ jsx("p", { className: "text-[10px] md:text-xs text-neutral-400 font-mono leading-relaxed", children: t.desc }) }),
           /* @__PURE__ */ jsxs(
             "button",
             {
               onClick: onUpgrade,
-              className: "w-full py-2.5 md:py-3 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 mb-3 md:mb-4",
+              className: "w-full py-2 md:py-2.5 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 mb-2.5 md:mb-3",
               children: [
-                /* @__PURE__ */ jsx(ScanLine, { size: 14 }),
+                /* @__PURE__ */ jsx(ScanLine, { size: 12, className: "md:hidden" }),
+                /* @__PURE__ */ jsx(ScanLine, { size: 14, className: "hidden md:block" }),
                 t.cta
               ]
             }
           ),
-          /* @__PURE__ */ jsxs("div", { className: "flex justify-center gap-4 text-[9px] text-neutral-600 font-mono uppercase", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex justify-center gap-3 md:gap-4 text-[8px] md:text-[9px] text-neutral-600 font-mono uppercase", children: [
             /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
-              /* @__PURE__ */ jsx(Lock, { size: 10 }),
+              /* @__PURE__ */ jsx(Lock, { size: 9 }),
               " ",
               t.aes
             ] }),
             /* @__PURE__ */ jsx("span", { children: "•" }),
             /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
-              /* @__PURE__ */ jsx(EyeOff, { size: 10 }),
+              /* @__PURE__ */ jsx(EyeOff, { size: 9 }),
               " ",
               t.blind
             ] })
@@ -10103,9 +10232,18 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
 function TopStocksTerminal() {
   const { language } = useLanguage();
   const { accessLevel } = useAccess();
+  const { isAuthenticated } = useAuth();
+  const [, navigate2] = useLocation();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isPro = (accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) || false;
+  const handleUpgrade = () => {
+    if (!isAuthenticated) {
+      navigate2("/signup");
+    } else {
+      navigate2("/premium-checkout");
+    }
+  };
   const handleSelectTrade = (trade) => {
     const insiderTrade = {
       id: trade.id || `temp-${Date.now()}`,
@@ -10121,8 +10259,8 @@ function TopStocksTerminal() {
       tradeDate: trade.date,
       isVerified: trade.isVerified || true,
       priceVariance: trade.priceChange || 0,
-      secFilingUrl: null,
-      accessionNumber: null,
+      secFilingUrl: trade.secFilingUrl || null,
+      accessionNumber: trade.accessionNumber || null,
       aiAnalysis: {
         signal: trade.aiRecommendation || "BUY",
         significanceScore: trade.aiConfidence || 95,
@@ -10190,7 +10328,9 @@ function TopStocksTerminal() {
           price: buyerBuyPrice,
           amount: buyerAmount,
           priceChange: Math.round(buyerPriceChange * 10) / 10,
-          date: insider.date ? new Date(insider.date).toLocaleDateString() : "N/A"
+          date: insider.date ? new Date(insider.date).toLocaleDateString() : "N/A",
+          secFilingUrl: insider.secFilingUrl,
+          accessionNumber: insider.accessionNumber
         };
       })
     };
@@ -10202,6 +10342,7 @@ function TopStocksTerminal() {
         data: stockRecommendations,
         lang: language,
         isPro,
+        onUpgrade: handleUpgrade,
         onSelectTrade: handleSelectTrade
       }
     ),
@@ -10213,6 +10354,575 @@ function TopStocksTerminal() {
         onClose: handleCloseModal
       }
     )
+  ] });
+}
+function AuthModal() {
+  useLocation();
+  const { showAuthModal, authModalMode, login, closeAuthModal } = useAuth();
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase();
+  const t = TRANSLATIONS[langKey].auth;
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [mode, setMode] = useState(authModalMode);
+  const [isLogin, setIsLogin] = useState(true);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const inputRefs = useRef([]);
+  const [logs, setLogs] = useState([]);
+  const [targets, setTargets] = useState([]);
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    setMode(authModalMode);
+    setIsLogin(authModalMode === "login");
+  }, [authModalMode]);
+  useEffect(() => {
+    if (!showAuthModal) {
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setError("");
+      setCode(["", "", "", "", "", ""]);
+      setVerificationSuccess(false);
+    }
+  }, [showAuthModal]);
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1e3);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+  useEffect(() => {
+    if (!showAuthModal) return;
+    const bootSequence = [
+      "ESTABLISHING_SEC_UPLINK...",
+      "HANDSHAKE_EDGAR_DB: [OK]",
+      "LOADING_INSTITUTIONAL_LEDGERS...",
+      "FILTERING_10B5-1_PLANS (NOISE_REDUCTION)...",
+      "LOADING_INSIDER_PROFILES_V2.4...",
+      "QUANT_MODEL_INIT: ALPHA_SCORE",
+      "CROSS_REFERENCING_DARK_POOLS...",
+      "ENCRYPTING_SESSION_KEYS...",
+      "TERMINAL_READY."
+    ];
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex < bootSequence.length) {
+        setLogs((prev) => [...prev, `> ${bootSequence[currentIndex]}`]);
+        currentIndex++;
+      } else {
+        if (Math.random() > 0.7) {
+          const commands = [
+            "SCANNING_FORM_4: NVDA [CEO_BUY]",
+            "DETECTING_CLUSTER_BUYING: BIOTECH_SECTOR",
+            "ANALYZING_FILING: 0001193125-24-123456",
+            "SENTIMENT_ANALYSIS: BULLISH_DIVERGENCE",
+            "WHALE_ALERT: $5.2M PURCHASE DETECTED",
+            "UPDATING_REAL_TIME_PRICE_TARGETS..."
+          ];
+          const cmd = commands[Math.floor(Math.random() * commands.length)];
+          setLogs((prev) => {
+            const newLogs = [...prev, `> ${cmd}`];
+            return newLogs.slice(-8);
+          });
+        }
+      }
+    }, 250);
+    return () => clearInterval(interval);
+  }, [showAuthModal]);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+  useEffect(() => {
+    if (!showAuthModal) return;
+    const spawnInterval = setInterval(() => {
+      if (document.hidden) return;
+      const id = Date.now();
+      const angle = Math.random() * 2 * Math.PI;
+      const r = Math.sqrt(Math.random()) * 40;
+      const x = 50 + r * Math.cos(angle);
+      const y = 50 + r * Math.sin(angle);
+      const typeRand = Math.random();
+      let type = "neutral";
+      let label = "";
+      if (typeRand > 0.85) {
+        type = "buy";
+        label = `CEO BUY +$${(Math.random() * 10).toFixed(1)}M`;
+      } else if (typeRand > 0.75) {
+        type = "sell";
+        label = "WHALE DUMP";
+      }
+      const newTarget = { id, x, y, type, label };
+      setTargets((prev) => [...prev, newTarget]);
+      setTimeout(() => {
+        setTargets((prev) => prev.filter((t2) => t2.id !== id));
+      }, 3e3);
+    }, 800);
+    return () => clearInterval(spawnInterval);
+  }, [showAuthModal]);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await apiClient.login(email, password);
+      if (response.success && response.user && response.token) {
+        login(response.user, response.token);
+        closeAuthModal();
+      } else {
+        setError(response.message || "Login failed");
+      }
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!email || !password || !confirmPassword) {
+      setError("All fields are required");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Invalid email address");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await apiClient.signup(email, password);
+      if (response.success) {
+        setMode("verify");
+        setCode(["", "", "", "", "", ""]);
+        setTimeout(() => {
+          var _a;
+          (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
+        }, 100);
+      } else {
+        setError(response.message || "Signup failed");
+      }
+    } catch (err) {
+      setError(err.message || "Signup failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleCodeChange = (index, value) => {
+    var _a;
+    if (!/^\d*$/.test(value)) return;
+    const newCode = [...code];
+    newCode[index] = value.slice(-1);
+    setCode(newCode);
+    if (value && index < 5) {
+      (_a = inputRefs.current[index + 1]) == null ? void 0 : _a.focus();
+    }
+  };
+  const handleCodeKeyDown = (index, e) => {
+    var _a;
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      (_a = inputRefs.current[index - 1]) == null ? void 0 : _a.focus();
+    }
+  };
+  const handleCodePaste = (e) => {
+    var _a;
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const newCode = [...code];
+    pastedData.split("").forEach((digit, index) => {
+      if (index < 6) newCode[index] = digit;
+    });
+    setCode(newCode);
+    const nextEmptyIndex = newCode.findIndex((c) => !c);
+    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+    (_a = inputRefs.current[focusIndex]) == null ? void 0 : _a.focus();
+  };
+  const handleVerifyCode = async (e) => {
+    e == null ? void 0 : e.preventDefault();
+    setError("");
+    const codeString = code.join("");
+    if (codeString.length !== 6) {
+      setError("Please enter all 6 digits");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: codeString })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setVerificationSuccess(true);
+        setTimeout(async () => {
+          try {
+            const loginResponse = await apiClient.login(email, password);
+            if (loginResponse.success && loginResponse.user && loginResponse.token) {
+              login(loginResponse.user, loginResponse.token);
+              closeAuthModal();
+            }
+          } catch (err) {
+            console.error("Auto-login failed:", err);
+            closeAuthModal();
+          }
+        }, 1500);
+      } else {
+        setError(data.message || "Verification failed");
+      }
+    } catch (err) {
+      setError(err.message || "Verification failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleResendCode = async () => {
+    var _a;
+    if (resendCooldown > 0) return;
+    setIsResending(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setResendCooldown(60);
+        setCode(["", "", "", "", "", ""]);
+        (_a = inputRefs.current[0]) == null ? void 0 : _a.focus();
+      } else {
+        setError(data.message || "Failed to resend code");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to resend code");
+    } finally {
+      setIsResending(false);
+    }
+  };
+  useEffect(() => {
+    if (mode === "verify" && code.every((digit) => digit !== "") && !isLoading) {
+      handleVerifyCode();
+    }
+  }, [code, mode, isLoading]);
+  if (!showAuthModal) return null;
+  if (verificationSuccess) {
+    return /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6 relative", children: [
+      /* @__PURE__ */ jsx("button", { onClick: closeAuthModal, className: "absolute top-4 right-4 text-neutral-600 hover:text-white transition-colors", children: /* @__PURE__ */ jsx(X, { className: "h-5 w-5" }) }),
+      /* @__PURE__ */ jsxs("div", { className: "space-y-6 py-12 text-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex justify-center", children: /* @__PURE__ */ jsx("div", { className: "w-16 h-16 rounded-full bg-emerald-900/50 border border-emerald-900 flex items-center justify-center", children: /* @__PURE__ */ jsx(CheckCircle, { className: "h-8 w-8 text-emerald-500" }) }) }),
+        /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 mb-2 uppercase tracking-wide", children: "Verification Complete" }),
+          /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-sm font-mono", children: "Logging you in..." })
+        ] })
+      ] })
+    ] }) });
+  }
+  if (mode === "verify") {
+    return /* @__PURE__ */ jsx("div", { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6 relative", children: [
+      /* @__PURE__ */ jsx("button", { onClick: closeAuthModal, className: "absolute top-4 right-4 text-neutral-600 hover:text-white transition-colors", children: /* @__PURE__ */ jsx(X, { className: "h-5 w-5" }) }),
+      /* @__PURE__ */ jsxs("div", { className: "text-center mb-8", children: [
+        /* @__PURE__ */ jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 mb-4", children: /* @__PURE__ */ jsx(Mail, { className: "h-8 w-8 text-emerald-600" }) }),
+        /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide", children: "Verify Email" }),
+        /* @__PURE__ */ jsxs("p", { className: "text-sm text-neutral-500 font-mono", children: [
+          "Check ",
+          /* @__PURE__ */ jsx("strong", { className: "text-neutral-300", children: email }),
+          /* @__PURE__ */ jsx("br", {}),
+          "Enter 6-digit verification code"
+        ] })
+      ] }),
+      error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
+        /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
+        /* @__PURE__ */ jsx(AlertDescription, { children: error })
+      ] }),
+      /* @__PURE__ */ jsxs("form", { onSubmit: handleVerifyCode, className: "space-y-6", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex justify-center gap-2", children: code.map((digit, index) => /* @__PURE__ */ jsx(
+          "input",
+          {
+            ref: (el) => inputRefs.current[index] = el,
+            type: "text",
+            inputMode: "numeric",
+            pattern: "\\d*",
+            maxLength: 1,
+            value: digit,
+            onChange: (e) => handleCodeChange(index, e.target.value),
+            onKeyDown: (e) => handleCodeKeyDown(index, e),
+            onPaste: handleCodePaste,
+            disabled: isLoading,
+            className: "w-12 h-14 text-center text-2xl font-bold font-mono border border-neutral-800 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#0a0a0a] text-neutral-200",
+            autoFocus: index === 0
+          },
+          index
+        )) }),
+        /* @__PURE__ */ jsx(
+          Button,
+          {
+            type: "submit",
+            className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs",
+            disabled: isLoading || code.join("").length !== 6,
+            children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(Loader2, { className: "mr-2 h-4 w-4 animate-spin" }),
+              "Verifying..."
+            ] }) : "Verify Code"
+          }
+        ),
+        /* @__PURE__ */ jsx("div", { className: "text-center", children: /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            onClick: handleResendCode,
+            disabled: resendCooldown > 0 || isResending,
+            className: "text-sm text-emerald-600 hover:text-emerald-500 font-medium disabled:text-neutral-600 disabled:cursor-not-allowed font-mono",
+            children: isResending ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              /* @__PURE__ */ jsx(Loader2, { className: "inline h-3 w-3 animate-spin mr-1" }),
+              "Resending..."
+            ] }) : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"
+          }
+        ) }),
+        /* @__PURE__ */ jsx("div", { className: "text-center pt-4 border-t border-neutral-800", children: /* @__PURE__ */ jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: () => setMode("signup"),
+            className: "text-sm text-neutral-500 hover:text-neutral-300 inline-flex items-center gap-1 font-mono",
+            children: [
+              /* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }),
+              "Back to Signup"
+            ]
+          }
+        ) })
+      ] })
+    ] }) });
+  }
+  return /* @__PURE__ */ jsxs("div", { className: "fixed inset-0 bg-[#030303] text-neutral-300 overflow-hidden font-mono selection:bg-emerald-900 selection:text-emerald-50 z-50", children: [
+    /* @__PURE__ */ jsx("style", { children: `
+        @keyframes radar-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes blip {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes lock-on {
+            0% { width: 40px; height: 40px; opacity: 0; transform: scale(1.5); }
+            20% { opacity: 1; }
+            100% { width: 24px; height: 24px; opacity: 1; transform: scale(1); }
+        }
+        @keyframes scan-bar {
+            0% { left: -50%; }
+            100% { left: 150%; }
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+      ` }),
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        onClick: closeAuthModal,
+        className: "absolute top-6 right-6 z-50 bg-black/50 hover:bg-neutral-800 p-2 rounded-full text-neutral-500 hover:text-white transition-colors border border-neutral-800",
+        "data-testid": "button-close-auth",
+        children: /* @__PURE__ */ jsx(X, { size: 20 })
+      }
+    ),
+    /* @__PURE__ */ jsxs("div", { className: "hidden lg:flex w-2/3 h-screen relative flex-col justify-between p-16 bg-[#020202] border-r border-neutral-900 overflow-hidden float-left", children: [
+      /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 pointer-events-none z-0", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 bg-radial-gradient(circle at 30% 50%, #05966908 0%, transparent 50%)" })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-4", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-600" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-800/50" }),
+            /* @__PURE__ */ jsx("div", { className: "w-1 h-4 bg-emerald-900/30" })
+          ] }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold tracking-[0.3em] text-emerald-500 uppercase animate-pulse", children: "DETECTING_SMART_MONEY_FLOW" })
+        ] }),
+        /* @__PURE__ */ jsxs("h1", { className: "text-6xl font-black tracking-tighter text-white mb-2 uppercase leading-none", children: [
+          "Insider",
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-700", children: "Pulse" })
+        ] }),
+        /* @__PURE__ */ jsxs("p", { className: "text-neutral-500 text-xs tracking-widest uppercase mt-2 flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Database, { size: 12 }),
+          "SEC Form 4 Intelligence Platform"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "relative z-10 flex-1 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "relative w-[500px] h-[500px] flex items-center justify-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 border border-neutral-800/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[15%] border border-neutral-800/50 rounded-full border-dashed opacity-50" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[35%] border border-neutral-800 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-[48%] border border-emerald-900/30 rounded-full" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute h-full w-[1px] bg-neutral-900" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-full h-full rounded-full animate-[radar-spin_4s_linear_infinite] origin-center bg-[conic-gradient(from_0deg,transparent_0deg,transparent_270deg,rgba(16,185,129,0.1)_360deg)]" }),
+        /* @__PURE__ */ jsx("div", { className: "absolute w-12 h-12 bg-[#050505] border border-emerald-900/50 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.2)] z-20", children: /* @__PURE__ */ jsx(Target, { size: 20, className: "text-emerald-600 animate-pulse" }) }),
+        targets.map((target) => /* @__PURE__ */ jsxs(
+          "div",
+          {
+            className: "absolute w-0 h-0 flex items-center justify-center",
+            style: { left: `${target.x}%`, top: `${target.y}%` },
+            children: [
+              target.type === "buy" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "absolute border-2 border-emerald-500/50 rounded-sm animate-[lock-on_0.5s_forwards]" }),
+                /* @__PURE__ */ jsx("div", { className: "w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_10px_#10b981] animate-[pulse_1s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute left-4 top-0 bg-emerald-900/90 text-[9px] text-emerald-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-emerald-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label }),
+                /* @__PURE__ */ jsx("div", { className: "absolute h-[1px] w-16 bg-emerald-800/50 rotate-45 origin-top-left top-0 left-0 -z-10 opacity-50" })
+              ] }),
+              target.type === "sell" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("div", { className: "w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_#f43f5e]" }),
+                /* @__PURE__ */ jsx("div", { className: "absolute w-8 h-8 border border-rose-900/50 rounded-full animate-[ping_1.5s_infinite]" }),
+                target.label && /* @__PURE__ */ jsx("div", { className: "absolute right-4 top-0 bg-rose-900/90 text-[9px] text-rose-100 px-2 py-0.5 rounded backdrop-blur-md whitespace-nowrap border border-rose-500/30 animate-[fade-in_0.3s_ease-out]", children: target.label })
+              ] }),
+              target.type === "neutral" && /* @__PURE__ */ jsx("div", { className: "w-1 h-1 bg-neutral-600 rounded-full animate-pulse opacity-50" })
+            ]
+          },
+          target.id
+        )),
+        /* @__PURE__ */ jsxs("div", { className: "absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[9px] text-emerald-500 tracking-[0.2em] uppercase font-bold", children: [
+            /* @__PURE__ */ jsx(Activity, { size: 12, className: "animate-bounce" }),
+            "Tracking Signals"
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "w-32 h-0.5 bg-neutral-800 overflow-hidden rounded-full relative", children: /* @__PURE__ */ jsx("div", { className: "absolute top-0 h-full bg-emerald-500 w-16 animate-[scan-bar_2s_linear_infinite] shadow-[0_0_8px_#10b981] opacity-80" }) })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsxs("div", { className: "relative z-10 bg-black/50 border-t border-neutral-900 backdrop-blur-sm pt-4", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-neutral-500 uppercase tracking-wider", children: [
+            /* @__PURE__ */ jsx(Scan, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "System Log" })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-[10px] text-emerald-700 animate-pulse", children: [
+            /* @__PURE__ */ jsx(Crosshair, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { children: "LIVE FEED" })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx("div", { ref: scrollRef, className: "h-24 overflow-hidden font-mono text-[10px] space-y-1.5 opacity-80", children: logs.map((log, i) => /* @__PURE__ */ jsxs("div", { className: "text-neutral-400 truncate border-l border-neutral-800 pl-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-600 mr-2", children: ((/* @__PURE__ */ new Date()).getTime() + i).toString().slice(-6) }),
+          log
+        ] }, i)) })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "w-full lg:w-1/3 h-screen flex items-center justify-center bg-[#050505] relative z-20 border-l border-neutral-900 lg:float-right", children: [
+      /* @__PURE__ */ jsx("div", { className: "absolute top-8 left-8 lg:hidden", children: /* @__PURE__ */ jsx("span", { className: "font-bold text-white tracking-tight text-lg", children: "INSIDERPULSE" }) }),
+      /* @__PURE__ */ jsxs("div", { className: "w-full max-w-sm px-8", children: [
+        /* @__PURE__ */ jsxs("div", { className: "mb-10 text-center", children: [
+          /* @__PURE__ */ jsx("div", { className: "w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,0,0,0.5)]", children: /* @__PURE__ */ jsx(Lock, { size: 24, className: "text-emerald-600" }) }),
+          /* @__PURE__ */ jsx("h2", { className: "text-2xl font-bold text-white mb-2 tracking-tight uppercase", children: isLogin ? t.welcome : t.createAccount }),
+          /* @__PURE__ */ jsx("p", { className: "text-neutral-500 text-xs font-mono leading-relaxed max-w-[240px] mx-auto", children: isLogin ? "Please authenticate to access real-time insider trading data streams." : "Initialize new institutional account." })
+        ] }),
+        error && /* @__PURE__ */ jsxs(Alert, { variant: "destructive", className: "mb-4", children: [
+          /* @__PURE__ */ jsx(AlertCircle, { className: "h-4 w-4" }),
+          /* @__PURE__ */ jsx(AlertDescription, { children: error })
+        ] }),
+        /* @__PURE__ */ jsxs("form", { className: "space-y-6", onSubmit: isLogin ? handleLogin : handleSignup, children: [
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Globe, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "email",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_EMAIL_ADDRESS",
+                id: "email",
+                value: email,
+                onChange: (e) => setEmail(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-email"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Lock, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "password",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "ENTER_PASSWORD",
+                id: "password",
+                value: password,
+                onChange: (e) => setPassword(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-password"
+              }
+            )
+          ] }) }),
+          !isLogin && /* @__PURE__ */ jsx("div", { className: "group", children: /* @__PURE__ */ jsxs("div", { className: "relative flex items-center", children: [
+            /* @__PURE__ */ jsx(Fingerprint, { size: 14, className: "absolute left-3 text-neutral-600 group-focus-within:text-emerald-500 transition-colors" }),
+            /* @__PURE__ */ jsx(
+              "input",
+              {
+                type: "password",
+                className: "block w-full bg-[#0a0a0a] border border-neutral-800 rounded text-sm text-neutral-200 pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 transition-all placeholder-neutral-700 font-mono",
+                placeholder: "CONFIRM_CREDENTIALS",
+                id: "confirm",
+                value: confirmPassword,
+                onChange: (e) => setConfirmPassword(e.target.value),
+                disabled: isLoading,
+                "data-testid": "input-confirm-password"
+              }
+            )
+          ] }) }),
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              type: "submit",
+              className: "w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-4 text-xs transition-all flex items-center justify-center gap-2 mt-4 group shadow-[0_0_15px_rgba(16,185,129,0.1)]",
+              disabled: isLoading,
+              "data-testid": "button-submit-auth",
+              children: isLoading ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx(Loader2, { className: "h-4 w-4 animate-spin" }),
+                isLogin ? "LOGGING IN..." : "CREATING..."
+              ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+                /* @__PURE__ */ jsx("span", { children: isLogin ? t.submit : t.register }),
+                /* @__PURE__ */ jsx(ArrowRight, { size: 14, className: "group-hover:translate-x-1 transition-transform" })
+              ] })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "mt-10 flex justify-between items-center border-t border-neutral-900 pt-6", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setIsLogin(!isLogin),
+              className: "text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold",
+              "data-testid": "button-toggle-mode",
+              children: isLogin ? t.noAccount : t.hasAccount
+            }
+          ),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-neutral-700", children: [
+            /* @__PURE__ */ jsx(ShieldCheck, { size: 12 }),
+            /* @__PURE__ */ jsx("span", { className: "text-[9px] font-mono", children: "AES-256 ENCRYPTION" })
+          ] })
+        ] })
+      ] })
+    ] })
   ] });
 }
 function PublicRouter() {
@@ -10418,6 +11128,7 @@ function App() {
   }, []);
   return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsx(LanguageProvider, { children: /* @__PURE__ */ jsx(AccessProvider, { children: /* @__PURE__ */ jsxs(TooltipProvider, { children: [
     /* @__PURE__ */ jsx(AppContent, {}),
+    /* @__PURE__ */ jsx(AuthModal, {}),
     /* @__PURE__ */ jsx(PWAInstallPrompt, {}),
     /* @__PURE__ */ jsx(Toaster, {})
   ] }) }) }) }) });

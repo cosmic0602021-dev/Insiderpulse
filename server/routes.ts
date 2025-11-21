@@ -2866,6 +2866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePerShare: trade.pricePerShare,
         totalValue: trade.totalValue,
         ownershipPercentage: trade.ownershipPercentage || 0,
+        filedDate: trade.filedDate, // Pass filedDate for historical analysis
         recentNews: recentNews.length > 0 ? recentNews : undefined
       });
 
@@ -3045,10 +3046,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })(),
         actionableRecommendation: `${analysis.signalType} ${t('signal')} - ${analysis.recommendation}`,
         priceTargets: {
-          conservative: trade.pricePerShare * 0.95,
-          realistic: trade.pricePerShare * 1.05,
-          optimistic: trade.pricePerShare * 1.15,
-          timeHorizon: t('timeHorizon')
+          // Use AI-generated percentage targets to calculate actual price targets
+          conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
+          realistic: trade.pricePerShare * (1 + analysis.priceTargets.realistic / 100),
+          optimistic: trade.pricePerShare * (1 + analysis.priceTargets.optimistic / 100),
+          timeHorizon: analysis.timeHorizon // Use AI-generated time horizon instead of hardcoded value
         },
         riskAssessment: {
           level: analysis.riskLevel,
@@ -3060,7 +3062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reasoning: analysis.keyInsights[0] || t('analyzingMarket')
         },
         catalysts: analysis.keyInsights,
-        timeHorizon: t('timeHorizon'),
+        timeHorizon: analysis.timeHorizon,
         confidence: analysis.significanceScore,
         newsAnalysis: newsAnalysis
       };
