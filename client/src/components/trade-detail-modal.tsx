@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -91,11 +91,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 overflow-hidden">
+      <DialogContent className="max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col">
         <VisuallyHidden>
           <DialogTitle>{trade?.companyName || 'Trade Details'}</DialogTitle>
         </VisuallyHidden>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
             <div className="flex items-center gap-2.5">
@@ -201,6 +201,15 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                       labelStyle={{ color: '#737373' }}
                     />
                     <Line type="monotone" dataKey="close" stroke="#10b981" strokeWidth={1.5} dot={{ r: 1.5 }} />
+                    {/* Insider Trade Marker */}
+                    <ReferenceDot 
+                      x={priceHistory[Math.floor(priceHistory.length / 2)]?.date} 
+                      y={trade.pricePerShare} 
+                      r={4} 
+                      fill={isBuy ? "#10b981" : "#ef4444"}
+                      stroke="#0a0a0a"
+                      strokeWidth={1.5}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
 

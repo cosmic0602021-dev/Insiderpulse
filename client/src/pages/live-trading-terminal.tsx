@@ -295,11 +295,19 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) - Match image_1763699117351.png exactly */}
+        {/* Locked Zone (Free Users) - Match image_1763700747059.png exactly */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
-            {/* Row 1: Header with both labels */}
-            <div className="sticky top-[45px] h-8 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center">
+            {/* Diagonal stripes covering ALL rows (1-5) with animation */}
+            <div 
+              className="absolute inset-0 pointer-events-none animate-stripe-scroll z-10"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 4px, rgba(245,158,11,0.04) 4px, rgba(245,158,11,0.04) 8px)'
+              }}
+            ></div>
+
+            {/* Row 1: Header with glow animation + stripes */}
+            <div className="sticky top-[45px] h-8 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center animate-pulse-glow">
               <div className="flex items-center gap-1.5">
                 <AlertTriangle size={9} className="text-amber-600" />
                 <span className="text-[8px] font-mono uppercase tracking-[0.2em] text-amber-600">
@@ -312,7 +320,7 @@ export default function LiveTradingTerminal() {
               </span>
             </div>
 
-            {/* Rows 2-4: Blurred trades with watermarks */}
+            {/* Rows 2-4: "SIGNAL ENCRYPTED" watermarks */}
             <div className="relative">
               <div className="blur-[2px] opacity-25 pointer-events-none select-none">
                 {filteredData.slice(0, 3).map((trade, idx) => (
@@ -322,37 +330,32 @@ export default function LiveTradingTerminal() {
                       onClick={() => {}}
                       tData={tData}
                     />
-                    {/* Row watermark - repeating header labels */}
-                    <div className="absolute inset-0 flex justify-between items-center px-4">
-                      <div className="flex items-center gap-1">
-                        <AlertTriangle size={7} className="text-amber-600/40" />
-                        <span className="text-[7px] font-mono uppercase tracking-[0.2em] text-amber-600/40">
-                          {t.realtimeZone}
-                        </span>
-                      </div>
-                      <span className="text-[6px] text-amber-600/30 font-mono uppercase tracking-[0.25em] flex items-center gap-0.5">
-                        <span className="text-amber-600/30">●</span>
-                        {t.encryptedForOutsiders}
-                      </span>
-                    </div>
                   </div>
                 ))}
               </div>
 
+              {/* 3 "SIGNAL ENCRYPTED" watermark overlays */}
+              {[0, 1, 2].map((idx) => (
+                <div 
+                  key={idx}
+                  className="absolute left-0 right-0 h-[52px] flex items-center justify-center pointer-events-none z-20"
+                  style={{ top: `${idx * 52}px` }}
+                >
+                  <div className="flex items-center gap-1.5 text-amber-600/60">
+                    <Lock size={10} />
+                    <span className="text-[9px] font-mono uppercase tracking-[0.2em]">
+                      SIGNAL ENCRYPTED
+                    </span>
+                  </div>
+                </div>
+              ))}
+
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/5 via-transparent to-black/30 pointer-events-none"></div>
-              
-              {/* Diagonal stripes with animation */}
-              <div 
-                className="absolute inset-0 pointer-events-none animate-stripe-scroll"
-                style={{
-                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 4px, rgba(245,158,11,0.04) 4px, rgba(245,158,11,0.04) 8px)'
-                }}
-              ></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/5 via-transparent to-black/30 pointer-events-none z-15"></div>
             </div>
 
             {/* Row 5: Unlock button */}
-            <div className="h-14 flex items-center justify-center bg-gradient-to-b from-black/20 to-transparent">
+            <div className="h-14 flex items-center justify-center bg-gradient-to-b from-black/20 to-transparent relative z-20">
               <button 
                 onClick={handleUpgrade}
                 className="relative px-5 h-8 bg-amber-600 text-black text-[9px] font-bold uppercase tracking-[0.2em] hover:bg-amber-500 transition-all flex items-center gap-1.5 font-mono shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)]"

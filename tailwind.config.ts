@@ -99,12 +99,23 @@ export default {
         "stripe-scroll": {
           "0%": { backgroundPosition: "0 0" },
           "100%": { backgroundPosition: "24px 0" }
+        },
+        "pulse-glow": {
+          "0%, 100%": { 
+            opacity: "1",
+            textShadow: "0 0 8px rgba(245, 158, 11, 0.4)"
+          },
+          "50%": { 
+            opacity: "0.85",
+            textShadow: "0 0 12px rgba(245, 158, 11, 0.6)"
+          }
         }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "stripe-scroll": "stripe-scroll 8s linear infinite"
+        "stripe-scroll": "stripe-scroll 8s linear infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite"
       },
     },
   },

@@ -183,6 +183,18 @@ body {
   }
 }
 
+/* Pulse glow animation for lock overlay header */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    opacity: 0.85;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
