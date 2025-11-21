@@ -306,8 +306,8 @@ export default function LiveTradingTerminal() {
               }}
             ></div>
 
-            {/* Row 1: Header with glow animation + stripes */}
-            <div className="sticky top-[45px] h-8 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center animate-pulse-glow">
+            {/* Row 1: Header with stripes visible */}
+            <div className="sticky top-[45px] h-8 bg-[#050505]/80 backdrop-blur-sm border-b border-amber-900/20 z-30 px-4 flex justify-between items-center">
               <div className="flex items-center gap-1.5">
                 <AlertTriangle size={9} className="text-amber-600" />
                 <span className="text-[8px] font-mono uppercase tracking-[0.2em] text-amber-600">
@@ -334,14 +334,14 @@ export default function LiveTradingTerminal() {
                 ))}
               </div>
 
-              {/* 3 "SIGNAL ENCRYPTED" watermark overlays */}
+              {/* 3 "SIGNAL ENCRYPTED" watermark overlays with border boxes */}
               {[0, 1, 2].map((idx) => (
                 <div 
                   key={idx}
                   className="absolute left-0 right-0 h-[52px] flex items-center justify-center pointer-events-none z-20"
                   style={{ top: `${idx * 52}px` }}
                 >
-                  <div className="flex items-center gap-1.5 text-amber-600/60">
+                  <div className="flex items-center gap-1.5 text-amber-600/60 px-3 py-1.5 border border-amber-600/20 bg-black/40">
                     <Lock size={10} />
                     <span className="text-[9px] font-mono uppercase tracking-[0.2em]">
                       SIGNAL ENCRYPTED

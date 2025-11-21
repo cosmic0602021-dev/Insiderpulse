@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
+import { ComposedChart, Line, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceLine } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -53,18 +53,38 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     };
   }, [trade]);
 
-  // Mock price history
+  // Generate 2-week price history with signed gap visualization
   const priceHistory = useMemo(() => {
     if (!trade) return [];
-    const base = trade.pricePerShare;
-    return [
-      { date: 'Jan', close: base * 0.92 },
-      { date: 'Feb', close: base * 0.95 },
-      { date: 'Mar', close: base * 0.97 },
-      { date: 'Apr', close: base * 1.01 },
-      { date: 'May', close: base * 0.98 },
-      { date: 'Jun', close: base }
-    ];
+    const insiderPrice = trade.pricePerShare;
+    const currentPrice = insiderPrice * 0.96; // Mock current price (should come from API)
+    const data = [];
+    
+    // Generate 14 days of data
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+      
+      // Create gradual trend from insider price to current price
+      const progress = (13 - i) / 13;
+      const price = insiderPrice + (currentPrice - insiderPrice) * progress;
+      
+      // Calculate signed gap for dual-direction visualization
+      const gap = price - insiderPrice;
+      
+      data.push({
+        date: dateStr,
+        close: price,
+        insiderPrice: insiderPrice,
+        // Signed gaps preserving direction
+        gapPositive: Math.max(gap, 0),   // Profit (positive when above insider price, 0 otherwise)
+        gapNegative: Math.min(gap, 0),   // Loss (negative when below insider price, 0 otherwise)
+        baselineZero: 0
+      });
+    }
+    
+    return data;
   }, [trade]);
 
   // Mock news
@@ -78,7 +98,30 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
   if (!trade) return null;
 
   const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'Buy';
-  const secFilingUrl = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${trade.ticker}&type=4&dateb=&owner=only&count=100`;
+  
+  // Generate SEC filing URL from accessionNumber
+  const getSecFilingUrl = () => {
+    // Prefer pre-stored URL
+    if (trade.secFilingUrl) {
+      return trade.secFilingUrl;
+    }
+    
+    // Parse accessionNumber (format: 0001140361-25-052819)
+    if (trade.accessionNumber) {
+      const parts = trade.accessionNumber.split('-');
+      if (parts.length >= 3) {
+        const cikPadded = parts[0]; // e.g., "0001140361"
+        const cik = Number(cikPadded); // Remove leading zeros: 1140361
+        const accessionNoDashes = trade.accessionNumber.replace(/-/g, ''); // "000114036125052819"
+        return `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNoDashes}/xslF345X05/primarydocument.xml`;
+      }
+    }
+    
+    // Fallback to browse URL
+    return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${trade.ticker}&type=4&dateb=&owner=only&count=100`;
+  };
+  
+  const secFilingUrl = getSecFilingUrl();
 
   // Calculate current price (mock - should come from API)
   const currentPrice = trade.pricePerShare * 0.96;
@@ -176,41 +219,92 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </span>
               </div>
               <div className="flex-1 p-3">
-                <ResponsiveContainer width="100%" height="85%">
-                  <LineChart data={priceHistory}>
+                <ResponsiveContainer width="100%" height="60%">
+                  <ComposedChart data={priceHistory}>
+                    <defs>
+                      <pattern id="stripe-pattern-profit" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+                        <rect width="4" height="8" fill="rgba(16, 185, 129, 0.15)" />
+                        <animate attributeName="x" from="0" to="8" dur="8s" repeatCount="indefinite" />
+                      </pattern>
+                      <pattern id="stripe-pattern-loss" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+                        <rect width="4" height="8" fill="rgba(239, 68, 68, 0.15)" />
+                        <animate attributeName="x" from="0" to="8" dur="8s" repeatCount="indefinite" />
+                      </pattern>
+                    </defs>
                     <CartesianGrid strokeDasharray="2 2" stroke="#171717" strokeOpacity={0.2} />
                     <XAxis 
                       dataKey="date" 
                       stroke="#404040" 
-                      style={{ fontSize: '8px', fontFamily: 'monospace' }} 
+                      style={{ fontSize: '10px', fontFamily: 'monospace' }} 
                       tick={{ fill: '#404040' }}
                     />
                     <YAxis 
                       stroke="#404040" 
-                      style={{ fontSize: '8px', fontFamily: 'monospace' }}
+                      style={{ fontSize: '10px', fontFamily: 'monospace' }}
                       tick={{ fill: '#404040' }}
+                      domain={['auto', 'auto']}
                     />
                     <Tooltip
                       contentStyle={{ 
                         background: '#0a0a0a', 
                         border: '1px solid #262626',
                         borderRadius: '0px',
-                        fontSize: '9px',
+                        fontSize: '11px',
                         fontFamily: 'monospace'
                       }}
                       labelStyle={{ color: '#737373' }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'close') {
+                          const delta = value - trade.pricePerShare;
+                          const deltaPercent = ((delta / trade.pricePerShare) * 100).toFixed(2);
+                          return [`$${value.toFixed(2)} (${delta >= 0 ? '+' : ''}${deltaPercent}%)`, 'Price'];
+                        }
+                        return [value, name];
+                      }}
                     />
-                    <Line type="monotone" dataKey="close" stroke="#10b981" strokeWidth={1.5} dot={{ r: 1.5 }} />
-                    {/* Insider Trade Marker */}
-                    <ReferenceDot 
-                      x={priceHistory[Math.floor(priceHistory.length / 2)]?.date} 
+                    {/* Reference line at insider trade price */}
+                    <ReferenceLine 
                       y={trade.pricePerShare} 
-                      r={4} 
+                      stroke={isBuy ? "#10b981" : "#ef4444"} 
+                      strokeDasharray="3 3" 
+                      strokeWidth={1}
+                      label={{ 
+                        value: `Insider: $${trade.pricePerShare.toFixed(2)}`, 
+                        position: 'insideTopRight',
+                        fill: '#737373',
+                        fontSize: 9,
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                    {/* Positive gap (profit): striped area above insider price */}
+                    <Area 
+                      type="monotone" 
+                      dataKey="gapPositive"
+                      stackId="gap"
+                      baseLine={trade.pricePerShare}
+                      fill="url(#stripe-pattern-profit)"
+                      stroke="none"
+                    />
+                    {/* Negative gap (loss): striped area below insider price */}
+                    <Area 
+                      type="monotone" 
+                      dataKey="gapNegative"
+                      stackId="gap"
+                      baseLine={trade.pricePerShare}
+                      fill="url(#stripe-pattern-loss)"
+                      stroke="none"
+                    />
+                    <Line type="monotone" dataKey="close" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                    {/* Insider Trade Marker at first data point */}
+                    <ReferenceDot 
+                      x={priceHistory[0]?.date} 
+                      y={trade.pricePerShare} 
+                      r={5} 
                       fill={isBuy ? "#10b981" : "#ef4444"}
                       stroke="#0a0a0a"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                     />
-                  </LineChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
 
                 {/* Price Footer */}
@@ -271,7 +365,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="flex items-center gap-2">
                   <CheckCircle size={12} className="text-emerald-500" />
                   <span className="text-[9px] text-emerald-500 uppercase tracking-widest font-mono">
-                    VERIFIED BY SEC
+                    VIEW SEC FILING
                   </span>
                 </div>
                 <ExternalLink size={10} className="text-emerald-500/50 group-hover:text-emerald-500" />
@@ -395,9 +489,9 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               </span>
               {news.length > 0 && (
                 <div className="flex gap-3 ml-3">
-                  <span className="text-[8px] text-emerald-500 font-mono">● {posCount} POSITIVE</span>
-                  <span className="text-[8px] text-rose-500 font-mono">● {negCount} NEGATIVE</span>
-                  <span className="text-[8px] text-neutral-500 font-mono">● {neutCount} NEUTRAL</span>
+                  <span className="text-[9px] text-emerald-500 font-mono">● {posCount} POSITIVE</span>
+                  <span className="text-[9px] text-rose-500 font-mono">● {negCount} NEGATIVE</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">● {neutCount} NEUTRAL</span>
                 </div>
               )}
             </div>
