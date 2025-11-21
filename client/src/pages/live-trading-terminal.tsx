@@ -295,25 +295,25 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) - Match image_1763698271171.png exactly */}
+        {/* Locked Zone (Free Users) - Match image_1763699117351.png exactly */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
-            {/* 48px Fixed Header */}
-            <div className="sticky top-[45px] h-12 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center bg-gradient-to-r from-amber-900/5 to-transparent">
-              <div className="flex items-center gap-2">
-                <Lock size={11} className="text-amber-600" />
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-600 font-bold">
+            {/* Fixed Header matching screenshot exactly */}
+            <div className="sticky top-[45px] h-10 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle size={10} className="text-amber-600" />
+                <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-amber-600">
                   {t.realtimeZone}
                 </span>
               </div>
-              <span className="text-[8px] text-amber-600/50 font-mono uppercase tracking-wide flex items-center gap-1">
-                <Lock size={8} className="text-amber-600/50" />
+              <span className="text-[8px] text-amber-600/60 font-mono uppercase tracking-wider flex items-center gap-1">
+                <span className="text-amber-600/60">●</span>
                 {t.encryptedForOutsiders}
               </span>
             </div>
 
-            {/* Blurred content with small badges */}
-            <div className="blur-sm opacity-30 pointer-events-none select-none relative">
+            {/* Blurred content */}
+            <div className="blur-[2px] opacity-20 pointer-events-none select-none relative">
               {filteredData.slice(0, 3).map((trade) => (
                 <div key={trade.id} className="relative">
                   <TradeRow 
@@ -321,10 +321,10 @@ export default function LiveTradingTerminal() {
                     onClick={() => {}}
                     tData={tData}
                   />
-                  {/* Subtle row badge */}
+                  {/* Center badge per row */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[9px] text-neutral-600/80 font-mono tracking-wide flex items-center gap-1">
-                      <Lock size={8} className="text-neutral-600/80" />
+                    <span className="text-[9px] text-neutral-500/60 font-mono uppercase tracking-wide flex items-center gap-1">
+                      <Lock size={7} className="text-neutral-500/60" />
                       {t.signalEncrypted}
                     </span>
                   </div>
@@ -332,32 +332,27 @@ export default function LiveTradingTerminal() {
               ))}
             </div>
 
-            {/* 4-Layer Backdrop Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center z-20">
-              {/* Layer 1: Amber gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 via-transparent to-amber-900/5"></div>
+            {/* Backdrop overlay matching screenshot */}
+            <div className="absolute inset-0 flex items-end justify-center pb-8 z-20">
+              {/* Subtle amber gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/5 via-transparent to-black/20"></div>
               
-              {/* Layer 2: 6px diagonal animated stripes */}
+              {/* Diagonal stripes - more subtle */}
               <div 
                 className="absolute inset-0"
                 style={{
-                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 6px, rgba(245,158,11,0.08) 6px, rgba(245,158,11,0.08) 12px)',
-                  animation: 'stripe-scroll 15s linear infinite'
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(245,158,11,0.03) 8px, rgba(245,158,11,0.03) 16px)'
                 }}
               ></div>
-
-              {/* Layer 3: Dark vignette */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
               
-              {/* Layer 4: CTA with sheen animation */}
+              {/* Unlock CTA button - smaller and centered at bottom */}
               <button 
                 onClick={handleUpgrade}
-                className="relative px-8 h-10 bg-amber-600 text-black text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-amber-500 transition-colors flex items-center gap-2 font-mono overflow-hidden group"
+                className="relative px-6 h-9 bg-amber-600 text-black text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-amber-500 transition-colors flex items-center gap-1.5 font-mono z-10"
                 data-testid="button-upgrade"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
-                <Lock size={12} className="text-black relative z-10" />
-                <span className="relative z-10">{t.unlockRealtime}</span>
+                <Zap size={11} className="text-black fill-black" />
+                <span>{t.unlockRealtime}</span>
               </button>
             </div>
           </div>
