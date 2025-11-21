@@ -53,17 +53,17 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     };
   }, [trade]);
 
-  // Generate simplified 14-day price history aligned with trade date
+  // Generate simplified 14-day price history aligned with filing date
   const priceHistory = useMemo(() => {
     if (!trade) return [];
     
-    const tradeDate = new Date(trade.tradeDate);
+    const filingDate = new Date(trade.filedDate);
     const insiderPrice = trade.pricePerShare;
     const data = [];
     
-    // Generate 14 days: 7 days before trade + trade day + 6 days after
+    // Generate 14 days: 7 days before filing + filing day + 6 days after
     for (let i = -7; i <= 6; i++) {
-      const date = new Date(tradeDate);
+      const date = new Date(filingDate);
       date.setDate(date.getDate() + i);
       const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
       
@@ -73,7 +73,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
         // Before trade: slightly lower price with variation
         marketPrice = insiderPrice * (0.95 + Math.random() * 0.03);
       } else if (i === 0) {
-        // Trade day: exact insider price
+        // Filing day: exact insider price
         marketPrice = insiderPrice;
       } else {
         // After trade: slight upward trend with variation
