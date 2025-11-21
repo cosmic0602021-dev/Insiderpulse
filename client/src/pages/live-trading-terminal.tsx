@@ -288,14 +288,11 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) */}
-        {!isLoading && !error && !isPro && (
-          <div className="relative border-b border-neutral-800 bg-[#080808] overflow-hidden">
-            <div className="absolute inset-0 opacity-5 pointer-events-none animate-[move-stripes_2s_linear_infinite]" 
-                 style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, #d97706 10px, #d97706 11px)', backgroundSize: '28px 28px' }}>
-            </div>
-            
-            <div className="px-4 py-2 bg-amber-900/10 border-b border-amber-900/20 flex justify-between items-center relative z-10">
+        {/* Locked Zone (Free Users) - Show blurred content underneath */}
+        {!isLoading && !error && !isPro && filteredData.length > 0 && (
+          <div className="relative border-b border-neutral-800 overflow-hidden">
+            {/* Header */}
+            <div className="sticky top-[45px] bg-[#050505] border-b border-amber-900/20 z-30 px-4 py-2 bg-amber-900/10 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Lock size={12} className="text-amber-600" />
                 <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600">{t.realtimeZone}</span>
@@ -303,19 +300,34 @@ export default function LiveTradingTerminal() {
               <span className="text-[8px] text-neutral-600 font-mono">{t.encrypted}</span>
             </div>
 
-            <div className="relative z-10 py-12 px-6 text-center">
-              <Lock className="mx-auto mb-4 text-amber-600" size={32} />
-              <h3 className="text-lg font-light text-neutral-300 mb-2">{t.signalEncrypted}</h3>
-              <p className="text-xs text-neutral-600 mb-6 max-w-md mx-auto">
-                {t.encryptedMessage}
-              </p>
-              <button 
-                onClick={handleUpgrade}
-                className="px-6 py-2 bg-amber-600 text-black text-xs font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors"
-                data-testid="button-upgrade"
-              >
-                {t.upgradeAction}
-              </button>
+            {/* Blurred content underneath to show data exists */}
+            <div className="blur-sm opacity-30 pointer-events-none select-none">
+              {filteredData.slice(0, 3).map((trade) => (
+                <TradeRow 
+                  key={trade.id} 
+                  trade={trade} 
+                  onClick={() => {}}
+                  tData={tData}
+                />
+              ))}
+            </div>
+
+            {/* Semi-transparent overlay with upgrade message */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="text-center px-6">
+                <Lock className="mx-auto mb-4 text-amber-600" size={32} />
+                <h3 className="text-lg font-light text-neutral-300 mb-2">{t.signalEncrypted}</h3>
+                <p className="text-xs text-neutral-600 mb-6 max-w-md mx-auto">
+                  {t.encryptedMessage}
+                </p>
+                <button 
+                  onClick={handleUpgrade}
+                  className="px-6 py-2 bg-amber-600 text-black text-xs font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors"
+                  data-testid="button-upgrade"
+                >
+                  {t.upgradeAction}
+                </button>
+              </div>
             </div>
           </div>
         )}
