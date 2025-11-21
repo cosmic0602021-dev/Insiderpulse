@@ -994,7 +994,8 @@ export function TradeDetailModal({
                     ) : (trade.comprehensiveAnalysis || comprehensiveAnalysis) ? (
                       // 실제 AI 분석 결과 표시 (통합된 종합의견 포함)
                       (() => {
-                        const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis!;
+                        const analysis = trade.comprehensiveAnalysis || comprehensiveAnalysis;
+                        if (!analysis) return null;
                         const sentiment = analysis.marketContext?.sentiment || 'NEUTRAL';
                         const isBullish = sentiment === 'BULLISH';
                         const isBearish = sentiment === 'BEARISH';

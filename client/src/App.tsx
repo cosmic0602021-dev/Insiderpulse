@@ -34,6 +34,8 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import LandingPage from "@/pages/landing";
 import ProfilePage from "@/pages/profile";
 import TerminalSidebar from "@/components/terminal-ui/Sidebar";
+import ProfileView from '@/components/terminal-ui/ProfileView';
+import TerminalSettingsView from '@/components/terminal-ui/SettingsView';
 import { View } from "@/components/terminal-ui/types";
 import { TRANSLATIONS } from "@/lib/translations";
 
@@ -256,8 +258,19 @@ function AppContent() {
         </div>
 
         <div className="flex-1 overflow-hidden relative w-full">
-          <main className="h-full overflow-x-hidden overflow-y-auto w-full">
-            <AppRouter />
+          <main className="h-full overflow-hidden w-full">
+            {activeView === View.LIVE_TRADING && (
+              <LiveTradingTerminal />
+            )}
+            {activeView === View.TOP_STOCKS && (
+              <Ranking />
+            )}
+            {activeView === View.PROFILE && (
+              <ProfileView lang={terminalLang} />
+            )}
+            {activeView === View.SETTINGS && (
+              <TerminalSettingsView lang={terminalLang} setLang={(lang) => setLanguage(lang as 'en' | 'ko' | 'ja' | 'zh')} />
+            )}
           </main>
         </div>
       </div>
