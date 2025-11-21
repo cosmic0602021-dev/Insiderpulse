@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { TRANSLATIONS, formatCurrency, formatNumber, formatPercent, type Language } from '@/lib/translations';
 import type { InsiderTrade } from '@shared/schema';
 import { apiClient, queryKeys } from '@/lib/api';
@@ -295,56 +295,69 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) - Match reference exactly */}
+        {/* Locked Zone (Free Users) - Match image_1763698271171.png exactly */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
-            {/* Header */}
-            <div className="sticky top-[45px] bg-[#050505] border-b border-amber-900/30 z-30 px-4 py-2 bg-amber-900/5 flex justify-between items-center">
+            {/* 48px Fixed Header */}
+            <div className="sticky top-[45px] h-12 bg-[#050505] border-b border-amber-900/20 z-30 px-4 flex justify-between items-center bg-gradient-to-r from-amber-900/5 to-transparent">
               <div className="flex items-center gap-2">
                 <Lock size={11} className="text-amber-600" />
-                <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-amber-600 font-bold">{t.realtimeZone}</span>
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-600 font-bold">
+                  {t.realtimeZone}
+                </span>
               </div>
-              <span className="text-[9px] text-amber-600/80 font-mono flex items-center gap-1">
-                🔒 {t.encryptedForOutsiders}
+              <span className="text-[8px] text-amber-600/50 font-mono uppercase tracking-wide flex items-center gap-1">
+                <Lock size={8} className="text-amber-600/50" />
+                {t.encryptedForOutsiders}
               </span>
             </div>
 
-            {/* Blurred content with SIGNAL ENCRYPTED badges */}
-            <div className="blur-md opacity-20 pointer-events-none select-none relative">
-              {filteredData.slice(0, 3).map((trade, idx) => (
+            {/* Blurred content with small badges */}
+            <div className="blur-sm opacity-30 pointer-events-none select-none relative">
+              {filteredData.slice(0, 3).map((trade) => (
                 <div key={trade.id} className="relative">
                   <TradeRow 
                     trade={trade} 
                     onClick={() => {}}
                     tData={tData}
                   />
-                  {/* Individual row SIGNAL ENCRYPTED badge */}
+                  {/* Subtle row badge */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[10px] text-neutral-500 font-mono tracking-wider flex items-center gap-1">
-                      🔒 {t.signalEncrypted}
+                    <span className="text-[9px] text-neutral-600/80 font-mono tracking-wide flex items-center gap-1">
+                      <Lock size={8} className="text-neutral-600/80" />
+                      {t.signalEncrypted}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Overlay with dense animated diagonal stripes */}
+            {/* 4-Layer Backdrop Overlay */}
             <div className="absolute inset-0 flex items-center justify-center z-20">
-              {/* Dense diagonal stripe pattern - tighter spacing, higher contrast */}
+              {/* Layer 1: Amber gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 via-transparent to-amber-900/5"></div>
+              
+              {/* Layer 2: 6px diagonal animated stripes */}
               <div 
-                className="absolute inset-0 animate-stripe-scroll"
+                className="absolute inset-0"
                 style={{
-                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 8px, rgba(245,158,11,0.15) 8px, rgba(245,158,11,0.15) 16px)',
+                  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0px, transparent 6px, rgba(245,158,11,0.08) 6px, rgba(245,158,11,0.08) 12px)',
+                  animation: 'stripe-scroll 15s linear infinite'
                 }}
               ></div>
+
+              {/* Layer 3: Dark vignette */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
               
-              {/* Compact flat button - sharp corners, solid amber */}
+              {/* Layer 4: CTA with sheen animation */}
               <button 
                 onClick={handleUpgrade}
-                className="px-6 py-2 bg-amber-600 text-black text-xs font-bold uppercase tracking-wide hover:bg-amber-500 transition-colors flex items-center gap-2 relative z-10 font-mono"
+                className="relative px-8 h-10 bg-amber-600 text-black text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-amber-500 transition-colors flex items-center gap-2 font-mono overflow-hidden group"
                 data-testid="button-upgrade"
               >
-                🔓 {t.unlockRealtime}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+                <Lock size={12} className="text-black relative z-10" />
+                <span className="relative z-10">{t.unlockRealtime}</span>
               </button>
             </div>
           </div>
@@ -399,8 +412,9 @@ interface TradeRowProps {
 function TradeRow({ trade, onClick, tData }: TradeRowProps) {
   const { language } = useLanguage();
   const isBuy = trade.type === 'Buy';
-  const typeClass = isBuy ? 'text-emerald-500' : 'text-rose-500';
-  const typeBg = isBuy ? 'bg-emerald-900/20 border-emerald-900/30' : 'bg-rose-900/20 border-rose-900/30';
+  const typeClass = isBuy ? 'text-emerald-500' : 'text-neutral-500';
+  const typeBg = isBuy ? 'bg-emerald-500' : 'bg-transparent';
+  const typeBorder = isBuy ? 'border-emerald-500' : 'border-neutral-700';
   
   // Format time ago based on language
   const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
@@ -409,36 +423,34 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
     locale: dateLocale
   });
 
+  const ActionIcon = isBuy ? ArrowUpRight : ArrowDownLeft;
+
   return (
     <div 
       onClick={onClick}
-      className="grid grid-cols-5 md:grid-cols-8 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
+      className="grid grid-cols-5 md:grid-cols-8 gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
       data-testid={`trade-row-${trade.ticker}`}
     >
       {/* Ticker + Company */}
-      <div className="flex flex-col pl-2 gap-0.5">
-        <div className="flex items-center gap-1.5">
-          <span className="font-mono font-bold text-neutral-200 text-sm">{trade.ticker}</span>
-          {trade.isVerified && (
-            <span className="text-[8px] text-emerald-600">✓</span>
-          )}
-        </div>
-        <span className="text-neutral-600 text-[10px] leading-none">{trade.companyName}</span>
+      <div className="flex flex-col gap-0.5">
+        <span className="font-mono font-semibold text-neutral-200 text-[13px] leading-[18px]">{trade.ticker}</span>
+        <span className="text-neutral-600 text-[11px] leading-none">{trade.companyName}</span>
       </div>
 
       {/* Insider (Hidden on mobile) */}
       <div className="hidden md:flex items-center">
-        <span className="text-neutral-300 font-mono text-xs font-medium truncate">{trade.insider}</span>
+        <span className="text-neutral-300 font-mono text-[12px] font-medium truncate">{trade.insider}</span>
       </div>
 
       {/* Relation (Hidden on mobile) */}
       <div className="hidden md:flex items-center">
-        <span className="text-neutral-500 font-mono text-[10px] uppercase tracking-wider truncate">{trade.relation}</span>
+        <span className="text-neutral-500 font-mono text-[12px] font-medium uppercase tracking-wider truncate">{trade.relation}</span>
       </div>
 
       {/* Action */}
       <div className="flex items-center justify-end">
-        <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBg} ${typeClass} rounded`}>
+        <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBorder} ${isBuy ? 'text-black' : typeClass} ${typeBg} rounded-sm inline-flex items-center gap-1`}>
+          <ActionIcon size={10} className={isBuy ? 'text-black' : 'text-neutral-500'} />
           {tData[trade.type] || trade.type}
         </span>
       </div>
