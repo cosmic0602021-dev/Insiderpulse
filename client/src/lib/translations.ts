@@ -30,6 +30,7 @@ const EN = {
     realtimeZone: 'Real-Time Signal Zone',
     encrypted: 'ENCRYPTED FOR OUTSIDERS',
     signalEncrypted: 'SIGNAL ENCRYPTED',
+    encryptedMessage: 'Real-time insider trades are encrypted for OUTSIDER users. Upgrade to access live data.',
     upgradeAction: 'Unlock Real-Time Data',
     noRecords: 'NO_RECORDS_FOUND'
   },
@@ -184,6 +185,7 @@ const KO = {
     realtimeZone: '실시간 시그널 구역',
     encrypted: 'OUTSIDER 암호화됨',
     signalEncrypted: '시그널 암호화',
+    encryptedMessage: 'OUTSIDER 사용자에게는 실시간 내부자 거래가 암호화됩니다. 업그레이드하여 실시간 데이터에 액세스하세요.',
     upgradeAction: '실시간 데이터 잠금 해제',
     noRecords: '기록 없음'
   },

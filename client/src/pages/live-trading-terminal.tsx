@@ -307,7 +307,7 @@ export default function LiveTradingTerminal() {
               <Lock className="mx-auto mb-4 text-amber-600" size={32} />
               <h3 className="text-lg font-light text-neutral-300 mb-2">{t.signalEncrypted}</h3>
               <p className="text-xs text-neutral-600 mb-6 max-w-md mx-auto">
-                Real-time insider trades are encrypted for {tCommon.tierFree} users. Upgrade to access live data.
+                {t.encryptedMessage}
               </p>
               <button 
                 onClick={handleUpgrade}
