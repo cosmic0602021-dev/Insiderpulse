@@ -250,10 +250,9 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     <defs>
                       {/* Strong gradient effect with unique ID to avoid conflicts */}
                       <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
-                        <stop offset="30%" stopColor="#059669" stopOpacity={0.6} />
-                        <stop offset="60%" stopColor="#047857" stopOpacity={0.4} />
-                        <stop offset="100%" stopColor="#064e3b" stopOpacity={0.1} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
+                        <stop offset="50%" stopColor="#059669" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
                       <CartesianGrid stroke="#999999" strokeDasharray="3 3" strokeOpacity={0.3} />
