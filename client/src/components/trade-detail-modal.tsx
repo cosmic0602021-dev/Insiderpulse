@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceLine, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -53,29 +53,39 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     };
   }, [trade]);
 
-  // Generate simplified 14-day price history for dual-line chart
+  // Generate simplified 14-day price history aligned with trade date
   const priceHistory = useMemo(() => {
     if (!trade) return [];
+    
+    const tradeDate = new Date(trade.tradeDate);
     const insiderPrice = trade.pricePerShare;
-    const currentPrice = insiderPrice * 0.96; // Mock current price (should come from API)
     const data = [];
     
-    // Generate 14 days of data
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+    // Generate 14 days: 7 days before trade + trade day + 6 days after
+    for (let i = -7; i <= 6; i++) {
+      const date = new Date(tradeDate);
+      date.setDate(date.getDate() + i);
       const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
       
-      // Create gradual trend from insider price to current price
-      const progress = (13 - i) / 13;
-      const marketPrice = insiderPrice + (currentPrice - insiderPrice) * progress;
+      // Create realistic price movement centered on insider trade
+      let marketPrice;
+      if (i < 0) {
+        // Before trade: slightly lower price with variation
+        marketPrice = insiderPrice * (0.95 + Math.random() * 0.03);
+      } else if (i === 0) {
+        // Trade day: exact insider price
+        marketPrice = insiderPrice;
+      } else {
+        // After trade: slight upward trend with variation
+        const trend = i * 0.005; // 0.5% per day
+        marketPrice = insiderPrice * (1 + trend + (Math.random() * 0.02 - 0.01));
+      }
       
       data.push({
         date: dateStr,
         marketPrice: marketPrice,
         insiderPrice: insiderPrice,
-        // Mark the insider trade point (first data point)
-        isInsiderTrade: i === 13
+        isInsiderTrade: i === 0
       });
     }
     
@@ -247,21 +257,13 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
-                      {/* Gradient for market price line */}
+                      {/* Enhanced gradient matching reference screenshot */}
                       <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="40%" stopColor="#059669" stopOpacity={0.25} />
+                        <stop offset="80%" stopColor="#047857" stopOpacity={0.1} />
+                        <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
                       </linearGradient>
-                      {/* Pulsing filter for insider marker */}
-                      <filter id="glowFilter">
-                        <feGaussianBlur stdDeviation="2" result="coloredBlur">
-                          <animate attributeName="stdDeviation" values="2;4;2" dur="3s" repeatCount="indefinite" />
-                        </feGaussianBlur>
-                        <feMerge>
-                          <feMergeNode in="coloredBlur"/>
-                          <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                      </filter>
                     </defs>
                       <XAxis 
                         dataKey="date" 
@@ -321,20 +323,10 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         fill="url(#marketGradient)"
                         stroke="none"
                         isAnimationActive={true}
-                        animationDuration={6000}
+                        animationDuration={4000}
                         animationEasing="ease-out"
                       />
-                      {/* Insider price line (horizontal reference) */}
-                      <Line 
-                        type="monotone" 
-                        dataKey="insiderPrice" 
-                        stroke="#737373" 
-                        strokeWidth={1.5} 
-                        strokeDasharray="4 4"
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                      {/* Market price line with slow animation */}
+                      {/* Market price line with 4s animation */}
                       <Line 
                         type="monotone" 
                         dataKey="marketPrice" 
@@ -342,19 +334,8 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         strokeWidth={2.5} 
                         dot={false}
                         isAnimationActive={true}
-                        animationDuration={7000}
+                        animationDuration={4000}
                         animationEasing="ease-in-out"
-                      />
-                      {/* Insider trade marker with pulsing glow */}
-                      <ReferenceDot 
-                        x={priceHistory[0]?.date} 
-                        y={trade.pricePerShare} 
-                        r={7} 
-                        fill={isBuy ? "#10b981" : "#ef4444"}
-                        stroke={isBuy ? "#10b981" : "#ef4444"}
-                        strokeWidth={3}
-                        opacity={0.8}
-                        filter="url(#glowFilter)"
                       />
                     </LineChart>
                   </ResponsiveContainer>
