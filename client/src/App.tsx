@@ -20,6 +20,7 @@ import TradeDetail from "@/pages/trade-detail";
 import Analytics from "@/pages/analytics";
 import Search from "@/pages/search";
 import LiveTrading from "@/pages/live-trading";
+import LiveTradingTerminal from "@/pages/live-trading-terminal";
 import Ranking from "@/pages/ranking";
 import PasswordDemo from "@/pages/password-demo";
 import EnhancedInsiderTradingDashboard from "@/components/EnhancedInsiderTradingDashboard";
@@ -61,6 +62,7 @@ function AppRouter() {
     <Switch>
       <Route path="/trade/:tradeId" component={TradeDetail} />
       <Route path="/trades" component={LiveTrading} />
+      <Route path="/terminal" component={LiveTradingTerminal} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/search" component={Search} />
