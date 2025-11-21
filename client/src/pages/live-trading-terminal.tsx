@@ -317,9 +317,15 @@ export default function LiveTradingTerminal() {
 
             {/* Simple overlay with unlock button only (like og1.png) */}
             <div className="absolute inset-0 bg-amber-600/5 flex items-center justify-center z-20">
+              {/* Grid pattern background */}
+              <div className="absolute inset-0 opacity-20" style={{
+                backgroundImage: 'linear-gradient(rgba(245, 158, 11, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(245, 158, 11, 0.1) 1px, transparent 1px)',
+                backgroundSize: '20px 20px'
+              }}></div>
+              
               <button 
                 onClick={handleUpgrade}
-                className="px-8 py-3 bg-amber-600 text-black text-sm font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors flex items-center gap-2"
+                className="px-8 py-3 bg-amber-600 text-black text-sm font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors flex items-center gap-2 relative z-10"
                 data-testid="button-upgrade"
               >
                 🔓 {t.upgradeAction}
