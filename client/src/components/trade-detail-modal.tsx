@@ -15,7 +15,18 @@ import { useLanguage } from '@/contexts/language-context';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
-interface EnhancedTrade extends InsiderTrade {
+interface EnhancedTrade {
+  id: string;
+  ticker: string | null;
+  companyName: string;
+  traderName: string;
+  traderTitle: string | null;
+  tradeType: string;
+  shares: number;
+  pricePerShare: number;
+  totalValue: number;
+  filedDate: string;
+  secFilingUrl?: string;
   predictionAccuracy?: number;
   recommendedBuyPrice?: number;
   currentPrice?: number;
@@ -251,6 +262,8 @@ export function TradeDetailModal({
 
   // 푸시 알림 구독 처리
   const handlePushNotification = async () => {
+    if (!trade) return;
+    
     // PWA 미설치 시 안내 모달 표시
     if (!isPWAInstalled) {
       setShowPWAGuide(true);
@@ -293,15 +306,16 @@ export function TradeDetailModal({
       });
 
       // localStorage에 알림 정보 저장 (Alert 페이지에서 사용)
+      
       const existingAlerts = JSON.parse(localStorage.getItem('insiderAlerts') || '[]');
       const newAlert = {
         id: Date.now().toString(),
         type: 'COMPANY',
         condition: 'equals',
         value: trade.companyName,
-        ticker: trade.ticker,
+        ticker: trade.ticker || '',
         isActive: true,
-        name: t('notification.tradeAlert').replace('{company}', trade.companyName).replace('{ticker}', trade.ticker),
+        name: `${t('notification.tradeAlert')} ${trade.companyName} (${trade.ticker})`,
         createdAt: new Date().toISOString()
       };
 
@@ -313,7 +327,7 @@ export function TradeDetailModal({
       }
 
       setIsSubscribed(true);
-      alert(t('notification.activated').replace('{ticker}', trade.ticker));
+      alert(`${t('notification.activated')} ${trade.ticker}`);
       setShowPWAGuide(false);
     } catch (error) {
       console.error('푸시 알림 구독 실패:', error);
@@ -356,13 +370,15 @@ export function TradeDetailModal({
       const dataUrl = canvas.toDataURL('image/png');
 
       // 모바일 브라우저에서 공유 API 사용
+      if (!trade) return;
+      
       if (navigator.share) {
         const blob = await (await fetch(dataUrl)).blob();
         await navigator.share({
-          title: `InsiderPulse: ${trade.ticker}`,
-          text: t('tradeDetail.shareText').replace('{company}', trade.companyName),
+          title: `InsiderPulse: ${trade.ticker || 'Trade'}`,
+          text: `${t('tradeDetail.shareText')} ${trade.companyName}`,
           files: [
-            new File([blob], `insider_trade_${trade.ticker}.png`, {
+            new File([blob], `insider_trade_${trade.ticker || 'unknown'}.png`, {
               type: 'image/png'
             })
           ]
@@ -371,7 +387,7 @@ export function TradeDetailModal({
         // 웹 브라우저의 경우 다운로드
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = `insider_trade_${trade.ticker}_${new Date().getTime()}.png`;
+        link.download = `insider_trade_${trade.ticker || 'unknown'}_${new Date().getTime()}.png`;
         link.click();
       }
     } catch (error) {
@@ -1157,9 +1173,9 @@ export function TradeDetailModal({
                                       onClick={() => toggleNewsExpansion(index)}
                                     >
                                       <div className="flex items-start justify-between">
-                                        <h7 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
+                                        <h6 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
                                           {news.title}
-                                        </h7>
+                                        </h6>
                                         <Badge className={`ml-2 text-xs px-2 py-1 whitespace-nowrap flex-shrink-0 flex items-center gap-1 ${
                                           isPositive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
                                           isNegative ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
@@ -1242,7 +1258,7 @@ export function TradeDetailModal({
                   📱 {t('pwa.prompt.addToHomeScreen')}
                 </h4>
                 <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                  {t('pwa.notification.requirement').replace('{company}', trade.companyName)}
+                  {`${t('pwa.notification.requirement')} ${trade.companyName}`}
                 </p>
 
                 <div className="space-y-3 text-sm">
@@ -1267,9 +1283,9 @@ export function TradeDetailModal({
               </div>
 
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                <p className="text-sm text-green-800 dark:text-green-200" dangerouslySetInnerHTML={{
-                  __html: '✓ ' + t('pwa.afterInstall').replace('{ticker}', trade.ticker)
-                }} />
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  ✓ {`${t('pwa.afterInstall')} ${trade.ticker || ''}`}
+                </p>
               </div>
 
               <div className="flex gap-2">

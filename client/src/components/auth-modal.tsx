@@ -67,7 +67,7 @@ export function AuthModal() {
       const response = await apiClient.login(email, password);
 
       if (response.success && response.user && response.token) {
-        login(response.user, response.token);
+        login(response.user as any, response.token);
         closeAuthModal();
       } else {
         setError(response.message || t('auth.login.errorFailed'));
@@ -197,7 +197,7 @@ export function AuthModal() {
           try {
             const loginResponse = await apiClient.login(email, password);
             if (loginResponse.success && loginResponse.user && loginResponse.token) {
-              login(loginResponse.user, loginResponse.token);
+              login(loginResponse.user as any, loginResponse.token);
               closeAuthModal();
             }
           } catch (err) {
@@ -364,7 +364,7 @@ export function AuthModal() {
                       {t('auth.verifyCode.resending')}
                     </>
                   ) : resendCooldown > 0 ? (
-                    t('auth.verifyCode.resendIn', { seconds: resendCooldown })
+                    `${t('auth.verifyCode.resendIn')} ${resendCooldown}s`
                   ) : (
                     t('auth.verifyCode.resendCode')
                   )}
