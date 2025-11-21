@@ -14,7 +14,7 @@ const EN = {
   sidebar: {
     modules: 'Modules',
     live: 'Live Trading',
-    analysis: 'Top Stocks',
+    analysis: 'Recommended Stocks',
     config: 'Configuration',
     watched: 'Watched Assets',
     noData: 'NO_DATA_STREAM'
@@ -28,9 +28,9 @@ const EN = {
     filter: { all: 'All', buy: 'Buy', sell: 'Sell' },
     table: { ticker: 'Ticker', insider: 'Insider', relation: 'Relation', action: 'Action', volume: 'Volume', value: 'Value', impact: 'Impact' },
     realtimeZone: 'Real-Time Signal Zone',
-    encrypted: 'ENCRYPTED FOR OUTSIDERS',
+    encrypted: 'OUTSIDER ENCRYPTED',
     signalEncrypted: 'SIGNAL ENCRYPTED',
-    encryptedMessage: 'Real-time insider trades are encrypted for OUTSIDER users. Upgrade to access live data.',
+    encryptedMessage: 'OUTSIDER users only see data delayed by 48 hours.',
     upgradeAction: 'Unlock Real-Time Data',
     noRecords: 'NO_RECORDS_FOUND'
   },
@@ -169,7 +169,7 @@ const KO = {
   sidebar: {
     modules: '모듈',
     live: '실시간 거래',
-    analysis: '상위 종목',
+    analysis: '추천 주식',
     config: '설정',
     watched: '관심 종목',
     noData: '데이터 스트림 없음'
@@ -185,7 +185,7 @@ const KO = {
     realtimeZone: '실시간 시그널 구역',
     encrypted: 'OUTSIDER 암호화됨',
     signalEncrypted: '시그널 암호화',
-    encryptedMessage: 'OUTSIDER 사용자에게는 실시간 내부자 거래가 암호화됩니다. 업그레이드하여 실시간 데이터에 액세스하세요.',
+    encryptedMessage: 'OUTSIDER 사용자에게는 48시간 지연된 데이터만 보입니다.',
     upgradeAction: '실시간 데이터 잠금 해제',
     noRecords: '기록 없음'
   },
@@ -314,10 +314,17 @@ const JA = {
   ...EN,
   common: {
     ...EN.common,
-    encrypted: 'OUTSIDER向け暗号化',
+    encrypted: 'OUTSIDER 暗号化',
     signalEncrypted: 'シグナル暗号化',
-    encryptedMessage: 'リアルタイムのインサイダー取引はOUTSIDERユーザー向けに暗号化されています。アップグレードしてライブデータにアクセスしてください。',
+    encryptedMessage: 'OUTSIDERユーザーには48時間遅延データのみ表示されます。',
     upgradeAction: 'リアルタイムデータのロック解除',
+  },
+  sidebar: {
+    ...EN.sidebar,
+    live: 'ライブトレーディング',
+    analysis: 'おすすめ銘柄',
+    config: '設定',
+    watched: 'ウォッチリスト',
   },
   auth: {
     ...EN.auth,
@@ -348,8 +355,15 @@ const ZH = {
     ...EN.common,
     encrypted: 'OUTSIDER 加密',
     signalEncrypted: '信号加密',
-    encryptedMessage: '实时内部交易对 OUTSIDER 用户加密。升级以访问实时数据。',
+    encryptedMessage: 'OUTSIDER 用户仅能查看延迟 48 小时的数据。',
     upgradeAction: '解锁实时数据',
+  },
+  sidebar: {
+    ...EN.sidebar,
+    live: '实时交易',
+    analysis: '推荐股票',
+    config: '配置',
+    watched: '关注列表',
   },
   auth: {
     ...EN.auth,

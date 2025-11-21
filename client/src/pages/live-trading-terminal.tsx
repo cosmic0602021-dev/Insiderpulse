@@ -189,7 +189,10 @@ export default function LiveTradingTerminal() {
               )}
             </p>
           </div>
-          <div className="flex gap-2 self-end">
+          <div className="flex gap-3 items-center self-end">
+            <span className="text-[10px] text-neutral-600 font-mono uppercase tracking-wider">
+              {language === 'ko' ? '업데이트됨' : language === 'ja' ? '更新' : language === 'zh' ? '更新时间' : 'UPDATED'}: {new Date().toLocaleTimeString(language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+            </span>
             <button 
               className="p-2 border border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 transition-colors bg-neutral-900/30"
               onClick={() => refetch()}
