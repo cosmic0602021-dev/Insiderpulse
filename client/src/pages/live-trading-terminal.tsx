@@ -248,14 +248,15 @@ export default function LiveTradingTerminal() {
         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
 
         {/* Table Header */}
-        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-4 md:grid-cols-7 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">
+        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-8 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">
           <div className="pl-2">{t.table.ticker}</div>
           <div className="hidden md:block">{t.table.insider}</div>
           <div className="hidden md:block">{t.table.relation}</div>
           <div className="text-right">{t.table.action}</div>
           <div className="text-right hidden md:block">{t.table.volume}</div>
           <div className="text-right">{t.table.value}</div>
-          <div className="text-right pr-2">{t.table.impact}</div>
+          <div className="text-right">{t.table.impact}</div>
+          <div className="text-right pr-2">{t.table.time}</div>
         </div>
 
         {/* Loading State */}
@@ -395,14 +396,22 @@ interface TradeRowProps {
 }
 
 function TradeRow({ trade, onClick, tData }: TradeRowProps) {
+  const { language } = useLanguage();
   const isBuy = trade.type === 'Buy';
   const typeClass = isBuy ? 'text-emerald-500' : 'text-rose-500';
   const typeBg = isBuy ? 'bg-emerald-900/20 border-emerald-900/30' : 'bg-rose-900/20 border-rose-900/30';
+  
+  // Format time ago based on language
+  const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
+  const timeAgo = formatDistanceToNow(new Date(trade.date), {
+    addSuffix: true,
+    locale: dateLocale
+  });
 
   return (
     <div 
       onClick={onClick}
-      className="grid grid-cols-4 md:grid-cols-7 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
+      className="grid grid-cols-5 md:grid-cols-8 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
       data-testid={`trade-row-${trade.ticker}`}
     >
       {/* Ticker */}
@@ -441,7 +450,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
       </div>
 
       {/* Impact */}
-      <div className="flex items-center justify-end pr-2">
+      <div className="flex items-center justify-end">
         {trade.priceChange !== 0 && (
           <span className={`flex items-center gap-1 font-mono ${trade.priceChange > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
             {trade.priceChange > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -451,6 +460,11 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
         {trade.priceChange === 0 && (
           <span className="text-neutral-600 text-[10px]">—</span>
         )}
+      </div>
+
+      {/* Time */}
+      <div className="flex items-center justify-end pr-2">
+        <span className="text-neutral-600 text-[10px] font-mono">{timeAgo}</span>
       </div>
     </div>
   );
