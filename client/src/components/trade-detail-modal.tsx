@@ -1,10 +1,10 @@
-import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp } from 'lucide-react';
+import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
-import { formatCurrency, formatNumber } from '@/lib/translations';
+import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useState, useEffect, useMemo } from 'react';
 
 interface TradeDetailModalProps {
@@ -14,7 +14,12 @@ interface TradeDetailModalProps {
 }
 
 export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalProps) {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const [newsExpanded, setNewsExpanded] = useState(true);
+
+  // Get translations for current language
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+  const t = TRANSLATIONS[langKey].modal;
 
   // Use existing trade data instead of fetching
   const aiAnalysis = useMemo(() => {
@@ -173,7 +178,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Trade Type */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                {t('modal.tradeType').toUpperCase()}
+                {t.tradeType.toUpperCase()}
               </div>
               <div className={`text-lg font-light ${isBuy ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {trade.tradeType}
@@ -183,29 +188,27 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Price Per Share */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                {t('modal.priceShare').toUpperCase()}
+                {t.priceShare.toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.pricePerShare)}
-                <span className="text-[10px] text-neutral-600 ml-1">/ {t('modal.share')}</span>
               </div>
             </div>
 
             {/* Shares Traded */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                {t('modal.sharesTraded').toUpperCase()}
+                {t.sharesTraded.toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatNumber(trade.shares / 1000)}K
-                <span className="text-[10px] text-neutral-600 ml-1">{t('modal.volume')}</span>
               </div>
             </div>
 
             {/* Total Value */}
             <div className="px-4 py-2.5">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                {t('modal.totalValue').toUpperCase()}
+                {t.totalValue.toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.totalValue)}
@@ -217,38 +220,25 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto">
             {/* Left Column - Price Analysis */}
             <div className="border-r border-neutral-800 flex flex-col">
-              <div className="px-3 py-1.5 border-b border-neutral-800 flex items-center gap-1.5 bg-neutral-950/30">
-                <TrendingUp size={10} className="text-neutral-500" />
-                <span className="text-[8px] text-neutral-500 uppercase tracking-[0.15em] font-mono">
-                  {t('modal.priceTrend').toUpperCase()}
-                </span>
-              </div>
-              
-              {/* Insider Info Row - Moved to top, 2-column layout */}
-              <div className="px-3 py-2 border-b border-neutral-800 grid grid-cols-2 gap-x-4 gap-y-2 text-xs bg-neutral-950/10">
+              {/* Insider Info Row - Single row, 3 columns */}
+              <div className="px-3 py-2 border-b border-neutral-800 grid grid-cols-3 gap-x-4 text-xs bg-neutral-950/10">
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    {t('modal.insiderName').toUpperCase()}
+                    {t.insiderName.toUpperCase()}
                   </div>
-                  <div className="text-neutral-300 text-[10px]">{trade.traderName}</div>
+                  <div className="text-neutral-300 text-[10px] truncate">{trade.traderName}</div>
                 </div>
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    {t('modal.position').toUpperCase()}
+                    {t.position.toUpperCase()}
                   </div>
-                  <div className="text-neutral-300 text-[10px]">{trade.traderTitle || 'Insider'}</div>
+                  <div className="text-neutral-300 text-[10px] truncate">{trade.traderTitle || 'Insider'}</div>
                 </div>
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    {t('modal.filingDate').toUpperCase()}
+                    {t.filingDate.toUpperCase()}
                   </div>
                   <div className="text-neutral-300 text-[10px]">{new Date(trade.filedDate).toLocaleDateString()}</div>
-                </div>
-                <div>
-                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    {t('modal.shares').toUpperCase()}
-                  </div>
-                  <div className="text-neutral-300 text-[10px]">{formatNumber(trade.shares)}</div>
                 </div>
               </div>
               
@@ -259,10 +249,10 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     <defs>
                       {/* Strong gradient effect matching reference screenshot */}
                       <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
-                        <stop offset="30%" stopColor="#059669" stopOpacity={0.35} />
-                        <stop offset="60%" stopColor="#047857" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
+                        <stop offset="30%" stopColor="#059669" stopOpacity={0.6} />
+                        <stop offset="60%" stopColor="#047857" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="#064e3b" stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
                       <CartesianGrid stroke="#999999" strokeDasharray="3 3" strokeOpacity={0.3} />
@@ -354,7 +344,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-neutral-800 mt-2.5">
                   <div>
                     <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                      {t('modal.basePrice').toUpperCase()}
+                      {t.basePrice.toUpperCase()}
                     </div>
                     <div className="text-sm text-neutral-300 font-mono">
                       {formatCurrency(trade.pricePerShare)}
@@ -362,13 +352,49 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   </div>
                   <div>
                     <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                      {t('modal.currentPrice').toUpperCase()}
+                      {t.currentPrice.toUpperCase()}
                     </div>
                     <div className={`text-sm font-mono flex items-center gap-1.5 ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       {formatCurrency(currentPrice)}
                       <span className="text-[10px]">{priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%</span>
                     </div>
                   </div>
+                </div>
+
+                {/* News Section */}
+                <div className="border-t border-neutral-800 pt-2.5 mt-2.5">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setNewsExpanded(!newsExpanded)}
+                  >
+                    <Newspaper size={11} className="text-amber-500" />
+                    <span className="text-[9px] text-amber-500 uppercase tracking-widest font-mono font-bold">
+                      {t.expandNews?.toUpperCase() || t.relatedNews.toUpperCase()} ({news.length})
+                    </span>
+                    <div className="ml-auto flex items-center gap-1 text-neutral-500">
+                      <span className="text-[8px] font-mono uppercase tracking-wider">
+                        {newsExpanded ? t.hideDetails : t.showDetails}
+                      </span>
+                      {newsExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                    </div>
+                  </div>
+                  {newsExpanded && (
+                    <div className="space-y-1 mt-2 max-h-[100px] overflow-y-auto">
+                      {news.length > 0 ? news.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between px-2 py-1.5 border border-neutral-800 bg-neutral-950/20 hover:bg-neutral-900/30 transition-colors">
+                          <span className="text-[10px] text-neutral-300 truncate flex-1 mr-2">{item.title}</span>
+                          <span className={`text-[7px] px-1.5 py-0.5 border font-mono uppercase tracking-wider shrink-0 ${
+                            item.sentiment === 'POSITIVE' ? 'text-emerald-500 border-emerald-900/30 bg-emerald-950/20' :
+                            'text-neutral-500 border-neutral-800 bg-neutral-950/20'
+                          }`}>
+                            {item.sentiment}
+                          </span>
+                        </div>
+                      )) : (
+                        <div className="text-center py-2 text-neutral-600 text-[10px]">Loading news...</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -386,7 +412,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="flex items-center gap-2">
                   <CheckCircle size={12} className="text-emerald-500" />
                   <span className="text-[9px] text-emerald-500 uppercase tracking-widest font-mono">
-                    {t('modal.secFiling').toUpperCase()}
+                    {t.secFiling.toUpperCase()}
                   </span>
                 </div>
                 <ExternalLink size={10} className="text-emerald-500/50 group-hover:text-emerald-500" />
@@ -397,7 +423,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
                   <Brain size={11} className="text-neutral-500" />
                   <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                    {t('modal.aiAnalysis').toUpperCase()}
+                    {t.aiAnalysis.toUpperCase()}
                   </span>
                 </div>
                 <div className="p-3 space-y-3">
@@ -405,7 +431,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        {t('modal.signal').toUpperCase()}
+                        {t.signal.toUpperCase()}
                       </div>
                       <div className={`text-xl font-light ${
                         aiAnalysis?.signal === 'BUY' ? 'text-emerald-500' : 
@@ -417,14 +443,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     </div>
                     <div>
                       <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        {t('modal.confidence').toUpperCase()}
+                        {t.confidence.toUpperCase()}
                       </div>
                       <div className="text-xl font-light text-neutral-200">{aiAnalysis?.confidence || 97}%</div>
                     </div>
                   </div>
 
                   {/* AI Insight */}
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  <p className="text-[11px] text-neutral-300 leading-relaxed italic border-l-2 border-neutral-700 pl-2">
                     {aiAnalysis?.insight || 'Merger discussions rumored in industry reports.'}
                   </p>
                 </div>
@@ -435,14 +461,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
                   <Target size={11} className="text-neutral-500" />
                   <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                    {t('modal.priceTargets').toUpperCase()}
+                    {t.priceTargets.toUpperCase()}
                   </span>
                 </div>
                 <div className="p-3 space-y-2.5">
                   {/* Conservative */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t('modal.conservative').toUpperCase()}
+                      {t.conservative.toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-neutral-600 rounded-sm" style={{ width: '60%' }}></div>
@@ -455,7 +481,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   {/* Realistic */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t('modal.realistic').toUpperCase()}
+                      {t.realistic.toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-emerald-500 rounded-sm" style={{ width: '80%' }}></div>
@@ -468,7 +494,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   {/* Optimistic */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t('modal.optimistic').toUpperCase()}
+                      {t.optimistic.toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-amber-500 rounded-sm" style={{ width: '100%' }}></div>
@@ -484,7 +510,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="grid grid-cols-2 gap-3">
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {t('modal.riskLevel').toUpperCase()}
+                    {t.riskLevel.toUpperCase()}
                   </div>
                   <div className="flex items-center gap-1.5 text-amber-500">
                     <AlertTriangle size={12} />
@@ -493,43 +519,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {t('modal.timeHorizon').toUpperCase()}
+                    {t.timeHorizon.toUpperCase()}
                   </div>
                   <div className="text-xs text-neutral-300 font-mono">{aiAnalysis?.timeHorizon || '3-6 MONTHS'}</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Bottom News Section */}
-          <div className="border-t border-neutral-800 px-5 py-3 bg-neutral-950/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Newspaper size={11} className="text-neutral-500" />
-              <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                {t('modal.relatedNews').toUpperCase()} ({news.length})
-              </span>
-              {news.length > 0 && (
-                <div className="flex gap-3 ml-3">
-                  <span className="text-[9px] text-emerald-500 font-mono">● {posCount} {t('modal.positive').toUpperCase()}</span>
-                  <span className="text-[9px] text-rose-500 font-mono">● {negCount} {t('modal.negative').toUpperCase()}</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">● {neutCount} {t('modal.neutral').toUpperCase()}</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              {news.length > 0 ? news.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between px-3 py-2 border border-neutral-800 bg-neutral-950/20 hover:bg-neutral-900/30 transition-colors">
-                  <span className="text-[11px] text-neutral-300">{item.title}</span>
-                  <span className={`text-[8px] px-2 py-0.5 border font-mono uppercase tracking-wider ${
-                    item.sentiment === 'POSITIVE' ? 'text-emerald-500 border-emerald-900/30 bg-emerald-950/20' :
-                    'text-neutral-500 border-neutral-800 bg-neutral-950/20'
-                  }`}>
-                    {item.sentiment}
-                  </span>
-                </div>
-              )) : (
-                <div className="text-center py-3 text-neutral-600 text-xs">Loading news...</div>
-              )}
             </div>
           </div>
         </div>

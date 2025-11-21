@@ -4,6 +4,7 @@ import { users, insiderTrades, stockPrices, stockPriceHistory, alerts } from "@s
 import { eq, desc, count, sum, avg, sql, inArray, gte, lte, and } from "drizzle-orm";
 import type { IStorage } from "./storage";
 import { validateAndCorrectTicker } from './ticker-validator';
+import { aiAnalysisService } from './ai-analysis';
 
 export const db = drizzle(process.env.DATABASE_URL!);
 
@@ -112,7 +113,17 @@ export class DatabaseStorage implements IStorage {
         priceVariance: insertTrade.priceVariance || null,
         secFilingUrl: insertTrade.secFilingUrl || null
       }).returning();
-      return result[0];
+
+      const trade = result[0];
+
+      // Generate AI analysis asynchronously (non-blocking)
+      if (trade && !insertTrade.aiAnalysis) {
+        this.generateAIAnalysisAsync(trade).catch(err => {
+          console.error(`⚠️ AI analysis generation failed for trade ${trade.id}:`, err.message);
+        });
+      }
+
+      return trade;
     } catch (error: any) {
       // If duplicate accessionNumber, return existing record instead of throwing
       if (error?.code === '23505' || error?.constraint === 'insider_trades_accession_number_unique') {
@@ -129,6 +140,42 @@ export class DatabaseStorage implements IStorage {
       }
       // Re-throw other errors
       throw error;
+    }
+  }
+
+  // Generate AI analysis asynchronously and update the trade
+  private async generateAIAnalysisAsync(trade: InsiderTrade): Promise<void> {
+    try {
+      const analysis = await aiAnalysisService.analyzeInsiderTrade({
+        companyName: trade.companyName,
+        ticker: trade.ticker || '',
+        traderName: trade.traderName,
+        traderTitle: trade.traderTitle || 'Insider',
+        tradeType: trade.tradeType as 'BUY' | 'SELL',
+        shares: trade.shares,
+        pricePerShare: trade.pricePerShare,
+        totalValue: trade.totalValue,
+        ownershipPercentage: trade.ownershipPercentage || 0
+      });
+
+      // Update the trade with AI analysis
+      await db.update(insiderTrades)
+        .set({
+          aiAnalysis: {
+            signal: analysis.signalType,
+            significanceScore: analysis.significanceScore,
+            keyInsights: analysis.keyInsights,
+            riskLevel: analysis.riskLevel,
+            recommendation: analysis.recommendation
+          },
+          significanceScore: analysis.significanceScore,
+          signalType: analysis.signalType
+        })
+        .where(eq(insiderTrades.id, trade.id));
+
+      console.log(`✅ AI analysis generated for trade ${trade.id} (${trade.ticker})`);
+    } catch (error: any) {
+      console.error(`❌ AI analysis failed for trade ${trade.id}:`, error.message);
     }
   }
 

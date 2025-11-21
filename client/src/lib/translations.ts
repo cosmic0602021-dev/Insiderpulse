@@ -26,7 +26,7 @@ const EN = {
     realtime: 'Real-Time Connection',
     query: 'QUERY_TICKER_OR_INSIDER...',
     filter: { all: 'All', buy: 'Buy', sell: 'Sell' },
-    table: { ticker: 'Ticker', insider: 'Insider', relation: 'Relation', action: 'Action', volume: 'Volume', value: 'Value', impact: 'Impact', time: 'Time' },
+    table: { ticker: 'Ticker', insider: 'Insider', relation: 'Relation', action: 'Action', price: 'Price', volume: 'Volume', value: 'Value', impact: 'Impact', time: 'Time' },
     realtimeZone: 'Real-Time Signal Zone',
     encrypted: 'OUTSIDER ENCRYPTED',
     encryptedForOutsiders: 'ENCRYPTED FOR OUTSIDERS',
@@ -91,9 +91,12 @@ const EN = {
     positive: 'Positive',
     neutral: 'Neutral',
     negative: 'Negative',
-    secFiling: 'SEC Filing',
+    secFiling: 'View SEC File',
     footerText: 'Certified SEC Data',
-    generated: 'Report Generated'
+    generated: 'Report Generated',
+    showDetails: 'Show Details',
+    hideDetails: 'Hide Details',
+    expandNews: 'Expand News'
   },
   profile: {
     header: 'User Profile',
@@ -201,7 +204,7 @@ const KO = {
     realtime: '실시간 연결됨',
     query: '티커 또는 내부자 검색...',
     filter: { all: '전체', buy: '매수', sell: '매도' },
-    table: { ticker: '티커', insider: '내부자', relation: '직위', action: '유형', volume: '거래량', value: '가치', impact: '영향', time: '시간' },
+    table: { ticker: '티커', insider: '내부자', relation: '직위', action: '유형', price: '가격', volume: '거래량', value: '가치', impact: '영향', time: '시간' },
     realtimeZone: '실시간 시그널 구역',
     encrypted: 'OUTSIDER 암호화됨',
     encryptedForOutsiders: 'OUTSIDER 암호화됨',
@@ -266,9 +269,12 @@ const KO = {
     positive: '긍정',
     neutral: '중립',
     negative: '부정',
-    secFiling: 'SEC 공시',
+    secFiling: 'SEC 파일 보기',
     footerText: '인증된 SEC 데이터',
-    generated: '보고서 생성됨'
+    generated: '보고서 생성됨',
+    showDetails: '자세히 보기',
+    hideDetails: '접기',
+    expandNews: '뉴스 펼쳐보기'
   },
   profile: {
     header: '사용자 프로필',

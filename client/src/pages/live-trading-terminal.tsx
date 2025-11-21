@@ -93,7 +93,9 @@ export default function LiveTradingTerminal() {
 
   // Map to terminal format and apply filters
   const terminalTrades = useMemo(() => {
-    return allTrades.map(mapInsiderTradeToTerminal);
+    return allTrades
+      .map(mapInsiderTradeToTerminal)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allTrades]);
 
   const filteredData = useMemo(() => {
@@ -245,7 +247,7 @@ export default function LiveTradingTerminal() {
 
       {/* Table Content */}
       <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
+        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 md:opacity-20"></div>
 
         {/* Table Header */}
         <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">
@@ -253,7 +255,7 @@ export default function LiveTradingTerminal() {
           <div className="hidden md:block">{t.table.insider}</div>
           <div className="hidden md:block">{t.table.relation}</div>
           <div className="text-right">{t.table.action}</div>
-          <div className="text-right hidden md:block">PRICE</div>
+          <div className="text-right hidden md:block">{t.table.price}</div>
           <div className="text-right hidden md:block">{t.table.volume}</div>
           <div className="text-right">{t.table.value}</div>
           <div className="text-right">{t.table.impact}</div>
@@ -434,7 +436,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
   return (
     <div 
       onClick={onClick}
-      className="grid grid-cols-5 md:grid-cols-9 gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
+      className="grid grid-cols-5 md:grid-cols-9 gap-x-2 md:gap-x-6 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
       data-testid={`trade-row-${trade.ticker}`}
     >
       {/* Ticker + Company */}

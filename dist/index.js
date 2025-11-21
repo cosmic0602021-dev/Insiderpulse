@@ -337,6 +337,167 @@ var init_ticker_validator = __esm({
   }
 });
 
+// server/ai-analysis.ts
+import OpenAI from "openai";
+var openai, AIAnalysisService, aiAnalysisService;
+var init_ai_analysis = __esm({
+  "server/ai-analysis.ts"() {
+    "use strict";
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    AIAnalysisService = class {
+      constructor() {
+        this.lastApiCall = 0;
+        this.rateLimitDelay = 2e3;
+      }
+      // 2 seconds between calls
+      async analyzeInsiderTrade(tradeData) {
+        try {
+          const now = Date.now();
+          const timeSinceLastCall = now - this.lastApiCall;
+          if (timeSinceLastCall < this.rateLimitDelay) {
+            await new Promise((resolve) => setTimeout(resolve, this.rateLimitDelay - timeSinceLastCall));
+          }
+          this.lastApiCall = Date.now();
+          const prompt = this.buildAnalysisPrompt(tradeData);
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            // Use more cost-effective model to avoid quota issues
+            messages: [
+              {
+                role: "system",
+                content: `You are an expert financial analyst specializing in insider trading analysis. 
+                     Analyze insider trading data and provide actionable investment insights.
+                     Always respond with valid JSON in the exact format specified.`
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.3,
+            // Lower temperature for more consistent analysis
+            max_tokens: 500
+            // Limit tokens to reduce cost
+          });
+          const content = response.choices[0].message.content;
+          if (!content) {
+            throw new Error("No content received from AI analysis");
+          }
+          const result = JSON.parse(content);
+          return this.validateAnalysisResult(result);
+        } catch (error) {
+          if (error?.status === 429) {
+            console.warn("OpenAI rate limit exceeded, using fallback analysis");
+          } else {
+            console.error("AI analysis failed:", error);
+          }
+          return this.generateFallbackAnalysis(tradeData);
+        }
+      }
+      buildAnalysisPrompt(tradeData) {
+        const tradeValue = (tradeData.totalValue / 1e6).toFixed(1);
+        const isLargePosition = tradeData.ownershipPercentage > 1;
+        const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
+          (title) => tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
+        );
+        let newsSection = "";
+        if (tradeData.recentNews && tradeData.recentNews.length > 0) {
+          const newsItems = tradeData.recentNews.slice(0, 5).map((news, idx) => {
+            const date2 = new Date(news.publishedDate).toLocaleDateString();
+            return `${idx + 1}. [${date2}] ${news.headline} (${news.sentiment}) - ${news.summary.substring(0, 150)}${news.summary.length > 150 ? "..." : ""}`;
+          }).join("\n");
+          const positiveCount = tradeData.recentNews.filter((n) => n.sentiment === "POSITIVE").length;
+          const negativeCount = tradeData.recentNews.filter((n) => n.sentiment === "NEGATIVE").length;
+          const neutralCount = tradeData.recentNews.filter((n) => n.sentiment === "NEUTRAL").length;
+          newsSection = `
+
+**Recent News Context** (Last 30 days - ${tradeData.recentNews.length} articles):
+- Sentiment Distribution: ${positiveCount} Positive, ${negativeCount} Negative, ${neutralCount} Neutral
+- Key Headlines:
+${newsItems}
+
+**IMPORTANT**: Consider how this news context relates to the insider's trading decision. Does the trade align with or contradict recent news sentiment? Are there specific catalysts or events that might explain the timing of this trade?
+`;
+        }
+        return `
+Analyze this insider trading transaction and provide investment insights:
+
+**Company**: ${tradeData.companyName} (${tradeData.ticker})
+**Insider**: ${tradeData.traderName} - ${tradeData.traderTitle}
+**Trade Type**: ${tradeData.tradeType}
+**Shares**: ${tradeData.shares.toLocaleString()}
+**Price per Share**: $${tradeData.pricePerShare}
+**Total Value**: $${tradeData.totalValue.toLocaleString()} (${tradeValue}M)
+**Ownership**: ${tradeData.ownershipPercentage}%
+${newsSection}
+Consider these factors:
+- Executive level insider (${isExecutive ? "Yes" : "No"})
+- Large position relative to ownership (${isLargePosition ? "Yes" : "No"})
+- Trade size and market impact
+- Typical insider trading patterns
+- Market timing considerations
+${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Recent news sentiment and correlation with trade timing" : ""}
+${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Potential catalysts or events driving the insider's decision" : ""}
+
+Provide analysis in this exact JSON format:
+{
+  "significanceScore": <1-100 integer based on trade importance>,
+  "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
+  "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
+  "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
+  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " and recent news" : ""}>"
+}
+
+Guidelines:
+- significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ", or trades aligned with major news events" : ""}
+- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? ". Consider news sentiment alignment" : ""}
+- keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " incorporating recent news context" : ""}
+- riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
+- recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? " considering both trade data and news sentiment" : ""}
+`;
+      }
+      validateAnalysisResult(result) {
+        return {
+          significanceScore: Math.max(1, Math.min(100, Math.round(result.significanceScore || 50))),
+          signalType: ["BUY", "SELL", "HOLD"].includes(result.signalType) ? result.signalType : "HOLD",
+          keyInsights: Array.isArray(result.keyInsights) ? result.keyInsights.slice(0, 3) : [
+            "Insider trading activity detected",
+            "Position size indicates confidence level",
+            "Market timing may provide investment signal"
+          ],
+          riskLevel: ["LOW", "MEDIUM", "HIGH"].includes(result.riskLevel) ? result.riskLevel : "MEDIUM",
+          recommendation: typeof result.recommendation === "string" ? result.recommendation : "Monitor for additional insider activity before making investment decisions"
+        };
+      }
+      generateFallbackAnalysis(tradeData) {
+        const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
+          (title) => tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
+        );
+        const isLargeTrade = tradeData.totalValue > 1e6;
+        const isBuy = tradeData.tradeType === "BUY";
+        let significanceScore = 50;
+        if (isExecutive) significanceScore += 20;
+        if (isLargeTrade) significanceScore += 15;
+        if (tradeData.ownershipPercentage > 1) significanceScore += 10;
+        const signalType = isBuy && isExecutive ? "BUY" : !isBuy && isLargeTrade ? "SELL" : "HOLD";
+        return {
+          significanceScore: Math.min(100, significanceScore),
+          signalType,
+          keyInsights: [
+            `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
+            `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
+            `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
+          ],
+          riskLevel: isLargeTrade && !isBuy ? "HIGH" : isExecutive && isBuy ? "LOW" : "MEDIUM",
+          recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`
+        };
+      }
+    };
+    aiAnalysisService = new AIAnalysisService();
+  }
+});
+
 // server/db-storage.ts
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, desc, sum, sql as sql2, inArray, gte, lte, and as and2 } from "drizzle-orm";
@@ -346,6 +507,7 @@ var init_db_storage = __esm({
     "use strict";
     init_schema();
     init_ticker_validator();
+    init_ai_analysis();
     db = drizzle(process.env.DATABASE_URL);
     DatabaseStorage = class {
       // User methods
@@ -418,7 +580,13 @@ var init_db_storage = __esm({
             priceVariance: insertTrade.priceVariance || null,
             secFilingUrl: insertTrade.secFilingUrl || null
           }).returning();
-          return result[0];
+          const trade = result[0];
+          if (trade && !insertTrade.aiAnalysis) {
+            this.generateAIAnalysisAsync(trade).catch((err) => {
+              console.error(`\u26A0\uFE0F AI analysis generation failed for trade ${trade.id}:`, err.message);
+            });
+          }
+          return trade;
         } catch (error) {
           if (error?.code === "23505" || error?.constraint === "insider_trades_accession_number_unique") {
             console.log(`\u26A0\uFE0F Duplicate accession number ${insertTrade.accessionNumber}, fetching existing record`);
@@ -428,6 +596,36 @@ var init_db_storage = __esm({
             }
           }
           throw error;
+        }
+      }
+      // Generate AI analysis asynchronously and update the trade
+      async generateAIAnalysisAsync(trade) {
+        try {
+          const analysis = await aiAnalysisService.analyzeInsiderTrade({
+            companyName: trade.companyName,
+            ticker: trade.ticker || "",
+            traderName: trade.traderName,
+            traderTitle: trade.traderTitle || "Insider",
+            tradeType: trade.tradeType,
+            shares: trade.shares,
+            pricePerShare: trade.pricePerShare,
+            totalValue: trade.totalValue,
+            ownershipPercentage: trade.ownershipPercentage || 0
+          });
+          await db.update(insiderTrades).set({
+            aiAnalysis: {
+              signal: analysis.signalType,
+              significanceScore: analysis.significanceScore,
+              keyInsights: analysis.keyInsights,
+              riskLevel: analysis.riskLevel,
+              recommendation: analysis.recommendation
+            },
+            significanceScore: analysis.significanceScore,
+            signalType: analysis.signalType
+          }).where(eq(insiderTrades.id, trade.id));
+          console.log(`\u2705 AI analysis generated for trade ${trade.id} (${trade.ticker})`);
+        } catch (error) {
+          console.error(`\u274C AI analysis failed for trade ${trade.id}:`, error.message);
         }
       }
       async upsertInsiderTrade(insertTrade) {
@@ -724,8 +922,8 @@ var init_storage = __esm({
           });
         }
         return trades.sort((a, b) => {
-          const dateA = new Date(sortBy === "filedDate" ? a.filedDate : a.createdAt);
-          const dateB = new Date(sortBy === "filedDate" ? b.filedDate : b.createdAt);
+          const dateA = new Date(sortBy === "filedDate" ? a.filedDate : a.createdAt || a.filedDate);
+          const dateB = new Date(sortBy === "filedDate" ? b.filedDate : b.createdAt || b.filedDate);
           return dateB.getTime() - dateA.getTime();
         }).slice(offset, offset + limit);
       }
@@ -6357,167 +6555,6 @@ var init_enhanced_api = __esm({
       }
     });
     enhanced_api_default = router2;
-  }
-});
-
-// server/ai-analysis.ts
-import OpenAI from "openai";
-var openai, AIAnalysisService, aiAnalysisService;
-var init_ai_analysis = __esm({
-  "server/ai-analysis.ts"() {
-    "use strict";
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    AIAnalysisService = class {
-      constructor() {
-        this.lastApiCall = 0;
-        this.rateLimitDelay = 2e3;
-      }
-      // 2 seconds between calls
-      async analyzeInsiderTrade(tradeData) {
-        try {
-          const now = Date.now();
-          const timeSinceLastCall = now - this.lastApiCall;
-          if (timeSinceLastCall < this.rateLimitDelay) {
-            await new Promise((resolve) => setTimeout(resolve, this.rateLimitDelay - timeSinceLastCall));
-          }
-          this.lastApiCall = Date.now();
-          const prompt = this.buildAnalysisPrompt(tradeData);
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            // Use more cost-effective model to avoid quota issues
-            messages: [
-              {
-                role: "system",
-                content: `You are an expert financial analyst specializing in insider trading analysis. 
-                     Analyze insider trading data and provide actionable investment insights.
-                     Always respond with valid JSON in the exact format specified.`
-              },
-              {
-                role: "user",
-                content: prompt
-              }
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.3,
-            // Lower temperature for more consistent analysis
-            max_tokens: 500
-            // Limit tokens to reduce cost
-          });
-          const content = response.choices[0].message.content;
-          if (!content) {
-            throw new Error("No content received from AI analysis");
-          }
-          const result = JSON.parse(content);
-          return this.validateAnalysisResult(result);
-        } catch (error) {
-          if (error?.status === 429) {
-            console.warn("OpenAI rate limit exceeded, using fallback analysis");
-          } else {
-            console.error("AI analysis failed:", error);
-          }
-          return this.generateFallbackAnalysis(tradeData);
-        }
-      }
-      buildAnalysisPrompt(tradeData) {
-        const tradeValue = (tradeData.totalValue / 1e6).toFixed(1);
-        const isLargePosition = tradeData.ownershipPercentage > 1;
-        const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
-          (title) => tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
-        );
-        let newsSection = "";
-        if (tradeData.recentNews && tradeData.recentNews.length > 0) {
-          const newsItems = tradeData.recentNews.slice(0, 5).map((news, idx) => {
-            const date2 = new Date(news.publishedDate).toLocaleDateString();
-            return `${idx + 1}. [${date2}] ${news.headline} (${news.sentiment}) - ${news.summary.substring(0, 150)}${news.summary.length > 150 ? "..." : ""}`;
-          }).join("\n");
-          const positiveCount = tradeData.recentNews.filter((n) => n.sentiment === "POSITIVE").length;
-          const negativeCount = tradeData.recentNews.filter((n) => n.sentiment === "NEGATIVE").length;
-          const neutralCount = tradeData.recentNews.filter((n) => n.sentiment === "NEUTRAL").length;
-          newsSection = `
-
-**Recent News Context** (Last 30 days - ${tradeData.recentNews.length} articles):
-- Sentiment Distribution: ${positiveCount} Positive, ${negativeCount} Negative, ${neutralCount} Neutral
-- Key Headlines:
-${newsItems}
-
-**IMPORTANT**: Consider how this news context relates to the insider's trading decision. Does the trade align with or contradict recent news sentiment? Are there specific catalysts or events that might explain the timing of this trade?
-`;
-        }
-        return `
-Analyze this insider trading transaction and provide investment insights:
-
-**Company**: ${tradeData.companyName} (${tradeData.ticker})
-**Insider**: ${tradeData.traderName} - ${tradeData.traderTitle}
-**Trade Type**: ${tradeData.tradeType}
-**Shares**: ${tradeData.shares.toLocaleString()}
-**Price per Share**: $${tradeData.pricePerShare}
-**Total Value**: $${tradeData.totalValue.toLocaleString()} (${tradeValue}M)
-**Ownership**: ${tradeData.ownershipPercentage}%
-${newsSection}
-Consider these factors:
-- Executive level insider (${isExecutive ? "Yes" : "No"})
-- Large position relative to ownership (${isLargePosition ? "Yes" : "No"})
-- Trade size and market impact
-- Typical insider trading patterns
-- Market timing considerations
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Recent news sentiment and correlation with trade timing" : ""}
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Potential catalysts or events driving the insider's decision" : ""}
-
-Provide analysis in this exact JSON format:
-{
-  "significanceScore": <1-100 integer based on trade importance>,
-  "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
-  "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
-  "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
-  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " and recent news" : ""}>"
-}
-
-Guidelines:
-- significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ", or trades aligned with major news events" : ""}
-- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? ". Consider news sentiment alignment" : ""}
-- keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " incorporating recent news context" : ""}
-- riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
-- recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? " considering both trade data and news sentiment" : ""}
-`;
-      }
-      validateAnalysisResult(result) {
-        return {
-          significanceScore: Math.max(1, Math.min(100, Math.round(result.significanceScore || 50))),
-          signalType: ["BUY", "SELL", "HOLD"].includes(result.signalType) ? result.signalType : "HOLD",
-          keyInsights: Array.isArray(result.keyInsights) ? result.keyInsights.slice(0, 3) : [
-            "Insider trading activity detected",
-            "Position size indicates confidence level",
-            "Market timing may provide investment signal"
-          ],
-          riskLevel: ["LOW", "MEDIUM", "HIGH"].includes(result.riskLevel) ? result.riskLevel : "MEDIUM",
-          recommendation: typeof result.recommendation === "string" ? result.recommendation : "Monitor for additional insider activity before making investment decisions"
-        };
-      }
-      generateFallbackAnalysis(tradeData) {
-        const isExecutive = ["CEO", "CFO", "President", "Chairman", "Director"].some(
-          (title) => tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
-        );
-        const isLargeTrade = tradeData.totalValue > 1e6;
-        const isBuy = tradeData.tradeType === "BUY";
-        let significanceScore = 50;
-        if (isExecutive) significanceScore += 20;
-        if (isLargeTrade) significanceScore += 15;
-        if (tradeData.ownershipPercentage > 1) significanceScore += 10;
-        const signalType = isBuy && isExecutive ? "BUY" : !isBuy && isLargeTrade ? "SELL" : "HOLD";
-        return {
-          significanceScore: Math.min(100, significanceScore),
-          signalType,
-          keyInsights: [
-            `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
-            `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
-            `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
-          ],
-          riskLevel: isLargeTrade && !isBuy ? "HIGH" : isExecutive && isBuy ? "LOW" : "MEDIUM",
-          recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`
-        };
-      }
-    };
-    aiAnalysisService = new AIAnalysisService();
   }
 });
 
