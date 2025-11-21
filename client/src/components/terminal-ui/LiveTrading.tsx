@@ -90,9 +90,9 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
        </div>
 
        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
+           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 z-0"></div>
 
-           <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-4 md:grid-cols-7 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">
+           <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-4 md:grid-cols-7 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3">
                <div className="pl-2">{t.table.ticker}</div>
                <div className="hidden md:block">{t.table.insider}</div>
                <div className="hidden md:block">{t.table.relation}</div>
@@ -149,27 +149,27 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
 
                 <div className="relative z-10">
                         {(isPro ? filteredData : historicalItems).map((trade) => (
-                        <div 
-                            key={trade.id} 
+                        <div
+                            key={trade.id}
                             onClick={() => onSelectTrade(trade)}
-                            className="grid grid-cols-4 md:grid-cols-7 px-4 py-3 border-b border-neutral-900/50 hover:bg-neutral-900/40 transition-colors cursor-pointer group text-xs text-neutral-400 font-mono items-center"
+                            className="grid grid-cols-4 md:grid-cols-7 px-4 py-3 border-b border-neutral-900/50 hover:bg-neutral-900/40 transition-colors cursor-pointer group text-xs text-neutral-300 font-mono items-center"
                         >
-                            <div className="pl-2 font-bold text-neutral-300 group-hover:text-white flex flex-col">
+                            <div className="pl-2 font-bold text-neutral-200 group-hover:text-white flex flex-col">
                                 {trade.ticker}
-                                <span className="text-[9px] text-neutral-700 font-sans font-normal mt-0.5 truncate pr-4">{trade.companyName}</span>
-                                <span className="md:hidden text-[9px] text-neutral-500 mt-0.5 truncate">{trade.insider}</span>
+                                <span className="text-[9px] text-neutral-500 font-sans font-normal mt-0.5 truncate pr-4">{trade.companyName}</span>
+                                <span className="md:hidden text-[9px] text-neutral-400 mt-0.5 truncate">{trade.insider}</span>
                             </div>
-                            <div className="hidden md:block text-neutral-500 group-hover:text-neutral-400 truncate pr-2">{trade.insider}</div>
-                            <div className="hidden md:block text-neutral-600 text-[9px] uppercase">{tData[trade.relation as keyof typeof tData] || trade.relation}</div>
+                            <div className="hidden md:block text-neutral-400 group-hover:text-neutral-300 truncate pr-2">{trade.insider}</div>
+                            <div className="hidden md:block text-neutral-400 text-[9px] uppercase">{tData[trade.relation as keyof typeof tData] || trade.relation}</div>
                             <div className="text-right">
-                            <span className={`px-1.5 py-0.5 text-[9px] uppercase tracking-wide border ${trade.type === 'Buy' ? 'border-emerald-900 text-emerald-600 bg-emerald-900/10' : 'border-rose-900 text-rose-600 bg-rose-900/10'}`}>
+                            <span className={`px-1.5 py-0.5 text-[9px] uppercase tracking-wide border ${trade.type === 'Buy' ? 'border-emerald-800 text-emerald-400 bg-emerald-900/20' : 'border-rose-800 text-rose-400 bg-rose-900/20'}`}>
                                 {tData[trade.type as keyof typeof tData] || trade.type}
                             </span>
                             </div>
-                            <div className="hidden md:block text-right text-neutral-500">{formatNumber(trade.shares)}</div>
-                            <div className="text-right text-neutral-300">{formatCurrency(trade.value)}</div>
+                            <div className="hidden md:block text-right text-neutral-400">{formatNumber(trade.shares)}</div>
+                            <div className="text-right text-neutral-200">{formatCurrency(trade.value)}</div>
                             <div className="text-right pr-2">
-                                <span className={`${trade.priceChange > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                <span className={`${trade.priceChange > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                     {formatPercent(trade.priceChange)}
                                 </span>
                             </div>
@@ -180,7 +180,7 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
            
            {filteredData.length === 0 && (
                <div className="flex flex-col items-center justify-center h-40 border-t border-neutral-900">
-                   <p className="text-neutral-700 text-xs mono">{t.noRecords}</p>
+                   <p className="text-neutral-400 text-xs mono">{t.noRecords}</p>
                </div>
            )}
        </div>

@@ -246,11 +246,11 @@ export default function LiveTradingTerminal() {
       </div>
 
       {/* Table Content */}
-      <div className="flex-1 overflow-y-auto relative custom-scrollbar bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] [background-attachment:local]" style={{ opacity: 0.3 }}>
-        <div className="absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+        <div className="absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 z-0"></div>
 
         {/* Table Header */}
-        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">
+        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3">
           <div className="pl-2">{t.table.ticker}</div>
           <div className="hidden md:block">{t.table.insider}</div>
           <div className="hidden md:block">{t.table.relation}</div>
@@ -442,7 +442,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
       {/* Ticker + Company */}
       <div className="flex flex-col gap-0.5">
         <span className="font-mono font-semibold text-neutral-200 text-[13px] leading-[18px]">{trade.ticker}</span>
-        <span className="text-neutral-600 text-[11px] leading-none">{trade.companyName}</span>
+        <span className="text-neutral-500 text-[11px] leading-none">{trade.companyName}</span>
       </div>
 
       {/* Insider (Hidden on mobile) */}
@@ -452,7 +452,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
 
       {/* Relation (Hidden on mobile) */}
       <div className="hidden md:flex items-center">
-        <span className="text-neutral-500 font-mono text-[12px] font-medium uppercase tracking-wider truncate">{trade.relation}</span>
+        <span className="text-neutral-400 font-mono text-[12px] font-medium uppercase tracking-wider truncate">{trade.relation}</span>
       </div>
 
       {/* Action */}
@@ -487,13 +487,13 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
           </span>
         )}
         {trade.priceChange === 0 && (
-          <span className="text-neutral-600 text-[10px]">—</span>
+          <span className="text-neutral-500 text-[10px]">—</span>
         )}
       </div>
 
       {/* Time */}
       <div className="flex items-center justify-end pr-2">
-        <span className="text-neutral-600 text-[10px] font-mono">{timeAgo}</span>
+        <span className="text-neutral-500 text-[10px] font-mono">{timeAgo}</span>
       </div>
     </div>
   );

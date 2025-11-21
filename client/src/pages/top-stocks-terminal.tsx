@@ -19,6 +19,8 @@ interface RankingInsider {
   totalValue: number;
   date: string;
   tradeType: string;
+  secFilingUrl?: string;
+  accessionNumber?: string;
 }
 
 interface RankingItem {
@@ -179,6 +181,8 @@ export default function TopStocksTerminal() {
           amount: buyerAmount,
           priceChange: Math.round(buyerPriceChange * 10) / 10,
           date: insider.date ? new Date(insider.date).toLocaleDateString() : 'N/A',
+          secFilingUrl: insider.secFilingUrl,
+          accessionNumber: insider.accessionNumber,
         };
       }),
     };

@@ -321,10 +321,10 @@ export default function LiveTrading() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0a0a0f] text-white">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>{t('liveTrading.loadingRealData')}</p>
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-white" />
+          <p className="text-white">{t('liveTrading.loadingRealData')}</p>
         </div>
       </div>
     );
@@ -332,10 +332,10 @@ export default function LiveTrading() {
 
   if (error) {
     return (
-      <div className="p-6">
-        <Alert className="border-destructive/50 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <AlertDescription className="text-destructive">
+      <div className="p-6 bg-[#0a0a0f] min-h-screen">
+        <Alert className="border-red-500/50 bg-red-900/20">
+          <AlertTriangle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-300">
             {t('liveTrading.dataLoadingFailed')}: {error.message}
           </AlertDescription>
         </Alert>
@@ -344,7 +344,7 @@ export default function LiveTrading() {
   }
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] relative">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] text-white relative">
       {/* Stripe Mesh Gradient Background */}
       <StripeMeshGradient variant="blue" opacity={0.3} animate={true} />
 
@@ -486,13 +486,13 @@ export default function LiveTrading() {
       )}
 
       {/* 거래 목록 */}
-      <Card>
+      <Card className="bg-[#0d1117]/80 border-white/10 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Shield className="h-5 w-5 text-white" />
             {t('liveTrading.verifiedTradesList')}
             {accessLevel && !accessLevel.hasRealtimeAccess && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">
                 {t('freeZone.delayedData')}
               </Badge>
             )}
@@ -501,11 +501,11 @@ export default function LiveTrading() {
         <CardContent>
           {filteredTrades.length === 0 ? (
             <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <AlertTriangle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-400">
                 {searchQuery ? '검색 결과가 없습니다' : t('liveTrading.noValidatedTrades')}
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-slate-400 mt-2">
                 {searchQuery ? '다른 키워드로 검색해보세요' : t('liveTrading.collectorRunning')}
               </p>
             </div>
@@ -554,7 +554,7 @@ export default function LiveTrading() {
                           </div>
                           {hasPercentChange && (
                             <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                              <span className="text-xs text-muted-foreground">{t('tradeDetail.priceChangeSinceTradeShort')}</span>
+                              <span className="text-xs text-slate-400">{t('tradeDetail.priceChangeSinceTradeShort')}</span>
                               <Badge
                                 variant="outline"
                                 className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold text-xs sm:text-sm ${
@@ -571,27 +571,27 @@ export default function LiveTrading() {
                         </div>
 
                         {/* 2행: 내부자 정보 */}
-                        <div className="text-xs sm:text-sm text-muted-foreground mb-2 truncate">
+                        <div className="text-xs sm:text-sm text-slate-400 mb-2 truncate">
                           {trade.traderName} • {trade.traderTitle}
                         </div>
 
                         {/* 3행: 거래 세부 정보 */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-baseline gap-1.5 sm:gap-2 text-xs sm:text-sm flex-shrink-0">
-                            <span className="font-semibold text-sm sm:text-base">{trade.shares?.toLocaleString()}</span>
-                            <span className="text-muted-foreground">주 ×</span>
-                            <span className="font-semibold">${pricePerShare.toFixed(2)}</span>
+                            <span className="font-semibold text-sm sm:text-base text-white">{trade.shares?.toLocaleString()}</span>
+                            <span className="text-slate-400">주 ×</span>
+                            <span className="font-semibold text-white">${pricePerShare.toFixed(2)}</span>
                           </div>
                           <div className="flex flex-col items-end gap-0.5 min-w-0">
                             <div className={`text-lg sm:text-xl font-bold ${getTradeTypeColor(trade.tradeType)} truncate`}>
                               {formatCurrency(Math.abs(trade.totalValue))}
                             </div>
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-400">
                               {trade.createdAt && (
                                 <span className="truncate">{formatTimeAgo(trade.createdAt)}</span>
                               )}
                               {trade.secFilingUrl && (
-                                <span className="text-blue-600 font-medium flex-shrink-0">SEC</span>
+                                <span className="text-blue-400 font-medium flex-shrink-0">SEC</span>
                               )}
                             </div>
                           </div>
@@ -623,7 +623,7 @@ export default function LiveTrading() {
 
           {/* 현재 표시 중인 개수 */}
           {filteredTrades.length > 0 && (
-            <div className="text-center text-sm text-muted-foreground pt-4">
+            <div className="text-center text-sm text-slate-400 pt-4">
               {searchQuery ? (
                 <>검색된 {filteredTrades.length}개의 거래 표시 중</>
               ) : (

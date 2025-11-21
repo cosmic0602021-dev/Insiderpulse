@@ -13,6 +13,8 @@ export interface Trade {
   priceChange: number;
   currentPrice: number;
   isVerified: boolean;
+  secFilingUrl?: string;
+  accessionNumber?: string;
   
   aiScore: number;
   aiConfidence: number;
@@ -63,6 +65,8 @@ export interface StockRecommendation {
     amount: number;
     date: string;
     priceChange: number;
+    secFilingUrl?: string;
+    accessionNumber?: string;
   }>;
 }
 

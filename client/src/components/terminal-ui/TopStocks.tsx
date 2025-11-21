@@ -39,6 +39,8 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
         priceChange: buyer.priceChange,
         currentPrice: stock.currentPrice,
         isVerified: true,
+        secFilingUrl: buyer.secFilingUrl,
+        accessionNumber: buyer.accessionNumber,
         aiScore: 92,
         aiConfidence: 95,
         aiRecommendation: 'Strong Buy',
