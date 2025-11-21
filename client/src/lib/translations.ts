@@ -310,11 +310,75 @@ const KO = {
   }
 };
 
+const JA = {
+  ...EN,
+  common: {
+    ...EN.common,
+    encrypted: 'OUTSIDER向け暗号化',
+    signalEncrypted: 'シグナル暗号化',
+    encryptedMessage: 'リアルタイムのインサイダー取引はOUTSIDERユーザー向けに暗号化されています。アップグレードしてライブデータにアクセスしてください。',
+    upgradeAction: 'リアルタイムデータのロック解除',
+  },
+  auth: {
+    ...EN.auth,
+    welcome: 'お帰りなさい',
+    createAccount: 'アカウント作成',
+    submit: 'ログイン',
+    register: '登録',
+    noAccount: '新規登録',
+    hasAccount: 'ログイン',
+  },
+  upgrade: {
+    ...EN.upgrade,
+    header: 'INSIDERにアップグレード',
+    subHeader: '無料トライアルでリアルタイムのインサイダー取引アラートを受け取る',
+    monthly: '月額',
+    yearly: '年額',
+    save: '33%節約',
+    trial: '無料トライアル',
+    trial3: '3日間無料トライアル開始',
+    trial7: '7日間無料トライアル開始',
+    secure: '安全な支払いと自動更新',
+  }
+};
+
+const ZH = {
+  ...EN,
+  common: {
+    ...EN.common,
+    encrypted: 'OUTSIDER 加密',
+    signalEncrypted: '信号加密',
+    encryptedMessage: '实时内部交易对 OUTSIDER 用户加密。升级以访问实时数据。',
+    upgradeAction: '解锁实时数据',
+  },
+  auth: {
+    ...EN.auth,
+    welcome: '欢迎回来',
+    createAccount: '创建账户',
+    submit: '登录',
+    register: '注册',
+    noAccount: '新用户注册',
+    hasAccount: '已有账户',
+  },
+  upgrade: {
+    ...EN.upgrade,
+    header: '升级到 INSIDER',
+    subHeader: '免费试用并获取实时内部交易警报',
+    monthly: '月付',
+    yearly: '年付',
+    save: '节省 33%',
+    trial: '免费试用',
+    trial3: '开始 3 天免费试用',
+    trial7: '开始 7 天免费试用',
+    secure: '安全支付和自动续订',
+  }
+};
+
 export const TRANSLATIONS = {
   en: EN,
   ko: KO,
-  ja: { ...EN, common: { ...EN.common } },
-  zh: { ...EN, common: { ...EN.common } }
+  ja: JA,
+  zh: ZH
 };
 
 export function formatCurrency(val: number): string {
