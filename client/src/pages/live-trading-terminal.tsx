@@ -291,7 +291,7 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) - Show blurred content underneath */}
+        {/* Locked Zone (Free Users) - Simplified like og1.png */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
             {/* Header */}
@@ -315,22 +315,15 @@ export default function LiveTradingTerminal() {
               ))}
             </div>
 
-            {/* Semi-transparent overlay with upgrade message */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
-              <div className="text-center px-6">
-                <Lock className="mx-auto mb-4 text-amber-600" size={32} />
-                <h3 className="text-lg font-light text-neutral-300 mb-2">{t.signalEncrypted}</h3>
-                <p className="text-xs text-neutral-600 mb-6 max-w-md mx-auto">
-                  {t.encryptedMessage}
-                </p>
-                <button 
-                  onClick={handleUpgrade}
-                  className="px-6 py-2 bg-amber-600 text-black text-xs font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors"
-                  data-testid="button-upgrade"
-                >
-                  {t.upgradeAction}
-                </button>
-              </div>
+            {/* Simple overlay with unlock button only (like og1.png) */}
+            <div className="absolute inset-0 bg-amber-600/5 flex items-center justify-center z-20">
+              <button 
+                onClick={handleUpgrade}
+                className="px-8 py-3 bg-amber-600 text-black text-sm font-bold uppercase tracking-wider hover:bg-amber-500 transition-colors flex items-center gap-2"
+                data-testid="button-upgrade"
+              >
+                🔓 {t.upgradeAction}
+              </button>
             </div>
           </div>
         )}

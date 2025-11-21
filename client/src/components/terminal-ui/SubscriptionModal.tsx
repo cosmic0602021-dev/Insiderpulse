@@ -54,19 +54,19 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ lang, onClose, on
 
             {/* Billing Toggle */}
             <div className="flex justify-center py-6 bg-[#080808]">
-                <div className="bg-neutral-900 p-1 rounded flex border border-neutral-800 relative">
+                <div className="bg-neutral-900 p-1 flex border border-neutral-800 relative">
                     <button 
                         onClick={() => setBillingCycle('monthly')}
-                        className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-all ${billingCycle === 'monthly' ? 'bg-neutral-700 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
+                        className={`px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${billingCycle === 'monthly' ? 'bg-neutral-700 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
                     >
                         {t.monthly}
                     </button>
                     <button 
                         onClick={() => setBillingCycle('yearly')}
-                        className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition-all flex items-center gap-2 ${billingCycle === 'yearly' ? 'bg-emerald-900 text-emerald-100 shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
+                        className={`px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${billingCycle === 'yearly' ? 'bg-emerald-900 text-emerald-100' : 'text-neutral-500 hover:text-neutral-300'}`}
                     >
                         {t.yearly}
-                        <span className="text-[9px] bg-emerald-500 text-black px-1.5 py-0.5 rounded font-bold">{t.save}</span>
+                        <span className="text-[9px] bg-emerald-500 text-black px-1.5 py-0.5 font-bold uppercase">{t.save}</span>
                     </button>
                 </div>
             </div>
