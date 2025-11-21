@@ -369,28 +369,33 @@ export default function Ranking() {
   }
 
   return (
-    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 max-w-full overflow-x-hidden" data-testid="ranking-page">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#050505]" data-testid="ranking-page">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="p-6 border-b border-neutral-900 flex justify-between items-end">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2" data-testid="page-title">
-            <Star className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 flex-shrink-0" />
+          <h1 className="text-3xl font-light text-neutral-200 tracking-tight uppercase flex items-center gap-3" data-testid="page-title">
             <span className="truncate">{t('ranking.title')}</span>
+            {!isPremium && <div className="bg-amber-900/20 border border-amber-900/50 text-amber-600 p-1 rounded-sm"><Lock size={14} /></div>}
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
+          <p className="text-xs text-neutral-600 mt-1 font-mono uppercase tracking-widest flex items-center gap-2">
+            <Activity size={12} />
             {t('ranking.subtitle')}
           </p>
         </div>
-        <Button 
-          onClick={handleRefresh} 
+        <Button
+          onClick={handleRefresh}
           disabled={refreshing}
           variant="outline"
+          className="border-neutral-800 text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
           data-testid="button-refresh"
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           {t('ranking.refreshData')}
         </Button>
       </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6">
 
       {/* Last Updated */}
       {data && (
@@ -889,6 +894,7 @@ export default function Ranking() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

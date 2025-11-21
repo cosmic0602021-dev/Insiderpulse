@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart3, Home, TrendingUp, AlertCircle, Settings, Search, Bell, Star, Crown, LogOut, User, X } from "lucide-react";
+import { LayoutDashboard, Activity, User, Settings, Power, X, LogIn, Bell, Crown, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,26 +12,23 @@ import {
   SidebarHeader,
   SidebarFooter
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation, Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPremiumAccess } from "@/lib/subscription-utils";
-const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
-const logoDark = '/insiderpulse_logo1.png';
 
-const getMenuItems = (t: (key: string) => string) => [
+const getMenuItems = () => [
   {
     title: "Live Trading",
     url: "/trades",
-    icon: TrendingUp,
+    icon: Activity,
     key: 'live-trades'
   },
   {
     title: "Top Stocks",
     url: "/ranking",
-    icon: Star,
+    icon: LayoutDashboard,
     key: 'ranking'
   },
   {
@@ -51,9 +48,12 @@ interface WatchlistItem {
 export function AppSidebar() {
   const [location] = useLocation();
   const { t } = useLanguage();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, openAuthModal } = useAuth();
   const [, navigate] = useLocation();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+
+  // Check if user has premium access
+  const isPro = user ? hasPremiumAccess(user) : false;
 
   // Load watchlist from localStorage
   useEffect(() => {
@@ -70,7 +70,6 @@ export function AppSidebar() {
 
     loadWatchlist();
 
-    // Listen for storage changes (when watchlist is updated elsewhere)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'watchlist' && e.newValue) {
         try {
@@ -83,7 +82,6 @@ export function AppSidebar() {
 
     window.addEventListener('storage', handleStorageChange);
 
-    // Also listen for custom events from the same window
     const handleWatchlistUpdate = () => {
       loadWatchlist();
     };
@@ -106,21 +104,17 @@ export function AppSidebar() {
     e.stopPropagation();
 
     try {
-      // Get existing alerts from localStorage
       const savedAlerts = localStorage.getItem('insiderAlerts');
       const alerts = savedAlerts ? JSON.parse(savedAlerts) : [];
 
-      // Check if alert already exists for this ticker
       const existingAlertIndex = alerts.findIndex((alert: any) =>
         alert.ticker === ticker && alert.type === 'COMPANY'
       );
 
       if (existingAlertIndex >= 0) {
-        // Toggle the alert's active status
         alerts[existingAlertIndex].isActive = !alerts[existingAlertIndex].isActive;
         localStorage.setItem('insiderAlerts', JSON.stringify(alerts));
       } else {
-        // Create new alert
         const newAlert = {
           id: Date.now().toString(),
           type: 'COMPANY',
@@ -135,7 +129,6 @@ export function AppSidebar() {
         localStorage.setItem('insiderAlerts', JSON.stringify(alerts));
       }
 
-      // Trigger update
       window.dispatchEvent(new Event('watchlistUpdate'));
     } catch (error) {
       console.error('Failed to toggle alert:', error);
@@ -157,51 +150,54 @@ export function AppSidebar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
-  const menuItems = getMenuItems(t);
+
+  const handleLoginClick = () => {
+    if (openAuthModal) {
+      openAuthModal('login');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const menuItems = getMenuItems();
 
   return (
-    <Sidebar data-testid="app-sidebar">
-      <SidebarHeader className="p-0">
-        <div className="flex items-center justify-center -my-2">
-          <img
-            src={logoLight}
-            alt="InsiderPulse"
-            className="block dark:hidden h-[163px] md:h-[204px] w-auto object-contain"
-            data-testid="app-logo-light"
-          />
-          <img
-            src={logoDark}
-            alt="InsiderPulse"
-            className="hidden dark:block h-[163px] md:h-[204px] w-auto object-contain"
-            data-testid="app-logo-dark"
-          />
+    <Sidebar data-testid="app-sidebar" className="bg-[#050505] border-r border-neutral-900">
+      <SidebarHeader className="p-6 border-b border-neutral-900">
+        <div>
+          <h1 className="text-xl font-black text-neutral-200 tracking-tighter uppercase">
+            Insider<span className="text-neutral-600">Pulse</span>
+          </h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[9px] bg-neutral-900 text-neutral-500 px-1 py-0.5 font-mono">SIGNAL_PRO_V2.4</span>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-[#050505]">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupLabel className="text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest">
+            Modules
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="px-2">
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.key}>
-                  <SidebarMenuButton 
-                    asChild 
+                  <SidebarMenuButton
+                    asChild
                     data-active={location === item.url}
                     data-testid={`sidebar-nav-${item.key}`}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 rounded-none ${
+                      location === item.url
+                        ? 'bg-neutral-900/50 text-neutral-200 border-neutral-500'
+                        : 'text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20'
+                    }`}
                   >
-                    <Link href={item.url} onClick={() => {
-                      console.log(`Navigation to ${item.title} clicked`);
-                    }}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge className="ml-auto h-5 w-auto text-xs">
-                          {item.badge}
-                        </Badge>
-                      )}
+                    <Link href={item.url}>
+                      <item.icon size={14} />
+                      <span className="uppercase tracking-wide">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -211,122 +207,116 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Watchlist ({watchlist.length})</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest mt-8">
+            Watchlist ({watchlist.length})
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="space-y-1">
+            <div className="px-4 py-4 border border-neutral-900/50 mx-2 bg-neutral-900/20">
               {watchlist.length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-4">
-                  No stocks in watchlist.<br />
-                  Add stocks from Live Trading.
-                </div>
+                <p className="text-[10px] text-neutral-600 font-mono text-center">
+                  No stocks tracked.<br />
+                  Add from Live Trading.
+                </p>
               ) : (
-                watchlist.map((item) => (
-                  <div
-                    key={item.ticker}
-                    className="group flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
-                    data-testid={`watchlist-${item.ticker.toLowerCase()}`}
-                  >
+                <div className="space-y-2">
+                  {watchlist.slice(0, 5).map((item) => (
                     <div
-                      className="flex-1 flex flex-col min-w-0"
+                      key={item.ticker}
+                      className="group flex items-center justify-between p-2 hover:bg-neutral-900/40 cursor-pointer transition-colors"
                       onClick={() => navigate('/trades')}
                     >
-                      <span className="text-sm font-medium">{item.ticker}</span>
-                      <span className="text-xs text-muted-foreground truncate">{item.companyName}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-neutral-300 font-mono">{item.ticker}</span>
+                        <p className="text-[9px] text-neutral-600 truncate">{item.companyName}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className={`p-1 ${isAlertActive(item.ticker) ? 'text-emerald-500' : 'text-neutral-600 hover:text-neutral-400'}`}
+                          onClick={(e) => handleToggleAlert(e, item.ticker, item.companyName)}
+                        >
+                          <Bell size={10} className={isAlertActive(item.ticker) ? 'fill-current' : ''} />
+                        </button>
+                        <button
+                          className="p-1 text-neutral-600 hover:text-rose-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFromWatchlist(item.ticker);
+                          }}
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 w-6 p-0 ${isAlertActive(item.ticker) ? 'text-blue-500' : 'opacity-0 group-hover:opacity-100'}`}
-                        onClick={(e) => handleToggleAlert(e, item.ticker, item.companyName)}
-                        title={isAlertActive(item.ticker) ? '알림 활성화됨' : '알림 설정'}
-                      >
-                        <Bell className={`h-3 w-3 ${isAlertActive(item.ticker) ? 'fill-current' : ''}`} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFromWatchlist(item.ticker);
-                        }}
-                        title="제거"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                  {watchlist.length > 5 && (
+                    <p className="text-[9px] text-neutral-600 text-center mt-2">
+                      +{watchlist.length - 5} more
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 space-y-3">
-        {/* User Info */}
-        {user && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-primary" />
+      <SidebarFooter className="p-4 border-t border-neutral-900 bg-[#080808]">
+        {isAuthenticated && user ? (
+          <>
+            <div className="flex items-center gap-3 px-3 py-2 mb-2 border border-neutral-900 bg-[#050505]">
+              <div className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-900' : 'bg-amber-900'}`}></div>
+              <div className="overflow-hidden flex-1">
+                <div className="text-[10px] font-medium text-neutral-400 truncate font-mono">
+                  {user.email?.split('@')[0] || 'USER'}
+                </div>
+                <div className={`text-[9px] uppercase font-bold ${isPro ? 'text-emerald-700' : 'text-amber-700'}`}>
+                  {isPro ? 'INSIDER PRO' : 'OUTSIDER'}
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.email}</p>
-              <p className="text-xs text-muted-foreground">
-                {(user.subscriptionTier === 'insider_pro' || user.subscriptionTier === 'insider') ? 'Insider' : 'Outsider'}
-              </p>
+
+            {!isPro && (
+              <Button
+                className="w-full mb-3 bg-amber-600 hover:bg-amber-500 text-black text-[10px] font-bold uppercase tracking-widest py-2"
+                asChild
+                data-testid="button-upgrade-premium"
+              >
+                <Link href="/premium-checkout">
+                  <Crown size={12} className="mr-2" />
+                  Upgrade to Insider
+                </Link>
+              </Button>
+            )}
+
+            <div className="flex items-center justify-between px-2 text-neutral-600 mt-3">
+              <Link href="/settings">
+                <button
+                  className={`hover:text-neutral-300 transition-colors ${location === '/settings' ? 'text-white' : ''}`}
+                >
+                  <Settings size={14} />
+                </button>
+              </Link>
+              <button onClick={handleLogout} className="hover:text-rose-500 transition-colors">
+                <Power size={14} />
+              </button>
             </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-between px-2">
+            <div className="text-[10px] font-medium text-neutral-500 font-mono uppercase">Guest Access</div>
+            <button
+              onClick={handleLoginClick}
+              className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wide border border-emerald-900/30 bg-emerald-900/10 px-3 py-1.5 rounded hover:bg-emerald-900/20 transition-colors"
+            >
+              <LogIn size={12} />
+              Login
+            </button>
           </div>
         )}
 
-        {/* Only show upgrade button for users without premium access */}
-        {user && !hasPremiumAccess(user) && (
-          <Button
-            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
-            asChild
-            data-testid="button-upgrade-premium"
-          >
-            <Link href="/premium-checkout" onClick={() => {
-              console.log('[APP SIDEBAR] Upgrade button clicked. User:', {
-                tier: user.subscriptionTier,
-                status: user.subscriptionStatus,
-                hasPremium: hasPremiumAccess(user)
-              });
-            }}>
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Insider
-            </Link>
-          </Button>
-        )}
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="w-2 h-2 bg-chart-2 rounded-full animate-pulse"></div>
-          <span>Live data feed active</span>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="justify-start text-xs flex-1"
-            asChild
-            data-testid="button-settings"
-          >
-            <Link href="/settings" onClick={() => console.log('Settings clicked')}>
-              <Settings className="h-3 w-3 mr-2" />
-              {t('nav.settings')}
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="justify-start text-xs"
-            onClick={handleLogout}
-            data-testid="button-logout"
-          >
-            <LogOut className="h-3 w-3" />
-          </Button>
+        <div className="mt-3 flex items-center gap-2 text-[9px] text-neutral-700 px-2">
+          <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></div>
+          <span className="font-mono uppercase tracking-wider">Live feed active</span>
         </div>
       </SidebarFooter>
     </Sidebar>

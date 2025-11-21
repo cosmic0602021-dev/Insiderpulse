@@ -477,25 +477,20 @@ export function TradeDetailModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="modal-backdrop fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       {/* InsiderPulse 워터마크 - 모달 중앙에 고정 */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-40 overflow-hidden">
-        <img
-          src={logoLight}
-          alt="InsiderPulse"
-          className="w-80 h-auto opacity-10 select-none dark:hidden"
-        />
-        <img
-          src={logoDark}
-          alt="InsiderPulse"
-          className="w-80 h-auto opacity-10 select-none hidden dark:block"
-        />
+        <div className="transform -rotate-12 whitespace-nowrap">
+          <h1 className="text-[8vw] font-black text-white/5 tracking-tighter uppercase leading-none text-center">
+            InsiderPulse<br/>Signal
+          </h1>
+        </div>
       </div>
       <Card
         ref={modalRef}
-        className="modal-content card-professional max-w-[95vw] sm:max-w-2xl w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative"
+        className="modal-content bg-[#080808] border border-neutral-800 max-w-[95vw] sm:max-w-3xl w-full max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-[0_0_50px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader className="relative z-10 px-3 sm:px-6">

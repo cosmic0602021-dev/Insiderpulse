@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, X, Mail, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, X, Mail, CheckCircle, ArrowLeft, Lock, Globe, ShieldCheck, ArrowRight } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
@@ -256,12 +256,12 @@ export function AuthModal() {
   if (!showAuthModal) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#080808] border border-neutral-800 rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-md p-6 relative">
         {/* Close button */}
         <button
           onClick={closeAuthModal}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          className="absolute top-4 right-4 text-neutral-600 hover:text-white transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
@@ -270,15 +270,15 @@ export function AuthModal() {
         {verificationSuccess ? (
           <div className="space-y-6 py-12 text-center">
             <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 rounded-full bg-emerald-900/50 border border-emerald-900 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-emerald-500" />
               </div>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold text-neutral-200 mb-2 uppercase tracking-wide">
                 {t('auth.verifyCode.successTitle')}
               </h3>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-neutral-500 text-sm font-mono">
                 {t('auth.verifyCode.successDesc')}
               </p>
             </div>
@@ -288,14 +288,14 @@ export function AuthModal() {
           <>
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 mb-4">
-                <Mail className="h-8 w-8 text-white" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-900 border border-neutral-800 mb-4">
+                <Mail className="h-8 w-8 text-emerald-600" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">
+              <h2 className="text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide">
                 {t('auth.verifyCode.title')}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                <strong>{email}</strong>{t('auth.verifyCode.subtitle')}<br />
+              <p className="text-sm text-neutral-500 font-mono">
+                <strong className="text-neutral-300">{email}</strong>{t('auth.verifyCode.subtitle')}<br />
                 {t('auth.verifyCode.enterCode')}
               </p>
             </div>
@@ -324,20 +324,20 @@ export function AuthModal() {
                     onKeyDown={(e) => handleCodeKeyDown(index, e)}
                     onPaste={handleCodePaste}
                     disabled={isLoading}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                    className="w-12 h-14 text-center text-2xl font-bold font-mono border border-neutral-800 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#0a0a0a] text-neutral-200"
                     autoFocus={index === 0}
                   />
                 ))}
               </div>
 
-              <p className="text-center text-sm text-slate-500">
+              <p className="text-center text-sm text-neutral-600 font-mono">
                 {t('auth.verifyCode.codeValid')}
               </p>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs"
                 disabled={isLoading || code.join('').length !== 6}
               >
                 {isLoading ? (
@@ -356,7 +356,7 @@ export function AuthModal() {
                   type="button"
                   onClick={handleResendCode}
                   disabled={resendCooldown > 0 || isResending}
-                  className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 font-medium disabled:text-slate-400 disabled:cursor-not-allowed"
+                  className="text-sm text-emerald-600 hover:text-emerald-500 font-medium disabled:text-neutral-600 disabled:cursor-not-allowed font-mono"
                 >
                   {isResending ? (
                     <>
@@ -372,11 +372,11 @@ export function AuthModal() {
               </div>
 
               {/* Back Button */}
-              <div className="text-center pt-4 border-t">
+              <div className="text-center pt-4 border-t border-neutral-800">
                 <button
                   type="button"
                   onClick={() => setMode('signup')}
-                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1"
+                  className="text-sm text-neutral-500 hover:text-neutral-300 inline-flex items-center gap-1 font-mono"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   {t('auth.verifyCode.backToSignup')}
@@ -388,11 +388,14 @@ export function AuthModal() {
           /* Login/Signup Form View */
           <>
             {/* Header */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">
+            <div className="mb-8 text-center">
+              <div className="w-16 h-16 mx-auto bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mb-6">
+                <Lock className="h-6 w-6 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2 text-neutral-200 uppercase tracking-wide">
                 {mode === 'login' ? t('auth.login.title') : t('auth.signup.title')}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-neutral-500 font-mono">
                 {mode === 'login' ? t('auth.login.subtitle') : t('auth.signup.subtitle')}
               </p>
             </div>
@@ -406,26 +409,30 @@ export function AuthModal() {
             )}
 
             {/* Form */}
-            <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-4">
+            <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">{t('auth.login.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('auth.login.emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                />
+                <Label htmlFor="email" className="text-neutral-400 text-xs uppercase tracking-wider">{t('auth.login.email')}</Label>
+                <div className="relative">
+                  <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('auth.login.emailPlaceholder')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    className="bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t('auth.login.password')}</Label>
+                  <Label htmlFor="password" className="text-neutral-400 text-xs uppercase tracking-wider">{t('auth.login.password')}</Label>
                   {mode === 'login' && (
                     <button
                       type="button"
-                      className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      className="text-[10px] text-neutral-500 hover:text-neutral-300"
                       onClick={() => {
                         closeAuthModal();
                         navigate('/forgot-password');
@@ -435,33 +442,41 @@ export function AuthModal() {
                     </button>
                   )}
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={t('auth.login.passwordPlaceholder')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
+                  />
+                </div>
               </div>
 
               {mode === 'signup' && (
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t('auth.signup.confirmPassword')}</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder={t('auth.login.passwordPlaceholder')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
+                  <Label htmlFor="confirmPassword" className="text-neutral-400 text-xs uppercase tracking-wider">{t('auth.signup.confirmPassword')}</Label>
+                  <div className="relative">
+                    <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder={t('auth.login.passwordPlaceholder')}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-[#0a0a0a] border-neutral-800 text-neutral-200 pl-10 font-mono placeholder:text-neutral-700 focus:border-emerald-600 focus:ring-emerald-600/20"
+                    />
+                  </div>
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-emerald-900/20 hover:bg-emerald-900/30 border border-emerald-900/50 text-emerald-500 font-bold uppercase tracking-widest py-3 text-xs mt-2"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -470,34 +485,27 @@ export function AuthModal() {
                     {mode === 'login' ? t('auth.login.signingIn') : t('auth.signup.creating')}
                   </>
                 ) : (
-                  mode === 'login' ? t('auth.login.button') : t('auth.signup.button')
+                  <>
+                    {mode === 'login' ? t('auth.login.button') : t('auth.signup.button')}
+                    <ArrowRight size={14} className="ml-2" />
+                  </>
                 )}
               </Button>
             </form>
 
             {/* Switch mode */}
-            <div className="mt-6 text-center text-sm">
-              {mode === 'login' ? (
-                <p className="text-muted-foreground">
-                  {t('auth.login.noAccount')}{' '}
-                  <button
-                    onClick={() => setMode('signup')}
-                    className="text-primary font-semibold hover:underline"
-                  >
-                    {t('auth.login.signUp')}
-                  </button>
-                </p>
-              ) : (
-                <p className="text-muted-foreground">
-                  {t('auth.signup.haveAccount')}{' '}
-                  <button
-                    onClick={() => setMode('login')}
-                    className="text-primary font-semibold hover:underline"
-                  >
-                    {t('auth.signup.signIn')}
-                  </button>
-                </p>
-              )}
+            <div className="mt-8 flex justify-between items-center border-t border-neutral-800 pt-6">
+              <button
+                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                className="text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold"
+              >
+                {mode === 'login' ? t('auth.login.noAccount') : t('auth.signup.haveAccount')}
+              </button>
+
+              <div className="flex items-center gap-2 text-neutral-700">
+                <ShieldCheck size={12} />
+                <span className="text-[9px] font-mono">AES-256</span>
+              </div>
             </div>
           </>
         )}

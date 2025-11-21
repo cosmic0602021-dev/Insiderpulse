@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { useLocation } from 'wouter';
 import {
   User,
@@ -16,7 +11,6 @@ import {
   XCircle,
   AlertCircle,
   Crown,
-  Ban,
   Ticket
 } from 'lucide-react';
 import {
@@ -36,23 +30,41 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api';
-import { apiRequest } from '@/lib/queryClient';
 
 // Lightweight countdown timer component that updates independently
 function CountdownTimer({ endDate }: { endDate: string | null }) {
-  const [time, setTime] = useState(formatTimeRemaining(endDate));
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0 });
 
   useEffect(() => {
-    // Update every minute
+    const calculateTime = () => {
+      if (!endDate) return { hours: 0, minutes: 0 };
+      const now = new Date();
+      const end = new Date(endDate);
+      const diffMs = end.getTime() - now.getTime();
+
+      if (diffMs > 0) {
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        return { hours, minutes };
+      }
+      return { hours: 0, minutes: 0 };
+    };
+
+    setTimeLeft(calculateTime());
+
     const interval = setInterval(() => {
-      setTime(formatTimeRemaining(endDate));
+      setTimeLeft(calculateTime());
     }, 60000);
 
     return () => clearInterval(interval);
   }, [endDate]);
 
-  return <>{time}</>;
+  return (
+    <>
+      {timeLeft.hours}<span className="text-neutral-600">:</span>{timeLeft.minutes.toString().padStart(2, '0')}
+      <span className="text-sm text-neutral-600 ml-2">hours</span>
+    </>
+  );
 }
 
 export default function ProfilePage() {
@@ -63,6 +75,7 @@ export default function ProfilePage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
+  const [couponStatus, setCouponStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { toast } = useToast();
 
   const handleManageSubscription = async () => {
@@ -94,7 +107,6 @@ export default function ProfilePage() {
   };
 
   const handleCancelSubscription = async () => {
-    // Check if user has active subscription or trial to cancel
     if (!user?.subscriptionStatus || (user.subscriptionStatus !== 'active' && user.subscriptionStatus !== 'trialing')) {
       toast({
         title: '오류',
@@ -130,12 +142,10 @@ export default function ProfilePage() {
             : '구독이 해지되었습니다. 현재 결제 기간 종료일까지 계속 이용하실 수 있습니다.',
         });
 
-        // Refresh user data - don't throw error if refresh fails
         try {
           await refreshUser();
         } catch (refreshError) {
           console.error('Error refreshing user data:', refreshError);
-          // Continue even if refresh fails - the cancellation was successful
         }
 
         setShowCancelDialog(false);
@@ -156,17 +166,12 @@ export default function ProfilePage() {
 
   const handleRedeemCoupon = async () => {
     if (!couponCode.trim()) {
-      toast({
-        title: '쿠폰 코드 입력',
-        description: '쿠폰 코드를 입력해주세요.',
-        variant: 'destructive',
-      });
+      setCouponStatus('error');
       return;
     }
 
     setIsRedeemingCoupon(true);
     try {
-      // Use direct fetch instead of apiRequest to properly handle error responses
       const token = localStorage.getItem('authToken');
       const response = await fetch('/api/coupon/redeem', {
         method: 'POST',
@@ -180,29 +185,24 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: '쿠폰 적용 성공!',
-          description: data.message,
-        });
+        setCouponStatus('success');
         setCouponCode('');
-
-        // Refresh user data to show updated trial end date
         await refreshUser();
+
+        setTimeout(() => setCouponStatus('idle'), 3000);
       } else {
-        // Show the actual error message from backend
+        setCouponStatus('error');
         toast({
           title: '쿠폰 적용 실패',
           description: data.message || '쿠폰 적용에 실패했습니다.',
           variant: 'destructive',
         });
+        setTimeout(() => setCouponStatus('idle'), 3000);
       }
     } catch (error: any) {
       console.error('Error redeeming coupon:', error);
-      toast({
-        title: '오류',
-        description: '쿠폰 적용 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
+      setCouponStatus('error');
+      setTimeout(() => setCouponStatus('idle'), 3000);
     } finally {
       setIsRedeemingCoupon(false);
     }
@@ -210,8 +210,8 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="container max-w-4xl mx-auto p-6">
-        <p className="text-center text-muted-foreground">Loading...</p>
+      <div className="flex-1 flex items-center justify-center bg-[#050505]">
+        <p className="text-neutral-600 font-mono">Loading...</p>
       </div>
     );
   }
@@ -226,13 +226,13 @@ export default function ProfilePage() {
 
   if (user.subscriptionStatus === 'trialing') {
     endDate = user.subscriptionEndDate;
-    endDateLabel = '무료체험 종료까지';
+    endDateLabel = '무료체험 종료';
   } else if (user.subscriptionStatus === 'active') {
     endDate = user.subscriptionEndDate;
-    endDateLabel = user.subscriptionStatus === 'canceled' ? '구독 종료까지' : '다음 결제까지';
+    endDateLabel = '다음 결제';
   } else if (user.subscriptionStatus === 'canceled' && user.subscriptionEndDate) {
     endDate = user.subscriptionEndDate;
-    endDateLabel = '구독 종료까지';
+    endDateLabel = '구독 종료';
   }
 
   const formattedEndDate = endDate ? new Date(endDate).toLocaleString('ko-KR', {
@@ -244,332 +244,273 @@ export default function ProfilePage() {
   }) : null;
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">프로필</h1>
-        <p className="text-muted-foreground mt-2">
-          계정 정보 및 구독 상태를 관리하세요
-        </p>
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#050505]">
+      {/* Header */}
+      <div className="p-6 border-b border-neutral-900">
+        <h1 className="text-3xl font-light text-neutral-200 tracking-tight uppercase">Profile</h1>
+        <p className="text-xs text-neutral-600 mt-1 font-mono uppercase tracking-widest">Account & Subscription Management</p>
       </div>
 
-      {/* Account Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            계정 정보
-          </CardTitle>
-          <CardDescription>
-            기본 계정 정보
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">이메일</Label>
-              <p className="text-sm font-medium">{user.email}</p>
+      <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full space-y-6">
+        {/* Account Info */}
+        <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-neutral-800 pb-4">
+            <User className="text-neutral-500" size={20} />
+            <h2 className="text-lg font-bold text-neutral-300">계정 정보</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">이메일</div>
+              <div className="text-neutral-300 font-mono font-medium">{user.email}</div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">가입일</Label>
-              <p className="text-sm font-medium">
+            <div>
+              <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">가입일</div>
+              <div className="text-neutral-300 font-mono font-medium">
                 {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : 'N/A'}
-              </p>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Subscription Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5" />
-            구독 상태
-          </CardTitle>
-          <CardDescription>
-            현재 플랜 및 구독 정보
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        {/* Subscription Info */}
+        <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-neutral-800 pb-4">
+            <Crown className="text-neutral-500" size={20} />
+            <h2 className="text-lg font-bold text-neutral-300">구독 상태</h2>
+          </div>
+
           {/* Current Plan */}
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">현재 플랜</Label>
-              <p className="text-2xl font-bold flex items-center gap-2">
+          <div className="bg-neutral-900/30 border border-neutral-800 p-4 flex justify-between items-center mb-6">
+            <div>
+              <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">현재 플랜</div>
+              <div className="text-xl font-bold text-white flex items-center gap-2">
                 {tierDisplayName}
-                {isPremium && <Crown className="h-5 w-5 text-yellow-500" />}
-              </p>
+                <span className={isPremium ? "text-emerald-500" : "text-amber-500"}>
+                  {isPremium ? '♛' : '♙'}
+                </span>
+              </div>
             </div>
-            <div className="text-right">
-              <p className={`text-sm font-medium px-3 py-1 rounded-full ${
-                user.subscriptionStatus === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                user.subscriptionStatus === 'trialing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
-                user.subscriptionStatus === 'canceled' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
-                'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-              }`}>
-                {statusDisplayName}
-              </p>
-            </div>
+            <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider border rounded-full ${
+              user.subscriptionStatus === 'active'
+                ? 'bg-emerald-900/30 text-emerald-500 border-emerald-900/50'
+                : user.subscriptionStatus === 'trialing'
+                ? 'bg-blue-900/30 text-blue-500 border-blue-900/50'
+                : user.subscriptionStatus === 'canceled'
+                ? 'bg-orange-900/30 text-orange-500 border-orange-900/50'
+                : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+            }`}>
+              {statusDisplayName}
+            </span>
           </div>
-
-          <Separator />
 
           {/* Trial Status */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">무료체험 사용 여부</Label>
-              <div className="flex items-center gap-2">
-                {user.hasUsedTrial ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm text-muted-foreground">사용 완료</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                    <span className="text-sm text-muted-foreground">미사용 (사용 가능)</span>
-                  </>
-                )}
-              </div>
+          <div className="flex justify-end mb-4">
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              {user.hasUsedTrial ? (
+                <>
+                  <CheckCircle2 size={12} />
+                  <span>무료체험 사용 완료</span>
+                </>
+              ) : (
+                <>
+                  <XCircle size={12} />
+                  <span>무료체험 미사용</span>
+                </>
+              )}
             </div>
-
-            {/* Time Remaining */}
-            {endDate && (
-              <div className="space-y-2 p-4 rounded-lg bg-muted">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Clock className="h-4 w-4" />
-                  {endDateLabel}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-3xl font-bold font-mono">
-                    <CountdownTimer endDate={endDate} />
-                  </div>
-                  <div className="text-right text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formattedEndDate}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
-          <Separator />
+          {/* Time Remaining */}
+          {endDate && (
+            <div className="bg-neutral-900/50 p-6 rounded text-center border border-neutral-800 relative overflow-hidden group mb-6">
+              <div className="relative z-10">
+                <div className="flex items-center justify-center gap-2 text-neutral-500 mb-2">
+                  <Clock size={14} />
+                  <span className="text-xs uppercase tracking-wider">{endDateLabel}</span>
+                </div>
+                <div className="text-4xl md:text-5xl font-mono font-bold text-neutral-200 mb-2 transition-all duration-500">
+                  <CountdownTimer endDate={endDate} />
+                </div>
+                <div className="text-xs text-neutral-600 font-mono flex items-center justify-center gap-1">
+                  <Calendar size={12} />
+                  {formattedEndDate}
+                </div>
+              </div>
+              {/* Progress Bar */}
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-900/50 w-full">
+                <div className="h-full bg-emerald-500/50 w-[80%]"></div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
-          <div className="space-y-3">
-            {!isPremium ? (
-              <>
-                <Button
-                  onClick={handleUpgradeToInsider}
-                  className="w-full"
-                  size="lg"
+          {!isPremium ? (
+            <>
+              <button
+                onClick={handleUpgradeToInsider}
+                className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
+              >
+                <Crown size={14} />
+                Upgrade to Insider
+              </button>
+              <div className="mt-4 flex justify-center text-[10px] text-neutral-600 items-center gap-1.5">
+                <AlertCircle size={10} className="text-amber-600" />
+                <span>Upgrade to activate real-time signals</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Cancel Subscription Button */}
+              {user.subscriptionStatus !== 'canceled' && (
+                <button
+                  onClick={() => setShowCancelDialog(true)}
+                  className="w-full py-3 border border-rose-900/50 text-rose-500 bg-rose-900/10 hover:bg-rose-900/20 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Upgrade to Insider
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  실시간 insider 거래 데이터 및 고급 기능에 액세스하세요
-                </p>
-              </>
-            ) : (
-              <>
-                {/* Cancel Subscription Button */}
-                {user.subscriptionStatus !== 'canceled' && (
-                  <Button
-                    onClick={() => setShowCancelDialog(true)}
-                    className="w-full"
-                    variant="destructive"
-                  >
-                    <Ban className="w-4 h-4 mr-2" />
-                    {user.subscriptionStatus === 'trialing' ? '무료체험 해지' : '구독 해지'}
-                  </Button>
-                )}
+                  <XCircle size={14} />
+                  {user.subscriptionStatus === 'trialing' ? '무료체험 해지' : '구독 해지'}
+                </button>
+              )}
 
-                <p className="text-xs text-muted-foreground text-center">
-                  💡 구독 상태가 자동으로 업데이트되지 않으면 "계정 새로고침"을 클릭하세요
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Info Box */}
-          {isPremium && user.subscriptionStatus === 'trialing' && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    무료체험 이용 중
-                  </p>
-                  <p className="text-xs text-blue-800 dark:text-blue-200">
-                    무료체험 종료 시 자동으로 결제가 진행됩니다. 자동결제를 원하지 않으시면 카드사를 통해 자동결제를 취소하세요. 단, 무료체험 기간은 계속 유지되며 종료 시까지 서비스를 이용하실 수 있습니다.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isPremium && user.subscriptionStatus === 'canceled' && (
-            <div className="rounded-lg bg-orange-50 dark:bg-orange-950 p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
-                    구독이 취소되었습니다
-                  </p>
-                  <p className="text-xs text-orange-800 dark:text-orange-200">
-                    구독 종료일까지 Insider 기능을 계속 이용하실 수 있습니다. 종료 후 다시 구독하시려면 "Upgrade to Insider" 버튼을 클릭하세요.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Coupon Redemption - only show for trialing users */}
-      {user && user.subscriptionStatus === 'trialing' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Ticket className="h-5 w-5" />
-              쿠폰 등록
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {user.usedCoupons && (user.usedCoupons as string[]).length > 0 ? (
-              // User has already used a coupon
-              <>
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-950 p-4 border border-amber-200 dark:border-amber-800">
+              {/* Info Box for trialing */}
+              {user.subscriptionStatus === 'trialing' && (
+                <div className="mt-4 p-4 bg-blue-900/20 border border-blue-900/50 rounded">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                        쿠폰 사용 완료
-                      </p>
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        계정당 1개의 쿠폰만 사용 가능합니다. 이미 <strong>{(user.usedCoupons as string[])[0]}</strong> 쿠폰을 사용하셨습니다.
+                      <p className="text-xs font-medium text-blue-400">무료체험 이용 중</p>
+                      <p className="text-[10px] text-blue-300/70">
+                        무료체험 종료 시 자동으로 결제가 진행됩니다.
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">사용한 쿠폰</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {(user.usedCoupons as string[]).map((code) => (
-                      <div
-                        key={code}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        {code}
-                      </div>
-                    ))}
+              )}
+
+              {/* Info Box for canceled */}
+              {user.subscriptionStatus === 'canceled' && (
+                <div className="mt-4 p-4 bg-orange-900/20 border border-orange-900/50 rounded">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-orange-400">구독이 취소되었습니다</p>
+                      <p className="text-[10px] text-orange-300/70">
+                        구독 종료일까지 Insider 기능을 계속 이용하실 수 있습니다.
+                      </p>
+                    </div>
                   </div>
-                  {user.couponExtensionDays && (
-                    <p className="text-xs text-muted-foreground">
-                      💡 무료체험 기간 {user.couponExtensionDays}일 연장됨
-                    </p>
-                  )}
                 </div>
-              </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Coupon Redemption - only show for trialing users */}
+        {user && user.subscriptionStatus === 'trialing' && (
+          <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-6 border-b border-neutral-800 pb-4">
+              <Ticket className="text-neutral-500" size={20} />
+              <h2 className="text-lg font-bold text-neutral-300">Redeem Code</h2>
+            </div>
+
+            {user.usedCoupons && (user.usedCoupons as string[]).length > 0 ? (
+              // User has already used a coupon
+              <div className="p-4 bg-amber-900/20 border border-amber-900/50 rounded">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-amber-500 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-amber-400">쿠폰 사용 완료</p>
+                    <p className="text-[10px] text-amber-300/70">
+                      계정당 1개의 쿠폰만 사용 가능합니다. 사용한 쿠폰: <strong>{(user.usedCoupons as string[])[0]}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : (
               // User has not used any coupon yet
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="coupon-code">쿠폰 코드</Label>
-                  <p className="text-sm text-muted-foreground">
-                    쿠폰 코드를 입력하면 무료체험 기간이 3일 연장됩니다
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      id="coupon-code"
-                      placeholder="쿠폰 코드 입력"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleRedeemCoupon();
-                        }
-                      }}
-                      disabled={isRedeemingCoupon}
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={handleRedeemCoupon}
-                      disabled={isRedeemingCoupon || !couponCode.trim()}
-                    >
-                      {isRedeemingCoupon ? (
-                        <>
-                          <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                          적용 중...
-                        </>
-                      ) : (
-                        '적용'
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="ENTER COUPON CODE"
+                    className="flex-1 bg-[#050505] border border-neutral-800 p-4 text-sm text-neutral-200 focus:outline-none focus:border-emerald-700 font-mono tracking-widest uppercase"
+                    disabled={isRedeemingCoupon}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRedeemCoupon();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleRedeemCoupon}
+                    className="bg-neutral-100 hover:bg-white text-black px-8 py-4 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={couponStatus === 'success' || isRedeemingCoupon}
+                  >
+                    {isRedeemingCoupon ? 'APPLYING...' : couponStatus === 'success' ? 'APPLIED' : 'REDEEM'}
+                  </button>
                 </div>
 
-                <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3">
-                  <p className="text-blue-900 dark:text-blue-100 text-xs">
-                    💡 Tip: 계정당 1개의 쿠폰만 사용 가능합니다. 신중하게 선택하세요!
-                  </p>
-                </div>
+                {couponStatus === 'success' && (
+                  <div className="mt-4 p-3 bg-emerald-900/20 border border-emerald-900/50 text-emerald-500 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle2 size={14} />
+                    SUCCESS: TRIAL EXTENDED BY +72 HOURS
+                  </div>
+                )}
+                {couponStatus === 'error' && (
+                  <div className="mt-4 p-3 bg-rose-900/20 border border-rose-900/50 text-rose-500 text-xs font-mono flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    ERROR: INVALID CODE OR INPUT EMPTY
+                  </div>
+                )}
+
+                <p className="text-[10px] text-neutral-600 mt-4 flex items-center gap-2">
+                  <Ticket size={10} />
+                  Enter promotional code to extend your free trial duration.
+                </p>
               </>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Subscription Details (only for premium users) */}
-      {isPremium && user.stripeCustomerId && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              결제 정보
-            </CardTitle>
-            <CardDescription>
-              Stripe를 통한 안전한 결제 관리
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              결제 수단 변경, 영수증 확인, 구독 취소 등은 Stripe 고객 포털에서 관리하실 수 있습니다.
-            </p>
-            <Button
+        {/* Payment Info */}
+        {isPremium && user.stripeCustomerId && (
+          <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+            <div className="flex items-center gap-3 mb-4 border-b border-neutral-800 pb-4">
+              <CreditCard className="text-neutral-500" size={20} />
+              <h2 className="text-lg font-bold text-neutral-300">결제 정보</h2>
+            </div>
+            <p className="text-xs text-neutral-500 mb-6">Secure payment management via Stripe</p>
+
+            <button
               onClick={handleManageSubscription}
               disabled={isLoadingPortal}
-              variant="outline"
-              className="w-full"
+              className="w-full py-3 border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoadingPortal ? (
                 <>
-                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
                   Loading...
                 </>
               ) : (
                 <>
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink size={14} />
                   Stripe 고객 포털 열기
                 </>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Cancel Subscription Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0a] border-neutral-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-neutral-200">
               {user.subscriptionStatus === 'trialing' ? '무료체험 해지' : '구독 해지'}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-neutral-500">
               {user.subscriptionStatus === 'trialing'
                 ? '무료체험 및 자동결제가 해지됩니다. 무료체험 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?'
                 : '구독 및 자동결제가 해지됩니다. 현재 결제 기간 종료일까지는 계속 이용하실 수 있습니다. 계속하시겠습니까?'
@@ -577,11 +518,13 @@ export default function ProfilePage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel className="bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800">
+              취소
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelSubscription}
               disabled={isCancelling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-rose-900/50 text-rose-500 hover:bg-rose-900/70 border border-rose-900/50"
             >
               {isCancelling ? '처리 중...' : '확인'}
             </AlertDialogAction>
