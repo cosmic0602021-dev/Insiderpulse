@@ -85,8 +85,8 @@ export default function TopStocksTerminal() {
       tradeDate: trade.date,
       isVerified: trade.isVerified || true,
       priceVariance: trade.priceChange || 0,
-      secFilingUrl: null,
-      accessionNumber: null,
+      secFilingUrl: trade.secFilingUrl || null,
+      accessionNumber: trade.accessionNumber || null,
       aiAnalysis: {
         signal: trade.aiRecommendation || 'BUY',
         significanceScore: trade.aiConfidence || 95,

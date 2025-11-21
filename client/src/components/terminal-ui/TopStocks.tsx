@@ -22,7 +22,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
 
   const handleBuyerClick = (stock: StockRecommendation, buyer: any) => {
     if (!onSelectTrade) return;
-    
+
     // Construct a Trade object from the specific buyer data to open the modal
     const trade: Trade = {
         id: `generated-${stock.ticker}-${Math.random()}`,
@@ -34,8 +34,8 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
         shares: buyer.shares,
         price: buyer.price,
         value: buyer.amount,
-        date: new Date().toISOString(), // Approx for display
-        filingDate: new Date().toISOString(),
+        date: buyer.date || new Date().toISOString(),
+        filingDate: buyer.date || new Date().toISOString(),
         priceChange: buyer.priceChange,
         currentPrice: stock.currentPrice,
         isVerified: true,
@@ -179,45 +179,46 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
           <div className="relative mb-8">
              {/* Restricted Overlay for Top 3 */}
              {!isPro && (
-                <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50">
-                    <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-4 md:p-8 relative overflow-hidden text-center shadow-2xl m-4">
+                <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-start md:items-center justify-center rounded-sm border border-neutral-800/50 overflow-auto">
+                    <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4">
 
                         {/* Status Bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-neutral-800">
                             <div className="h-full w-1/3 bg-amber-600 mx-auto"></div>
                         </div>
 
-                        <div className="mb-3 md:mb-6 mt-2">
-                            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-sm bg-neutral-900 border border-neutral-800 mb-3 md:mb-4">
-                                <ShieldCheck size={24} className="text-neutral-600 md:hidden" />
-                                <ShieldCheck size={32} className="text-neutral-600 hidden md:block" />
+                        <div className="mb-3 md:mb-4 mt-2">
+                            <div className="inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-sm bg-neutral-900 border border-neutral-800 mb-2 md:mb-3">
+                                <ShieldCheck size={20} className="text-neutral-600 md:hidden" />
+                                <ShieldCheck size={28} className="text-neutral-600 hidden md:block" />
                             </div>
-                            <h2 className="text-lg md:text-xl font-bold text-neutral-200 uppercase tracking-wider mb-2">
+                            <h2 className="text-base md:text-lg font-bold text-neutral-200 uppercase tracking-wider mb-1.5">
                                 {t.restricted}
                             </h2>
-                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 md:px-3 py-1 uppercase tracking-widest">
+                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest">
                                 {t.securityLevel}
                             </div>
                         </div>
 
-                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-8 border-t border-b border-neutral-900 py-3 md:py-6">
-                            <p className="text-[11px] md:text-xs text-neutral-400 font-mono leading-relaxed">
+                        <div className="space-y-2 md:space-y-3 mb-3 md:mb-5 border-t border-b border-neutral-900 py-2.5 md:py-4">
+                            <p className="text-[10px] md:text-xs text-neutral-400 font-mono leading-relaxed">
                                 {t.desc}
                             </p>
                         </div>
 
                         <button
                             onClick={onUpgrade}
-                            className="w-full py-2.5 md:py-3 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 mb-3 md:mb-4"
+                            className="w-full py-2 md:py-2.5 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 mb-2.5 md:mb-3"
                         >
-                            <ScanLine size={14} />
+                            <ScanLine size={12} className="md:hidden" />
+                            <ScanLine size={14} className="hidden md:block" />
                             {t.cta}
                         </button>
                         
-                        <div className="flex justify-center gap-4 text-[9px] text-neutral-600 font-mono uppercase">
-                            <span className="flex items-center gap-1"><Lock size={10} /> {t.aes}</span>
+                        <div className="flex justify-center gap-3 md:gap-4 text-[8px] md:text-[9px] text-neutral-600 font-mono uppercase">
+                            <span className="flex items-center gap-1"><Lock size={9} /> {t.aes}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1"><EyeOff size={10} /> {t.blind}</span>
+                            <span className="flex items-center gap-1"><EyeOff size={9} /> {t.blind}</span>
                         </div>
                     </div>
                 </div>

@@ -246,8 +246,8 @@ export default function LiveTradingTerminal() {
       </div>
 
       {/* Table Content */}
-      <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-        <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 md:opacity-20"></div>
+      <div className="flex-1 overflow-y-auto relative custom-scrollbar bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] [background-attachment:local]" style={{ opacity: 0.3 }}>
+        <div className="absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
         {/* Table Header */}
         <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-600 uppercase tracking-widest font-mono px-4 py-3">

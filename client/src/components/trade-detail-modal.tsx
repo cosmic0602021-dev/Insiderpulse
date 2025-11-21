@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 
 interface TradeDetailModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ interface TradeDetailModalProps {
 export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalProps) {
   const { language } = useLanguage();
   const [newsExpanded, setNewsExpanded] = useState(true);
+  const gradientId = useId(); // Generate unique ID to avoid conflicts
 
   // Get translations for current language
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
@@ -247,8 +248,8 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
-                      {/* Strong gradient effect matching reference screenshot */}
-                      <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
+                      {/* Strong gradient effect with unique ID to avoid conflicts */}
+                      <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
                         <stop offset="30%" stopColor="#059669" stopOpacity={0.6} />
                         <stop offset="60%" stopColor="#047857" stopOpacity={0.4} />
@@ -307,11 +308,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                           fontFamily: 'monospace'
                         }}
                       />
-                      {/* Gradient area under market price */}
+                      {/* Gradient area under market price with unique ID reference */}
                       <Area 
                         type="monotone" 
                         dataKey="marketPrice"
-                        fill="url(#marketGradient)"
+                        fill={`url(#${gradientId})`}
                         stroke="none"
                         isAnimationActive={true}
                         animationDuration={4000}

@@ -4251,7 +4251,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pricePerShare: t.pricePerShare,
             totalValue: t.totalValue,
             date: t.filedDate,
-            tradeType: t.tradeType
+            tradeType: t.tradeType,
+            secFilingUrl: t.secFilingUrl,
+            accessionNumber: t.accessionNumber
           }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
 
