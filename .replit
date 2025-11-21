@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["gtk3", "xvfb-run", "firefox", "alsa-lib", "pulseaudio"]
+packages = ["gtk3", "xvfb-run", "firefox", "alsa-lib", "pulseaudio", "unzip"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -44,3 +44,7 @@ integrations = ["javascript_websocket:1.0.0", "javascript_openai:1.0.0", "javasc
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 43253
+externalPort = 3000
