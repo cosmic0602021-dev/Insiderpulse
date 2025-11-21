@@ -295,55 +295,56 @@ export default function LiveTradingTerminal() {
           </div>
         )}
 
-        {/* Locked Zone (Free Users) - Simplified like og1.png */}
+        {/* Locked Zone (Free Users) - Match reference exactly */}
         {!isLoading && !error && !isPro && filteredData.length > 0 && (
           <div className="relative border-b border-neutral-800 overflow-hidden">
             {/* Header */}
-            <div className="sticky top-[45px] bg-[#050505] border-b border-amber-900/20 z-30 px-4 py-2 bg-amber-900/10 flex justify-between items-center">
+            <div className="sticky top-[45px] bg-[#050505] border-b border-amber-900/30 z-30 px-4 py-2 bg-amber-900/5 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Lock size={12} className="text-amber-600" />
-                <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600">{t.realtimeZone}</span>
+                <Lock size={11} className="text-amber-600" />
+                <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-amber-600 font-bold">{t.realtimeZone}</span>
               </div>
-              <span className="text-[8px] text-neutral-600 font-mono">{t.encrypted}</span>
+              <span className="text-[9px] text-amber-600/80 font-mono flex items-center gap-1">
+                🔒 {t.encryptedForOutsiders}
+              </span>
             </div>
 
-            {/* Blurred content underneath to show data exists */}
-            <div className="blur-sm opacity-30 pointer-events-none select-none">
-              {filteredData.slice(0, 3).map((trade) => (
-                <TradeRow 
-                  key={trade.id} 
-                  trade={trade} 
-                  onClick={() => {}}
-                  tData={tData}
-                />
+            {/* Blurred content with SIGNAL ENCRYPTED badges */}
+            <div className="blur-md opacity-20 pointer-events-none select-none relative">
+              {filteredData.slice(0, 3).map((trade, idx) => (
+                <div key={trade.id} className="relative">
+                  <TradeRow 
+                    trade={trade} 
+                    onClick={() => {}}
+                    tData={tData}
+                  />
+                  {/* Individual row SIGNAL ENCRYPTED badge */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[10px] text-neutral-500 font-mono tracking-wider flex items-center gap-1">
+                      🔒 {t.signalEncrypted}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Overlay with animated diagonal stripes (like og1.png) */}
-            <div className="absolute inset-0 flex items-center justify-center z-20 bg-gradient-to-b from-amber-900/10 to-amber-950/20">
-              {/* Base amber tint overlay */}
-              <div className="absolute inset-0 bg-amber-600/8"></div>
-              
-              {/* Animated diagonal stripe pattern */}
+            {/* Overlay with dense animated diagonal stripes */}
+            <div className="absolute inset-0 flex items-center justify-center z-20">
+              {/* Dense diagonal stripe pattern - tighter spacing, higher contrast */}
               <div 
                 className="absolute inset-0 animate-stripe-scroll"
                 style={{
-                  backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(245, 158, 11, 0.12) 15px, rgba(245, 158, 11, 0.12) 30px)',
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 8px, rgba(245,158,11,0.15) 8px, rgba(245,158,11,0.15) 16px)',
                 }}
               ></div>
               
-              {/* Inner shadow effect */}
-              <div className="absolute inset-0 shadow-[inset_0_2px_20px_rgba(0,0,0,0.4)]"></div>
-              
+              {/* Compact flat button - sharp corners, solid amber */}
               <button 
                 onClick={handleUpgrade}
-                className="px-10 py-4 bg-gradient-to-b from-neutral-900 to-black border-[3px] border-amber-500 text-amber-500 text-sm font-black uppercase tracking-[0.2em] hover:from-black hover:to-neutral-900 hover:border-amber-400 hover:text-amber-400 transition-all flex items-center gap-3 relative z-10 shadow-[0_0_30px_rgba(245,158,11,0.5),inset_0_1px_0_rgba(245,158,11,0.3)]"
+                className="px-6 py-2 bg-amber-600 text-black text-xs font-bold uppercase tracking-wide hover:bg-amber-500 transition-colors flex items-center gap-2 relative z-10 font-mono"
                 data-testid="button-upgrade"
-                style={{
-                  textShadow: '0 0 10px rgba(245, 158, 11, 0.5)'
-                }}
               >
-                🔓 {t.upgradeAction}
+                🔓 {t.unlockRealtime}
               </button>
             </div>
           </div>
@@ -414,22 +415,25 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
       className="grid grid-cols-5 md:grid-cols-8 text-xs border-b border-neutral-900 hover:bg-neutral-900/30 transition-colors cursor-pointer px-4 py-3"
       data-testid={`trade-row-${trade.ticker}`}
     >
-      {/* Ticker */}
-      <div className="flex items-center gap-2 pl-2">
-        <span className="font-mono font-bold text-neutral-200">{trade.ticker}</span>
-        {trade.isVerified && (
-          <span className="text-[8px] text-emerald-600">✓</span>
-        )}
+      {/* Ticker + Company */}
+      <div className="flex flex-col pl-2 gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono font-bold text-neutral-200 text-sm">{trade.ticker}</span>
+          {trade.isVerified && (
+            <span className="text-[8px] text-emerald-600">✓</span>
+          )}
+        </div>
+        <span className="text-neutral-600 text-[10px] leading-none">{trade.companyName}</span>
       </div>
 
       {/* Insider (Hidden on mobile) */}
       <div className="hidden md:flex items-center">
-        <span className="text-neutral-400 truncate">{trade.insider}</span>
+        <span className="text-neutral-300 font-mono text-xs font-medium truncate">{trade.insider}</span>
       </div>
 
       {/* Relation (Hidden on mobile) */}
       <div className="hidden md:flex items-center">
-        <span className="text-neutral-600 text-[10px] truncate">{trade.relation}</span>
+        <span className="text-neutral-500 font-mono text-[10px] uppercase tracking-wider truncate">{trade.relation}</span>
       </div>
 
       {/* Action */}

@@ -29,9 +29,11 @@ const EN = {
     table: { ticker: 'Ticker', insider: 'Insider', relation: 'Relation', action: 'Action', volume: 'Volume', value: 'Value', impact: 'Impact', time: 'Time' },
     realtimeZone: 'Real-Time Signal Zone',
     encrypted: 'OUTSIDER ENCRYPTED',
+    encryptedForOutsiders: 'ENCRYPTED FOR OUTSIDERS',
     signalEncrypted: 'SIGNAL ENCRYPTED',
     encryptedMessage: 'OUTSIDER users only see data delayed by 48 hours.',
     upgradeAction: 'Unlock Real-Time Data',
+    unlockRealtime: 'UNLOCK REAL-TIME DATA',
     noRecords: 'NO_RECORDS_FOUND'
   },
   top: {
@@ -184,9 +186,11 @@ const KO = {
     table: { ticker: '티커', insider: '내부자', relation: '직위', action: '유형', volume: '거래량', value: '가치', impact: '영향', time: '시간' },
     realtimeZone: '실시간 시그널 구역',
     encrypted: 'OUTSIDER 암호화됨',
+    encryptedForOutsiders: 'OUTSIDER 암호화됨',
     signalEncrypted: '시그널 암호화',
     encryptedMessage: 'OUTSIDER 사용자에게는 48시간 지연된 데이터만 보입니다.',
     upgradeAction: '실시간 데이터 잠금 해제',
+    unlockRealtime: '실시간 데이터 잠금 해제',
     noRecords: '기록 없음'
   },
   top: {
@@ -319,6 +323,12 @@ const JA = {
     encryptedMessage: 'OUTSIDERユーザーには48時間遅延データのみ表示されます。',
     upgradeAction: 'リアルタイムデータのロック解除',
   },
+  live: {
+    ...EN.live,
+    encryptedForOutsiders: 'OUTSIDER暗号化済み',
+    signalEncrypted: 'シグナル暗号化',
+    unlockRealtime: 'リアルタイムデータのロック解除',
+  },
   sidebar: {
     ...EN.sidebar,
     live: 'ライブトレーディング',
@@ -357,6 +367,12 @@ const ZH = {
     signalEncrypted: '信号加密',
     encryptedMessage: 'OUTSIDER 用户仅能查看延迟 48 小时的数据。',
     upgradeAction: '解锁实时数据',
+  },
+  live: {
+    ...EN.live,
+    encryptedForOutsiders: 'OUTSIDER 加密',
+    signalEncrypted: '信号加密',
+    unlockRealtime: '解锁实时数据',
   },
   sidebar: {
     ...EN.sidebar,
