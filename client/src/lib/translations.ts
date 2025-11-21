@@ -53,7 +53,11 @@ const EN = {
     institutional: 'Simultaneous Buyers',
     avgPrice: 'Avg Price',
     curPrice: 'Cur Price',
-    totalVol: 'Total Vol'
+    totalVol: 'Total Vol',
+    buyPrice: 'Buy Price',
+    shareCount: 'Share Count',
+    totalAmount: 'Total Amount',
+    buyOnly: 'Buy Only'
   },
   modal: {
     tradeType: 'Trade Type',
@@ -222,7 +226,11 @@ const KO = {
     institutional: '동시 다발적 매수 활동',
     avgPrice: '평균 단가',
     curPrice: '현재가',
-    totalVol: '총 거래량'
+    totalVol: '총 거래량',
+    buyPrice: '매수 단가',
+    shareCount: '거래 주식 수',
+    totalAmount: '총 거래액',
+    buyOnly: '매수 전용'
   },
   modal: {
     tradeType: '거래 유형',
@@ -353,6 +361,13 @@ const JA = {
     signalEncrypted: 'シグナル暗号化',
     unlockRealtime: 'リアルタイムデータのロック解除',
   },
+  top: {
+    ...EN.top,
+    buyPrice: '購入価格',
+    shareCount: '株式数',
+    totalAmount: '総額',
+    buyOnly: '買いのみ'
+  },
   sidebar: {
     ...EN.sidebar,
     live: 'ライブトレーディング',
@@ -397,6 +412,13 @@ const ZH = {
     encryptedForOutsiders: 'OUTSIDER 加密',
     signalEncrypted: '信号加密',
     unlockRealtime: '解锁实时数据',
+  },
+  top: {
+    ...EN.top,
+    buyPrice: '购买价格',
+    shareCount: '股数',
+    totalAmount: '总额',
+    buyOnly: '仅买入'
   },
   sidebar: {
     ...EN.sidebar,

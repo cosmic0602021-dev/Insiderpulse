@@ -122,14 +122,14 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                             <div className="md:col-span-4 flex flex-col">
                                 <div className="flex items-center gap-2">
                                     <div className="text-sm font-bold text-neutral-300 group-hover/row:text-white transition-colors">{buyer.name}</div>
-                                    <span className="bg-emerald-900/20 text-emerald-500 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">Buy Only</span>
+                                    <span className="bg-emerald-900/20 text-emerald-500 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">{t.buyOnly}</span>
                                 </div>
                                 <span className="text-xs text-neutral-500 mt-1">{(tData as any)[buyer.relation] || buyer.relation}</span>
                             </div>
                             
                             {/* Buy Price & Change - Col 3 */}
                             <div className="md:col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50">
-                                 <div className="text-[9px] text-neutral-500 uppercase mb-0.5">Buy Price</div>
+                                 <div className="text-[9px] text-neutral-500 uppercase mb-0.5">{t.buyPrice}</div>
                                  <div className="text-sm text-emerald-400 font-mono font-bold">
                                     {formatCurrency(buyer.price)}
                                  </div>
@@ -141,13 +141,13 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
 
                             {/* Share Count - Col 2 */}
                             <div className="md:col-span-2 bg-neutral-900/50 p-2 rounded border border-neutral-800/50 h-full">
-                                 <div className="text-[9px] text-neutral-500 uppercase mb-0.5">Share Count</div>
+                                 <div className="text-[9px] text-neutral-500 uppercase mb-0.5">{t.shareCount}</div>
                                  <div className="text-sm text-white font-mono font-bold">{formatNumber(buyer.shares)}</div>
                             </div>
 
                             {/* Total Amount - Col 3 */}
                             <div className="md:col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50 h-full">
-                                <div className="text-[9px] text-neutral-500 uppercase mb-0.5">Total Amount</div>
+                                <div className="text-[9px] text-neutral-500 uppercase mb-0.5">{t.totalAmount}</div>
                                 <div className="text-sm text-emerald-500 font-bold font-mono">{formatCurrency(buyer.amount)}</div>
                             </div>
                         </div>

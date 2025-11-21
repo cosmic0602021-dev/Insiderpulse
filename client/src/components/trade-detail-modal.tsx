@@ -267,13 +267,13 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     </defs>
                       <XAxis 
                         dataKey="date" 
-                        stroke="#404040" 
+                        stroke="#666666" 
                         style={{ fontSize: '9px', fontFamily: 'monospace' }} 
                         tick={{ fill: '#525252' }}
                         axisLine={{ strokeWidth: 1 }}
                       />
                       <YAxis 
-                        stroke="#404040" 
+                        stroke="#666666" 
                         style={{ fontSize: '9px', fontFamily: 'monospace' }}
                         tick={{ fill: '#525252' }}
                         axisLine={{ strokeWidth: 1 }}
