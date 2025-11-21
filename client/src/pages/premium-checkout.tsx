@@ -1,26 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from "@/components/ui/checkbox";
-import { CreditCard, TrendingUp, Shield, Zap, CheckCircle, Clock, RefreshCw, ArrowRight, Check, Sparkles, AlertTriangle } from "lucide-react";
-import { StripeMeshGradient } from "@/components/stripe-mesh-gradient";
-import { GlassCard } from "@/components/glass-card";
+import { X, ShieldCheck, Check, Zap, Lock, CreditCard, TrendingUp, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 import { useLanguage } from "@/contexts/language-context";
+import { TRANSLATIONS } from '@/lib/translations';
 
 export default function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const isSubmittingRef = useRef(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+  const t = TRANSLATIONS[langKey].upgrade;
+  const common = TRANSLATIONS[langKey].common;
 
   // Redirect if user already has active subscription
   useEffect(() => {
@@ -34,149 +33,25 @@ export default function PremiumCheckout() {
     }
   }, [user, setLocation, toast]);
 
-  // Get localized plan data based on current language
-  const getLocalizedPlans = () => {
-    const features = {
-      ko: [
-        "실시간 내부자 거래 알림 (48시간 지연 없음)",
-        "순수 매수/매도 신호만 표시 (보조금, 옵션, 보상 제외)",
-        "AI 기반 거래 분석 & 예측",
-        "고급 패턴 감지 & 신호",
-        "임원 거래 추적 (CEO, CFO 등)",
-        "실시간 데이터 업데이트 & 푸시 알림",
-        "내부자 거래 성과 분석",
-        "독점 시장 인텔리전스 리포트"
-      ],
-      en: [
-        "Real-time insider trade alerts (no 48h delay)",
-        "Pure buy/sell signals only (no grants, options, awards)",
-        "AI-powered trade analysis & predictions",
-        "Advanced pattern detection & signals",
-        "Executive trade tracking (CEO, CFO, etc.)",
-        "Live data updates & push notifications",
-        "Historical insider performance analytics",
-        "Exclusive market intelligence reports"
-      ],
-      ja: [
-        "リアルタイムインサイダー取引アラート（48時間遅延なし）",
-        "純粋な買い/売りシグナルのみ（助成金、オプション、報酬を除く）",
-        "AI駆動の取引分析と予測",
-        "高度なパターン検出とシグナル",
-        "役員取引追跡（CEO、CFOなど）",
-        "ライブデータ更新とプッシュ通知",
-        "過去のインサイダーパフォーマンス分析",
-        "独占的な市場インテリジェンスレポート"
-      ],
-      zh: [
-        "实时内幕交易提醒（无48小时延迟）",
-        "仅纯粹买卖信号（不包括补助金、期权、奖励）",
-        "AI驱动的交易分析和预测",
-        "高级模式检测和信号",
-        "高管交易追踪（CEO、CFO等）",
-        "实时数据更新和推送通知",
-        "历史内幕交易绩效分析",
-        "独家市场情报报告"
-      ]
-    };
-
-    const intervals = {
-      ko: { month: '/월', year: '/년' },
-      en: { month: '/month', year: '/year' },
-      ja: { month: '/月', year: '/年' },
-      zh: { month: '/月', year: '/年' }
-    };
-
-    const billingIntervals = {
-      ko: { monthly: '월간 자동결제', yearly: '연간 자동결제' },
-      en: { monthly: 'Monthly auto-renewal', yearly: 'Yearly auto-renewal' },
-      ja: { monthly: '月次自動更新', yearly: '年次自動更新' },
-      zh: { monthly: '月度自动续费', yearly: '年度自动续费' }
-    };
-
-    return {
-      monthly: {
-        name: "Insider",
-        price: 14,
-        priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
-        interval: intervals[language].month,
-        billingInterval: billingIntervals[language].monthly,
-        description: t('checkout.planDescription'),
-        features: features[language],
-        savings: null
-      },
-      yearly: {
-        name: "Insider",
-        price: 112,
-        originalPrice: 168,
-        priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
-        interval: intervals[language].year,
-        billingInterval: billingIntervals[language].yearly,
-        pricePerMonth: 9.33,
-        description: t('checkout.planDescription'),
-        features: features[language],
-        savings: "Save 33% with annual billing",
-        discount: "33% OFF"
-      },
-    };
+  // Plan pricing
+  const plans = {
+    monthly: {
+      price: 14,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SPBb1Q9br8aQ595KTOAcBfO',
+      trialDays: 3,
+    },
+    yearly: {
+      price: 112,
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY || 'price_1SPBdLQ9br8aQ595n0dKEOLv',
+      trialDays: 7,
+    },
   };
 
-  const plans = getLocalizedPlans();
   const currentPlan = plans[selectedPlan];
-
-  // Localized text sections
-  const securityText = {
-    ko: {
-      title: '안전한 결제 & 자동 갱신',
-      description: (interval: string) => `모든 거래는 Stripe를 통해 암호화되고 안전하게 처리됩니다. 구독은 취소하실 때까지 ${interval}마다 자동으로 갱신됩니다. 언제든지 한 번의 클릭으로 취소 가능하며, 결제 기간이 끝날 때까지 계속 이용하실 수 있습니다.`,
-      interval: { monthly: '매월', yearly: '매년' }
-    },
-    en: {
-      title: 'Secure Payment & Auto-Renewal',
-      description: (interval: string) => `All transactions are encrypted and processed securely through Stripe. Your subscription will automatically renew ${interval} until you cancel. Cancel anytime with one click - you'll keep access until the end of your billing period.`,
-      interval: { monthly: 'every month', yearly: 'every year' }
-    },
-    ja: {
-      title: '安全な決済と自動更新',
-      description: (interval: string) => `すべての取引は暗号化され、Stripeを通じて安全に処理されます。サブスクリプションはキャンセルするまで${interval}自動的に更新されます。いつでもワンクリックでキャンセルでき、請求期間の終了までアクセスを維持できます。`,
-      interval: { monthly: '毎月', yearly: '毎年' }
-    },
-    zh: {
-      title: '安全支付与自动续费',
-      description: (interval: string) => `所有交易都经过加密，并通过Stripe安全处理。您的订阅将${interval}自动续订，直到您取消为止。随时一键取消 - 您将保留访问权限直至计费周期结束。`,
-      interval: { monthly: '每月', yearly: '每年' }
-    }
-  };
-
-  const dataText = {
-    ko: {
-      title: '실제 SEC 데이터',
-      description: 'SEC 서류에서 직접 가져온 데이터입니다. 가짜 데이터 없음 - 오직 실제 정보만 제공합니다.'
-    },
-    en: {
-      title: 'Real SEC Data',
-      description: 'All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.'
-    },
-    ja: {
-      title: '本物のSECデータ',
-      description: 'すべてのデータはSECファイリングから直接取得されています。偽のデータはありません - 実際の実用的な情報のみです。'
-    },
-    zh: {
-      title: '真实SEC数据',
-      description: '所有数据直接来源于SEC文件。没有虚假数据 - 只有真实、可操作的情报。'
-    }
-  };
-
-  // Trial periods by plan
-  const trialDays = selectedPlan === 'yearly' ? 7 : 3;
-  const trialPeriodKo = selectedPlan === 'yearly' ? '7일' : '3일';
-  const trialPeriodEn = selectedPlan === 'yearly' ? '7 days' : '3 days';
-
-  // Check if user has already used trial
   const hasUsedTrial = user?.hasUsedTrial || false;
   const showTrialInfo = !hasUsedTrial;
 
   const handleCheckout = async () => {
-    // Check if user agreed to terms (only required if trial available)
     if (showTrialInfo && !agreedToTerms) {
       toast({
         title: "약관 동의 필요",
@@ -186,15 +61,11 @@ export default function PremiumCheckout() {
       return;
     }
 
-    // Prevent double-clicks and concurrent requests
     if (isSubmittingRef.current) {
-      console.log('⚠️ Already submitting, ignoring duplicate click');
       return;
     }
 
-    // Double-check authentication before proceeding
     if (!user) {
-      console.error('❌ No user found when attempting checkout');
       toast({
         title: "로그인 필요",
         description: "구독하려면 먼저 로그인해주세요.",
@@ -204,10 +75,8 @@ export default function PremiumCheckout() {
       return;
     }
 
-    // Verify auth token exists
     const token = localStorage.getItem('authToken');
     if (!token) {
-      console.error('❌ No auth token found in localStorage');
       toast({
         title: "세션 만료",
         description: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -220,13 +89,6 @@ export default function PremiumCheckout() {
     isSubmittingRef.current = true;
     setIsProcessing(true);
 
-    console.log('🚀 Starting checkout process', {
-      userId: user.id,
-      email: user.email,
-      plan: selectedPlan,
-      priceId: currentPlan.priceId
-    });
-
     try {
       const response = await apiRequest("POST", "/api/create-subscription", {
         priceId: currentPlan.priceId,
@@ -238,20 +100,13 @@ export default function PremiumCheckout() {
       }
 
       const data = await response.json();
-      console.log('✅ Checkout session created:', data);
 
       if (data.url) {
-        console.log('🔗 Redirecting to Stripe Checkout:', data.url);
-        // Redirect to Stripe Checkout
-        // Note: Don't reset isSubmittingRef or isProcessing here since we're redirecting
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL received');
       }
     } catch (error: any) {
-      console.error('❌ Error creating checkout session:', error);
-
-      // Handle specific error for duplicate subscriptions
       if (error.message && error.message.includes('이미 활성 구독이 있습니다')) {
         toast({
           title: "이미 구독 중입니다",
@@ -275,300 +130,193 @@ export default function PremiumCheckout() {
   // Redirect to login if not authenticated
   if (!authLoading && !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-center">로그인 필요</CardTitle>
-            <CardDescription className="text-center">
-              구독하려면 먼저 로그인해주세요
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => setLocation('/login?redirect=/premium-checkout')}
-              className="w-full"
-            >
-              로그인 페이지로 이동
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[#030303] flex items-center justify-center p-4">
+        <div className="bg-[#080808] border border-neutral-800 p-8 max-w-md w-full text-center">
+          <ShieldCheck size={48} className="text-neutral-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">로그인 필요</h2>
+          <p className="text-neutral-500 text-sm mb-6">구독하려면 먼저 로그인해주세요</p>
+          <button
+            onClick={() => setLocation('/login?redirect=/premium-checkout')}
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-widest text-xs transition-all"
+          >
+            로그인 페이지로 이동
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] p-4 relative overflow-hidden">
-      {/* Stripe Mesh Gradient */}
-      <StripeMeshGradient variant="purple" opacity={0.4} animate={true} />
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/95 backdrop-blur-sm">
+      <div className="flex min-h-screen items-center justify-center p-4 md:p-6 py-10">
+        {/* Modal Container */}
+        <div className="relative w-full max-w-4xl bg-[#080808] border border-neutral-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex flex-col overflow-hidden rounded-sm my-auto">
 
-      <div className="max-w-5xl mx-auto relative z-10">
-        <div className="text-center mb-16 mt-8">
-          <Badge className="mb-8 px-4 py-2 text-xs font-medium
-                           bg-white/10 text-white border border-white/20
-                           backdrop-blur-xl rounded-full shadow-lg shadow-purple-500/10">
-            <Sparkles className="inline-block w-3 h-3 mr-2" />
-            Premium Subscription
-          </Badge>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white tracking-tight
-                        bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/40" data-testid="text-checkout-title">
-            {t('checkout.title')}
-          </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed">
-            {showTrialInfo
-              ? t('checkout.subtitle').replace('{days}', trialPeriodKo.split('일')[0])
-              : t('checkout.subtitle').replace('{days}', trialPeriodKo.split('일')[0])}
-          </p>
-        </div>
+          {/* Close Button */}
+          <button
+            onClick={() => setLocation('/trades')}
+            className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors z-30 p-2 bg-black/50 rounded-full"
+          >
+            <X size={20} />
+          </button>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Plan Card */}
-          <div className="space-y-4">
-            {/* Plan Toggle */}
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex rounded-lg bg-slate-800 p-1 border border-slate-700">
-                <button
-                  onClick={() => setSelectedPlan('monthly')}
-                  className={`px-6 py-3 rounded-md font-semibold transition-all ${
-                    selectedPlan === 'monthly'
-                      ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {t('checkout.monthly')}
-                </button>
-                <button
-                  onClick={() => setSelectedPlan('yearly')}
-                  className={`relative px-6 py-3 rounded-md font-semibold transition-all ${
-                    selectedPlan === 'yearly'
-                      ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {t('checkout.yearly')}
-                  {selectedPlan !== 'yearly' && (
-                    <span className="absolute -top-2 -right-2 bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">
-                      {t('checkout.yearlyDiscount')}
-                    </span>
-                  )}
-                </button>
+          {/* Header Section */}
+          <div className="p-8 border-b border-neutral-900 text-center bg-[#0a0a0a]">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-neutral-900 rounded-full flex items-center justify-center border border-neutral-800 relative">
+                <div className="absolute inset-0 rounded-full border border-emerald-900 animate-ping opacity-20"></div>
+                <ShieldCheck size={24} className="text-emerald-500" />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight uppercase mb-2">
+              {t.header}
+            </h2>
+            <p className="text-sm text-neutral-500 font-mono">
+              {t.subHeader}
+            </p>
+          </div>
+
+          {/* Billing Toggle */}
+          <div className="flex justify-center py-6 bg-[#080808]">
+            <div className="bg-neutral-900 p-1 flex border border-neutral-800 relative">
+              <button
+                onClick={() => setSelectedPlan('monthly')}
+                className={`px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${selectedPlan === 'monthly' ? 'bg-neutral-700 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+              >
+                {t.monthly}
+              </button>
+              <button
+                onClick={() => setSelectedPlan('yearly')}
+                className={`px-8 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${selectedPlan === 'yearly' ? 'bg-emerald-900 text-emerald-100' : 'text-neutral-500 hover:text-neutral-300'}`}
+              >
+                {t.yearly}
+                <span className="text-[9px] bg-emerald-500 text-black px-1.5 py-0.5 font-bold uppercase">{t.save}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row border-t border-neutral-900">
+
+            {/* Left Column: The Offering */}
+            <div className="w-full md:w-1/2 p-8 border-r-0 md:border-r border-b md:border-b-0 border-neutral-900 bg-[#080808]">
+              <div className="mb-8">
+                <div className="text-xs text-neutral-500 uppercase tracking-wider mb-2 font-bold flex items-center gap-2">
+                  <Zap size={12} className="text-emerald-500" />
+                  {common.tierPro} {t.secData}
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-5xl font-black tracking-tighter text-emerald-500">
+                    {selectedPlan === 'monthly' ? t.priceMonthly : t.priceYearly}
+                  </span>
+                  <span className="text-neutral-500 text-sm font-mono mb-1">
+                    {selectedPlan === 'monthly' ? t.periodMonthly : t.periodYearly}
+                  </span>
+                </div>
+                {selectedPlan === 'yearly' && (
+                  <div className="text-[10px] text-neutral-500 mt-2 font-mono border-l-2 border-neutral-800 pl-2">
+                    ≈ $9/month (Save $56 annually)
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {t.features.map((feat: string, i: number) => (
+                  <div key={i} className="flex items-start gap-3 text-sm text-neutral-300 group">
+                    <div className="mt-0.5 w-4 h-4 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center group-hover:border-emerald-800 transition-colors">
+                      <Check size={10} className="text-emerald-500" />
+                    </div>
+                    <span className="text-neutral-400 group-hover:text-neutral-200 transition-colors text-xs leading-relaxed">{feat}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <Card className="border-2 border-amber-500 bg-gradient-to-br from-slate-800 to-slate-900">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-white text-2xl">
-                        {currentPlan.name}
-                      </CardTitle>
-                      {selectedPlan === 'yearly' && (
-                        <Badge variant="default" className="bg-amber-500 text-slate-900 font-bold">
-                          <Zap className="w-3 h-3 mr-1" />
-                          {plans.yearly.discount}
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="text-slate-300 text-base">
-                      {currentPlan.description}
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  {selectedPlan === 'yearly' && (
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-2xl font-bold text-slate-500 line-through">${plans.yearly.originalPrice}</span>
-                      <span className="text-sm text-slate-400">/year</span>
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-amber-500">${currentPlan.price}</span>
-                    <span className="text-xl text-slate-400">{currentPlan.interval}</span>
-                  </div>
-                  {selectedPlan === 'yearly' && (
-                    <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                      <p className="text-emerald-400 font-bold text-lg">
-                        ≈ $9/month
-                      </p>
-                      <p className="text-xs text-emerald-300 mt-1">
-                        Save $56 compared to monthly billing
-                      </p>
-                    </div>
-                  )}
-                  <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
-                    <RefreshCw className="w-4 h-4" />
-                    <span>{currentPlan.billingInterval}</span>
-                  </div>
-                  {currentPlan.savings && (
-                    <div className="mt-3 flex items-center gap-2">
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                        {currentPlan.savings}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {currentPlan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3 text-sm text-slate-200">
-                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Free Trial Info - only show if user hasn't used trial */}
-            {showTrialInfo && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg border border-amber-500/30">
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-base text-white">
-                      {t('checkout.trialTitle').replace('{days}', trialDays.toString())}
-                    </h3>
-                    <p className="text-sm text-slate-300 mt-1">
-                      {t('checkout.trialDescription')
-                        .replace('{days}', trialDays.toString())
-                        .replace('{price}', currentPlan.price.toString())
-                        .replace('{interval}', t('checkout.priceMonth'))}
-                    </p>
-                  </div>
-                </div>
+            {/* Right Column: The Checkout Summary */}
+            <div className="w-full md:w-1/2 p-8 bg-[#050505] flex flex-col">
+              <div className="flex items-center gap-2 mb-6">
+                <CreditCard size={16} className="text-neutral-500" />
+                <span className="text-sm font-bold text-neutral-300 uppercase tracking-wide">
+                  {showTrialInfo ? t.trial : '즉시 결제'}
+                </span>
               </div>
-            )}
 
-            {/* No Trial - Direct Billing Info */}
-            {!showTrialInfo && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/30">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-sm text-white">
-                      무료체험 이미 사용됨
-                    </h3>
-                    <p className="text-sm text-slate-300 mt-1">
-                      무료체험은 계정당 1회만 제공됩니다. 결제 즉시 ${currentPlan.price}{currentPlan.interval} 자동결제가 시작됩니다.
-                    </p>
-                  </div>
+              <div className="bg-neutral-900/30 border border-neutral-800 p-6 rounded-sm mb-6 space-y-3">
+                <div className="flex justify-between text-xs">
+                  <span className="text-neutral-500">{t.secData}</span>
+                  <span className="text-white font-bold">{common.tierPro} ({selectedPlan === 'monthly' ? t.monthly : t.yearly})</span>
                 </div>
+                {showTrialInfo ? (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-neutral-500">Free Trial</span>
+                      <span className="text-emerald-500 font-bold">{selectedPlan === 'monthly' ? t.trial3Badge : t.trial7Badge}</span>
+                    </div>
+                    <div className="h-[1px] bg-neutral-800 my-2"></div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-neutral-500">After Trial</span>
+                      <span className="text-white font-mono">{selectedPlan === 'monthly' ? t.afterTrial3 : t.afterTrial7}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-[1px] bg-neutral-800 my-2"></div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-neutral-500">결제 금액</span>
+                      <span className="text-white font-mono">${currentPlan.price}{selectedPlan === 'monthly' ? '/월' : '/년'}</span>
+                    </div>
+                    <div className="text-[10px] text-amber-500 mt-2">
+                      * 무료체험 이미 사용됨 - 즉시 결제가 시작됩니다
+                    </div>
+                  </>
+                )}
               </div>
-            )}
 
-            <div className="mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-sm text-white">{securityText[language].title}</h3>
-                  <p className="text-sm text-slate-300 mt-1">
-                    {securityText[language].description(securityText[language].interval[selectedPlan === 'monthly' ? 'monthly' : 'yearly'])}
+              {showTrialInfo && (
+                <div className="flex items-start gap-3 mb-6 p-3 bg-neutral-900/20 border border-neutral-900 rounded">
+                  <div className="mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="accent-emerald-600 bg-neutral-900 border-neutral-700"
+                    />
+                  </div>
+                  <p className="text-[10px] text-neutral-500 leading-relaxed">
+                    {t.terms}
                   </p>
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="mt-4 p-4 bg-slate-800 rounded-lg border border-slate-700">
-              <div className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-sm text-white">{dataText[language].title}</h3>
-                  <p className="text-sm text-slate-300 mt-1">
-                    {dataText[language].description}
-                  </p>
-                </div>
+              <button
+                onClick={handleCheckout}
+                disabled={isProcessing || (showTrialInfo && !agreedToTerms)}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 text-black font-bold uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:shadow-none flex items-center justify-center gap-2 mt-auto"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  showTrialInfo
+                    ? (selectedPlan === 'monthly' ? t.trial3 : t.trial7)
+                    : '지금 구독하기'
+                )}
+              </button>
+
+              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-neutral-600">
+                <Lock size={10} />
+                {t.secure}
               </div>
             </div>
           </div>
 
-          {/* Checkout Button */}
-          <div className="flex flex-col items-center justify-start lg:pt-16">
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  {showTrialInfo ? t('checkout.startTrial') : t('checkout.subscribeNow')}
-                </CardTitle>
-                <CardDescription>
-                  {showTrialInfo
-                    ? t('checkout.cardDescriptionTrial')
-                        .replace('{days}', trialDays.toString())
-                        .replace('{price}', currentPlan.price.toString())
-                        .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))
-                    : t('checkout.cardDescriptionNoTrial')
-                        .replace('{price}', currentPlan.price.toString())
-                        .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center justify-between">
-                    <span>{t('checkout.planLabel')}</span>
-                    <span className="font-semibold">{currentPlan.name} ({selectedPlan === 'monthly' ? t('checkout.monthly') : t('checkout.yearly')})</span>
-                  </div>
-                  {showTrialInfo && (
-                    <div className="flex items-center justify-between">
-                      <span>{t('checkout.freeTrialLabel')}</span>
-                      <span className="font-semibold text-green-600 dark:text-green-400 text-base">{trialDays}{t('checkout.trialTitle').replace('{days}', '').trim()}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span>{showTrialInfo ? t('checkout.afterTrialLabel') : t('checkout.priceLabel')}</span>
-                    <span className="font-semibold">{t('checkout.priceWithTax')
-                      .replace('{price}', currentPlan.price.toString())
-                      .replace('{interval}', selectedPlan === 'monthly' ? t('checkout.priceMonth') : t('checkout.priceYear'))}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{t('checkout.billingCycleLabel')}</span>
-                    <span>{selectedPlan === 'monthly' ? t('checkout.billingMonthly') : t('checkout.billingYearly')}</span>
-                  </div>
-                </div>
-
-                {/* Terms Agreement Checkbox */}
-                {showTrialInfo && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/50">
-                    <Checkbox
-                      id="terms"
-                      checked={agreedToTerms}
-                      onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                      className="mt-0.5"
-                    />
-                    <label
-                      htmlFor="terms"
-                      className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
-                    >
-                      {t('checkout.termsAgreement')}
-                    </label>
-                  </div>
-                )}
-
-                <Button
-                  onClick={handleCheckout}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold py-6 text-lg"
-                  disabled={isProcessing || (showTrialInfo && !agreedToTerms)}
-                  data-testid="button-complete-payment"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-5 h-5 mr-2" />
-                      {showTrialInfo ? `Start ${trialPeriodEn} Free Trial` : 'Subscribe Now'}
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-xs text-center text-slate-500">
-                  {showTrialInfo
-                    ? `You won't be charged for ${trialPeriodEn}. Cancel anytime during the trial.`
-                    : '안전한 Stripe 결제 시스템을 통해 처리됩니다.'}
-                </p>
-              </CardContent>
-            </Card>
+          {/* Footer Strip */}
+          <div className="bg-[#050505] border-t border-neutral-900 p-3 flex justify-center md:justify-between items-center text-[9px] text-neutral-600 uppercase tracking-wider px-8">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={10} />
+              {t.secDesc}
+            </div>
           </div>
         </div>
       </div>

@@ -411,6 +411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userId: userId
             }
           },
+          // Disable automatic tax to remove "세금별도" text
+          automatic_tax: {
+            enabled: false
+          },
           success_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/premium-checkout?canceled=true`,
           metadata: {
