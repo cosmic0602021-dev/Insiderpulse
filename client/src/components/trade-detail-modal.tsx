@@ -1,7 +1,7 @@
 import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -173,7 +173,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Trade Type */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                TRADE TYPE
+                {t('modal.tradeType').toUpperCase()}
               </div>
               <div className={`text-lg font-light ${isBuy ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {trade.tradeType}
@@ -183,7 +183,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Price Per Share */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                PRICE PER SHARE
+                {t('modal.priceShare').toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.pricePerShare)}
@@ -194,7 +194,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Shares Traded */}
             <div className="px-4 py-2.5 border-r border-neutral-800">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                SHARES TRADED
+                {t('modal.sharesTraded').toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatNumber(trade.shares / 1000)}K
@@ -205,7 +205,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             {/* Total Value */}
             <div className="px-4 py-2.5">
               <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1">
-                TOTAL VALUE
+                {t('modal.totalValue').toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.totalValue)}
@@ -220,7 +220,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="px-3 py-1.5 border-b border-neutral-800 flex items-center gap-1.5 bg-neutral-950/30">
                 <TrendingUp size={10} className="text-neutral-500" />
                 <span className="text-[8px] text-neutral-500 uppercase tracking-[0.15em] font-mono">
-                  PRICE TREND
+                  {t('modal.priceTrend').toUpperCase()}
                 </span>
               </div>
               
@@ -228,25 +228,25 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="px-3 py-2 border-b border-neutral-800 grid grid-cols-2 gap-x-4 gap-y-2 text-xs bg-neutral-950/10">
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    INSIDER NAME
+                    {t('modal.insiderName').toUpperCase()}
                   </div>
                   <div className="text-neutral-300 text-[10px]">{trade.traderName}</div>
                 </div>
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    POSITION
+                    {t('modal.position').toUpperCase()}
                   </div>
                   <div className="text-neutral-300 text-[10px]">{trade.traderTitle || 'Insider'}</div>
                 </div>
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    FILING DATE
+                    {t('modal.filingDate').toUpperCase()}
                   </div>
                   <div className="text-neutral-300 text-[10px]">{new Date(trade.filedDate).toLocaleDateString()}</div>
                 </div>
                 <div>
                   <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    SHARES
+                    {t('modal.shares').toUpperCase()}
                   </div>
                   <div className="text-neutral-300 text-[10px]">{formatNumber(trade.shares)}</div>
                 </div>
@@ -257,23 +257,23 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
-                      {/* Enhanced gradient matching reference screenshot */}
+                      {/* Strong gradient effect matching reference screenshot */}
                       <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
-                        <stop offset="40%" stopColor="#059669" stopOpacity={0.25} />
-                        <stop offset="80%" stopColor="#047857" stopOpacity={0.1} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
+                        <stop offset="30%" stopColor="#059669" stopOpacity={0.35} />
+                        <stop offset="60%" stopColor="#047857" stopOpacity={0.2} />
                         <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
                       <XAxis 
                         dataKey="date" 
-                        stroke="#262626" 
+                        stroke="#404040" 
                         style={{ fontSize: '9px', fontFamily: 'monospace' }} 
                         tick={{ fill: '#525252' }}
                         axisLine={{ strokeWidth: 1 }}
                       />
                       <YAxis 
-                        stroke="#262626" 
+                        stroke="#404040" 
                         style={{ fontSize: '9px', fontFamily: 'monospace' }}
                         tick={{ fill: '#525252' }}
                         axisLine={{ strokeWidth: 1 }}
@@ -337,6 +337,15 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                         animationDuration={4000}
                         animationEasing="ease-in-out"
                       />
+                      {/* Small dot at insider trade point */}
+                      <ReferenceDot 
+                        x={priceHistory.find(p => p.isInsiderTrade)?.date} 
+                        y={trade.pricePerShare} 
+                        r={4} 
+                        fill={isBuy ? "#10b981" : "#ef4444"}
+                        stroke="#0a0a0a"
+                        strokeWidth={1.5}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
 
@@ -344,7 +353,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-neutral-800 mt-2.5">
                   <div>
                     <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                      BASE PRICE
+                      {t('modal.basePrice').toUpperCase()}
                     </div>
                     <div className="text-sm text-neutral-300 font-mono">
                       {formatCurrency(trade.pricePerShare)}
@@ -352,7 +361,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   </div>
                   <div>
                     <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                      CURRENT PRICE
+                      {t('modal.currentPrice').toUpperCase()}
                     </div>
                     <div className={`text-sm font-mono flex items-center gap-1.5 ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       {formatCurrency(currentPrice)}
@@ -376,7 +385,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="flex items-center gap-2">
                   <CheckCircle size={12} className="text-emerald-500" />
                   <span className="text-[9px] text-emerald-500 uppercase tracking-widest font-mono">
-                    VIEW SEC FILING
+                    {t('modal.secFiling').toUpperCase()}
                   </span>
                 </div>
                 <ExternalLink size={10} className="text-emerald-500/50 group-hover:text-emerald-500" />
@@ -387,7 +396,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
                   <Brain size={11} className="text-neutral-500" />
                   <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                    AI ANALYSIS
+                    {t('modal.aiAnalysis').toUpperCase()}
                   </span>
                 </div>
                 <div className="p-3 space-y-3">
@@ -395,7 +404,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        SIGNAL
+                        {t('modal.signal').toUpperCase()}
                       </div>
                       <div className={`text-xl font-light ${
                         aiAnalysis?.signal === 'BUY' ? 'text-emerald-500' : 
@@ -407,7 +416,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     </div>
                     <div>
                       <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        CONFIDENCE
+                        {t('modal.confidence').toUpperCase()}
                       </div>
                       <div className="text-xl font-light text-neutral-200">{aiAnalysis?.confidence || 97}%</div>
                     </div>
@@ -425,14 +434,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
                   <Target size={11} className="text-neutral-500" />
                   <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                    PRICE TARGETS
+                    {t('modal.priceTargets').toUpperCase()}
                   </span>
                 </div>
                 <div className="p-3 space-y-2.5">
                   {/* Conservative */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      CONSERVATIVE
+                      {t('modal.conservative').toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-neutral-600 rounded-sm" style={{ width: '60%' }}></div>
@@ -445,7 +454,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   {/* Realistic */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      REALISTIC
+                      {t('modal.realistic').toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-emerald-500 rounded-sm" style={{ width: '80%' }}></div>
@@ -458,7 +467,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   {/* Optimistic */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      OPTIMISTIC
+                      {t('modal.optimistic').toUpperCase()}
                     </span>
                     <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
                       <div className="h-full bg-amber-500 rounded-sm" style={{ width: '100%' }}></div>
@@ -474,7 +483,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="grid grid-cols-2 gap-3">
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    RISK LEVEL
+                    {t('modal.riskLevel').toUpperCase()}
                   </div>
                   <div className="flex items-center gap-1.5 text-amber-500">
                     <AlertTriangle size={12} />
@@ -483,7 +492,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    TIME HORIZON
+                    {t('modal.timeHorizon').toUpperCase()}
                   </div>
                   <div className="text-xs text-neutral-300 font-mono">{aiAnalysis?.timeHorizon || '3-6 MONTHS'}</div>
                 </div>
@@ -496,13 +505,13 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             <div className="flex items-center gap-2 mb-2">
               <Newspaper size={11} className="text-neutral-500" />
               <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                RELATED NEWS & SENTIMENT ({news.length})
+                {t('modal.relatedNews').toUpperCase()} ({news.length})
               </span>
               {news.length > 0 && (
                 <div className="flex gap-3 ml-3">
-                  <span className="text-[9px] text-emerald-500 font-mono">● {posCount} POSITIVE</span>
-                  <span className="text-[9px] text-rose-500 font-mono">● {negCount} NEGATIVE</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">● {neutCount} NEUTRAL</span>
+                  <span className="text-[9px] text-emerald-500 font-mono">● {posCount} {t('modal.positive').toUpperCase()}</span>
+                  <span className="text-[9px] text-rose-500 font-mono">● {negCount} {t('modal.negative').toUpperCase()}</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">● {neutCount} {t('modal.neutral').toUpperCase()}</span>
                 </div>
               )}
             </div>
