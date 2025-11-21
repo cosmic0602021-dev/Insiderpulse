@@ -5,6 +5,9 @@ import { useAccess } from '@/contexts/access-context';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { type Language } from '@/lib/translations';
+import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { useState } from 'react';
+import type { InsiderTrade } from '@shared/schema';
 
 interface RankingInsider {
   name: string;
@@ -49,8 +52,44 @@ interface RankingResponse {
 export default function TopStocksTerminal() {
   const { language } = useLanguage();
   const { accessLevel } = useAccess();
+  const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const isPro = accessLevel?.hasRealtimeAccess || false;
+  
+  const handleSelectTrade = (trade: any) => {
+    // Convert the trade object to InsiderTrade format
+    const insiderTrade = {
+      id: trade.id || `temp-${Date.now()}`,
+      ticker: trade.ticker,
+      companyName: trade.companyName,
+      traderName: trade.insider,
+      traderTitle: trade.relation,
+      tradeType: trade.type === 'Buy' ? 'BUY' : 'SELL',
+      shares: trade.shares,
+      pricePerShare: trade.price,
+      totalValue: trade.value,
+      filedDate: trade.filingDate || trade.date,
+      tradeDate: trade.date,
+      isVerified: trade.isVerified || true,
+      priceVariance: trade.priceChange || 0,
+      secFilingUrl: null,
+      accessionNumber: null,
+      aiAnalysis: {
+        signal: trade.aiRecommendation || 'BUY',
+        significanceScore: trade.aiConfidence || 95,
+        keyInsights: [trade.summary || 'Significant insider activity detected'],
+        riskLevel: trade.riskLevel || 'LOW',
+      }
+    };
+    setSelectedTrade(insiderTrade);
+    setIsModalOpen(true);
+  };
+  
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTrade(null);
+  };
   
   // Fetch ranking data using apiRequest with auth header
   const { data: rankingData, isLoading, error } = useQuery<RankingResponse>({
@@ -134,10 +173,20 @@ export default function TopStocksTerminal() {
   });
 
   return (
-    <TopStocks 
-      data={stockRecommendations}
-      lang={language as Language}
-      isPro={isPro}
-    />
+    <>
+      <TopStocks 
+        data={stockRecommendations}
+        lang={language as Language}
+        isPro={isPro}
+        onSelectTrade={handleSelectTrade}
+      />
+      {selectedTrade && (
+        <TradeDetailModal
+          trade={selectedTrade}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
   );
 }

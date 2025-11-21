@@ -1,7 +1,7 @@
-import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink } from 'lucide-react';
+import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { ComposedChart, Line, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, ReferenceLine, Area } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber } from '@/lib/translations';
@@ -53,7 +53,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     };
   }, [trade]);
 
-  // Generate 2-week price history with signed gap visualization
+  // Generate simplified 14-day price history for dual-line chart
   const priceHistory = useMemo(() => {
     if (!trade) return [];
     const insiderPrice = trade.pricePerShare;
@@ -68,19 +68,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
       
       // Create gradual trend from insider price to current price
       const progress = (13 - i) / 13;
-      const price = insiderPrice + (currentPrice - insiderPrice) * progress;
-      
-      // Calculate signed gap for dual-direction visualization
-      const gap = price - insiderPrice;
+      const marketPrice = insiderPrice + (currentPrice - insiderPrice) * progress;
       
       data.push({
         date: dateStr,
-        close: price,
+        marketPrice: marketPrice,
         insiderPrice: insiderPrice,
-        // Signed gaps preserving direction
-        gapPositive: Math.max(gap, 0),   // Profit (positive when above insider price, 0 otherwise)
-        gapNegative: Math.min(gap, 0),   // Loss (negative when below insider price, 0 otherwise)
-        baselineZero: 0
+        // Mark the insider trade point (first data point)
+        isInsiderTrade: i === 13
       });
     }
     
@@ -134,7 +129,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col">
+      <DialogContent className="max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden">
         <VisuallyHidden>
           <DialogTitle>{trade?.companyName || 'Trade Details'}</DialogTitle>
         </VisuallyHidden>
@@ -208,104 +203,161 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             </div>
           </div>
 
-          {/* Main Content Grid */}
+          {/* Main Content Grid - Compressed Layout */}
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto">
             {/* Left Column - Price Analysis */}
             <div className="border-r border-neutral-800 flex flex-col">
-              <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-1.5 bg-neutral-950/30">
-                <BarChart3 size={10} className="text-neutral-500" />
+              <div className="px-3 py-1.5 border-b border-neutral-800 flex items-center gap-1.5 bg-neutral-950/30">
+                <TrendingUp size={10} className="text-neutral-500" />
                 <span className="text-[8px] text-neutral-500 uppercase tracking-[0.15em] font-mono">
-                  PRICE ANALYSIS
+                  PRICE TREND
                 </span>
               </div>
-              <div className="flex-1 p-3">
-                <ResponsiveContainer width="100%" height="60%">
-                  <ComposedChart data={priceHistory}>
+              
+              {/* Insider Info Row - Moved to top, 2-column layout */}
+              <div className="px-3 py-2 border-b border-neutral-800 grid grid-cols-2 gap-x-4 gap-y-2 text-xs bg-neutral-950/10">
+                <div>
+                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
+                    INSIDER NAME
+                  </div>
+                  <div className="text-neutral-300 text-[10px]">{trade.traderName}</div>
+                </div>
+                <div>
+                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
+                    POSITION
+                  </div>
+                  <div className="text-neutral-300 text-[10px]">{trade.traderTitle || 'Insider'}</div>
+                </div>
+                <div>
+                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
+                    FILING DATE
+                  </div>
+                  <div className="text-neutral-300 text-[10px]">{new Date(trade.filedDate).toLocaleDateString()}</div>
+                </div>
+                <div>
+                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
+                    SHARES
+                  </div>
+                  <div className="text-neutral-300 text-[10px]">{formatNumber(trade.shares)}</div>
+                </div>
+              </div>
+              
+              {/* Chart Section - Responsive width */}
+              <div className="flex-1 p-3 flex flex-col">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
-                      <pattern id="stripe-pattern-profit" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-                        <rect width="4" height="8" fill="rgba(16, 185, 129, 0.15)" />
-                        <animate attributeName="x" from="0" to="8" dur="8s" repeatCount="indefinite" />
-                      </pattern>
-                      <pattern id="stripe-pattern-loss" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-                        <rect width="4" height="8" fill="rgba(239, 68, 68, 0.15)" />
-                        <animate attributeName="x" from="0" to="8" dur="8s" repeatCount="indefinite" />
-                      </pattern>
+                      {/* Gradient for market price line */}
+                      <linearGradient id="marketGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      {/* Pulsing filter for insider marker */}
+                      <filter id="glowFilter">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur">
+                          <animate attributeName="stdDeviation" values="2;4;2" dur="3s" repeatCount="indefinite" />
+                        </feGaussianBlur>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
                     </defs>
-                    <CartesianGrid strokeDasharray="2 2" stroke="#171717" strokeOpacity={0.2} />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#404040" 
-                      style={{ fontSize: '10px', fontFamily: 'monospace' }} 
-                      tick={{ fill: '#404040' }}
-                    />
-                    <YAxis 
-                      stroke="#404040" 
-                      style={{ fontSize: '10px', fontFamily: 'monospace' }}
-                      tick={{ fill: '#404040' }}
-                      domain={['auto', 'auto']}
-                    />
-                    <Tooltip
-                      contentStyle={{ 
-                        background: '#0a0a0a', 
-                        border: '1px solid #262626',
-                        borderRadius: '0px',
-                        fontSize: '11px',
-                        fontFamily: 'monospace'
-                      }}
-                      labelStyle={{ color: '#737373' }}
-                      formatter={(value: any, name: string) => {
-                        if (name === 'close') {
-                          const delta = value - trade.pricePerShare;
-                          const deltaPercent = ((delta / trade.pricePerShare) * 100).toFixed(2);
-                          return [`$${value.toFixed(2)} (${delta >= 0 ? '+' : ''}${deltaPercent}%)`, 'Price'];
-                        }
-                        return [value, name];
-                      }}
-                    />
-                    {/* Reference line at insider trade price */}
-                    <ReferenceLine 
-                      y={trade.pricePerShare} 
-                      stroke={isBuy ? "#10b981" : "#ef4444"} 
-                      strokeDasharray="3 3" 
-                      strokeWidth={1}
-                      label={{ 
-                        value: `Insider: $${trade.pricePerShare.toFixed(2)}`, 
-                        position: 'insideTopRight',
-                        fill: '#737373',
-                        fontSize: 9,
-                        fontFamily: 'monospace'
-                      }}
-                    />
-                    {/* Positive gap (profit): striped area above insider price */}
-                    <Area 
-                      type="monotone" 
-                      dataKey="gapPositive"
-                      stackId="gap"
-                      baseLine={trade.pricePerShare}
-                      fill="url(#stripe-pattern-profit)"
-                      stroke="none"
-                    />
-                    {/* Negative gap (loss): striped area below insider price */}
-                    <Area 
-                      type="monotone" 
-                      dataKey="gapNegative"
-                      stackId="gap"
-                      baseLine={trade.pricePerShare}
-                      fill="url(#stripe-pattern-loss)"
-                      stroke="none"
-                    />
-                    <Line type="monotone" dataKey="close" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
-                    {/* Insider Trade Marker at first data point */}
-                    <ReferenceDot 
-                      x={priceHistory[0]?.date} 
-                      y={trade.pricePerShare} 
-                      r={5} 
-                      fill={isBuy ? "#10b981" : "#ef4444"}
-                      stroke="#0a0a0a"
-                      strokeWidth={2}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#262626" 
+                        style={{ fontSize: '9px', fontFamily: 'monospace' }} 
+                        tick={{ fill: '#525252' }}
+                        axisLine={{ strokeWidth: 1 }}
+                      />
+                      <YAxis 
+                        stroke="#262626" 
+                        style={{ fontSize: '9px', fontFamily: 'monospace' }}
+                        tick={{ fill: '#525252' }}
+                        axisLine={{ strokeWidth: 1 }}
+                        domain={['auto', 'auto']}
+                        width={50}
+                      />
+                      <Tooltip
+                        contentStyle={{ 
+                          background: '#0a0a0a', 
+                          border: '1px solid #262626',
+                          borderRadius: '0px',
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          padding: '8px'
+                        }}
+                        labelStyle={{ color: '#737373', fontSize: '9px' }}
+                        formatter={(value: any, name: string) => {
+                          if (name === 'marketPrice') {
+                            const delta = value - trade.pricePerShare;
+                            const deltaPercent = ((delta / trade.pricePerShare) * 100).toFixed(2);
+                            return [`$${value.toFixed(2)} (${delta >= 0 ? '+' : ''}${deltaPercent}%)`, 'Market'];
+                          }
+                          if (name === 'insiderPrice') {
+                            return [`$${value.toFixed(2)}`, 'Insider'];
+                          }
+                          return [value, name];
+                        }}
+                      />
+                      {/* Reference line for insider price */}
+                      <ReferenceLine 
+                        y={trade.pricePerShare} 
+                        stroke="#404040" 
+                        strokeDasharray="3 3" 
+                        strokeWidth={1}
+                        label={{ 
+                          value: `Insider Entry: $${trade.pricePerShare.toFixed(2)}`, 
+                          position: 'insideTopLeft',
+                          fill: '#737373',
+                          fontSize: 9,
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                      {/* Gradient area under market price */}
+                      <Area 
+                        type="monotone" 
+                        dataKey="marketPrice"
+                        fill="url(#marketGradient)"
+                        stroke="none"
+                        isAnimationActive={true}
+                        animationDuration={6000}
+                        animationEasing="ease-out"
+                      />
+                      {/* Insider price line (horizontal reference) */}
+                      <Line 
+                        type="monotone" 
+                        dataKey="insiderPrice" 
+                        stroke="#737373" 
+                        strokeWidth={1.5} 
+                        strokeDasharray="4 4"
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                      {/* Market price line with slow animation */}
+                      <Line 
+                        type="monotone" 
+                        dataKey="marketPrice" 
+                        stroke="#10b981" 
+                        strokeWidth={2.5} 
+                        dot={false}
+                        isAnimationActive={true}
+                        animationDuration={7000}
+                        animationEasing="ease-in-out"
+                      />
+                      {/* Insider trade marker with pulsing glow */}
+                      <ReferenceDot 
+                        x={priceHistory[0]?.date} 
+                        y={trade.pricePerShare} 
+                        r={7} 
+                        fill={isBuy ? "#10b981" : "#ef4444"}
+                        stroke={isBuy ? "#10b981" : "#ef4444"}
+                        strokeWidth={3}
+                        opacity={0.8}
+                        filter="url(#glowFilter)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
 
                 {/* Price Footer */}
                 <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-neutral-800 mt-2.5">
@@ -326,28 +378,6 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                       <span className="text-[10px]">{priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%</span>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Insider Info Row */}
-              <div className="px-3 py-2 border-t border-neutral-800 grid grid-cols-3 gap-3 text-xs bg-neutral-950/20">
-                <div>
-                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    INSIDER NAME
-                  </div>
-                  <div className="text-neutral-300 text-[10px]">{trade.traderName}</div>
-                </div>
-                <div>
-                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    POSITION / RELATION
-                  </div>
-                  <div className="text-neutral-300 text-[10px]">{trade.traderTitle || 'Insider'}</div>
-                </div>
-                <div>
-                  <div className="text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5">
-                    FILING DATE
-                  </div>
-                  <div className="text-neutral-300 text-[10px]">{new Date(trade.filedDate).toLocaleDateString()}</div>
                 </div>
               </div>
             </div>
