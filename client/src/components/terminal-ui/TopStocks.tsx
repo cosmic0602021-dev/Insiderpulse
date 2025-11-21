@@ -177,42 +177,54 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
           <div className="relative mb-8">
-             {/* Restricted Overlay for Top 3 - Only covers top third */}
+             {/* Restricted Overlay for Top 3 */}
              {!isPro && (
-                <div className="absolute top-0 left-0 right-0 h-1/3 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-t-sm border-t border-l border-r border-neutral-800/50">
-                    <div className="max-w-sm w-full bg-[#0a0a0a] border border-neutral-800 px-6 py-4 relative overflow-hidden text-center shadow-2xl mx-4">
+                <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50">
+                    <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-8 relative overflow-hidden text-center shadow-2xl m-4">
                       
                         {/* Status Bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-neutral-800">
                             <div className="h-full w-1/3 bg-amber-600 mx-auto"></div>
                         </div>
 
-                        <div className="mb-3 mt-1">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-sm bg-neutral-900 border border-neutral-800 mb-2">
-                                <ShieldCheck size={24} className="text-neutral-600" />
+                        <div className="mb-6 mt-2">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm bg-neutral-900 border border-neutral-800 mb-4">
+                                <ShieldCheck size={32} className="text-neutral-600" />
                             </div>
-                            <h2 className="text-base font-bold text-neutral-200 uppercase tracking-wider mb-1">
+                            <h2 className="text-xl font-bold text-neutral-200 uppercase tracking-wider mb-2">
                                 {t.restricted}
                             </h2>
-                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] font-bold px-2 py-0.5 uppercase tracking-widest">
+                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
                                 {t.securityLevel}
                             </div>
+                        </div>
+
+                        <div className="space-y-4 mb-8 border-t border-b border-neutral-900 py-6">
+                            <p className="text-xs text-neutral-400 font-mono leading-relaxed">
+                                {t.desc}
+                            </p>
                         </div>
                         
                         <button 
                             onClick={onUpgrade}
-                            className="w-full py-2 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 mb-4"
                         >
-                            <ScanLine size={12} />
+                            <ScanLine size={14} />
                             {t.cta}
                         </button>
+                        
+                        <div className="flex justify-center gap-4 text-[9px] text-neutral-600 font-mono uppercase">
+                            <span className="flex items-center gap-1"><Lock size={10} /> {t.aes}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><EyeOff size={10} /> {t.blind}</span>
+                        </div>
                     </div>
                 </div>
              )}
              
-             {/* Top 3 Items (Blurred if not Pro) */}
+             {/* Only show rank #1 in background (blurred) - hide #2 and #3 */}
              <div className={`grid gap-6 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : ''}`}>
-                {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
+                {isPro ? topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />) : topTier.slice(0, 1).map(stock => <StockCard key={stock.ticker} stock={stock} />)}
              </div>
           </div>
 
