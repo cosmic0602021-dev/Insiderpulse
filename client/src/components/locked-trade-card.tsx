@@ -98,9 +98,9 @@ export function LockedTradesSection({ trades, onUnlock }: LockedTradesSectionPro
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-amber-500" />
-          <h3 className="text-lg font-bold">{t('lockedTrade.realtimeZone')}</h3>
+          <h3 className="text-lg font-bold text-white">{t('lockedTrade.realtimeZone')}</h3>
         </div>
-        <span className="text-sm text-slate-400">
+        <span className="text-sm text-slate-300">
           {trades.length} {t('lockedTrade.lockedTrades')}
         </span>
       </div>

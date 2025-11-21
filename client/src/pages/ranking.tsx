@@ -431,7 +431,7 @@ export default function Ranking() {
             {/* Lock Overlay for Top 3 (Free Users Only) */}
             {isLocked && (
               <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-                <div className="text-center p-6 space-y-4">
+                <div className="text-center p-6 space-y-2">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-2">
                     <Lock className="w-8 h-8 text-amber-500" />
                   </div>
