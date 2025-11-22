@@ -10274,6 +10274,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
   const [stockPrice, setStockPrice] = useState(null);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   useEffect(() => {
     if (!isOpen || !(stock == null ? void 0 : stock.ticker)) {
       setStockPrice(null);
@@ -10382,7 +10383,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
       insight,
       priceTargets,
       riskLevel: isLargeAmount ? t.riskLow : t.riskMedium,
-      timeHorizon: isManyBuyers ? "2-4w" : "3-6w"
+      timeHorizon: isManyBuyers ? langKey === "ko" ? "2-4주" : "2-4 weeks" : langKey === "ko" ? "3-6주" : "3-6 weeks"
     };
   }, [stock, stats, t, langKey]);
   const priceHistory = useMemo(() => {
@@ -10390,18 +10391,23 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
     const avgDate = new Date((stats.firstDate.getTime() + stats.lastDate.getTime()) / 2);
     const avgPrice = stats.avgPrice;
     const data = [];
+    const seed = stock.ticker.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const pseudoRandom = (index) => {
+      const x = Math.sin(seed + index) * 1e4;
+      return x - Math.floor(x);
+    };
     for (let i = -7; i <= 6; i++) {
       const date = new Date(avgDate);
       date.setDate(date.getDate() + i);
       const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
       let marketPrice;
       if (i < 0) {
-        marketPrice = avgPrice * (0.95 + Math.random() * 0.03);
+        marketPrice = avgPrice * (0.95 + pseudoRandom(i + 10) * 0.03);
       } else if (i === 0) {
         marketPrice = avgPrice;
       } else {
         const trend = i * 5e-3;
-        marketPrice = avgPrice * (1 + trend + (Math.random() * 0.02 - 0.01));
+        marketPrice = avgPrice * (1 + trend + (pseudoRandom(i + 20) * 0.02 - 0.01));
       }
       data.push({
         date: dateStr,
@@ -10549,17 +10555,34 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mb-1", children: [
-          /* @__PURE__ */ jsx(Brain, { size: 12, className: "text-purple-400" }),
-          /* @__PURE__ */ jsx("span", { className: "text-[9px] font-bold text-purple-400 uppercase tracking-wider", children: langKey === "ko" ? "AI 분석결과" : "AI ANALYSIS" }),
-          isLoadingAnalysis && /* @__PURE__ */ jsx("span", { className: "text-[8px] text-purple-400/60 ml-1", children: langKey === "ko" ? "분석중..." : "Analyzing..." })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium", children: (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) || (aiAnalysis == null ? void 0 : aiAnalysis.insight) }),
-        (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.actionableRecommendation) && /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5", children: [
-          /* @__PURE__ */ jsx("span", { className: "font-bold", children: langKey === "ko" ? "추천: " : "Action: " }),
-          comprehensiveAnalysis.actionableRecommendation
-        ] })
+      /* @__PURE__ */ jsxs("div", { className: "border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
+        /* @__PURE__ */ jsxs(
+          "div",
+          {
+            className: "px-2 py-2 flex items-center justify-between cursor-pointer hover:bg-purple-950/20 transition-colors",
+            onClick: () => !isLoadingAnalysis && setIsAnalysisExpanded(!isAnalysisExpanded),
+            children: [
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
+                /* @__PURE__ */ jsx(Brain, { size: 12, className: "text-purple-400" }),
+                /* @__PURE__ */ jsx("span", { className: "text-[9px] font-bold text-purple-400 uppercase tracking-wider", children: langKey === "ko" ? "AI 분석결과" : "AI ANALYSIS" })
+              ] }),
+              !isLoadingAnalysis && (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-purple-400/60", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] font-mono uppercase", children: isAnalysisExpanded ? langKey === "ko" ? "접기" : "Less" : langKey === "ko" ? "더보기" : "More" }),
+                isAnalysisExpanded ? /* @__PURE__ */ jsx(ChevronUp, { size: 10 }) : /* @__PURE__ */ jsx(ChevronDown, { size: 10 })
+              ] })
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsx("div", { className: "px-2 pb-2", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "pl-5 space-y-1.5", children: [
+          /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-full" }),
+          /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-4/5" })
+        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx("p", { className: `text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? "line-clamp-1" : ""}`, children: comprehensiveAnalysis.executiveSummary }),
+          isAnalysisExpanded && comprehensiveAnalysis.actionableRecommendation && /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5", children: [
+            /* @__PURE__ */ jsx("span", { className: "font-bold", children: langKey === "ko" ? "추천: " : "Action: " }),
+            comprehensiveAnalysis.actionableRecommendation
+          ] })
+        ] }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : "Unable to load analysis data." }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
@@ -10570,8 +10593,8 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "예측 시기" : "TIME HORIZON" }),
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || "2-4w" })
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "목표 달성" : "TARGET" }),
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon) || (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || (langKey === "ko" ? "2-4주 내" : "2-4 weeks") })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [

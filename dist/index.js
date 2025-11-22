@@ -8674,7 +8674,7 @@ var init_news_correlation_service = __esm({
           ]);
           const allNews = newsFromAPIs.flat();
           const uniqueNews = this.deduplicateNews(allNews);
-          const relevantNews = uniqueNews.filter((article) => article.relevanceScore >= 30).sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 50);
+          const relevantNews = uniqueNews.filter((article) => article.relevanceScore >= 60).sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 50);
           this.newsCache.set(cacheKey, relevantNews);
           setTimeout(() => this.newsCache.delete(cacheKey), 24 * 60 * 60 * 1e3);
           return relevantNews;
@@ -8744,7 +8744,7 @@ var init_news_correlation_service = __esm({
             return publishDate >= startDate && publishDate <= endDate;
           }).map((article) => {
             const relevanceScore = this.calculateRelevanceScore(
-              { title: article.headline, description: article.summary },
+              { title: article.headline, description: article.summary, ticker },
               ticker,
               companyName
             );
@@ -8793,8 +8793,22 @@ var init_news_correlation_service = __esm({
       calculateRelevanceScore(article, ticker, companyName) {
         const text2 = (article.title + " " + (article.description || article.summary || "")).toLowerCase();
         let score = 0;
-        if (text2.includes(ticker.toLowerCase())) score += 40;
-        if (companyName && text2.includes(companyName.toLowerCase())) score += 30;
+        const escapedTicker = ticker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const tickerRegex = new RegExp(`\\b${escapedTicker}\\b`, "i");
+        if (tickerRegex.test(text2)) score += 40;
+        if (companyName && companyName.toLowerCase() !== ticker.toLowerCase()) {
+          const companyWords = companyName.toLowerCase().split(/\s+/).filter((w) => w.length >= 5);
+          const matchedWords = companyWords.filter((word) => {
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const wordRegex = new RegExp(`\\b${escapedWord}\\b`, "i");
+            return wordRegex.test(text2);
+          });
+          if (companyWords.length > 0 && matchedWords.length === companyWords.length) {
+            score += 30;
+          }
+        } else if (companyName) {
+          score += 10;
+        }
         const importantKeywords = [
           "earnings",
           "revenue",

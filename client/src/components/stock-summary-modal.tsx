@@ -1,4 +1,4 @@
-import { X, AlertTriangle, Brain, Target, TrendingUp, Users } from 'lucide-react';
+import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -27,6 +27,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !stock?.ticker) {
@@ -158,7 +159,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       insight,
       priceTargets,
       riskLevel: isLargeAmount ? t.riskLow : t.riskMedium,
-      timeHorizon: isManyBuyers ? '2-4w' : '3-6w'
+      timeHorizon: isManyBuyers ? (langKey === 'ko' ? '2-4주' : '2-4 weeks') : (langKey === 'ko' ? '3-6주' : '3-6 weeks')
     };
   }, [stock, stats, t, langKey]);
 
@@ -169,6 +170,13 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     const avgPrice = stats.avgPrice;
     const data = [];
 
+    // Use ticker as seed for consistent pseudo-random values
+    const seed = stock.ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const pseudoRandom = (index: number) => {
+      const x = Math.sin(seed + index) * 10000;
+      return x - Math.floor(x);
+    };
+
     for (let i = -7; i <= 6; i++) {
       const date = new Date(avgDate);
       date.setDate(date.getDate() + i);
@@ -176,12 +184,12 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
       let marketPrice;
       if (i < 0) {
-        marketPrice = avgPrice * (0.95 + Math.random() * 0.03);
+        marketPrice = avgPrice * (0.95 + pseudoRandom(i + 10) * 0.03);
       } else if (i === 0) {
         marketPrice = avgPrice;
       } else {
         const trend = i * 0.005;
-        marketPrice = avgPrice * (1 + trend + (Math.random() * 0.02 - 0.01));
+        marketPrice = avgPrice * (1 + trend + (pseudoRandom(i + 20) * 0.02 - 0.01));
       }
 
       data.push({
@@ -374,28 +382,51 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             </div>
           </div>
 
-          {/* AI Insight - Prominent display */}
-          <div className="px-2 py-2 border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Brain size={12} className="text-purple-400" />
-              <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
-                {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
-              </span>
-              {isLoadingAnalysis && (
-                <span className="text-[8px] text-purple-400/60 ml-1">
-                  {langKey === 'ko' ? '분석중...' : 'Analyzing...'}
+          {/* AI Insight - Collapsible */}
+          <div className="border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0">
+            <div
+              className="px-2 py-2 flex items-center justify-between cursor-pointer hover:bg-purple-950/20 transition-colors"
+              onClick={() => !isLoadingAnalysis && setIsAnalysisExpanded(!isAnalysisExpanded)}
+            >
+              <div className="flex items-center gap-1.5">
+                <Brain size={12} className="text-purple-400" />
+                <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
+                  {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
                 </span>
+              </div>
+              {!isLoadingAnalysis && comprehensiveAnalysis?.executiveSummary && (
+                <div className="flex items-center gap-1 text-purple-400/60">
+                  <span className="text-[8px] font-mono uppercase">
+                    {isAnalysisExpanded ? (langKey === 'ko' ? '접기' : 'Less') : (langKey === 'ko' ? '더보기' : 'More')}
+                  </span>
+                  {isAnalysisExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                </div>
               )}
             </div>
-            <p className="text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium">
-              {comprehensiveAnalysis?.executiveSummary || aiAnalysis?.insight}
-            </p>
-            {comprehensiveAnalysis?.actionableRecommendation && (
-              <p className="text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5">
-                <span className="font-bold">{langKey === 'ko' ? '추천: ' : 'Action: '}</span>
-                {comprehensiveAnalysis.actionableRecommendation}
-              </p>
-            )}
+            <div className="px-2 pb-2">
+              {isLoadingAnalysis ? (
+                <div className="pl-5 space-y-1.5">
+                  <div className="h-3 bg-purple-900/30 rounded animate-pulse w-full"></div>
+                  <div className="h-3 bg-purple-900/30 rounded animate-pulse w-4/5"></div>
+                </div>
+              ) : comprehensiveAnalysis?.executiveSummary ? (
+                <>
+                  <p className={`text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? 'line-clamp-1' : ''}`}>
+                    {comprehensiveAnalysis.executiveSummary}
+                  </p>
+                  {isAnalysisExpanded && comprehensiveAnalysis.actionableRecommendation && (
+                    <p className="text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5">
+                      <span className="font-bold">{langKey === 'ko' ? '추천: ' : 'Action: '}</span>
+                      {comprehensiveAnalysis.actionableRecommendation}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-[10px] text-neutral-500 pl-5 italic">
+                  {langKey === 'ko' ? '분석 데이터를 불러올 수 없습니다.' : 'Unable to load analysis data.'}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Risk & Time Horizon */}
@@ -411,10 +442,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             </div>
             <div className="border border-neutral-800 bg-neutral-950/30 p-2">
               <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
-                {langKey === 'ko' ? '예측 시기' : 'TIME HORIZON'}
+                {langKey === 'ko' ? '목표 달성' : 'TARGET'}
               </div>
               <div className="text-[10px] text-neutral-200 font-mono font-bold">
-                {aiAnalysis?.timeHorizon || '2-4w'}
+                {comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주 내' : '2-4 weeks')}
               </div>
             </div>
           </div>

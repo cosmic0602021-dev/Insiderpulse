@@ -170,8 +170,9 @@ class NewsCorrelationService {
       const uniqueNews = this.deduplicateNews(allNews);
 
       // 관련성 점수로 필터링 및 정렬
+      // Increase threshold to 60 to filter out unrelated news (was 30)
       const relevantNews = uniqueNews
-        .filter(article => article.relevanceScore >= 30)
+        .filter(article => article.relevanceScore >= 60)
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, 50); // 최대 50개 뉴스
 
@@ -266,7 +267,7 @@ class NewsCorrelationService {
         })
         .map(article => {
           const relevanceScore = this.calculateRelevanceScore(
-            { title: article.headline, description: article.summary },
+            { title: article.headline, description: article.summary, ticker },
             ticker,
             companyName
           );
@@ -328,11 +329,34 @@ class NewsCorrelationService {
     const text = (article.title + ' ' + (article.description || article.summary || '')).toLowerCase();
     let score = 0;
 
-    // 티커 언급
-    if (text.includes(ticker.toLowerCase())) score += 40;
+    // 티커 언급 - Use word boundary matching to avoid false positives
+    // e.g., "VAC" should not match "vacation" or "vacuum"
+    // Escape special regex characters in ticker
+    const escapedTicker = ticker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const tickerRegex = new RegExp(`\\b${escapedTicker}\\b`, 'i');
+    if (tickerRegex.test(text)) score += 40;
 
-    // 회사명 언급
-    if (companyName && text.includes(companyName.toLowerCase())) score += 30;
+    // 회사명 언급 - Use word boundary matching for company name
+    if (companyName && companyName.toLowerCase() !== ticker.toLowerCase()) {
+      // Only check company name if it's different from ticker
+      // Filter words: must be 5+ characters to avoid common words
+      const companyWords = companyName.toLowerCase().split(/\s+/).filter(w => w.length >= 5);
+
+      // Use word boundary matching for each word
+      const matchedWords = companyWords.filter(word => {
+        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const wordRegex = new RegExp(`\\b${escapedWord}\\b`, 'i');
+        return wordRegex.test(text);
+      });
+
+      // Require ALL significant words to match (100% exact)
+      if (companyWords.length > 0 && matchedWords.length === companyWords.length) {
+        score += 30;
+      }
+    } else if (companyName) {
+      // If company name is same as ticker, add smaller bonus for ticker match
+      score += 10;
+    }
 
     // 중요 키워드들
     const importantKeywords = [
