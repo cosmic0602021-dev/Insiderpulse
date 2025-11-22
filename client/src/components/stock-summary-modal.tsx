@@ -25,10 +25,13 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const { language } = useLanguage();
   const gradientId = useId();
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
+  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<any>(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !stock?.ticker) {
       setStockPrice(null);
+      setComprehensiveAnalysis(null);
       return;
     }
 
@@ -44,8 +47,34 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       }
     };
 
+    // Fetch comprehensive AI analysis
+    const fetchAnalysis = async () => {
+      setIsLoadingAnalysis(true);
+      try {
+        // First get the latest trade for this ticker
+        const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
+        if (tradesResponse.ok) {
+          const tradesData = await tradesResponse.json();
+          if (tradesData.trades && tradesData.trades.length > 0) {
+            const tradeId = tradesData.trades[0].id;
+            // Get comprehensive analysis for this trade
+            const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`);
+            if (analysisResponse.ok) {
+              const analysisData = await analysisResponse.json();
+              setComprehensiveAnalysis(analysisData);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch analysis:', error);
+      } finally {
+        setIsLoadingAnalysis(false);
+      }
+    };
+
     fetchStockPrice();
-  }, [isOpen, stock?.ticker]);
+    fetchAnalysis();
+  }, [isOpen, stock?.ticker, language]);
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].modal;
@@ -314,9 +343,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 <TrendingUp size={10} className="text-emerald-500" />
                 <span className="text-[8px] text-emerald-500/70 uppercase font-mono">Signal</span>
               </div>
-              <div className="text-lg font-bold text-emerald-500">{tTop.strongBuy}</div>
+              <div className="text-lg font-bold text-emerald-500">
+                {comprehensiveAnalysis?.signal || tTop.strongBuy}
+              </div>
               <div className="text-[8px] text-emerald-500/60 font-mono">
-                {aiAnalysis?.confidence}% {langKey === 'ko' ? '신뢰도' : 'conf'}
+                {comprehensiveAnalysis?.confidence || aiAnalysis?.confidence}% {langKey === 'ko' ? '신뢰도' : 'conf'}
               </div>
             </div>
 
@@ -329,15 +360,15 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               <div className="space-y-1">
                 <div className="flex justify-between text-[9px]">
                   <span className="text-neutral-600">{langKey === 'ko' ? '보수' : 'Low'}</span>
-                  <span className="text-neutral-400 font-mono">{formatCurrency(aiAnalysis?.priceTargets.conservative || 0)}</span>
+                  <span className="text-neutral-400 font-mono">{formatCurrency(comprehensiveAnalysis?.priceTargets?.conservative || aiAnalysis?.priceTargets.conservative || 0)}</span>
                 </div>
                 <div className="flex justify-between text-[9px]">
                   <span className="text-emerald-600">{langKey === 'ko' ? '현실' : 'Mid'}</span>
-                  <span className="text-emerald-400 font-mono font-bold">{formatCurrency(aiAnalysis?.priceTargets.realistic || 0)}</span>
+                  <span className="text-emerald-400 font-mono font-bold">{formatCurrency(comprehensiveAnalysis?.priceTargets?.realistic || aiAnalysis?.priceTargets.realistic || 0)}</span>
                 </div>
                 <div className="flex justify-between text-[9px]">
                   <span className="text-amber-600">{langKey === 'ko' ? '낙관' : 'High'}</span>
-                  <span className="text-amber-400 font-mono">{formatCurrency(aiAnalysis?.priceTargets.optimistic || 0)}</span>
+                  <span className="text-amber-400 font-mono">{formatCurrency(comprehensiveAnalysis?.priceTargets?.optimistic || aiAnalysis?.priceTargets.optimistic || 0)}</span>
                 </div>
               </div>
             </div>
@@ -350,10 +381,21 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
                 {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
               </span>
+              {isLoadingAnalysis && (
+                <span className="text-[8px] text-purple-400/60 ml-1">
+                  {langKey === 'ko' ? '분석중...' : 'Analyzing...'}
+                </span>
+              )}
             </div>
             <p className="text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium">
-              {aiAnalysis?.insight}
+              {comprehensiveAnalysis?.executiveSummary || aiAnalysis?.insight}
             </p>
+            {comprehensiveAnalysis?.actionableRecommendation && (
+              <p className="text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5">
+                <span className="font-bold">{langKey === 'ko' ? '추천: ' : 'Action: '}</span>
+                {comprehensiveAnalysis.actionableRecommendation}
+              </p>
+            )}
           </div>
 
           {/* Risk & Time Horizon */}
