@@ -7,9 +7,11 @@ import { apiRequest } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { type Language } from '@/lib/translations';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { StockSummaryModal } from '@/components/stock-summary-modal';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
+import type { StockRecommendation } from '@/components/terminal-ui/types';
 
 interface RankingInsider {
   name: string;
@@ -60,6 +62,8 @@ export default function TopStocksTerminal() {
   const [, navigate] = useLocation();
   const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<StockRecommendation | null>(null);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
   const isPro = accessLevel?.hasRealtimeAccess || false;
 
@@ -104,7 +108,17 @@ export default function TopStocksTerminal() {
     setIsModalOpen(false);
     setSelectedTrade(null);
   };
-  
+
+  const handleViewDetails = (stock: StockRecommendation) => {
+    setSelectedStock(stock);
+    setIsSummaryModalOpen(true);
+  };
+
+  const handleCloseSummaryModal = () => {
+    setIsSummaryModalOpen(false);
+    setSelectedStock(null);
+  };
+
   // Fetch ranking data using apiRequest with auth header
   const { data: rankingData, isLoading, error } = useQuery<RankingResponse>({
     queryKey: ['/api/rankings', language],
@@ -196,6 +210,7 @@ export default function TopStocksTerminal() {
         isPro={isPro}
         onUpgrade={handleUpgrade}
         onSelectTrade={handleSelectTrade}
+        onViewDetails={handleViewDetails}
       />
       {selectedTrade && (
         <TradeDetailModal
@@ -204,6 +219,11 @@ export default function TopStocksTerminal() {
           onClose={handleCloseModal}
         />
       )}
+      <StockSummaryModal
+        stock={selectedStock}
+        isOpen={isSummaryModalOpen}
+        onClose={handleCloseSummaryModal}
+      />
     </>
   );
 }

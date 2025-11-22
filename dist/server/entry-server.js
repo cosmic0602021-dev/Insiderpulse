@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -5755,6 +5755,25 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
   const { language } = useLanguage();
   const [newsExpanded, setNewsExpanded] = useState(true);
   const gradientId = useId();
+  const [stockPrice, setStockPrice] = useState(null);
+  useEffect(() => {
+    if (!isOpen || !(trade == null ? void 0 : trade.ticker)) {
+      setStockPrice(null);
+      return;
+    }
+    const fetchStockPrice = async () => {
+      try {
+        const response = await fetch(`/api/stocks/${trade.ticker}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStockPrice(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch stock price:", error);
+      }
+    };
+    fetchStockPrice();
+  }, [isOpen, trade == null ? void 0 : trade.ticker]);
   const langKey = language.toLowerCase();
   const t = TRANSLATIONS[langKey].modal;
   const aiAnalysis = useMemo(() => {
@@ -5911,8 +5930,8 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
     return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${trade.ticker}&type=4&dateb=&owner=only&count=100`;
   };
   const secFilingUrl = getSecFilingUrl();
-  const currentPrice = trade.pricePerShare * 0.96;
-  const priceChange = (currentPrice - trade.pricePerShare) / trade.pricePerShare * 100;
+  const currentPrice = (stockPrice == null ? void 0 : stockPrice.currentPrice) || trade.pricePerShare;
+  const priceChange = stockPrice ? (stockPrice.currentPrice - trade.pricePerShare) / trade.pricePerShare * 100 : 0;
   news.filter((n) => n.sentiment === "POSITIVE").length;
   news.filter((n) => n.sentiment === "NEUTRAL").length;
   return /* @__PURE__ */ jsx(Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs(DialogContent, { className: "max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden", children: [
@@ -10035,7 +10054,7 @@ const SettingsView = ({ lang, setLang }) => {
     ] })
   ] });
 };
-const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
+const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails }) => {
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
   const topTier = data.slice(0, 3);
@@ -10092,7 +10111,21 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
           "0",
           stock.rank
         ] }),
-        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 tracking-wide", children: stock.ticker })
+        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 tracking-wide", children: stock.ticker }),
+        onViewDetails && /* @__PURE__ */ jsxs(
+          "button",
+          {
+            onClick: (e) => {
+              e.stopPropagation();
+              onViewDetails(stock);
+            },
+            className: "ml-2 px-2 py-1 bg-emerald-900/30 border border-emerald-800 text-emerald-500 text-[9px] uppercase tracking-wider font-bold hover:bg-emerald-900/50 transition-colors flex items-center gap-1",
+            children: [
+              /* @__PURE__ */ jsx(Eye, { size: 10 }),
+              lang === "ko" ? "자세히" : "Details"
+            ]
+          }
+        )
       ] }),
       /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-500 uppercase mb-4 tracking-wider", children: stock.companyName }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-y-4 text-[10px] uppercase text-neutral-600", children: [
@@ -10229,6 +10262,349 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
     ] })
   ] });
 };
+function StockSummaryModal({ isOpen, onClose, stock }) {
+  var _a;
+  const { language } = useLanguage();
+  const [newsExpanded, setNewsExpanded] = useState(true);
+  const gradientId = useId();
+  const [stockPrice, setStockPrice] = useState(null);
+  useEffect(() => {
+    if (!isOpen || !(stock == null ? void 0 : stock.ticker)) {
+      setStockPrice(null);
+      return;
+    }
+    const fetchStockPrice = async () => {
+      try {
+        const response = await fetch(`/api/stocks/${stock.ticker}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStockPrice(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch stock price:", error);
+      }
+    };
+    fetchStockPrice();
+  }, [isOpen, stock == null ? void 0 : stock.ticker]);
+  const langKey = language.toLowerCase();
+  const t = TRANSLATIONS[langKey].modal;
+  const tTop = TRANSLATIONS[langKey].top;
+  const tData = TRANSLATIONS[langKey].data;
+  const stats = useMemo(() => {
+    if (!stock) return null;
+    const buyers = stock.buyers;
+    const totalShares = buyers.reduce((sum, b) => sum + b.shares, 0);
+    const totalAmount = buyers.reduce((sum, b) => sum + b.amount, 0);
+    const avgPrice = totalAmount / totalShares;
+    const avgPriceChange = buyers.reduce((sum, b) => sum + b.priceChange, 0) / buyers.length;
+    const dates = buyers.map((b) => new Date(b.date)).sort((a, b) => a.getTime() - b.getTime());
+    const firstDate = dates[0];
+    const lastDate = dates[dates.length - 1];
+    return {
+      buyerCount: buyers.length,
+      totalShares,
+      totalAmount,
+      avgPrice,
+      avgPriceChange,
+      firstDate,
+      lastDate,
+      currentPrice: stock.currentPrice,
+      priceChange: stock.priceChange
+    };
+  }, [stock]);
+  const aiAnalysis = useMemo(() => {
+    if (!stock || !stats) return null;
+    const isManyBuyers = stats.buyerCount >= 3;
+    const isLargeAmount = stats.totalAmount > 1e6;
+    const isPositiveChange = stats.priceChange > 0;
+    let confidence = 50;
+    confidence += stats.buyerCount * 8;
+    if (isLargeAmount) confidence += 15;
+    if (isPositiveChange) confidence += 10;
+    confidence = Math.min(95, confidence);
+    let insight = "";
+    if (langKey === "ko") {
+      if (isManyBuyers && isLargeAmount) {
+        insight = `${stats.buyerCount}명의 내부자가 동시에 대규모 매수를 진행했습니다. 강력한 확신 신호입니다.`;
+      } else if (isManyBuyers) {
+        insight = `${stats.buyerCount}명의 내부자가 동시에 매수했습니다. 내부적으로 긍정적인 전망을 공유하고 있습니다.`;
+      } else {
+        insight = "여러 내부자의 동시 매수는 회사에 대한 확신을 나타냅니다.";
+      }
+    } else {
+      if (isManyBuyers && isLargeAmount) {
+        insight = `${stats.buyerCount} insiders made large simultaneous purchases. Strong conviction signal.`;
+      } else if (isManyBuyers) {
+        insight = `${stats.buyerCount} insiders bought simultaneously. Sharing positive internal outlook.`;
+      } else {
+        insight = "Multiple insider buys indicate confidence in the company.";
+      }
+    }
+    const multiplier = 1 + stats.buyerCount * 0.02;
+    const priceTargets = {
+      conservative: stats.avgPrice * (1.03 * multiplier),
+      realistic: stats.avgPrice * (1.08 * multiplier),
+      optimistic: stats.avgPrice * (1.15 * multiplier)
+    };
+    return {
+      signal: "BUY",
+      confidence,
+      insight,
+      priceTargets,
+      riskLevel: isLargeAmount ? t.riskLow : t.riskMedium,
+      timeHorizon: isManyBuyers ? "2-4 weeks" : "3-6 weeks"
+    };
+  }, [stock, stats, t, langKey]);
+  const priceHistory = useMemo(() => {
+    if (!stock || !stats) return [];
+    const avgDate = new Date((stats.firstDate.getTime() + stats.lastDate.getTime()) / 2);
+    const avgPrice = stats.avgPrice;
+    const data = [];
+    for (let i = -7; i <= 6; i++) {
+      const date = new Date(avgDate);
+      date.setDate(date.getDate() + i);
+      const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+      let marketPrice;
+      if (i < 0) {
+        marketPrice = avgPrice * (0.95 + Math.random() * 0.03);
+      } else if (i === 0) {
+        marketPrice = avgPrice;
+      } else {
+        const trend = i * 5e-3;
+        marketPrice = avgPrice * (1 + trend + (Math.random() * 0.02 - 0.01));
+      }
+      data.push({
+        date: dateStr,
+        marketPrice,
+        avgBuyPrice: avgPrice,
+        isClusterCenter: i === 0
+      });
+    }
+    return data;
+  }, [stock, stats]);
+  const news = useMemo(() => [
+    { title: t.newsEarnings, sentiment: "POSITIVE" },
+    { title: t.newsProduct, sentiment: "POSITIVE" },
+    { title: t.newsVolatility, sentiment: "NEUTRAL" },
+    { title: t.newsAnalyst, sentiment: "POSITIVE" }
+  ], [t]);
+  if (!stock || !stats) return null;
+  const currentPrice = (stockPrice == null ? void 0 : stockPrice.currentPrice) || stock.currentPrice;
+  const priceChange = (currentPrice - stats.avgPrice) / stats.avgPrice * 100;
+  return /* @__PURE__ */ jsx(Dialog, { open: isOpen, onOpenChange: onClose, children: /* @__PURE__ */ jsxs(DialogContent, { className: "max-w-[95vw] lg:max-w-[1400px] w-full h-[95vh] max-h-[950px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden", children: [
+    /* @__PURE__ */ jsx(VisuallyHidden, { children: /* @__PURE__ */ jsxs(DialogTitle, { children: [
+      stock.companyName,
+      " - Cluster Buy Summary"
+    ] }) }),
+    /* @__PURE__ */ jsxs("div", { className: "flex flex-col h-full overflow-hidden", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-gradient-to-r from-emerald-950/20 to-transparent", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
+          /* @__PURE__ */ jsx("div", { className: `w-10 h-10 flex items-center justify-center border ${stock.rank <= 3 ? "bg-amber-900/30 border-amber-700 text-amber-500" : "bg-neutral-900 border-neutral-700 text-neutral-400"}`, children: /* @__PURE__ */ jsxs("span", { className: "font-mono text-lg font-bold", children: [
+            "#",
+            stock.rank
+          ] }) }),
+          /* @__PURE__ */ jsxs("div", { children: [
+            /* @__PURE__ */ jsxs("h2", { className: "text-lg text-neutral-200 font-bold tracking-tight flex items-center gap-2", children: [
+              stock.ticker,
+              /* @__PURE__ */ jsx("span", { className: "text-sm font-normal text-neutral-500", children: "•" }),
+              /* @__PURE__ */ jsx("span", { className: "text-sm font-normal text-neutral-400", children: stock.companyName })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mt-0.5", children: [
+              /* @__PURE__ */ jsx("span", { className: "bg-emerald-900/30 text-emerald-500 text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider", children: langKey === "ko" ? "클러스터 매수" : "CLUSTER BUY" }),
+              /* @__PURE__ */ jsxs("span", { className: "text-[10px] text-neutral-600 font-mono", children: [
+                stats.buyerCount,
+                " ",
+                langKey === "ko" ? "명 동시매수" : "SIMULTANEOUS BUYERS"
+              ] })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx("button", { onClick: onClose, className: "p-1.5 hover:bg-neutral-900 transition-colors", children: /* @__PURE__ */ jsx(X, { size: 16, className: "text-neutral-500" }) })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-5 border-b border-neutral-800", children: [
+        /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-r border-neutral-800 bg-emerald-950/10", children: [
+          /* @__PURE__ */ jsxs("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1 flex items-center gap-1", children: [
+            /* @__PURE__ */ jsx(Users, { size: 9 }),
+            langKey === "ko" ? "동시 매수자" : "BUYERS"
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "text-2xl font-bold text-emerald-500", children: stats.buyerCount })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-r border-neutral-800", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: tTop.avgPrice.toUpperCase() }),
+          /* @__PURE__ */ jsx("div", { className: "text-xl font-light text-neutral-200", children: formatCurrency(stats.avgPrice) })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-r border-neutral-800", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.sharesTraded.toUpperCase() }),
+          /* @__PURE__ */ jsx("div", { className: "text-xl font-light text-neutral-200", children: formatNumber(stats.totalShares) })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-r border-neutral-800", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.totalValue.toUpperCase() }),
+          /* @__PURE__ */ jsx("div", { className: "text-xl font-light text-emerald-500", children: formatCurrency(stats.totalAmount, false) })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "px-4 py-3", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.currentPrice.toUpperCase() }),
+          /* @__PURE__ */ jsxs("div", { className: `text-xl font-light flex items-center gap-1.5 ${priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
+            formatCurrency(currentPrice),
+            /* @__PURE__ */ jsxs("span", { className: "text-xs", children: [
+              priceChange >= 0 ? "+" : "",
+              priceChange.toFixed(1),
+              "%"
+            ] })
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] overflow-auto", children: [
+        /* @__PURE__ */ jsxs("div", { className: "border-r border-neutral-800 flex flex-col overflow-hidden", children: [
+          /* @__PURE__ */ jsx("div", { className: "p-3 border-b border-neutral-800", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 180, children: /* @__PURE__ */ jsxs(ComposedChart, { data: priceHistory, margin: { left: 10, right: 20, top: 10, bottom: 5 }, children: [
+            /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs("linearGradient", { id: gradientId, x1: "0", y1: "0", x2: "0", y2: "1", children: [
+              /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: "#10b981", stopOpacity: 0.6 }),
+              /* @__PURE__ */ jsx("stop", { offset: "50%", stopColor: "#059669", stopOpacity: 0.3 }),
+              /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: "#064e3b", stopOpacity: 0.05 })
+            ] }) }),
+            /* @__PURE__ */ jsx(CartesianGrid, { stroke: "#999999", strokeDasharray: "3 3", strokeOpacity: 0.3 }),
+            /* @__PURE__ */ jsx(XAxis, { dataKey: "date", stroke: "#666666", style: { fontSize: "9px", fontFamily: "monospace" }, tick: { fill: "#525252" } }),
+            /* @__PURE__ */ jsx(YAxis, { stroke: "#666666", style: { fontSize: "9px", fontFamily: "monospace" }, tick: { fill: "#525252" }, domain: ["auto", "auto"], width: 50 }),
+            /* @__PURE__ */ jsx(
+              Tooltip,
+              {
+                contentStyle: { background: "#0a0a0a", border: "1px solid #262626", borderRadius: "0px", fontSize: "10px", fontFamily: "monospace", padding: "8px" },
+                labelStyle: { color: "#737373", fontSize: "9px" },
+                formatter: (value, name) => {
+                  if (name === "marketPrice") {
+                    const delta = value - stats.avgPrice;
+                    const deltaPercent = (delta / stats.avgPrice * 100).toFixed(2);
+                    return [`$${value.toFixed(2)} (${delta >= 0 ? "+" : ""}${deltaPercent}%)`, "Market"];
+                  }
+                  return [value, name];
+                }
+              }
+            ),
+            /* @__PURE__ */ jsx(ReferenceLine, { y: stats.avgPrice, stroke: "#404040", strokeDasharray: "3 3", strokeWidth: 1, label: { value: `Avg Entry: $${stats.avgPrice.toFixed(2)}`, position: "insideTopLeft", fill: "#737373", fontSize: 9, fontFamily: "monospace" } }),
+            /* @__PURE__ */ jsx(Area, { type: "monotone", dataKey: "marketPrice", fill: `url(#${gradientId})`, fillOpacity: 1, stroke: "none", isAnimationActive: true, animationDuration: 4e3 }),
+            /* @__PURE__ */ jsx(Line, { type: "monotone", dataKey: "marketPrice", stroke: "#10b981", strokeWidth: 2.5, dot: false, isAnimationActive: true, animationDuration: 4e3 }),
+            /* @__PURE__ */ jsx(ReferenceDot, { x: (_a = priceHistory.find((p) => p.isClusterCenter)) == null ? void 0 : _a.date, y: stats.avgPrice, r: 4, fill: "#10b981", stroke: "#0a0a0a", strokeWidth: 1.5 })
+          ] }) }) }),
+          /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-3", children: [
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-3 pb-2 border-b border-neutral-800", children: [
+              /* @__PURE__ */ jsx(Users, { size: 12, className: "text-emerald-600" }),
+              /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold text-neutral-400 uppercase tracking-wider", children: langKey === "ko" ? "동시 매수자 상세" : "SIMULTANEOUS BUYER DETAILS" }),
+              /* @__PURE__ */ jsx("span", { className: "ml-auto text-[9px] bg-neutral-800 text-neutral-500 px-1.5 py-0.5 rounded-full font-mono", children: stats.buyerCount })
+            ] }),
+            /* @__PURE__ */ jsx("div", { className: "space-y-2", children: stock.buyers.map((buyer, idx) => /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-12 items-center gap-3 p-3 bg-neutral-900/30 border-l-2 border-emerald-800 hover:bg-neutral-900/50 transition-colors", children: [
+              /* @__PURE__ */ jsx("div", { className: "col-span-1", children: /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-600 font-mono", children: idx + 1 }) }),
+              /* @__PURE__ */ jsxs("div", { className: "col-span-4", children: [
+                /* @__PURE__ */ jsx("div", { className: "text-sm font-bold text-neutral-300 truncate", children: buyer.name }),
+                /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500", children: tData[buyer.relation] || buyer.relation })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50", children: [
+                /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-500 uppercase mb-0.5", children: tTop.buyPrice }),
+                /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-400 font-mono font-bold", children: formatCurrency(buyer.price) }),
+                /* @__PURE__ */ jsxs("div", { className: `text-[9px] font-bold ${buyer.priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
+                  buyer.priceChange > 0 ? "+" : "",
+                  buyer.priceChange,
+                  "%"
+                ] })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "col-span-2 bg-neutral-900/50 p-2 rounded border border-neutral-800/50", children: [
+                /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-500 uppercase mb-0.5", children: tTop.shareCount }),
+                /* @__PURE__ */ jsx("div", { className: "text-sm text-white font-mono font-bold", children: formatNumber(buyer.shares) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "col-span-2 bg-neutral-900/50 p-2 rounded border border-neutral-800/50", children: [
+                /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-500 uppercase mb-0.5", children: tTop.totalAmount }),
+                /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-500 font-bold font-mono", children: formatCurrency(buyer.amount) })
+              ] })
+            ] }, idx)) })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3 p-4 bg-neutral-950/20 overflow-y-auto", children: [
+          /* @__PURE__ */ jsxs("div", { className: "px-3 py-3 bg-emerald-950/30 border border-emerald-900/50 flex items-center justify-between", children: [
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx(TrendingUp, { size: 14, className: "text-emerald-500" }),
+              /* @__PURE__ */ jsx("span", { className: "text-sm text-emerald-500 font-bold uppercase tracking-wider", children: tTop.strongBuy })
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "text-[10px] text-emerald-500/70 font-mono", children: langKey === "ko" ? "클러스터 매수 감지" : "CLUSTER BUY DETECTED" })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30", children: [
+            /* @__PURE__ */ jsxs("div", { className: "px-3 py-2 border-b border-neutral-800 flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx(Brain, { size: 11, className: "text-neutral-500" }),
+              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500 uppercase tracking-widest font-mono", children: t.aiAnalysis.toUpperCase() })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "p-3 space-y-3", children: [
+              /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-3", children: [
+                /* @__PURE__ */ jsxs("div", { children: [
+                  /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.signal.toUpperCase() }),
+                  /* @__PURE__ */ jsx("div", { className: "text-xl font-light text-emerald-500", children: (aiAnalysis == null ? void 0 : aiAnalysis.signal) || "BUY" })
+                ] }),
+                /* @__PURE__ */ jsxs("div", { children: [
+                  /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.confidence.toUpperCase() }),
+                  /* @__PURE__ */ jsxs("div", { className: "text-xl font-light text-neutral-200", children: [
+                    (aiAnalysis == null ? void 0 : aiAnalysis.confidence) || 85,
+                    "%"
+                  ] })
+                ] })
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "text-[11px] text-neutral-300 leading-relaxed italic border-l-2 border-emerald-700 pl-2", children: aiAnalysis == null ? void 0 : aiAnalysis.insight })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30", children: [
+            /* @__PURE__ */ jsxs("div", { className: "px-3 py-2 border-b border-neutral-800 flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx(Target, { size: 11, className: "text-neutral-500" }),
+              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500 uppercase tracking-widest font-mono", children: t.priceTargets.toUpperCase() })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "p-3 space-y-2.5", children: [
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.conservative.toUpperCase() }),
+                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-neutral-600 rounded-sm", style: { width: "60%" } }) }),
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.conservative) || stats.avgPrice * 1.05) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.realistic.toUpperCase() }),
+                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-emerald-500 rounded-sm", style: { width: "80%" } }) }),
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.realistic) || stats.avgPrice * 1.12) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.optimistic.toUpperCase() }),
+                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-amber-500 rounded-sm", style: { width: "100%" } }) }),
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.optimistic) || stats.avgPrice * 1.2) })
+              ] })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-3", children: [
+            /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-3", children: [
+              /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.riskLevel.toUpperCase() }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-emerald-500", children: [
+                /* @__PURE__ */ jsx(AlertTriangle, { size: 12 }),
+                /* @__PURE__ */ jsx("span", { className: "text-xs font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-3", children: [
+              /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.timeHorizon.toUpperCase() }),
+              /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-300 font-mono", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || "2-4 weeks" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30", children: [
+            /* @__PURE__ */ jsxs("div", { className: "px-3 py-2 border-b border-neutral-800 flex items-center gap-2 cursor-pointer hover:bg-neutral-900/50 transition-colors", onClick: () => setNewsExpanded(!newsExpanded), children: [
+              /* @__PURE__ */ jsx(Newspaper, { size: 11, className: "text-amber-500" }),
+              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-amber-500 uppercase tracking-widest font-mono font-bold", children: t.relatedNews.toUpperCase() }),
+              /* @__PURE__ */ jsxs("div", { className: "ml-auto flex items-center gap-1 text-neutral-500", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] font-mono uppercase", children: newsExpanded ? t.hideDetails : t.showDetails }),
+                newsExpanded ? /* @__PURE__ */ jsx(ChevronUp, { size: 10 }) : /* @__PURE__ */ jsx(ChevronDown, { size: 10 })
+              ] })
+            ] }),
+            newsExpanded && /* @__PURE__ */ jsx("div", { className: "p-3 space-y-1", children: news.map((item, idx) => /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-2 py-1.5 border border-neutral-800 bg-neutral-950/20 hover:bg-neutral-900/30 transition-colors", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-300 truncate flex-1 mr-2", children: item.title }),
+              /* @__PURE__ */ jsx("span", { className: `text-[7px] px-1.5 py-0.5 border font-mono uppercase tracking-wider shrink-0 ${item.sentiment === "POSITIVE" ? "text-emerald-500 border-emerald-900/30 bg-emerald-950/20" : "text-neutral-500 border-neutral-800 bg-neutral-950/20"}`, children: item.sentiment })
+            ] }, idx)) })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "mt-auto pt-3 border-t border-neutral-800", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between text-[9px] text-neutral-600", children: [
+            /* @__PURE__ */ jsx("span", { className: "font-mono uppercase tracking-wider", children: langKey === "ko" ? "실시간 내부자 거래 알림" : "Real-Time Insider Trade Alerts" }),
+            /* @__PURE__ */ jsx("span", { className: "font-bold text-neutral-500", children: "InsiderPulse" })
+          ] }) })
+        ] })
+      ] })
+    ] })
+  ] }) });
+}
 function TopStocksTerminal() {
   const { language } = useLanguage();
   const { accessLevel } = useAccess();
@@ -10236,6 +10612,8 @@ function TopStocksTerminal() {
   const [, navigate2] = useLocation();
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const isPro = (accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) || false;
   const handleUpgrade = () => {
     if (!isAuthenticated) {
@@ -10274,6 +10652,14 @@ function TopStocksTerminal() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedTrade(null);
+  };
+  const handleViewDetails = (stock) => {
+    setSelectedStock(stock);
+    setIsSummaryModalOpen(true);
+  };
+  const handleCloseSummaryModal = () => {
+    setIsSummaryModalOpen(false);
+    setSelectedStock(null);
   };
   const { data: rankingData, isLoading, error } = useQuery({
     queryKey: ["/api/rankings", language],
@@ -10343,7 +10729,8 @@ function TopStocksTerminal() {
         lang: language,
         isPro,
         onUpgrade: handleUpgrade,
-        onSelectTrade: handleSelectTrade
+        onSelectTrade: handleSelectTrade,
+        onViewDetails: handleViewDetails
       }
     ),
     selectedTrade && /* @__PURE__ */ jsx(
@@ -10352,6 +10739,14 @@ function TopStocksTerminal() {
         trade: selectedTrade,
         isOpen: isModalOpen,
         onClose: handleCloseModal
+      }
+    ),
+    /* @__PURE__ */ jsx(
+      StockSummaryModal,
+      {
+        stock: selectedStock,
+        isOpen: isSummaryModalOpen,
+        onClose: handleCloseSummaryModal
       }
     )
   ] });

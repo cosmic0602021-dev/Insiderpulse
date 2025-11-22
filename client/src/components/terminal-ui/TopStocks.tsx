@@ -2,7 +2,7 @@
 import React from 'react';
 import { StockRecommendation, Language, Trade } from './types';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
-import { Activity, Lock, ShieldCheck, EyeOff, ScanLine } from 'lucide-react';
+import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye } from 'lucide-react';
 
 interface TopStocksProps {
   data: StockRecommendation[];
@@ -10,9 +10,10 @@ interface TopStocksProps {
   isPro: boolean;
   onUpgrade?: () => void;
   onSelectTrade?: (trade: Trade) => void;
+  onViewDetails?: (stock: StockRecommendation) => void;
 }
 
-const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onSelectTrade }) => {
+const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails }) => {
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
 
@@ -75,6 +76,18 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                 <div className="flex items-baseline gap-3 mb-2">
                     <span className={`text-4xl font-black select-none ${stock.rank <= 3 ? 'text-amber-500' : 'text-neutral-800'}`}>0{stock.rank}</span>
                     <h3 className="text-xl font-bold text-neutral-200 tracking-wide">{stock.ticker}</h3>
+                    {onViewDetails && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails(stock);
+                            }}
+                            className="ml-2 px-2 py-1 bg-emerald-900/30 border border-emerald-800 text-emerald-500 text-[9px] uppercase tracking-wider font-bold hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+                        >
+                            <Eye size={10} />
+                            {lang === 'ko' ? '자세히' : 'Details'}
+                        </button>
+                    )}
                 </div>
                 <div className="text-xs text-neutral-500 uppercase mb-4 tracking-wider">{stock.companyName}</div>
                 
