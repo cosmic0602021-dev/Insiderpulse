@@ -7,6 +7,14 @@ import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useState, useEffect, useMemo, useId } from 'react';
 
+interface StockPriceData {
+  ticker: string;
+  currentPrice: number;
+  change: number;
+  changePercent: number;
+  lastUpdated: string;
+}
+
 interface TradeDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +25,29 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
   const { language } = useLanguage();
   const [newsExpanded, setNewsExpanded] = useState(true);
   const gradientId = useId(); // Generate unique ID to avoid conflicts
+  const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
+
+  // Fetch real stock price from API
+  useEffect(() => {
+    if (!isOpen || !trade?.ticker) {
+      setStockPrice(null);
+      return;
+    }
+
+    const fetchStockPrice = async () => {
+      try {
+        const response = await fetch(`/api/stocks/${trade.ticker}`);
+        if (response.ok) {
+          const data = await response.json();
+          setStockPrice(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch stock price:', error);
+      }
+    };
+
+    fetchStockPrice();
+  }, [isOpen, trade?.ticker]);
 
   // Get translations for current language
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
@@ -218,9 +249,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
   
   const secFilingUrl = getSecFilingUrl();
 
-  // Calculate current price (mock - should come from API)
-  const currentPrice = trade.pricePerShare * 0.96;
-  const priceChange = ((currentPrice - trade.pricePerShare) / trade.pricePerShare) * 100;
+  // Use real stock price from API, fallback to trade price if not available
+  const currentPrice = stockPrice?.currentPrice || trade.pricePerShare;
+  const priceChange = stockPrice
+    ? ((stockPrice.currentPrice - trade.pricePerShare) / trade.pricePerShare) * 100
+    : 0;
 
   // Calculate sentiment counts
   const posCount = news.filter(n => n.sentiment === 'POSITIVE').length;

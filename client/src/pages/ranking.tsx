@@ -194,7 +194,8 @@ export default function Ranking() {
         const buyTrades = tickerTrades.filter(t => t.tradeType === 'BUY' || t.tradeType === 'PURCHASE');
         const sellTrades = tickerTrades.filter(t => t.tradeType === 'SELL' || t.tradeType === 'SALE');
         const buyRatio = buyTrades.length / (buyTrades.length + sellTrades.length);
-        const currentPrice = recentTrade.pricePerShare * (1 + Math.random() * 0.1 - 0.05);
+        // Use real price from ranking item (from API), fallback to trade price
+        const currentPrice = item.currentPrice || recentTrade.pricePerShare;
 
         // Enhance trade data with real analysis
         const enhancedTrade = {
@@ -656,8 +657,8 @@ export default function Ranking() {
                         onClick={(e) => {
                           e.stopPropagation(); // 카드 클릭 이벤트 방지
                           // insider 데이터를 TradeDetailModal 형식으로 변환
-                          // 간단한 AI 분석 생성
-                          const currentPrice = insider.pricePerShare * (1 + Math.random() * 0.1 - 0.05);
+                          // Use real price from ranking item (from API), fallback to insider price
+                          const currentPrice = item.currentPrice || insider.pricePerShare;
                           const priceTargets = {
                             conservative: insider.pricePerShare * 1.05,
                             realistic: insider.pricePerShare * 1.15,
