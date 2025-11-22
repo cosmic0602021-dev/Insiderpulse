@@ -405,9 +405,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             </div>
             <div className="px-2 pb-2">
               {isLoadingAnalysis ? (
-                <div className="pl-5 space-y-1.5">
-                  <div className="h-3 bg-purple-900/30 rounded animate-pulse w-full"></div>
-                  <div className="h-3 bg-purple-900/30 rounded animate-pulse w-4/5"></div>
+                <div className="pl-5 flex items-center gap-2">
+                  <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-[10px] text-purple-400 font-mono">
+                    {langKey === 'ko' ? 'AI 분석 중...' : 'Analyzing...'}
+                  </span>
                 </div>
               ) : comprehensiveAnalysis?.executiveSummary ? (
                 <p className={`text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? 'line-clamp-1' : ''}`}>

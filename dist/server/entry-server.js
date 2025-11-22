@@ -10573,9 +10573,9 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             ]
           }
         ),
-        /* @__PURE__ */ jsx("div", { className: "px-2 pb-2", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "pl-5 space-y-1.5", children: [
-          /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-full" }),
-          /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-4/5" })
+        /* @__PURE__ */ jsx("div", { className: "px-2 pb-2", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "pl-5 flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx("div", { className: "w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-purple-400 font-mono", children: langKey === "ko" ? "AI 분석 중..." : "Analyzing..." })
         ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsx("p", { className: `text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? "line-clamp-1" : ""}`, children: comprehensiveAnalysis.executiveSummary }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : "Unable to load analysis data." }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [

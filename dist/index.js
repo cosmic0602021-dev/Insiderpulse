@@ -11239,7 +11239,14 @@ async function translateText(text2, targetLanguage) {
       messages: [
         {
           role: "system",
-          content: `You are a professional translator. Translate the following text to ${targetLangName}. Only return the translated text, nothing else.`
+          content: `You are a professional translator. Translate the following text to ${targetLangName}.
+IMPORTANT RULES:
+- DO NOT translate company names (e.g., "Marriott Vacations Worldwide" stays as is)
+- DO NOT translate stock ticker symbols (e.g., VAC, AAPL, MSFT)
+- DO NOT translate person names
+- Keep numbers, percentages, and currencies in their original format
+- Only translate the descriptive/analytical parts of the text
+Only return the translated text, nothing else.`
         },
         {
           role: "user",
