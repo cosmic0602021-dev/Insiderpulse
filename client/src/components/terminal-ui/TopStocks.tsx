@@ -82,10 +82,10 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                                 e.stopPropagation();
                                 onViewDetails(stock);
                             }}
-                            className="ml-2 px-2 py-1 bg-emerald-900/30 border border-emerald-800 text-emerald-500 text-[9px] uppercase tracking-wider font-bold hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+                            className="ml-3 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105"
                         >
-                            <Eye size={10} />
-                            {lang === 'ko' ? '자세히' : 'Details'}
+                            <Eye size={12} />
+                            {lang === 'ko' ? '자세히 보기' : 'View Details'}
                         </button>
                     )}
                 </div>
@@ -183,6 +183,9 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
             </h1>
             <p className="text-xs text-neutral-600 mt-1 mono uppercase tracking-widest flex items-center gap-2">
                 <Activity size={12} /> {t.subHeader}
+            </p>
+            <p className="text-[10px] text-emerald-500 mt-1 font-mono flex items-center gap-1">
+                <span className="animate-pulse">●</span> {lang === 'ko' ? '연결됨' : 'CONNECTED'}
             </p>
           </div>
       </div>

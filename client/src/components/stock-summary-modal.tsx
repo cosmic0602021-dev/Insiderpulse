@@ -60,9 +60,17 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     const totalAmount = buyers.reduce((sum, b) => sum + b.amount, 0);
     const avgPrice = totalAmount / totalShares;
 
-    const dates = buyers.map(b => new Date(b.date)).sort((a, b) => a.getTime() - b.getTime());
-    const firstDate = dates[0];
-    const lastDate = dates[dates.length - 1];
+    // Parse dates safely, filtering out invalid dates
+    const validDates = buyers
+      .map(b => {
+        const d = new Date(b.date);
+        return isNaN(d.getTime()) ? null : d;
+      })
+      .filter((d): d is Date => d !== null)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const firstDate = validDates.length > 0 ? validDates[0] : new Date();
+    const lastDate = validDates.length > 0 ? validDates[validDates.length - 1] : new Date();
 
     return {
       buyerCount: buyers.length,
@@ -172,18 +180,37 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
           {/* Header - Compact */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-gradient-to-r from-emerald-950/20 to-transparent shrink-0">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 flex items-center justify-center border ${stock.rank <= 3 ? 'bg-amber-900/30 border-amber-700 text-amber-500' : 'bg-neutral-900 border-neutral-700 text-neutral-400'}`}>
-                <span className="font-mono text-sm font-bold">#{stock.rank}</span>
+              {/* Company Logo */}
+              <div className="relative">
+                <img
+                  src={`https://financialmodelingprep.com/image-stock/${stock.ticker}.png`}
+                  alt={stock.ticker}
+                  className="w-9 h-9 rounded bg-neutral-900 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className={`w-9 h-9 hidden items-center justify-center rounded border ${stock.rank <= 3 ? 'bg-amber-900/30 border-amber-700 text-amber-500' : 'bg-neutral-900 border-neutral-700 text-neutral-400'}`}>
+                  <span className="font-mono text-xs font-bold">{stock.ticker.slice(0, 2)}</span>
+                </div>
+              </div>
+              {/* Rank Badge */}
+              <div className={`w-6 h-6 flex items-center justify-center border ${stock.rank <= 3 ? 'bg-amber-900/30 border-amber-700 text-amber-500' : 'bg-neutral-900 border-neutral-700 text-neutral-400'}`}>
+                <span className="font-mono text-[10px] font-bold">#{stock.rank}</span>
               </div>
               <div>
                 <h2 className="text-sm md:text-base text-neutral-200 font-bold tracking-tight">
-                  {stock.ticker} <span className="text-neutral-500 font-normal hidden sm:inline">• {stock.companyName}</span>
+                  {stock.ticker}
                 </h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-emerald-900/30 text-emerald-500 text-[8px] px-1.5 py-0.5 font-bold uppercase">
+                <div className="text-[10px] text-neutral-400 truncate max-w-[140px] sm:max-w-[200px]">
+                  {stock.companyName}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="bg-emerald-900/30 text-emerald-500 text-[7px] px-1 py-0.5 font-bold uppercase">
                     {langKey === 'ko' ? '클러스터 매수' : 'CLUSTER BUY'}
                   </span>
-                  <span className="text-[9px] text-neutral-600 font-mono">
+                  <span className="text-[8px] text-neutral-600 font-mono">
                     {stats.buyerCount}{langKey === 'ko' ? '명' : ' buyers'}
                   </span>
                 </div>
@@ -245,8 +272,8 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
           {/* Chart - Compact */}
           <div className="p-2 border-b border-neutral-800 shrink-0">
-            <ResponsiveContainer width="100%" height={120}>
-              <ComposedChart data={priceHistory} margin={{ left: 0, right: 10, top: 5, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={140}>
+              <ComposedChart data={priceHistory} margin={{ left: 0, right: 10, top: 15, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
@@ -255,12 +282,26 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 </defs>
                 <CartesianGrid stroke="#333" strokeDasharray="3 3" strokeOpacity={0.3} />
                 <XAxis dataKey="date" stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} />
-                <YAxis stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} domain={['auto', 'auto']} width={40} />
+                <YAxis stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} domain={['auto', 'auto']} width={45} />
                 <Tooltip contentStyle={{ background: '#0a0a0a', border: '1px solid #262626', fontSize: '9px', fontFamily: 'monospace', padding: '4px' }} />
-                <ReferenceLine y={stats.avgPrice} stroke="#404040" strokeDasharray="3 3" strokeWidth={1} />
+                {/* Average Buy Price Reference Line - More prominent */}
+                <ReferenceLine
+                  y={stats.avgPrice}
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  strokeDasharray="4 2"
+                  label={{
+                    value: `${langKey === 'ko' ? '평균 매수가' : 'AVG BUY'}: $${stats.avgPrice.toFixed(2)}`,
+                    position: 'top',
+                    fill: '#f59e0b',
+                    fontSize: 9,
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold'
+                  }}
+                />
                 <Area type="monotone" dataKey="marketPrice" fill={`url(#${gradientId})`} fillOpacity={1} stroke="none" />
                 <Line type="monotone" dataKey="marketPrice" stroke="#10b981" strokeWidth={2} dot={false} />
-                <ReferenceDot x={priceHistory.find(p => p.isClusterCenter)?.date} y={stats.avgPrice} r={3} fill="#10b981" stroke="#0a0a0a" />
+                <ReferenceDot x={priceHistory.find(p => p.isClusterCenter)?.date} y={stats.avgPrice} r={5} fill="#f59e0b" stroke="#0a0a0a" strokeWidth={2} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -302,13 +343,37 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             </div>
           </div>
 
-          {/* AI Insight - Single line */}
-          <div className="px-2 py-1.5 border-b border-neutral-800 bg-neutral-950/30 shrink-0">
-            <div className="flex items-start gap-1.5">
-              <Brain size={10} className="text-neutral-500 mt-0.5 shrink-0" />
-              <p className="text-[9px] md:text-[10px] text-neutral-400 leading-tight italic">
-                {aiAnalysis?.insight}
-              </p>
+          {/* AI Insight - Prominent display */}
+          <div className="px-2 py-2 border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Brain size={12} className="text-purple-400" />
+              <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
+                {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
+              </span>
+            </div>
+            <p className="text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium">
+              {aiAnalysis?.insight}
+            </p>
+          </div>
+
+          {/* Risk & Time Horizon */}
+          <div className="grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0">
+            <div className="border border-neutral-800 bg-neutral-950/30 p-2">
+              <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
+                {langKey === 'ko' ? '위험도' : 'RISK'}
+              </div>
+              <div className="flex items-center gap-1 text-emerald-500">
+                <AlertTriangle size={10} />
+                <span className="text-[10px] font-bold">{aiAnalysis?.riskLevel || t.riskLow}</span>
+              </div>
+            </div>
+            <div className="border border-neutral-800 bg-neutral-950/30 p-2">
+              <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
+                {langKey === 'ko' ? '예측 시기' : 'TIME HORIZON'}
+              </div>
+              <div className="text-[10px] text-neutral-200 font-mono font-bold">
+                {aiAnalysis?.timeHorizon || '2-4w'}
+              </div>
             </div>
           </div>
 
@@ -343,7 +408,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
                   {/* Amount */}
                   <div className="text-right shrink-0 w-16">
-                    <div className="text-[9px] text-neutral-500">{formatNumber(buyer.shares)}sh</div>
+                    <div className="text-[9px] text-neutral-500">{formatNumber(buyer.shares)} {langKey === 'ko' ? '주' : 'sh'}</div>
                     <div className="text-[10px] text-emerald-500 font-bold font-mono">{formatCurrency(buyer.amount)}</div>
                   </div>
                 </div>

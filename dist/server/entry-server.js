@@ -10119,10 +10119,10 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
               e.stopPropagation();
               onViewDetails(stock);
             },
-            className: "ml-2 px-2 py-1 bg-emerald-900/30 border border-emerald-800 text-emerald-500 text-[9px] uppercase tracking-wider font-bold hover:bg-emerald-900/50 transition-colors flex items-center gap-1",
+            className: "ml-3 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105",
             children: [
-              /* @__PURE__ */ jsx(Eye, { size: 10 }),
-              lang === "ko" ? "자세히" : "Details"
+              /* @__PURE__ */ jsx(Eye, { size: 12 }),
+              lang === "ko" ? "자세히 보기" : "View Details"
             ]
           }
         )
@@ -10208,6 +10208,11 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         /* @__PURE__ */ jsx(Activity, { size: 12 }),
         " ",
         t.subHeader
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-emerald-500 mt-1 font-mono flex items-center gap-1", children: [
+        /* @__PURE__ */ jsx("span", { className: "animate-pulse", children: "●" }),
+        " ",
+        lang === "ko" ? "연결됨" : "CONNECTED"
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-6 relative custom-scrollbar", children: [
@@ -10295,9 +10300,12 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
     const totalShares = buyers.reduce((sum, b) => sum + b.shares, 0);
     const totalAmount = buyers.reduce((sum, b) => sum + b.amount, 0);
     const avgPrice = totalAmount / totalShares;
-    const dates = buyers.map((b) => new Date(b.date)).sort((a, b) => a.getTime() - b.getTime());
-    const firstDate = dates[0];
-    const lastDate = dates[dates.length - 1];
+    const validDates = buyers.map((b) => {
+      const d = new Date(b.date);
+      return isNaN(d.getTime()) ? null : d;
+    }).filter((d) => d !== null).sort((a, b) => a.getTime() - b.getTime());
+    const firstDate = validDates.length > 0 ? validDates[0] : /* @__PURE__ */ new Date();
+    const lastDate = validDates.length > 0 ? validDates[validDates.length - 1] : /* @__PURE__ */ new Date();
     return {
       buyerCount: buyers.length,
       totalShares,
@@ -10389,22 +10397,32 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
     /* @__PURE__ */ jsxs("div", { className: "flex flex-col h-full overflow-y-auto", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-gradient-to-r from-emerald-950/20 to-transparent shrink-0", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx("div", { className: `w-8 h-8 flex items-center justify-center border ${stock.rank <= 3 ? "bg-amber-900/30 border-amber-700 text-amber-500" : "bg-neutral-900 border-neutral-700 text-neutral-400"}`, children: /* @__PURE__ */ jsxs("span", { className: "font-mono text-sm font-bold", children: [
+          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+            /* @__PURE__ */ jsx(
+              "img",
+              {
+                src: `https://financialmodelingprep.com/image-stock/${stock.ticker}.png`,
+                alt: stock.ticker,
+                className: "w-9 h-9 rounded bg-neutral-900 object-contain",
+                onError: (e) => {
+                  var _a2;
+                  e.currentTarget.style.display = "none";
+                  (_a2 = e.currentTarget.nextElementSibling) == null ? void 0 : _a2.classList.remove("hidden");
+                }
+              }
+            ),
+            /* @__PURE__ */ jsx("div", { className: `w-9 h-9 hidden items-center justify-center rounded border ${stock.rank <= 3 ? "bg-amber-900/30 border-amber-700 text-amber-500" : "bg-neutral-900 border-neutral-700 text-neutral-400"}`, children: /* @__PURE__ */ jsx("span", { className: "font-mono text-xs font-bold", children: stock.ticker.slice(0, 2) }) })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: `w-6 h-6 flex items-center justify-center border ${stock.rank <= 3 ? "bg-amber-900/30 border-amber-700 text-amber-500" : "bg-neutral-900 border-neutral-700 text-neutral-400"}`, children: /* @__PURE__ */ jsxs("span", { className: "font-mono text-[10px] font-bold", children: [
             "#",
             stock.rank
           ] }) }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsxs("h2", { className: "text-sm md:text-base text-neutral-200 font-bold tracking-tight", children: [
-              stock.ticker,
-              " ",
-              /* @__PURE__ */ jsxs("span", { className: "text-neutral-500 font-normal hidden sm:inline", children: [
-                "• ",
-                stock.companyName
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
-              /* @__PURE__ */ jsx("span", { className: "bg-emerald-900/30 text-emerald-500 text-[8px] px-1.5 py-0.5 font-bold uppercase", children: langKey === "ko" ? "클러스터 매수" : "CLUSTER BUY" }),
-              /* @__PURE__ */ jsxs("span", { className: "text-[9px] text-neutral-600 font-mono", children: [
+            /* @__PURE__ */ jsx("h2", { className: "text-sm md:text-base text-neutral-200 font-bold tracking-tight", children: stock.ticker }),
+            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-400 truncate max-w-[140px] sm:max-w-[200px]", children: stock.companyName }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mt-0.5", children: [
+              /* @__PURE__ */ jsx("span", { className: "bg-emerald-900/30 text-emerald-500 text-[7px] px-1 py-0.5 font-bold uppercase", children: langKey === "ko" ? "클러스터 매수" : "CLUSTER BUY" }),
+              /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-neutral-600 font-mono", children: [
                 stats.buyerCount,
                 langKey === "ko" ? "명" : " buyers"
               ] })
@@ -10442,19 +10460,35 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "p-2 border-b border-neutral-800 shrink-0", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 120, children: /* @__PURE__ */ jsxs(ComposedChart, { data: priceHistory, margin: { left: 0, right: 10, top: 5, bottom: 0 }, children: [
+      /* @__PURE__ */ jsx("div", { className: "p-2 border-b border-neutral-800 shrink-0", children: /* @__PURE__ */ jsx(ResponsiveContainer, { width: "100%", height: 140, children: /* @__PURE__ */ jsxs(ComposedChart, { data: priceHistory, margin: { left: 0, right: 10, top: 15, bottom: 0 }, children: [
         /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs("linearGradient", { id: gradientId, x1: "0", y1: "0", x2: "0", y2: "1", children: [
           /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: "#10b981", stopOpacity: 0.5 }),
           /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: "#064e3b", stopOpacity: 0.05 })
         ] }) }),
         /* @__PURE__ */ jsx(CartesianGrid, { stroke: "#333", strokeDasharray: "3 3", strokeOpacity: 0.3 }),
         /* @__PURE__ */ jsx(XAxis, { dataKey: "date", stroke: "#444", style: { fontSize: "8px", fontFamily: "monospace" }, tick: { fill: "#525252" } }),
-        /* @__PURE__ */ jsx(YAxis, { stroke: "#444", style: { fontSize: "8px", fontFamily: "monospace" }, tick: { fill: "#525252" }, domain: ["auto", "auto"], width: 40 }),
+        /* @__PURE__ */ jsx(YAxis, { stroke: "#444", style: { fontSize: "8px", fontFamily: "monospace" }, tick: { fill: "#525252" }, domain: ["auto", "auto"], width: 45 }),
         /* @__PURE__ */ jsx(Tooltip, { contentStyle: { background: "#0a0a0a", border: "1px solid #262626", fontSize: "9px", fontFamily: "monospace", padding: "4px" } }),
-        /* @__PURE__ */ jsx(ReferenceLine, { y: stats.avgPrice, stroke: "#404040", strokeDasharray: "3 3", strokeWidth: 1 }),
+        /* @__PURE__ */ jsx(
+          ReferenceLine,
+          {
+            y: stats.avgPrice,
+            stroke: "#f59e0b",
+            strokeWidth: 2,
+            strokeDasharray: "4 2",
+            label: {
+              value: `${langKey === "ko" ? "평균 매수가" : "AVG BUY"}: $${stats.avgPrice.toFixed(2)}`,
+              position: "top",
+              fill: "#f59e0b",
+              fontSize: 9,
+              fontFamily: "monospace",
+              fontWeight: "bold"
+            }
+          }
+        ),
         /* @__PURE__ */ jsx(Area, { type: "monotone", dataKey: "marketPrice", fill: `url(#${gradientId})`, fillOpacity: 1, stroke: "none" }),
         /* @__PURE__ */ jsx(Line, { type: "monotone", dataKey: "marketPrice", stroke: "#10b981", strokeWidth: 2, dot: false }),
-        /* @__PURE__ */ jsx(ReferenceDot, { x: (_a = priceHistory.find((p) => p.isClusterCenter)) == null ? void 0 : _a.date, y: stats.avgPrice, r: 3, fill: "#10b981", stroke: "#0a0a0a" })
+        /* @__PURE__ */ jsx(ReferenceDot, { x: (_a = priceHistory.find((p) => p.isClusterCenter)) == null ? void 0 : _a.date, y: stats.avgPrice, r: 5, fill: "#f59e0b", stroke: "#0a0a0a", strokeWidth: 2 })
       ] }) }) }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
         /* @__PURE__ */ jsxs("div", { className: "bg-emerald-950/30 border border-emerald-900/50 p-2 flex flex-col justify-center", children: [
@@ -10490,10 +10524,26 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "px-2 py-1.5 border-b border-neutral-800 bg-neutral-950/30 shrink-0", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-1.5", children: [
-        /* @__PURE__ */ jsx(Brain, { size: 10, className: "text-neutral-500 mt-0.5 shrink-0" }),
-        /* @__PURE__ */ jsx("p", { className: "text-[9px] md:text-[10px] text-neutral-400 leading-tight italic", children: aiAnalysis == null ? void 0 : aiAnalysis.insight })
-      ] }) }),
+      /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mb-1", children: [
+          /* @__PURE__ */ jsx(Brain, { size: 12, className: "text-purple-400" }),
+          /* @__PURE__ */ jsx("span", { className: "text-[9px] font-bold text-purple-400 uppercase tracking-wider", children: langKey === "ko" ? "AI 분석결과" : "AI ANALYSIS" })
+        ] }),
+        /* @__PURE__ */ jsx("p", { className: "text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium", children: aiAnalysis == null ? void 0 : aiAnalysis.insight })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
+        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "위험도" : "RISK" }),
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-emerald-500", children: [
+            /* @__PURE__ */ jsx(AlertTriangle, { size: 10 }),
+            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "예측 시기" : "TIME HORIZON" }),
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || "2-4w" })
+        ] })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800", children: [
           /* @__PURE__ */ jsx(Users, { size: 10, className: "text-emerald-600" }),
@@ -10518,7 +10568,8 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           /* @__PURE__ */ jsxs("div", { className: "text-right shrink-0 w-16", children: [
             /* @__PURE__ */ jsxs("div", { className: "text-[9px] text-neutral-500", children: [
               formatNumber(buyer.shares),
-              "sh"
+              " ",
+              langKey === "ko" ? "주" : "sh"
             ] }),
             /* @__PURE__ */ jsx("div", { className: "text-[10px] text-emerald-500 font-bold font-mono", children: formatCurrency(buyer.amount) })
           ] })
