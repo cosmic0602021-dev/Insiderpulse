@@ -34,12 +34,18 @@ export class DatabaseStorage implements IStorage {
     toDate?: string,
     sortBy: 'createdAt' | 'filedDate' = 'filedDate',
     transactionTypes?: string[],
-    filterBy?: 'createdAt' | 'filedDate'
+    filterBy?: 'createdAt' | 'filedDate',
+    ticker?: string
   ): Promise<InsiderTrade[]> {
     const conditions = [];
 
     if (verifiedOnly) {
       conditions.push(eq(insiderTrades.isVerified, true));
+    }
+
+    // Filter by ticker if provided
+    if (ticker) {
+      conditions.push(eq(insiderTrades.ticker, ticker.toUpperCase()));
     }
 
     // Use filterBy if provided, otherwise default to sortBy for backward compatibility

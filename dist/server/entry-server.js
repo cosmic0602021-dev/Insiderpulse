@@ -10576,13 +10576,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         /* @__PURE__ */ jsx("div", { className: "px-2 pb-2", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "pl-5 space-y-1.5", children: [
           /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-full" }),
           /* @__PURE__ */ jsx("div", { className: "h-3 bg-purple-900/30 rounded animate-pulse w-4/5" })
-        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-          /* @__PURE__ */ jsx("p", { className: `text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? "line-clamp-1" : ""}`, children: comprehensiveAnalysis.executiveSummary }),
-          isAnalysisExpanded && comprehensiveAnalysis.actionableRecommendation && /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5", children: [
-            /* @__PURE__ */ jsx("span", { className: "font-bold", children: langKey === "ko" ? "추천: " : "Action: " }),
-            comprehensiveAnalysis.actionableRecommendation
-          ] })
-        ] }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : "Unable to load analysis data." }) })
+        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsx("p", { className: `text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? "line-clamp-1" : ""}`, children: comprehensiveAnalysis.executiveSummary }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : "Unable to load analysis data." }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [

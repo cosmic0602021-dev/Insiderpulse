@@ -1119,10 +1119,13 @@ var init_db_storage = __esm({
         return result[0];
       }
       // Insider trading methods
-      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy) {
+      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy, ticker) {
         const conditions = [];
         if (verifiedOnly) {
           conditions.push(eq2(insiderTrades.isVerified, true));
+        }
+        if (ticker) {
+          conditions.push(eq2(insiderTrades.ticker, ticker.toUpperCase()));
         }
         const filterField = filterBy || sortBy;
         if (fromDate) {
@@ -1494,11 +1497,14 @@ var init_storage = __esm({
         return user2;
       }
       // Insider trading methods
-      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes = ["BUY", "SELL", "PURCHASE", "SALE"], filterBy) {
+      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes = ["BUY", "SELL", "PURCHASE", "SALE"], filterBy, ticker) {
         let trades = Array.from(this.insiderTrades.values());
         console.log(`\u{1F50D} [DEBUG] MemStorage has ${trades.length} total trades in memory`);
         if (verifiedOnly) {
           trades = trades.filter((trade) => trade.isVerified === true);
+        }
+        if (ticker) {
+          trades = trades.filter((trade) => trade.ticker?.toUpperCase() === ticker.toUpperCase());
         }
         if (transactionTypes && transactionTypes.length > 0) {
           trades = trades.filter((trade) => {
@@ -12734,6 +12740,7 @@ async function registerRoutes(app2) {
       const sortBy = req.query.sortBy || "filedDate";
       const transactionFilter = req.query.transactionTypes;
       const transactionTypes = transactionFilter ? transactionFilter.split(",") : ["BUY", "SELL"];
+      const ticker = req.query.ticker;
       const userId = getUserIdFromToken(req);
       let hasRealtimeAccess = false;
       if (!userId) {
@@ -12762,7 +12769,7 @@ async function registerRoutes(app2) {
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker);
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
         if (rawTrades.length > 0) {

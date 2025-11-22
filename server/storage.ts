@@ -108,7 +108,8 @@ export class MemStorage implements IStorage {
     toDate?: string,
     sortBy: 'createdAt' | 'filedDate' = 'filedDate',
     transactionTypes: string[] = ['BUY', 'SELL', 'PURCHASE', 'SALE'], // Default to pure buy/sell only
-    filterBy?: 'createdAt' | 'filedDate' // New parameter for filtering separate from sorting
+    filterBy?: 'createdAt' | 'filedDate', // New parameter for filtering separate from sorting
+    ticker?: string // Filter by ticker symbol
   ): Promise<InsiderTrade[]> {
     let trades = Array.from(this.insiderTrades.values());
     console.log(`🔍 [DEBUG] MemStorage has ${trades.length} total trades in memory`);
@@ -118,6 +119,11 @@ export class MemStorage implements IStorage {
 
     if (verifiedOnly) {
       trades = trades.filter(trade => trade.isVerified === true);
+    }
+
+    // Filter by ticker if provided
+    if (ticker) {
+      trades = trades.filter(trade => trade.ticker?.toUpperCase() === ticker.toUpperCase());
     }
 
     // Filter by transaction type (default: only BUY/SELL - filters out grants, options, etc.)

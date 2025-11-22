@@ -410,17 +410,9 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   <div className="h-3 bg-purple-900/30 rounded animate-pulse w-4/5"></div>
                 </div>
               ) : comprehensiveAnalysis?.executiveSummary ? (
-                <>
-                  <p className={`text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? 'line-clamp-1' : ''}`}>
-                    {comprehensiveAnalysis.executiveSummary}
-                  </p>
-                  {isAnalysisExpanded && comprehensiveAnalysis.actionableRecommendation && (
-                    <p className="text-[10px] text-purple-300 leading-relaxed pl-5 mt-1.5 border-t border-purple-900/30 pt-1.5">
-                      <span className="font-bold">{langKey === 'ko' ? '추천: ' : 'Action: '}</span>
-                      {comprehensiveAnalysis.actionableRecommendation}
-                    </p>
-                  )}
-                </>
+                <p className={`text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? 'line-clamp-1' : ''}`}>
+                {comprehensiveAnalysis.executiveSummary}
+              </p>
               ) : (
                 <p className="text-[10px] text-neutral-500 pl-5 italic">
                   {langKey === 'ko' ? '분석 데이터를 불러올 수 없습니다.' : 'Unable to load analysis data.'}

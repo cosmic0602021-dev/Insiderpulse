@@ -2090,6 +2090,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? transactionFilter.split(',')
         : ['BUY', 'SELL']; // Default: pure buy/sell only (schema-valid values)
 
+      // Ticker filter
+      const ticker = req.query.ticker as string;
+
       // Access control: check if user has real-time access
       const userId = getUserIdFromToken(req);
 
@@ -2126,7 +2129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
 
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker);
 
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
