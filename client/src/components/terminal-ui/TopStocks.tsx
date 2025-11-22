@@ -98,7 +98,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                     </div>
                     <div>
                         <div className="mb-1">{t.insiders}</div>
-                        <div className="text-neutral-300 text-base font-mono">{stock.insiderCount}</div>
+                        <div className="text-neutral-300 text-base font-mono">{stock.insiderCount}{lang === 'ko' ? '명' : ''}</div>
                     </div>
                 </div>
                 
@@ -123,7 +123,6 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                 <div className="flex items-center gap-2 mb-4 border-b border-neutral-900 pb-2">
                     <Activity className="text-emerald-700" size={14} />
                     <span className="text-xs font-bold text-neutral-400 uppercase tracking-wide">{t.institutional}</span>
-                    <span className="ml-2 text-[10px] bg-neutral-800 text-neutral-500 px-1.5 rounded-full">{stock.buyers.length}</span>
                 </div>
                 
                 <div className="space-y-2">

@@ -5267,9 +5267,9 @@ const EN = {
     blind: "BLIND_TRUST_MODE",
     signal: "Signal Strength",
     strongBuy: "Strong Buy",
-    insiders: "Insiders Buying",
-    institutional: "Simultaneous Buyers",
-    avgPrice: "Avg Price",
+    insiders: "Insiders",
+    institutional: "Insider Purchases",
+    avgPrice: "Insider Avg Price",
     curPrice: "Cur Price",
     totalVol: "Total Vol",
     buyPrice: "Buy Price",
@@ -5467,15 +5467,15 @@ const KO = {
     blind: "블라인드 트러스트 모드",
     signal: "시그널 강도",
     strongBuy: "강력 매수",
-    insiders: "내부자 매수",
-    institutional: "동시 다발적 매수 활동",
-    avgPrice: "평균 단가",
+    insiders: "내부자",
+    institutional: "내부자 매수 내역",
+    avgPrice: "내부자 평균 매수가",
     curPrice: "현재가",
-    totalVol: "총 거래량",
-    buyPrice: "매수 단가",
-    shareCount: "거래 주식 수",
-    totalAmount: "총 거래액",
-    buyOnly: "매수 전용"
+    totalVol: "총 매수액",
+    buyPrice: "내부자 매수가",
+    shareCount: "매수 주식 수",
+    totalAmount: "총 매수액",
+    buyOnly: "매수"
   },
   modal: {
     tradeType: "거래 유형",
@@ -10135,7 +10135,10 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         ] }),
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("div", { className: "mb-1", children: t.insiders }),
-          /* @__PURE__ */ jsx("div", { className: "text-neutral-300 text-base font-mono", children: stock.insiderCount })
+          /* @__PURE__ */ jsxs("div", { className: "text-neutral-300 text-base font-mono", children: [
+            stock.insiderCount,
+            lang === "ko" ? "명" : ""
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "mt-6 pt-4 border-t border-neutral-900 grid grid-cols-1 gap-2", children: [
@@ -10156,8 +10159,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-4 border-b border-neutral-900 pb-2", children: [
         /* @__PURE__ */ jsx(Activity, { className: "text-emerald-700", size: 14 }),
-        /* @__PURE__ */ jsx("span", { className: "text-xs font-bold text-neutral-400 uppercase tracking-wide", children: t.institutional }),
-        /* @__PURE__ */ jsx("span", { className: "ml-2 text-[10px] bg-neutral-800 text-neutral-500 px-1.5 rounded-full", children: stock.buyers.length })
+        /* @__PURE__ */ jsx("span", { className: "text-xs font-bold text-neutral-400 uppercase tracking-wide", children: t.institutional })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "space-y-2", children: stock.buyers.map((buyer, idx) => /* @__PURE__ */ jsxs(
         "div",
@@ -10451,13 +10453,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx("h2", { className: "text-sm md:text-base text-neutral-200 font-bold tracking-tight", children: stock.ticker }),
             /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-400 truncate max-w-[140px] sm:max-w-[200px]", children: stock.companyName }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mt-0.5", children: [
-              /* @__PURE__ */ jsx("span", { className: "bg-emerald-900/30 text-emerald-500 text-[7px] px-1 py-0.5 font-bold uppercase", children: langKey === "ko" ? "클러스터 매수" : "CLUSTER BUY" }),
-              /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-neutral-600 font-mono", children: [
-                stats.buyerCount,
-                langKey === "ko" ? "명" : " buyers"
-              ] })
-            ] })
+            /* @__PURE__ */ jsx("div", { className: "flex items-center gap-1.5 mt-0.5", children: /* @__PURE__ */ jsx("span", { className: "bg-emerald-900/30 text-emerald-500 text-[7px] px-1 py-0.5 font-bold uppercase", children: langKey === "ko" ? "내부자 동시매수" : "INSIDER BUY" }) })
           ] })
         ] }),
         /* @__PURE__ */ jsx("button", { onClick: onClose, className: "p-1 hover:bg-neutral-900 transition-colors", children: /* @__PURE__ */ jsx(X, { size: 14, className: "text-neutral-500" }) })
@@ -10466,9 +10462,12 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-r border-neutral-800 bg-emerald-950/10", children: [
           /* @__PURE__ */ jsxs("div", { className: "text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5 flex items-center gap-0.5", children: [
             /* @__PURE__ */ jsx(Users, { size: 7 }),
-            langKey === "ko" ? "매수자" : "BUYERS"
+            langKey === "ko" ? "내부자" : "INSIDERS"
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg md:text-xl font-bold text-emerald-500", children: stats.buyerCount })
+          /* @__PURE__ */ jsxs("div", { className: "text-lg md:text-xl font-bold text-emerald-500", children: [
+            stats.buyerCount,
+            langKey === "ko" ? "명" : ""
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-r border-neutral-800", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5", children: langKey === "ko" ? "평균가" : "AVG" }),
@@ -10594,7 +10593,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800", children: [
           /* @__PURE__ */ jsx(Users, { size: 10, className: "text-emerald-600" }),
-          /* @__PURE__ */ jsx("span", { className: "text-[9px] font-bold text-neutral-400 uppercase tracking-wider", children: langKey === "ko" ? "매수자 상세" : "BUYER DETAILS" })
+          /* @__PURE__ */ jsx("span", { className: "text-[9px] font-bold text-neutral-400 uppercase tracking-wider", children: langKey === "ko" ? "내부자 상세" : "INSIDER DETAILS" })
         ] }),
         /* @__PURE__ */ jsx("div", { className: "space-y-1.5", children: stock.buyers.map((buyer, idx) => /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 p-2 bg-neutral-900/30 border-l-2 border-emerald-800", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex-1 min-w-0", children: [

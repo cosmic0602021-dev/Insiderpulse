@@ -245,10 +245,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="bg-emerald-900/30 text-emerald-500 text-[7px] px-1 py-0.5 font-bold uppercase">
-                    {langKey === 'ko' ? '클러스터 매수' : 'CLUSTER BUY'}
-                  </span>
-                  <span className="text-[8px] text-neutral-600 font-mono">
-                    {stats.buyerCount}{langKey === 'ko' ? '명' : ' buyers'}
+                    {langKey === 'ko' ? '내부자 동시매수' : 'INSIDER BUY'}
                   </span>
                 </div>
               </div>
@@ -263,10 +260,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             <div className="px-2 py-2 border-r border-neutral-800 bg-emerald-950/10">
               <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5 flex items-center gap-0.5">
                 <Users size={7} />
-                {langKey === 'ko' ? '매수자' : 'BUYERS'}
+                {langKey === 'ko' ? '내부자' : 'INSIDERS'}
               </div>
               <div className="text-lg md:text-xl font-bold text-emerald-500">
-                {stats.buyerCount}
+                {stats.buyerCount}{langKey === 'ko' ? '명' : ''}
               </div>
             </div>
 
@@ -449,7 +446,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800">
               <Users size={10} className="text-emerald-600" />
               <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
-                {langKey === 'ko' ? '매수자 상세' : 'BUYER DETAILS'}
+                {langKey === 'ko' ? '내부자 상세' : 'INSIDER DETAILS'}
               </span>
             </div>
 
