@@ -11224,15 +11224,27 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import OpenAI4 from "openai";
 async function translateText(text2, targetLanguage) {
-  if (!text2 || targetLanguage === "en") {
+  if (!text2) {
     return text2;
   }
   const languageNames = {
+    en: "English",
     ko: "Korean",
     ja: "Japanese",
     zh: "Chinese (Simplified)"
   };
   const targetLangName = languageNames[targetLanguage] || "English";
+  if (targetLanguage === "en") {
+    const asciiRatio = (text2.match(/[\x00-\x7F]/g) || []).length / text2.length;
+    if (asciiRatio > 0.8) {
+      return text2;
+    }
+  } else if (targetLanguage === "ko") {
+    const koreanRatio = (text2.match(/[\uAC00-\uD7AF]/g) || []).length / text2.length;
+    if (koreanRatio > 0.3) {
+      return text2;
+    }
+  }
   try {
     const response = await openai2.chat.completions.create({
       model: "gpt-4o-mini",

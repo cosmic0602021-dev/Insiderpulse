@@ -49,17 +49,34 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Helper function to translate text
 async function translateText(text: string, targetLanguage: string): Promise<string> {
-  if (!text || targetLanguage === 'en') {
+  if (!text) {
     return text;
   }
 
   const languageNames: Record<string, string> = {
+    en: 'English',
     ko: 'Korean',
     ja: 'Japanese',
     zh: 'Chinese (Simplified)'
   };
 
   const targetLangName = languageNames[targetLanguage] || 'English';
+
+  // Skip translation if text appears to already be in target language
+  // Check if text contains mostly target language characters
+  if (targetLanguage === 'en') {
+    // If text is mostly ASCII (English), skip translation
+    const asciiRatio = (text.match(/[\x00-\x7F]/g) || []).length / text.length;
+    if (asciiRatio > 0.8) {
+      return text;
+    }
+  } else if (targetLanguage === 'ko') {
+    // If text contains Korean characters, might already be translated
+    const koreanRatio = (text.match(/[\uAC00-\uD7AF]/g) || []).length / text.length;
+    if (koreanRatio > 0.3) {
+      return text;
+    }
+  }
 
   try {
     const response = await openai.chat.completions.create({
