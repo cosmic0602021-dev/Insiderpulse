@@ -459,7 +459,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                       <span className="text-[9px] text-neutral-600 font-mono w-4">{idx + 1}</span>
                       <span className="text-[11px] font-bold text-neutral-300 truncate">{buyer.name}</span>
                     </div>
-                    <span className="text-[9px] text-neutral-500 ml-5">{(tData as any)[buyer.relation] || buyer.relation}</span>
+                    <div className="flex items-center gap-2 ml-5">
+                      <span className="text-[9px] text-neutral-500">{(tData as any)[buyer.relation] || buyer.relation}</span>
+                      <span className="text-[8px] text-neutral-600 font-mono">{buyer.date}</span>
+                    </div>
                   </div>
 
                   {/* Price & Change */}

@@ -10601,7 +10601,10 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
               /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-600 font-mono w-4", children: idx + 1 }),
               /* @__PURE__ */ jsx("span", { className: "text-[11px] font-bold text-neutral-300 truncate", children: buyer.name })
             ] }),
-            /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500 ml-5", children: tData[buyer.relation] || buyer.relation })
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 ml-5", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500", children: tData[buyer.relation] || buyer.relation }),
+              /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 font-mono", children: buyer.date })
+            ] })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "text-right shrink-0", children: [
             /* @__PURE__ */ jsx("div", { className: "text-[11px] text-emerald-400 font-mono font-bold", children: formatCurrency(buyer.price) }),
