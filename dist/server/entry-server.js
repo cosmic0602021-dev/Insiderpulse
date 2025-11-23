@@ -10270,7 +10270,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
   ] });
 };
 function StockSummaryModal({ isOpen, onClose, stock }) {
-  var _a, _b, _c, _d;
+  var _a;
   const { language } = useLanguage();
   const gradientId = useId();
   const [stockPrice, setStockPrice] = useState(null);
@@ -10373,11 +10373,60 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         insight = "Multiple insider buys indicate confidence.";
       }
     }
-    const multiplier = 1 + stats.buyerCount * 0.02;
+    let baseMedian, baseP75, baseAvg;
+    if (stats.buyerCount >= 3) {
+      baseMedian = 0.1;
+      baseP75 = 0.22;
+      baseAvg = 0.36;
+    } else if (stats.buyerCount >= 2) {
+      baseMedian = 0.03;
+      baseP75 = 0.07;
+      baseAvg = 0.3;
+    } else {
+      baseMedian = 0.01;
+      baseP75 = 0.05;
+      baseAvg = 0.1;
+    }
+    const investmentBonus = stats.totalAmount >= 5e6 ? 0.03 : stats.totalAmount >= 1e6 ? 0.02 : stats.totalAmount >= 5e5 ? 0.01 : 0;
+    const buyers = stock.buyers;
+    const hasCEO = buyers.some(
+      (b) => {
+        var _a2, _b;
+        return ((_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("CEO")) || ((_b = b.relation) == null ? void 0 : _b.toUpperCase().includes("CHIEF EXECUTIVE"));
+      }
+    );
+    const hasCFO = buyers.some(
+      (b) => {
+        var _a2, _b;
+        return ((_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("CFO")) || ((_b = b.relation) == null ? void 0 : _b.toUpperCase().includes("CHIEF FINANCIAL"));
+      }
+    );
+    const hasPresident = buyers.some(
+      (b) => {
+        var _a2;
+        return (_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("PRESIDENT");
+      }
+    );
+    let positionBonus = 0;
+    if (hasCEO) {
+      positionBonus = 0.02;
+    } else if (hasPresident) {
+      positionBonus = 0.015;
+    } else if (hasCFO) {
+      positionBonus = 0.01;
+    }
+    const clusterWithCEOBonus = stats.buyerCount >= 3 && hasCEO ? 0.03 : 0;
+    const totalBonus = investmentBonus + positionBonus + clusterWithCEOBonus;
+    const adjustedMedian = baseMedian + totalBonus;
+    const adjustedP75 = baseP75 + totalBonus * 1.5;
+    const adjustedAvg = baseAvg + totalBonus * 2;
     const priceTargets = {
-      conservative: stats.avgPrice * (1.03 * multiplier),
-      realistic: stats.avgPrice * (1.08 * multiplier),
-      optimistic: stats.avgPrice * (1.15 * multiplier)
+      conservative: stats.avgPrice * (1 + adjustedMedian),
+      // Based on median return
+      realistic: stats.avgPrice * (1 + adjustedP75),
+      // Based on 75th percentile
+      optimistic: stats.avgPrice * (1 + adjustedAvg)
+      // Based on average (includes outliers)
     };
     return {
       signal: "BUY",
@@ -10538,20 +10587,35 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             /* @__PURE__ */ jsx(Target, { size: 9, className: "text-neutral-500" }),
             /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-500 uppercase font-mono", children: langKey === "ko" ? "목표가" : "Targets" })
           ] }),
-          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "보수" : "Low" }),
-              /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency(((_b = comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.priceTargets) == null ? void 0 : _b.conservative) || (aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.conservative) || 0) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-emerald-600", children: langKey === "ko" ? "현실" : "Mid" }),
-              /* @__PURE__ */ jsx("span", { className: "text-emerald-400 font-mono font-bold", children: formatCurrency(((_c = comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.priceTargets) == null ? void 0 : _c.realistic) || (aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.realistic) || 0) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-amber-600", children: langKey === "ko" ? "낙관" : "High" }),
-              /* @__PURE__ */ jsx("span", { className: "text-amber-400 font-mono", children: formatCurrency(((_d = comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.priceTargets) == null ? void 0 : _d.optimistic) || (aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.optimistic) || 0) })
-            ] })
-          ] })
+          (() => {
+            const newsAnalysis = comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.newsAnalysis;
+            let newsMultiplier = 1;
+            if (newsAnalysis && newsAnalysis.totalNews > 0) {
+              const positiveRatio = newsAnalysis.positiveCount / newsAnalysis.totalNews;
+              const negativeRatio = newsAnalysis.negativeCount / newsAnalysis.totalNews;
+              newsMultiplier = 1 + positiveRatio * 0.05 - negativeRatio * 0.03;
+            }
+            const baseTargets = (aiAnalysis == null ? void 0 : aiAnalysis.priceTargets) || { conservative: 0, realistic: 0, optimistic: 0 };
+            const adjustedTargets = {
+              conservative: baseTargets.conservative * newsMultiplier,
+              realistic: baseTargets.realistic * newsMultiplier,
+              optimistic: baseTargets.optimistic * newsMultiplier
+            };
+            return /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "보수" : "Low" }),
+                /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency(adjustedTargets.conservative) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-emerald-600", children: langKey === "ko" ? "현실" : "Mid" }),
+                /* @__PURE__ */ jsx("span", { className: "text-emerald-400 font-mono font-bold", children: formatCurrency(adjustedTargets.realistic) })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
+                /* @__PURE__ */ jsx("span", { className: "text-amber-600", children: langKey === "ko" ? "낙관" : "High" }),
+                /* @__PURE__ */ jsx("span", { className: "text-amber-400 font-mono", children: formatCurrency(adjustedTargets.optimistic) })
+              ] })
+            ] });
+          })()
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
