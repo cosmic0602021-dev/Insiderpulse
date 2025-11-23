@@ -200,9 +200,9 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                         </h3>
                         
                         <div className="flex flex-wrap gap-3 md:gap-4 mb-4 text-[10px] font-mono uppercase">
-                            <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2 h-2 bg-emerald-900 rounded-full"></span> {trade.newsAnalysis.positive} Positive</span>
-                            <span className="flex items-center gap-1.5 text-rose-600"><span className="w-2 h-2 bg-rose-900 rounded-full"></span> {trade.newsAnalysis.negative} Negative</span>
-                            <span className="flex items-center gap-1.5 text-neutral-500"><span className="w-2 h-2 bg-neutral-800 rounded-full"></span> {trade.newsAnalysis.neutral} Neutral</span>
+                            <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2 h-2 bg-emerald-900 rounded-full"></span> {trade.newsAnalysis.positive} {lang === 'ko' ? '긍정' : 'Positive'}</span>
+                            <span className="flex items-center gap-1.5 text-rose-600"><span className="w-2 h-2 bg-rose-900 rounded-full"></span> {trade.newsAnalysis.negative} {lang === 'ko' ? '부정' : 'Negative'}</span>
+                            <span className="flex items-center gap-1.5 text-neutral-500"><span className="w-2 h-2 bg-neutral-800 rounded-full"></span> {trade.newsAnalysis.neutral} {lang === 'ko' ? '중립' : 'Neutral'}</span>
                         </div>
 
                         <div className="space-y-2">
@@ -254,7 +254,7 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                              <div className="space-y-3">
                                  <div>
                                      <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>Conservative</span>
+                                         <span>{lang === 'ko' ? '보수적' : 'Conservative'}</span>
                                          <span className="font-mono text-neutral-300">${trade.targets.conservative.toFixed(2)}</span>
                                      </div>
                                      <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
@@ -263,7 +263,7 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                                  </div>
                                  <div>
                                      <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>Realistic</span>
+                                         <span>{lang === 'ko' ? '현실적' : 'Realistic'}</span>
                                          <span className="font-mono text-emerald-400">${trade.targets.realistic.toFixed(2)}</span>
                                      </div>
                                      <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
@@ -272,7 +272,7 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                                  </div>
                                  <div>
                                      <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>Optimistic</span>
+                                         <span>{lang === 'ko' ? '낙관적' : 'Optimistic'}</span>
                                          <span className="font-mono text-amber-400">${trade.targets.optimistic.toFixed(2)}</span>
                                      </div>
                                      <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
@@ -286,12 +286,12 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                             <div className="flex justify-between items-center py-2 border-b border-neutral-800">
                                 <span className="text-xs text-neutral-500 uppercase">{t.riskLevel}</span>
                                 <span className="text-xs font-bold text-amber-500 uppercase flex items-center gap-1">
-                                    <AlertTriangle size={10} /> {trade.riskLevel}
+                                    <AlertTriangle size={10} /> {tData[trade.riskLevel] || trade.riskLevel}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center py-2 border-b border-neutral-800">
                                 <span className="text-xs text-neutral-500 uppercase">{t.timeHorizon}</span>
-                                <span className="text-xs font-bold text-neutral-300 uppercase font-mono">{trade.timeHorizon}</span>
+                                <span className="text-xs font-bold text-neutral-300 uppercase font-mono">{tData[trade.timeHorizon] || trade.timeHorizon}</span>
                             </div>
                         </div>
                     </div>

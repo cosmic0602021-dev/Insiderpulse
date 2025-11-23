@@ -423,7 +423,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 <span className="text-[8px] text-emerald-500/70 uppercase font-mono">Signal</span>
               </div>
               <div className="text-lg font-bold text-emerald-500">
-                {comprehensiveAnalysis?.signal || tTop.strongBuy}
+                {(tData as any)[comprehensiveAnalysis?.signal] || comprehensiveAnalysis?.signal || tTop.strongBuy}
               </div>
               <div className="text-[8px] text-emerald-500/60 font-mono">
                 {comprehensiveAnalysis?.confidence || aiAnalysis?.confidence}% {langKey === 'ko' ? '신뢰도' : 'conf'}
@@ -523,7 +523,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               </div>
               <div className="flex items-center gap-1 text-emerald-500">
                 <AlertTriangle size={10} />
-                <span className="text-[10px] font-bold">{aiAnalysis?.riskLevel || t.riskLow}</span>
+                <span className="text-[10px] font-bold">{(tData as any)[aiAnalysis?.riskLevel] || aiAnalysis?.riskLevel || t.riskLow}</span>
               </div>
             </div>
             <div className="border border-neutral-800 bg-neutral-950/30 p-2">
@@ -531,7 +531,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 {langKey === 'ko' ? '목표 달성' : 'TARGET'}
               </div>
               <div className="text-[10px] text-neutral-200 font-mono font-bold">
-                {comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주 내' : '2-4 weeks')}
+                {(tData as any)[comprehensiveAnalysis?.timeHorizon] || (tData as any)[aiAnalysis?.timeHorizon] || comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주' : '2-4 weeks')}
               </div>
             </div>
           </div>

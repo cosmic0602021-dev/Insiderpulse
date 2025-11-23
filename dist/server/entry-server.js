@@ -436,8 +436,14 @@ const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnWindowFocus: true,
+      // Refetch when window regains focus
+      refetchOnMount: "always",
+      // Always refetch on component mount
+      staleTime: 5 * 60 * 1e3,
+      // Data becomes stale after 5 minutes
+      gcTime: 10 * 60 * 1e3,
+      // Garbage collect after 10 minutes
       retry: false
     },
     mutations: {
@@ -5376,14 +5382,72 @@ const EN = {
   data: {
     Buy: "Buy",
     Sell: "Sell",
+    // Executive titles
     CEO: "CEO",
     CFO: "CFO",
+    COO: "COO",
+    CTO: "CTO",
+    CIO: "CIO",
+    CMO: "CMO",
+    CRO: "CRO",
+    CAO: "CAO",
+    CHRO: "CHRO",
+    CCO: "CCO",
+    // Full titles
+    "Chief Executive Officer": "CEO",
+    "Chief Financial Officer": "CFO",
+    "Chief Operating Officer": "COO",
+    "Chief Technology Officer": "CTO",
+    "Chief Information Officer": "CIO",
+    "Chief Marketing Officer": "CMO",
+    "Chief Revenue Officer": "CRO",
+    "Chief Accounting Officer": "CAO",
+    "Chief Medical Officer": "CMO",
+    "Chief Product Officer": "CPO",
+    "Chief Legal Officer": "CLO",
+    "Chief Business Officer": "CBO",
+    "Chief Commercial Officer": "CCO",
+    "Chief Content Officer": "CCO",
+    "Chief Innovation Officer": "CIO",
+    // Board positions
     Director: "Director",
+    Chairman: "Chairman",
+    "Chair": "Chair",
+    President: "President",
+    "Pres": "President",
+    // Combined titles
+    "CEO, Pres": "CEO & President",
+    "COB, CEO": "Chairman & CEO",
+    "CFO, COO": "CFO & COO",
+    "CFO, Treasurer": "CFO & Treasurer",
+    "CHAIRPERSON, CEO": "Chair & CEO",
+    // Vice Presidents
     "VP of Sales": "VP of Sales",
-    "Chief Legal Officer": "Chief Legal Officer",
+    EVP: "EVP",
+    SVP: "SVP",
+    // Ownership
+    "10%": "10% Owner",
     "10% Owner": "10% Owner",
     "Major Shareholder": "Major Shareholder",
-    "Co-Founder": "Co-Founder"
+    "Co-Founder": "Co-Founder",
+    // General
+    Officer: "Officer",
+    Insider: "Insider",
+    Executive: "Executive",
+    // Signals (Buy and Sell already defined above)
+    "Strong Buy": "Strong Buy",
+    "Hold": "Hold",
+    "Strong Sell": "Strong Sell",
+    // Risk levels
+    "Low": "Low",
+    "Medium": "Medium",
+    "High": "High",
+    // Time horizons
+    "1-2 weeks": "1-2 weeks",
+    "2-4 weeks": "2-4 weeks",
+    "1-3 months": "1-3 months",
+    "3-6 months": "3-6 months",
+    "6-12 months": "6-12 months"
   },
   upgrade: {
     header: "Upgrade to Insider",
@@ -5576,14 +5640,72 @@ const KO = {
   data: {
     Buy: "매수",
     Sell: "매도",
-    CEO: "CEO",
-    CFO: "CFO",
+    // Executive titles
+    CEO: "대표이사",
+    CFO: "재무이사",
+    COO: "운영이사",
+    CTO: "기술이사",
+    CIO: "정보이사",
+    CMO: "마케팅이사",
+    CRO: "매출이사",
+    CAO: "회계이사",
+    CHRO: "인사이사",
+    CCO: "콘텐츠이사",
+    // Full titles
+    "Chief Executive Officer": "대표이사",
+    "Chief Financial Officer": "재무이사",
+    "Chief Operating Officer": "운영이사",
+    "Chief Technology Officer": "기술이사",
+    "Chief Information Officer": "정보이사",
+    "Chief Marketing Officer": "마케팅이사",
+    "Chief Revenue Officer": "매출이사",
+    "Chief Accounting Officer": "회계이사",
+    "Chief Medical Officer": "의료이사",
+    "Chief Product Officer": "제품이사",
+    "Chief Legal Officer": "법무이사",
+    "Chief Business Officer": "사업이사",
+    "Chief Commercial Officer": "상업이사",
+    "Chief Content Officer": "콘텐츠이사",
+    "Chief Innovation Officer": "혁신이사",
+    // Board positions
     Director: "이사",
+    Chairman: "회장",
+    "Chair": "의장",
+    President: "사장",
+    "Pres": "사장",
+    // Combined titles
+    "CEO, Pres": "대표이사 겸 사장",
+    "COB, CEO": "회장 겸 대표이사",
+    "CFO, COO": "재무 겸 운영이사",
+    "CFO, Treasurer": "재무이사 겸 회계담당",
+    "CHAIRPERSON, CEO": "의장 겸 대표이사",
+    // Vice Presidents
     "VP of Sales": "영업 부사장",
-    "Chief Legal Officer": "최고 법무 책임자",
+    EVP: "부사장",
+    SVP: "선임부사장",
+    // Ownership
+    "10%": "10% 소유주",
     "10% Owner": "10% 소유주",
     "Major Shareholder": "대주주",
-    "Co-Founder": "공동 창립자"
+    "Co-Founder": "공동 창립자",
+    // General
+    Officer: "임원",
+    Insider: "내부자",
+    Executive: "경영진",
+    // Signals (Buy and Sell already defined above as 매수/매도)
+    "Strong Buy": "강력 매수",
+    "Hold": "보유",
+    "Strong Sell": "강력 매도",
+    // Risk levels
+    "Low": "낮음",
+    "Medium": "중간",
+    "High": "높음",
+    // Time horizons
+    "1-2 weeks": "1-2주",
+    "2-4 weeks": "2-4주",
+    "1-3 months": "1-3개월",
+    "3-6 months": "3-6개월",
+    "6-12 months": "6-12개월"
   },
   upgrade: {
     header: "Insider로 업그레이드",
@@ -10575,7 +10697,7 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             /* @__PURE__ */ jsx(TrendingUp, { size: 10, className: "text-emerald-500" }),
             /* @__PURE__ */ jsx("span", { className: "text-[8px] text-emerald-500/70 uppercase font-mono", children: "Signal" })
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-emerald-500", children: (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.signal) || tTop.strongBuy }),
+          /* @__PURE__ */ jsx("div", { className: "text-lg font-bold text-emerald-500", children: tData[comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.signal] || (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.signal) || tTop.strongBuy }),
           /* @__PURE__ */ jsxs("div", { className: "text-[8px] text-emerald-500/60 font-mono", children: [
             (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.confidence) || (aiAnalysis == null ? void 0 : aiAnalysis.confidence),
             "% ",
@@ -10646,12 +10768,12 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "위험도" : "RISK" }),
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-emerald-500", children: [
             /* @__PURE__ */ jsx(AlertTriangle, { size: 10 }),
-            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
+            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: tData[aiAnalysis == null ? void 0 : aiAnalysis.riskLevel] || (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "목표 달성" : "TARGET" }),
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon) || (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || (langKey === "ko" ? "2-4주 내" : "2-4 weeks") })
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: tData[comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon] || tData[aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon] || (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon) || (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || (langKey === "ko" ? "2-4주" : "2-4 weeks") })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [
@@ -11476,6 +11598,13 @@ function AppContent() {
       setActiveView(View.PROFILE);
     } else if (location2.startsWith("/settings")) {
       setActiveView(View.SETTINGS);
+    }
+  }, [location2]);
+  useEffect(() => {
+    if (location2.startsWith("/dashboard") || location2.startsWith("/ranking")) {
+      queryClient.invalidateQueries({ queryKey: ["trades"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["topStocks"] });
     }
   }, [location2]);
   const publicPaths = ["/", "/signup", "/login", "/forgot-password", "/reset-password", "/verify-code", "/verify-email", "/start-trial", "/premium-checkout"];

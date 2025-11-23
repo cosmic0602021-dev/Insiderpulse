@@ -145,6 +145,16 @@ function AppContent() {
     }
   }, [location]);
 
+  // Invalidate queries on route change for fresh data
+  useEffect(() => {
+    // Invalidate relevant queries when navigating to data-heavy pages
+    if (location.startsWith('/dashboard') || location.startsWith('/ranking')) {
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['topStocks'] });
+    }
+  }, [location]);
+
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location);
 
