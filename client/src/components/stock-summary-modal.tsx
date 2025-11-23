@@ -7,6 +7,11 @@ import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useState, useEffect, useMemo, useId } from 'react';
 import { StockRecommendation } from './terminal-ui/types';
 
+// Global cache for AI analysis - shared across all users/sessions
+// Key format: "ticker_language", stores analysis data with timestamp
+const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+
 interface StockPriceData {
   ticker: string;
   currentPrice: number;
@@ -48,8 +53,18 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       }
     };
 
-    // Fetch comprehensive AI analysis
+    // Fetch comprehensive AI analysis with caching
     const fetchAnalysis = async () => {
+      const cacheKey = `${stock.ticker}_${language}`;
+
+      // Check global cache first
+      const cached = analysisCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log(`✅ Using cached analysis for ${stock.ticker} (${language})`);
+        setComprehensiveAnalysis(cached.data);
+        return;
+      }
+
       setIsLoadingAnalysis(true);
       try {
         // First get the latest trade for this ticker
@@ -63,6 +78,13 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             if (analysisResponse.ok) {
               const analysisData = await analysisResponse.json();
               setComprehensiveAnalysis(analysisData);
+
+              // Store in global cache
+              analysisCache.set(cacheKey, {
+                data: analysisData,
+                timestamp: Date.now()
+              });
+              console.log(`📦 Cached analysis for ${stock.ticker} (${language})`);
             }
           }
         }

@@ -14,6 +14,10 @@ import { useLocation } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
+// Global cache for AI analysis - shared across all users/sessions
+const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+
 const logoLight = '/Gemini_Generated_Image_wdqi0fwdqi0fwdqi.png';
 const logoDark = '/insiderpulse_logo1.png';
 
@@ -174,20 +178,36 @@ export default function Ranking() {
         // Use the most recent trade
         const recentTrade = sortedTrades[0];
 
-        // Fetch real comprehensive analysis from API
+        // Fetch real comprehensive analysis from API with caching
         let comprehensiveAnalysis = null;
-        try {
-          console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
-          const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`);
+        const cacheKey = `${ticker}_${language}`;
 
-          if (response.ok) {
-            comprehensiveAnalysis = await response.json();
-            console.log('Comprehensive analysis fetched successfully');
-          } else {
-            console.warn('Failed to fetch comprehensive analysis, using fallback');
+        // Check cache first
+        const cached = analysisCache.get(cacheKey);
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+          console.log(`✅ Using cached analysis for ${ticker} (${language})`);
+          comprehensiveAnalysis = cached.data;
+        } else {
+          try {
+            console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
+            const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`);
+
+            if (response.ok) {
+              comprehensiveAnalysis = await response.json();
+              console.log('Comprehensive analysis fetched successfully');
+
+              // Store in cache
+              analysisCache.set(cacheKey, {
+                data: comprehensiveAnalysis,
+                timestamp: Date.now()
+              });
+              console.log(`📦 Cached analysis for ${ticker} (${language})`);
+            } else {
+              console.warn('Failed to fetch comprehensive analysis, using fallback');
+            }
+          } catch (analysisError) {
+            console.error('Error fetching comprehensive analysis:', analysisError);
           }
-        } catch (analysisError) {
-          console.error('Error fetching comprehensive analysis:', analysisError);
         }
 
         // Calculate additional display metrics

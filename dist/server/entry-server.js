@@ -10391,6 +10391,8 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] })
   ] });
 };
+const analysisCache = /* @__PURE__ */ new Map();
+const CACHE_DURATION = 6 * 60 * 60 * 1e3;
 function StockSummaryModal({ isOpen, onClose, stock }) {
   var _a;
   const { language } = useLanguage();
@@ -10417,6 +10419,13 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
       }
     };
     const fetchAnalysis = async () => {
+      const cacheKey = `${stock.ticker}_${language}`;
+      const cached = analysisCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log(`✅ Using cached analysis for ${stock.ticker} (${language})`);
+        setComprehensiveAnalysis(cached.data);
+        return;
+      }
       setIsLoadingAnalysis(true);
       try {
         const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
@@ -10428,6 +10437,11 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             if (analysisResponse.ok) {
               const analysisData = await analysisResponse.json();
               setComprehensiveAnalysis(analysisData);
+              analysisCache.set(cacheKey, {
+                data: analysisData,
+                timestamp: Date.now()
+              });
+              console.log(`📦 Cached analysis for ${stock.ticker} (${language})`);
             }
           }
         }
