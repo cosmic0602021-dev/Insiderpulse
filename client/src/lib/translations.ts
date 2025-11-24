@@ -572,6 +572,76 @@ const JA = {
     trial3: '3日間無料トライアル開始',
     trial7: '7日間無料トライアル開始',
     secure: '安全な支払いと自動更新',
+  },
+  data: {
+    Buy: '買い',
+    Sell: '売り',
+    // Executive titles
+    CEO: '最高経営責任者',
+    CFO: '最高財務責任者',
+    COO: '最高執行責任者',
+    CTO: '最高技術責任者',
+    CIO: '最高情報責任者',
+    CMO: '最高マーケティング責任者',
+    CRO: '最高収益責任者',
+    CAO: '最高会計責任者',
+    CHRO: '最高人事責任者',
+    CCO: '最高コンテンツ責任者',
+    // Full titles
+    'Chief Executive Officer': '最高経営責任者',
+    'Chief Financial Officer': '最高財務責任者',
+    'Chief Operating Officer': '最高執行責任者',
+    'Chief Technology Officer': '最高技術責任者',
+    'Chief Information Officer': '最高情報責任者',
+    'Chief Marketing Officer': '最高マーケティング責任者',
+    'Chief Revenue Officer': '最高収益責任者',
+    'Chief Accounting Officer': '最高会計責任者',
+    'Chief Medical Officer': '最高医療責任者',
+    'Chief Product Officer': '最高製品責任者',
+    'Chief Legal Officer': '最高法務責任者',
+    'Chief Business Officer': '最高事業責任者',
+    'Chief Commercial Officer': '最高商務責任者',
+    'Chief Content Officer': '最高コンテンツ責任者',
+    'Chief Innovation Officer': '最高イノベーション責任者',
+    // Board positions
+    Director: '取締役',
+    Chairman: '会長',
+    'Chair': '議長',
+    President: '社長',
+    'Pres': '社長',
+    // Combined titles
+    'CEO, Pres': '最高経営責任者兼社長',
+    'COB, CEO': '会長兼最高経営責任者',
+    'CFO, COO': '最高財務責任者兼最高執行責任者',
+    'CFO, Treasurer': '最高財務責任者兼財務担当',
+    'CHAIRPERSON, CEO': '議長兼最高経営責任者',
+    // Vice Presidents
+    'VP of Sales': '営業担当副社長',
+    EVP: '上級副社長',
+    SVP: '執行副社長',
+    // Ownership
+    '10%': '10%所有者',
+    '10% Owner': '10%所有者',
+    'Major Shareholder': '大株主',
+    'Co-Founder': '共同創業者',
+    // General
+    Officer: '役員',
+    Insider: 'インサイダー',
+    Executive: '経営幹部',
+    // Signals
+    'Strong Buy': '強い買い',
+    'Hold': '保有',
+    'Strong Sell': '強い売り',
+    // Risk levels
+    'Low': '低',
+    'Medium': '中',
+    'High': '高',
+    // Time horizons
+    '1-2 weeks': '1-2週間',
+    '2-4 weeks': '2-4週間',
+    '1-3 months': '1-3ヶ月',
+    '3-6 months': '3-6ヶ月',
+    '6-12 months': '6-12ヶ月'
   }
 };
 
@@ -629,6 +699,76 @@ const ZH = {
     trial3: '开始 3 天免费试用',
     trial7: '开始 7 天免费试用',
     secure: '安全支付和自动续订',
+  },
+  data: {
+    Buy: '买入',
+    Sell: '卖出',
+    // Executive titles
+    CEO: '首席执行官',
+    CFO: '首席财务官',
+    COO: '首席运营官',
+    CTO: '首席技术官',
+    CIO: '首席信息官',
+    CMO: '首席营销官',
+    CRO: '首席收入官',
+    CAO: '首席会计官',
+    CHRO: '首席人力资源官',
+    CCO: '首席内容官',
+    // Full titles
+    'Chief Executive Officer': '首席执行官',
+    'Chief Financial Officer': '首席财务官',
+    'Chief Operating Officer': '首席运营官',
+    'Chief Technology Officer': '首席技术官',
+    'Chief Information Officer': '首席信息官',
+    'Chief Marketing Officer': '首席营销官',
+    'Chief Revenue Officer': '首席收入官',
+    'Chief Accounting Officer': '首席会计官',
+    'Chief Medical Officer': '首席医疗官',
+    'Chief Product Officer': '首席产品官',
+    'Chief Legal Officer': '首席法务官',
+    'Chief Business Officer': '首席商务官',
+    'Chief Commercial Officer': '首席商业官',
+    'Chief Content Officer': '首席内容官',
+    'Chief Innovation Officer': '首席创新官',
+    // Board positions
+    Director: '董事',
+    Chairman: '董事长',
+    'Chair': '主席',
+    President: '总裁',
+    'Pres': '总裁',
+    // Combined titles
+    'CEO, Pres': '首席执行官兼总裁',
+    'COB, CEO': '董事长兼首席执行官',
+    'CFO, COO': '首席财务官兼首席运营官',
+    'CFO, Treasurer': '首席财务官兼财务主管',
+    'CHAIRPERSON, CEO': '主席兼首席执行官',
+    // Vice Presidents
+    'VP of Sales': '销售副总裁',
+    EVP: '执行副总裁',
+    SVP: '高级副总裁',
+    // Ownership
+    '10%': '10%持股人',
+    '10% Owner': '10%持股人',
+    'Major Shareholder': '大股东',
+    'Co-Founder': '联合创始人',
+    // General
+    Officer: '高管',
+    Insider: '内部人',
+    Executive: '管理层',
+    // Signals
+    'Strong Buy': '强烈买入',
+    'Hold': '持有',
+    'Strong Sell': '强烈卖出',
+    // Risk levels
+    'Low': '低',
+    'Medium': '中',
+    'High': '高',
+    // Time horizons
+    '1-2 weeks': '1-2周',
+    '2-4 weeks': '2-4周',
+    '1-3 months': '1-3个月',
+    '3-6 months': '3-6个月',
+    '6-12 months': '6-12个月'
   }
 };
 
