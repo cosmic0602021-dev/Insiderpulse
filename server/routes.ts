@@ -2755,14 +2755,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Trade not found' });
       }
 
-      // 💰 COST OPTIMIZATION: Check cache first (90% cost reduction)
-      // If analysis was generated within last 6 hours, return cached result
+      // 💰 COST OPTIMIZATION: Check cache first (99% cost reduction)
+      // If analysis was generated within last 7 days, return cached result
       if (trade.comprehensiveAnalysis && trade.analysisGeneratedAt) {
         const cacheAge = Date.now() - new Date(trade.analysisGeneratedAt).getTime();
-        const SIX_HOURS = 6 * 60 * 60 * 1000;
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
-        if (cacheAge < SIX_HOURS) {
-          console.log(`✅ Using cached analysis (${Math.floor(cacheAge / 60000)} minutes old) - saved GPT API call`);
+        if (cacheAge < SEVEN_DAYS) {
+          console.log(`✅ Using cached analysis (${Math.floor(cacheAge / (60 * 60 * 1000))} hours old) - saved GPT API call`);
 
           const cachedData = trade.comprehensiveAnalysis as any;
           const cachedLanguage = cachedData._language || 'en'; // Default to English if not specified
@@ -2826,7 +2826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`✅ Returning cached analysis in ${language}`);
           return res.json(trade.comprehensiveAnalysis);
         } else {
-          console.log(`⏰ Cache expired (${Math.floor(cacheAge / (60 * 60 * 1000))} hours old) - regenerating analysis`);
+          console.log(`⏰ Cache expired (${Math.floor(cacheAge / (24 * 60 * 60 * 1000))} days old) - regenerating analysis`);
         }
       }
 
@@ -2925,7 +2925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return translations[key]?.[language] || translations[key]?.['en'] || key;
       };
 
-      // Pre-compute news analysis with translation
+      // Pre-compute news analysis in English for caching
       let newsAnalysis;
       if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
         // Use real news data - sort by date (newest first)
@@ -2938,22 +2938,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return dateB - dateA;
           });
 
-        // Translate news items if needed
-        const translatedNewsItems = await Promise.all(
-          newsItems.map(async (article: any) => ({
-            title: await translateText(article.title, language),
-            summary: await translateText(article.summary, language),
-            sentiment: article.sentiment,
-            published: new Date(article.publishedDate),
-            relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
-            source: article.source
-          }))
-        );
+        // Keep news in English for caching - translation happens on response
+        const englishNewsItems = newsItems.map((article: any) => ({
+          title: article.title,
+          summary: article.summary,
+          sentiment: article.sentiment,
+          published: new Date(article.publishedDate),
+          relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
+          source: article.source
+        }));
 
-        const positiveCount = translatedNewsItems.filter((n: any) =>
+        const positiveCount = englishNewsItems.filter((n: any) =>
           n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
         ).length;
-        const negativeCount = translatedNewsItems.filter((n: any) =>
+        const negativeCount = englishNewsItems.filter((n: any) =>
           n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
         ).length;
 
@@ -2961,13 +2959,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalNews: newsCorrelationResult.relatedNews.length,
           positiveCount,
           negativeCount,
-          majorNews: translatedNewsItems,
+          majorNews: englishNewsItems,
           // Additional insights from news correlation
           correlationScore: newsCorrelationResult.correlationScore,
           aiInsights: newsCorrelationResult.aiInsights
         };
       } else {
-        // Fallback to basic analysis if no news available
+        // Fallback to basic analysis if no news available - keep in English
         console.log('No news available, using fallback analysis');
         const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
         const fallbackTitle = `${trade.traderTitle || 'Insider'} ${isBuy ? 'purchased' : 'sold'} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`;
@@ -2975,9 +2973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected` :
           `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`;
 
-        const translatedFallbackNews = [{
-          title: await translateText(fallbackTitle, language),
-          summary: await translateText(fallbackSummary, language),
+        const englishFallbackNews = [{
+          title: fallbackTitle,
+          summary: fallbackSummary,
           sentiment: isBuy ? 'BULLISH' : 'BEARISH',
           published: new Date(trade.filedDate),
           relevanceScore: 0.95,
@@ -2988,7 +2986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalNews: 1,
           positiveCount: isBuy ? 1 : 0,
           negativeCount: isBuy ? 0 : 1,
-          majorNews: translatedFallbackNews
+          majorNews: englishFallbackNews
         };
       }
 
@@ -3012,58 +3010,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const latestNews = newsCorrelationResult.relatedNews
               .sort((a: any, b: any) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())[0];
 
-            // Create news context based on language
+            // Always create news context in English for caching
             let newsContext = '';
-            if (language === 'ko') {
-              newsContext = `최근 30일간 ${totalNews}건의 관련 뉴스가 보도되었으며, `;
-              newsContext += `긍정 ${positiveNews}건, 부정 ${negativeNews}건, 중립 ${neutralNews}건으로 `;
+            newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
+            newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
 
-              if (positiveNews > negativeNews) {
-                newsContext += '전반적으로 긍정적인 시장 분위기를 보이고 있습니다. ';
-              } else if (negativeNews > positiveNews) {
-                newsContext += '시장의 우려가 감지되고 있습니다. ';
-              } else {
-                newsContext += '시장은 중립적인 태도를 유지하고 있습니다. ';
-              }
-
-              if (latestNews) {
-                newsContext += `특히 "${latestNews.title}" 뉴스가 주목받고 있으며, `;
-              }
-
-              // Relate to insider trade
-              const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
-              if (isBuy && positiveNews > negativeNews) {
-                newsContext += '긍정적인 뉴스 흐름과 내부자 매수가 맞물려 강력한 매수 신호를 형성하고 있습니다. ';
-              } else if (!isBuy && negativeNews > positiveNews) {
-                newsContext += '부정적인 뉴스와 내부자 매도가 동시에 발생하여 주의가 필요합니다. ';
-              } else if (isBuy && negativeNews > positiveNews) {
-                newsContext += '부정적인 뉴스에도 불구하고 내부자가 매수에 나서 역발상 투자 기회일 수 있습니다. ';
-              }
+            if (positiveNews > negativeNews) {
+              newsContext += 'Overall market sentiment is positive. ';
+            } else if (negativeNews > positiveNews) {
+              newsContext += 'Market concerns have been detected. ';
             } else {
-              newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
-              newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
+              newsContext += 'Market sentiment remains neutral. ';
+            }
 
-              if (positiveNews > negativeNews) {
-                newsContext += 'Overall market sentiment is positive. ';
-              } else if (negativeNews > positiveNews) {
-                newsContext += 'Market concerns have been detected. ';
-              } else {
-                newsContext += 'Market sentiment remains neutral. ';
-              }
+            if (latestNews) {
+              newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
+            }
 
-              if (latestNews) {
-                newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
-              }
-
-              // Relate to insider trade
-              const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
-              if (isBuy && positiveNews > negativeNews) {
-                newsContext += 'The convergence of positive news flow and insider buying creates a strong buy signal. ';
-              } else if (!isBuy && negativeNews > positiveNews) {
-                newsContext += 'The combination of negative news and insider selling warrants caution. ';
-              } else if (isBuy && negativeNews > positiveNews) {
-                newsContext += 'Insider buying despite negative news may present a contrarian opportunity. ';
-              }
+            // Relate to insider trade
+            const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
+            if (isBuy && positiveNews > negativeNews) {
+              newsContext += 'The convergence of positive news flow and insider buying creates a strong buy signal. ';
+            } else if (!isBuy && negativeNews > positiveNews) {
+              newsContext += 'The combination of negative news and insider selling warrants caution. ';
+            } else if (isBuy && negativeNews > positiveNews) {
+              newsContext += 'Insider buying despite negative news may present a contrarian opportunity. ';
             }
 
             summary = newsContext + summary;
@@ -3071,7 +3042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           return summary;
         })(),
-        actionableRecommendation: `${analysis.signalType} ${t('signal')} - ${analysis.recommendation}`,
+        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation}`,
         priceTargets: {
           // Use AI-generated percentage targets to calculate actual price targets
           conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
@@ -3082,11 +3053,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         riskAssessment: {
           level: analysis.riskLevel,
           factors: analysis.keyInsights,
-          mitigation: t('mitigation')
+          mitigation: 'Diversified investment and stop-loss recommended'
         },
         marketContext: {
           sentiment: analysis.signalType === 'BUY' ? 'BULLISH' : analysis.signalType === 'SELL' ? 'BEARISH' : 'NEUTRAL',
-          reasoning: analysis.keyInsights[0] || t('analyzingMarket')
+          reasoning: analysis.keyInsights[0] || 'Analyzing market conditions'
         },
         catalysts: analysis.keyInsights,
         timeHorizon: analysis.timeHorizon,
@@ -3094,41 +3065,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newsAnalysis: newsAnalysis
       };
 
-      // Translate catalysts (keyInsights) if not English
-      if (language !== 'en' && comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
-        comprehensiveAnalysis.catalysts = await Promise.all(
-          comprehensiveAnalysis.catalysts.map((catalyst: string) => translateText(catalyst, language))
-        );
-      }
+      // 💾 SAVE TO DATABASE IN ENGLISH: Cache analysis for future requests (99% cost reduction)
+      // Always save in English so all languages can translate from the same cache
+      (comprehensiveAnalysis as any)._language = 'en';
 
-      // Translate marketContext reasoning if not English
-      if (language !== 'en' && comprehensiveAnalysis.marketContext.reasoning) {
-        comprehensiveAnalysis.marketContext.reasoning = await translateText(
-          comprehensiveAnalysis.marketContext.reasoning,
-          language
-        );
-      }
-
-      // Translate executiveSummary if not English
-      if (language !== 'en' && comprehensiveAnalysis.executiveSummary) {
-        comprehensiveAnalysis.executiveSummary = await translateText(
-          comprehensiveAnalysis.executiveSummary,
-          language
-        );
-      }
-
-      // Translate actionableRecommendation if not English
-      if (language !== 'en' && comprehensiveAnalysis.actionableRecommendation) {
-        comprehensiveAnalysis.actionableRecommendation = await translateText(
-          comprehensiveAnalysis.actionableRecommendation,
-          language
-        );
-      }
-
-      // Add language marker to cached analysis
-      (comprehensiveAnalysis as any)._language = language;
-
-      // 💾 SAVE TO DATABASE: Cache analysis for future requests (90% cost reduction)
       try {
         await db.update(insiderTrades)
           .set({
@@ -3136,10 +3076,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
             analysisGeneratedAt: new Date()
           })
           .where(eq(insiderTrades.id, tradeId));
-        console.log(`💾 Cached analysis saved to database for trade ${tradeId}`);
+        console.log(`💾 Cached analysis saved to database in English for trade ${tradeId}`);
       } catch (cacheError) {
         console.error('⚠️ Failed to cache analysis (continuing):', cacheError);
         // Continue anyway - caching failure shouldn't block the response
+      }
+
+      // 🌍 Translate for response if not English
+      if (language !== 'en') {
+        console.log(`🌍 Translating new analysis to ${language} before returning...`);
+
+        // Translate catalysts (keyInsights)
+        if (comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
+          comprehensiveAnalysis.catalysts = await Promise.all(
+            comprehensiveAnalysis.catalysts.map((catalyst: string) => translateText(catalyst, language))
+          );
+        }
+
+        // Translate marketContext reasoning
+        if (comprehensiveAnalysis.marketContext.reasoning) {
+          comprehensiveAnalysis.marketContext.reasoning = await translateText(
+            comprehensiveAnalysis.marketContext.reasoning,
+            language
+          );
+        }
+
+        // Translate executiveSummary
+        if (comprehensiveAnalysis.executiveSummary) {
+          comprehensiveAnalysis.executiveSummary = await translateText(
+            comprehensiveAnalysis.executiveSummary,
+            language
+          );
+        }
+
+        // Translate actionableRecommendation
+        if (comprehensiveAnalysis.actionableRecommendation) {
+          comprehensiveAnalysis.actionableRecommendation = await translateText(
+            comprehensiveAnalysis.actionableRecommendation,
+            language
+          );
+        }
+
+        // Translate riskAssessment mitigation
+        if (comprehensiveAnalysis.riskAssessment?.mitigation) {
+          comprehensiveAnalysis.riskAssessment.mitigation = await translateText(
+            comprehensiveAnalysis.riskAssessment.mitigation,
+            language
+          );
+        }
+
+        // Translate news items
+        if (comprehensiveAnalysis.newsAnalysis?.majorNews && Array.isArray(comprehensiveAnalysis.newsAnalysis.majorNews)) {
+          comprehensiveAnalysis.newsAnalysis.majorNews = await Promise.all(
+            comprehensiveAnalysis.newsAnalysis.majorNews.map(async (news: any) => ({
+              ...news,
+              title: await translateText(news.title, language),
+              summary: await translateText(news.summary, language)
+            }))
+          );
+        }
+
+        // Update language marker for response
+        (comprehensiveAnalysis as any)._language = language;
+        console.log(`✅ Analysis translated to ${language} for response`);
       }
 
       res.json(comprehensiveAnalysis);
