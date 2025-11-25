@@ -135,7 +135,8 @@
       "WebFetch(domain:companiesmarketcap.com)",
       "Bash(timeout 80 node:*)",
       "Bash(timeout 120 node:*)",
-      "Bash(npm run build:client:*)"
+      "Bash(npm run build:client:*)",
+      "Bash(do echo \"Updating $ticker...\")"
     ],
     "deny": [],
     "ask": []

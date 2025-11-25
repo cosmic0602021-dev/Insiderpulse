@@ -185,14 +185,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             </div>
             {trade.marketCap && trade.marketCap > 0 && (
               <div className="text-xs font-normal text-muted-foreground mt-1">
-                시총대비: {(() => {
-                  const ratio = (trade.totalValue / trade.marketCap!) * 100;
-                  if (ratio >= 10) return Math.round(ratio) + '%';
-                  if (ratio >= 1) return ratio.toFixed(1) + '%';
-                  if (ratio >= 0.01) return ratio.toFixed(2) + '%';
-                  if (ratio >= 0.001) return ratio.toFixed(3) + '%';
-                  return ratio.toFixed(4) + '%';
-                })()}
+                시총대비: {((trade.totalValue / trade.marketCap!) * 100).toFixed(3)}%
               </div>
             )}
             {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
