@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -109,7 +109,13 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInsiderTrade = z.infer<typeof insertInsiderTradeSchema>;
-export type InsiderTrade = typeof insiderTrades.$inferSelect;
+export type InsiderTrade = typeof insiderTrades.$inferSelect & {
+  // Enriched fields added by API (not in database)
+  currentPrice?: number;
+  marketCap?: number | null;
+  priceChangePercent?: number;
+  priceLastUpdated?: Date | null;
+};
 
 // Deprecated - AI analysis no longer used
 export type AIAnalysis = {
@@ -264,10 +270,10 @@ export const exchangeRates = pgTable("exchange_rates", {
   rate: decimal("rate", { precision: 15, scale: 6 }).notNull(), // Exchange rate with high precision
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
   source: text("source").notNull().default("frankfurter"), // API source
-});
-
-// Create unique index for base+target currency pair
-export const exchangeRatesIndex = sql`CREATE UNIQUE INDEX IF NOT EXISTS "idx_exchange_rates_pair" ON "exchange_rates" ("base_currency", "target_currency")`;
+}, (table) => ({
+  // Unique constraint for base+target currency pair (required for upsert)
+  uniquePair: uniqueIndex("idx_exchange_rates_pair").on(table.baseCurrency, table.targetCurrency),
+}));
 
 export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
   id: true,

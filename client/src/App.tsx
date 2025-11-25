@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useState, useEffect } from "react";
 import { Globe, Shield, ShieldCheck, Menu, X } from 'lucide-react';
 import LanguageSelection from "@/pages/language-selection";
+import { CurrencySelector } from "@/components/currency-selector";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
 import TradeDetail from "@/pages/trade-detail";
@@ -234,7 +235,7 @@ function AppContent() {
 
             {/* Language Selector */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="flex items-center gap-2 hover:text-neutral-300 transition-colors focus:outline-none"
                 data-testid="button-language-selector"
@@ -245,8 +246,8 @@ function AppContent() {
 
               {showLangMenu && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowLangMenu(false)}
                   />
                   <div className="absolute right-0 top-full mt-2 w-24 bg-[#0a0a0a] border border-neutral-800 shadow-xl flex flex-col py-1 z-50">
@@ -267,6 +268,9 @@ function AppContent() {
                 </>
               )}
             </div>
+
+            {/* Currency Selector */}
+            <CurrencySelector />
           </div>
         </div>
 

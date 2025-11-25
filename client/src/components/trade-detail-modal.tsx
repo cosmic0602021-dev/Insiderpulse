@@ -14,6 +14,7 @@ interface StockPriceData {
   currentPrice: number;
   change: number;
   changePercent: number;
+  marketCap?: number;
   lastUpdated: string;
 }
 
@@ -337,6 +338,25 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.totalValue, false)}
               </div>
+              {stockPrice?.marketCap && stockPrice.marketCap > 0 && (
+                <div className="text-[10px] text-neutral-500 font-mono mt-1">
+                  {(() => {
+                    const ratio = (trade.totalValue / stockPrice.marketCap) * 100;
+                    let percentStr;
+                    if (ratio >= 10) percentStr = Math.round(ratio) + '%';
+                    else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
+                    else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
+                    else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
+                    else percentStr = ratio.toFixed(4) + '%';
+
+                    const prefix = language === 'ko' ? '시총대비 ' :
+                                  language === 'ja' ? '時価総額比 ' :
+                                  language === 'zh' ? '市值比 ' :
+                                  'Market cap ratio: ';
+                    return prefix + percentStr;
+                  })()}
+                </div>
+              )}
             </div>
           </div>
 

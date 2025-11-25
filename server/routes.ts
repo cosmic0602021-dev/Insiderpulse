@@ -4103,7 +4103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch current stock prices for all tickers
       const uniqueTickers = Array.from(tickerMetrics.keys());
-      const stockPriceMap = new Map<string, { price: number; lastUpdated: Date }>();
+      const stockPriceMap = new Map<string, { price: number; lastUpdated: Date; marketCap: number | null }>();
 
       if (uniqueTickers.length > 0) {
         const prices = await db.query.stockPrices.findMany({
@@ -4112,6 +4112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ticker: true,
             currentPrice: true,
             lastUpdated: true,
+            marketCap: true,
           }
         });
 
@@ -4119,7 +4120,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (price.ticker && price.currentPrice) {
             stockPriceMap.set(price.ticker, {
               price: Number(price.currentPrice),
-              lastUpdated: price.lastUpdated || new Date()
+              lastUpdated: price.lastUpdated || new Date(),
+              marketCap: price.marketCap || null
             });
           }
         });
@@ -4294,6 +4296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const stockPriceData = stockPriceMap.get(metrics.ticker);
         const currentPrice = stockPriceData?.price;
         const priceLastUpdated = stockPriceData?.lastUpdated;
+        const marketCap = stockPriceData?.marketCap;
 
         // Calculate percentage change from average buy price
         let priceChangePercent = undefined;
@@ -4319,6 +4322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
+          marketCap: marketCap || null, // Add market cap
           // enhancedTrade 객체 추가 (frontend compatibility)
           enhancedTrade: {
             currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,

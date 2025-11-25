@@ -50,6 +50,7 @@ interface RankingItem {
   currentPrice?: number;
   priceChangePercent?: number;
   priceLastUpdated?: string | null;
+  marketCap?: number | null; // 시가총액 추가
   // 패턴 정보 추가
   detectedPatterns?: Array<{
     type: string;
@@ -223,6 +224,7 @@ export default function Ranking() {
           companyName: companyName,
           ticker: ticker,
           currentPrice,
+          marketCap: item.marketCap, // Add marketCap from ranking item
           predictionAccuracy: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
           impactPrediction: buyRatio > 0.7 ? `+${(Math.random() * 5 + 2).toFixed(1)}%` : `-${(Math.random() * 3 + 1).toFixed(1)}%`,
           aiInsight: comprehensiveAnalysis
@@ -617,6 +619,24 @@ export default function Ranking() {
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
+                    {/* Market cap ratio display */}
+                    {item.marketCap && item.marketCap > 0 && (
+                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                        {(() => {
+                          const ratio = (item.netBuying / item.marketCap) * 100;
+                          let ratioStr;
+                          if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                          else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                          else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                          else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                          else ratioStr = ratio.toFixed(4) + '%';
+                          return language === 'ko' ? `시총대비: ${ratioStr}` :
+                                 language === 'ja' ? `時価総額比: ${ratioStr}` :
+                                 language === 'zh' ? `市值比: ${ratioStr}` :
+                                 `vs Market Cap: ${ratioStr}`;
+                        })()}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -697,6 +717,7 @@ export default function Ranking() {
                             filedDate: insider.date,
                             secFilingUrl: insider.secFilingUrl,
                             currentPrice,
+                            marketCap: item.marketCap, // Add marketCap from ranking item
                             predictionAccuracy: Math.floor(Math.random() * 20 + 75),
                             impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
                             aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
@@ -801,6 +822,24 @@ export default function Ranking() {
                             <p className="font-semibold text-sm text-green-600 dark:text-green-400">
                               ${(insider.totalValue / 1000).toFixed(0)}K
                             </p>
+                            {/* Market cap ratio for individual insider */}
+                            {item.marketCap && item.marketCap > 0 && (
+                              <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                                {(() => {
+                                  const ratio = (insider.totalValue / item.marketCap) * 100;
+                                  let ratioStr;
+                                  if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                                  else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                                  else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                                  else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                                  else ratioStr = ratio.toFixed(4) + '%';
+                                  return language === 'ko' ? `시총대비: ${ratioStr}` :
+                                         language === 'ja' ? `時価総額比: ${ratioStr}` :
+                                         language === 'zh' ? `市值比: ${ratioStr}` :
+                                         `vs Cap: ${ratioStr}`;
+                                })()}
+                              </p>
+                            )}
                           </div>
                         </div>
 

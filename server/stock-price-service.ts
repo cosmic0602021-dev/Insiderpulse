@@ -82,22 +82,53 @@ export class StockPriceService {
       const change = currentPrice - previousClose;
       const changePercent = (change / previousClose) * 100;
 
-      // Get market cap from Finnhub (Yahoo Finance doesn't provide it reliably)
-      let marketCap = 0;
-      try {
-        const finnhubKey = process.env.FINNHUB_API_KEY;
-        if (finnhubKey) {
-          const finnhubResponse = await axios.get(
-            `https://finnhub.io/api/v1/stock/profile2?symbol=${upperTicker}&token=${finnhubKey}`,
-            { timeout: 5000 }
-          );
-          // Finnhub returns market cap in millions of dollars
-          marketCap = finnhubResponse.data?.marketCapitalization
-            ? Math.round(finnhubResponse.data.marketCapitalization * 1000000)
-            : 0;
+      // Get market cap using Polygon.io (5 calls/min, unlimited per day!)
+      let marketCap = meta.marketCap || 0;
+
+      // Use Polygon.io for missing data - much better than Finnhub (unlimited daily)
+      if (!marketCap || marketCap === 0) {
+        try {
+          const polygonKey = process.env.POLYGON_API_KEY;
+          if (polygonKey) {
+            const polygonResponse = await axios.get(
+              `https://api.polygon.io/v3/reference/tickers/${upperTicker}?apiKey=${polygonKey}`,
+              { timeout: 10000 }
+            );
+            if (polygonResponse.data?.results?.market_cap) {
+              // Polygon returns market cap in dollars (exact value)
+              marketCap = Math.round(polygonResponse.data.results.market_cap);
+              console.log(`✅ Got market cap from Polygon for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+            }
+          }
+        } catch (polygonError) {
+          console.warn(`Polygon API failed for ${upperTicker}, trying Yahoo Finance fallback`);
         }
-      } catch (finnhubError) {
-        console.warn(`Finnhub API failed for ${upperTicker}, skipping market cap`);
+      }
+
+      // Fallback to Yahoo Finance quoteSummary API if still no market cap
+      if (!marketCap || marketCap === 0) {
+        try {
+          const yahooResponse = await axios.get(
+            `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${upperTicker}?modules=price,summaryDetail`,
+            {
+              timeout: 10000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            }
+          );
+
+          const result = yahooResponse.data?.quoteSummary?.result?.[0];
+          if (result) {
+            const yahooMarketCap = result.price?.marketCap?.raw || result.summaryDetail?.marketCap?.raw;
+            if (yahooMarketCap && yahooMarketCap > 0) {
+              marketCap = Math.round(yahooMarketCap);
+              console.log(`✅ Got market cap from Yahoo Finance for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+            }
+          }
+        } catch (yahooError) {
+          console.warn(`Yahoo Finance also failed for ${upperTicker}, market cap will be 0`);
+        }
       }
 
       const priceData = {
@@ -214,8 +245,8 @@ export class StockPriceService {
           continue;
         }
 
-        // Rate limiting: wait 100ms between requests to avoid API limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Rate limiting: Polygon.io allows 5 calls/min = wait 12 seconds between requests
+        await new Promise(resolve => setTimeout(resolve, 12000));
       }
 
       console.log('\n📈 Stock Price Update Summary:');

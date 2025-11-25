@@ -173,7 +173,12 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
                             <div className="text-right pr-2">
                                 {trade.marketCap && trade.marketCap > 0 ? (
                                     <span className="text-neutral-300">
-                                        {((trade.value / trade.marketCap) * 100).toFixed(4)}%
+                                        {(() => {
+                                          const ratio = (trade.value / trade.marketCap) * 100;
+                                          if (ratio >= 10) return Math.round(ratio) + '%';
+                                          if (ratio >= 1) return ratio.toFixed(1) + '%';
+                                          return ratio.toFixed(2) + '%';
+                                        })()}
                                     </span>
                                 ) : (
                                     <span className="text-neutral-600 text-[9px]">N/A</span>

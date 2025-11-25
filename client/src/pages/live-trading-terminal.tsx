@@ -485,14 +485,19 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
         <span className="text-neutral-300 font-mono">{formatCurrency(trade.value)}</span>
       </div>
 
-      {/* Market Cap Ratio (시총대비) */}
+      {/* Market Cap Ratio (시총대비) - 별도 컬럼 */}
       <div className="flex items-center justify-end">
         {trade.marketCap && trade.marketCap > 0 ? (
           <span className="text-neutral-300 font-mono text-[11px]">
-            {((trade.value / trade.marketCap) * 100).toFixed(4)}%
+            {(() => {
+              const ratio = (trade.value / trade.marketCap) * 100;
+              if (ratio >= 10) return Math.round(ratio) + '%';
+              if (ratio >= 1) return ratio.toFixed(1) + '%';
+              return ratio.toFixed(2) + '%';
+            })()}
           </span>
         ) : (
-          <span className="text-neutral-600 text-[10px]">N/A</span>
+          <span className="text-neutral-600 text-[10px]">-</span>
         )}
       </div>
 

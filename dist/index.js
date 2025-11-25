@@ -18,8 +18,10 @@ var schema_exports = {};
 __export(schema_exports, {
   alerts: () => alerts,
   collectionRuns: () => collectionRuns,
+  exchangeRates: () => exchangeRates,
   insertAlertSchema: () => insertAlertSchema,
   insertCollectionRunSchema: () => insertCollectionRunSchema,
+  insertExchangeRateSchema: () => insertExchangeRateSchema,
   insertInsiderTradeSchema: () => insertInsiderTradeSchema,
   insertStockPriceHistorySchema: () => insertStockPriceHistorySchema,
   insertStockPriceSchema: () => insertStockPriceSchema,
@@ -35,10 +37,10 @@ __export(schema_exports, {
   users: () => users
 });
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var users, insiderTrades, insertUserSchema, insertInsiderTradeSchema, stockPrices, insertStockPriceSchema, stockPriceHistory, stockPriceHistoryIndex, insertStockPriceHistorySchema, alerts, insertAlertSchema, collectionRuns, insertCollectionRunSchema, userEvents, insertUserEventSchema, userSessions, insertUserSessionSchema;
+var users, insiderTrades, insertUserSchema, insertInsiderTradeSchema, stockPrices, insertStockPriceSchema, stockPriceHistory, stockPriceHistoryIndex, insertStockPriceHistorySchema, alerts, insertAlertSchema, collectionRuns, insertCollectionRunSchema, userEvents, insertUserEventSchema, userSessions, insertUserSessionSchema, exchangeRates, insertExchangeRateSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -266,6 +268,25 @@ var init_schema = __esm({
     insertUserSessionSchema = createInsertSchema(userSessions).omit({
       id: true,
       createdAt: true
+    });
+    exchangeRates = pgTable("exchange_rates", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      baseCurrency: varchar("base_currency", { length: 3 }).notNull().default("USD"),
+      // Always USD
+      targetCurrency: varchar("target_currency", { length: 3 }).notNull(),
+      // KRW, CNY, JPY, etc.
+      rate: decimal("rate", { precision: 15, scale: 6 }).notNull(),
+      // Exchange rate with high precision
+      lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+      source: text("source").notNull().default("frankfurter")
+      // API source
+    }, (table) => ({
+      // Unique constraint for base+target currency pair (required for upsert)
+      uniquePair: uniqueIndex("idx_exchange_rates_pair").on(table.baseCurrency, table.targetCurrency)
+    }));
+    insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+      id: true,
+      lastUpdated: true
     });
   }
 });
@@ -1101,9 +1122,10 @@ var init_db_storage = __esm({
   "server/db-storage.ts"() {
     "use strict";
     init_schema();
+    init_schema();
     init_ticker_validator();
     init_ai_analysis();
-    db = drizzle(process.env.DATABASE_URL);
+    db = drizzle(process.env.DATABASE_URL, { schema: schema_exports });
     DatabaseStorage = class {
       // User methods
       async getUser(id) {
@@ -1936,6 +1958,47 @@ var init_stock_price_service = __esm({
           const previousClose = meta.previousClose;
           const change = currentPrice - previousClose;
           const changePercent = change / previousClose * 100;
+          let marketCap = meta.marketCap || 0;
+          if (!marketCap || marketCap === 0) {
+            try {
+              const polygonKey = process.env.POLYGON_API_KEY;
+              if (polygonKey) {
+                const polygonResponse = await axios.get(
+                  `https://api.polygon.io/v3/reference/tickers/${upperTicker}?apiKey=${polygonKey}`,
+                  { timeout: 1e4 }
+                );
+                if (polygonResponse.data?.results?.market_cap) {
+                  marketCap = Math.round(polygonResponse.data.results.market_cap);
+                  console.log(`\u2705 Got market cap from Polygon for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+                }
+              }
+            } catch (polygonError) {
+              console.warn(`Polygon API failed for ${upperTicker}, trying Yahoo Finance fallback`);
+            }
+          }
+          if (!marketCap || marketCap === 0) {
+            try {
+              const yahooResponse = await axios.get(
+                `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${upperTicker}?modules=price,summaryDetail`,
+                {
+                  timeout: 1e4,
+                  headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                  }
+                }
+              );
+              const result2 = yahooResponse.data?.quoteSummary?.result?.[0];
+              if (result2) {
+                const yahooMarketCap = result2.price?.marketCap?.raw || result2.summaryDetail?.marketCap?.raw;
+                if (yahooMarketCap && yahooMarketCap > 0) {
+                  marketCap = Math.round(yahooMarketCap);
+                  console.log(`\u2705 Got market cap from Yahoo Finance for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+                }
+              }
+            } catch (yahooError) {
+              console.warn(`Yahoo Finance also failed for ${upperTicker}, market cap will be 0`);
+            }
+          }
           const priceData = {
             ticker: upperTicker,
             companyName: meta.longName || meta.shortName || upperTicker,
@@ -1943,7 +2006,7 @@ var init_stock_price_service = __esm({
             change: change || 0,
             changePercent: changePercent || 0,
             volume: meta.regularMarketVolume || 0,
-            marketCap: meta.marketCap || 0
+            marketCap
           };
           this.cache.set(upperTicker, { data: priceData, timestamp: Date.now() });
           return priceData;
@@ -2018,7 +2081,7 @@ var init_stock_price_service = __esm({
               console.error(`\u274C [${successCount + failedCount}/${uniqueTickers.size}] Failed to update ${ticker}:`, error?.message || error);
               continue;
             }
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 12e3));
           }
           console.log("\n\u{1F4C8} Stock Price Update Summary:");
           console.log(`   \u2705 Successfully updated: ${successCount} tickers`);
@@ -9840,7 +9903,7 @@ async function activateTrial(userId) {
 async function checkExpiredTrials() {
   const now = /* @__PURE__ */ new Date();
   const expiredTrialUsers = await db3.query.users.findMany({
-    where: (users2, { and: and5, lt, isNotNull, or, isNull: isNull2 }) => and5(
+    where: (users2, { and: and6, lt, isNotNull, or, isNull: isNull2 }) => and6(
       lt(users2.trialExpiresAt, now),
       isNotNull(users2.trialExpiresAt),
       or(
@@ -9905,6 +9968,172 @@ var init_subscription_service = __esm({
       upgradeToInsiderPro,
       cancelSubscription
     };
+  }
+});
+
+// server/exchange-rate-service.ts
+import axios9 from "axios";
+import { eq as eq5, and as and5 } from "drizzle-orm";
+var ExchangeRateService, exchangeRateService;
+var init_exchange_rate_service = __esm({
+  "server/exchange-rate-service.ts"() {
+    "use strict";
+    init_db_storage();
+    init_schema();
+    ExchangeRateService = class {
+      constructor() {
+        this.SUPPORTED_CURRENCIES = ["KRW", "CNY", "JPY"];
+        this.BASE_CURRENCY = "USD";
+        this.FRANKFURTER_API = "https://api.frankfurter.dev/v1/latest";
+        this.CACHE_DURATION = 24 * 60 * 60 * 1e3;
+        // 24 hours
+        this.memoryCache = /* @__PURE__ */ new Map();
+      }
+      /**
+       * Fetch latest exchange rates from Frankfurter API and update database
+       */
+      async updateExchangeRates() {
+        try {
+          console.log("\u{1F4B1} Fetching exchange rates from Frankfurter API...");
+          const symbols = this.SUPPORTED_CURRENCIES.join(",");
+          const response = await axios9.get(`${this.FRANKFURTER_API}?base=${this.BASE_CURRENCY}&symbols=${symbols}`, {
+            timeout: 1e4
+          });
+          if (!response.data || !response.data.rates) {
+            throw new Error("Invalid response from Frankfurter API");
+          }
+          const rates = response.data.rates;
+          console.log("\u{1F4B1} Received rates:", rates);
+          for (const currency of this.SUPPORTED_CURRENCIES) {
+            if (rates[currency]) {
+              const rateData = {
+                baseCurrency: this.BASE_CURRENCY,
+                targetCurrency: currency,
+                rate: rates[currency].toString(),
+                source: "frankfurter"
+              };
+              await db.insert(exchangeRates).values(rateData).onConflictDoUpdate({
+                target: [exchangeRates.baseCurrency, exchangeRates.targetCurrency],
+                set: {
+                  rate: rateData.rate,
+                  lastUpdated: /* @__PURE__ */ new Date(),
+                  source: rateData.source
+                }
+              });
+              this.memoryCache.set(currency, {
+                rate: rates[currency],
+                timestamp: Date.now()
+              });
+              console.log(`\u2705 Updated ${currency}: ${rates[currency]}`);
+            }
+          }
+          console.log("\u2705 Exchange rates updated successfully");
+        } catch (error) {
+          console.error("\u274C Failed to update exchange rates:", error);
+          throw error;
+        }
+      }
+      /**
+       * Get exchange rate for a specific currency
+       */
+      async getExchangeRate(targetCurrency) {
+        if (targetCurrency === this.BASE_CURRENCY) {
+          return 1;
+        }
+        const cached = this.memoryCache.get(targetCurrency);
+        if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+          return cached.rate;
+        }
+        try {
+          const result = await db.query.exchangeRates.findFirst({
+            where: and5(
+              eq5(exchangeRates.baseCurrency, this.BASE_CURRENCY),
+              eq5(exchangeRates.targetCurrency, targetCurrency)
+            )
+          });
+          if (result) {
+            const rate = parseFloat(result.rate);
+            this.memoryCache.set(targetCurrency, {
+              rate,
+              timestamp: Date.now()
+            });
+            return rate;
+          }
+          console.log(`\u26A0\uFE0F Rate for ${targetCurrency} not in DB, fetching from API...`);
+          await this.updateExchangeRates();
+          const newCached = this.memoryCache.get(targetCurrency);
+          if (newCached) {
+            return newCached.rate;
+          }
+          throw new Error(`Failed to fetch exchange rate for ${targetCurrency}`);
+        } catch (error) {
+          console.error(`\u274C Failed to get exchange rate for ${targetCurrency}:`, error);
+          throw error;
+        }
+      }
+      /**
+       * Get all current exchange rates
+       */
+      async getAllExchangeRates() {
+        const rates = {
+          [this.BASE_CURRENCY]: 1
+        };
+        for (const currency of this.SUPPORTED_CURRENCIES) {
+          try {
+            rates[currency] = await this.getExchangeRate(currency);
+          } catch (error) {
+            console.error(`Failed to get rate for ${currency}:`, error);
+            rates[currency] = 0;
+          }
+        }
+        return rates;
+      }
+      /**
+       * Convert amount from USD to target currency
+       */
+      async convert(amountInUSD, targetCurrency) {
+        if (targetCurrency === this.BASE_CURRENCY) {
+          return amountInUSD;
+        }
+        const rate = await this.getExchangeRate(targetCurrency);
+        return amountInUSD * rate;
+      }
+      /**
+       * Initialize exchange rates on server start
+       */
+      async initialize() {
+        try {
+          console.log("\u{1F30D} Initializing exchange rate service...");
+          const dbRates = await db.query.exchangeRates.findMany({
+            where: eq5(exchangeRates.baseCurrency, this.BASE_CURRENCY)
+          });
+          if (dbRates.length === 0) {
+            console.log("\u{1F4E5} No rates in database, fetching from API...");
+            await this.updateExchangeRates();
+          } else {
+            for (const rateData of dbRates) {
+              this.memoryCache.set(rateData.targetCurrency, {
+                rate: parseFloat(rateData.rate),
+                timestamp: new Date(rateData.lastUpdated).getTime()
+              });
+            }
+            console.log(`\u2705 Loaded ${dbRates.length} exchange rates from database`);
+            const oldestRate = dbRates.reduce((oldest, rate) => {
+              return new Date(rate.lastUpdated) < new Date(oldest.lastUpdated) ? rate : oldest;
+            });
+            const age = Date.now() - new Date(oldestRate.lastUpdated).getTime();
+            if (age > this.CACHE_DURATION) {
+              console.log("\u23F0 Rates are stale, updating from API...");
+              await this.updateExchangeRates();
+            }
+          }
+          console.log("\u2705 Exchange rate service initialized");
+        } catch (error) {
+          console.error("\u274C Failed to initialize exchange rate service:", error);
+        }
+      }
+    };
+    exchangeRateService = new ExchangeRateService();
   }
 });
 
@@ -10351,7 +10580,7 @@ var init_marketbeat_collector = __esm({
 });
 
 // server/scrapers/sec-rss-scraper.ts
-import axios9 from "axios";
+import axios10 from "axios";
 import * as cheerio from "cheerio";
 var SecRssScraper, secRssScraper;
 var init_sec_rss_scraper = __esm({
@@ -10384,7 +10613,7 @@ var init_sec_rss_scraper = __esm({
       async getLatestForm4Filings() {
         try {
           console.log("\u{1F504} SEC RSS\uC5D0\uC11C \uCD5C\uC2E0 Form 4 \uD30C\uC77C\uB9C1 \uC218\uC9D1 \uC911...");
-          const response = await axios9.get(this.RSS_URLS.form4Latest, {
+          const response = await axios10.get(this.RSS_URLS.form4Latest, {
             headers: this.headers,
             timeout: 15e3
           });
@@ -10441,7 +10670,7 @@ var init_sec_rss_scraper = __esm({
        */
       async parseForm4FromRSSItem(item) {
         try {
-          const response = await axios9.get(item.link, {
+          const response = await axios10.get(item.link, {
             headers: {
               ...this.headers,
               "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -10647,7 +10876,7 @@ var auto_scheduler_exports = {};
 __export(auto_scheduler_exports, {
   autoScheduler: () => autoScheduler
 });
-import { eq as eq5 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 var AutoScheduler, autoScheduler;
 var init_auto_scheduler = __esm({
   "server/auto-scheduler.ts"() {
@@ -10762,7 +10991,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq5(collectionRuns.id, runId));
+          }).where(eq6(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] OpenInsider collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("OpenInsider", processedCount, duration);
@@ -10774,7 +11003,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq5(collectionRuns.id, runId));
+            }).where(eq6(collectionRuns.id, runId));
           }
           this.openInsiderFailures++;
           if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -10805,7 +11034,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq5(collectionRuns.id, runId));
+          }).where(eq6(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] MarketBeat collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("MarketBeat", processedCount, duration);
@@ -10817,7 +11046,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq5(collectionRuns.id, runId));
+            }).where(eq6(collectionRuns.id, runId));
           }
           this.marketBeatFailures++;
           if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -10880,7 +11109,7 @@ var init_auto_scheduler = __esm({
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date(),
             metadata: { totalTrades: trades.length }
-          }).where(eq5(collectionRuns.id, runId));
+          }).where(eq6(collectionRuns.id, runId));
           console.log(`
 \u2705 [AUTO] SEC RSS Collection Complete`);
           console.log(`   \u23F1\uFE0F Duration: ${duration}ms`);
@@ -10901,7 +11130,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq5(collectionRuns.id, runId));
+            }).where(eq6(collectionRuns.id, runId));
           }
           this.secRssFailures++;
           if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11217,7 +11446,7 @@ import express from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
-import { eq as eq6 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 import { z as z3 } from "zod";
 import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
@@ -11326,7 +11555,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -11349,7 +11578,7 @@ async function registerRoutes(app2) {
             await db4.update(users).set({
               subscriptionStatus: existingSub.status === "canceled" ? "canceled" : "inactive",
               stripeSubscriptionId: null
-            }).where(eq6(users.id, userId));
+            }).where(eq7(users.id, userId));
           } else if (existingSub.cancel_at_period_end && (existingSub.status === "active" || existingSub.status === "trialing")) {
             console.log(`\u26A0\uFE0F Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
@@ -11358,11 +11587,11 @@ async function registerRoutes(app2) {
           await db4.update(users).set({
             subscriptionStatus: "inactive",
             stripeSubscriptionId: null
-          }).where(eq6(users.id, userId));
+          }).where(eq7(users.id, userId));
         }
       }
       const updatedUser = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!updatedUser) {
         return res.status(404).json({
@@ -11388,13 +11617,13 @@ async function registerRoutes(app2) {
           } else {
             console.error(`\u26A0\uFE0F Unexpected Stripe error, will create new customer:`, error);
           }
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq7(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer ID from database for user ${userId}`);
           customerId = null;
         }
       } else if (customerId) {
         console.warn(`\u26A0\uFE0F Invalid customer ID format: "${customerId}", will create new one`);
-        await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: null }).where(eq7(users.id, userId));
         customerId = null;
       }
       if (customerId) {
@@ -11417,7 +11646,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq7(users.id, userId));
         console.log(`\u{1F4BE} Created fresh Stripe customer for user ${userId} (Link removed)`);
       }
       if (customerId) {
@@ -11439,7 +11668,7 @@ async function registerRoutes(app2) {
           }
         } catch (error) {
           console.error(`\u274C Failed to check subscriptions for customer ${customerId}:`, error.message);
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq7(users.id, userId));
           return res.status(400).json({
             error: "\uACB0\uC81C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.",
             details: "Customer validation failed"
@@ -11525,7 +11754,7 @@ async function registerRoutes(app2) {
       } catch (error) {
         console.error(`\u274C Failed to create checkout session:`, error.message);
         if (error.message?.includes("customer") || error.code === "resource_missing") {
-          await db4.update(users).set({ stripeCustomerId: null }).where(eq6(users.id, userId));
+          await db4.update(users).set({ stripeCustomerId: null }).where(eq7(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer from database`);
         }
         return res.status(500).json({
@@ -11580,7 +11809,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11594,7 +11823,7 @@ async function registerRoutes(app2) {
           message: "\uCFE0\uD3F0\uC740 \uBB34\uB8CC\uCCB4\uD5D8 \uAE30\uAC04 \uC911\uC5D0\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4"
         });
       }
-      const validCoupons = ["tosslove", "stocktwitslove", "redditlove", "naverlove", "kiwilove", "producthunt"];
+      const validCoupons = ["tosslove", "stocktwitslove", "redditlove", "naverlove", "kiwilove", "producthunt", "facebooklove"];
       const normalizedCoupon = couponCode.toLowerCase().trim();
       if (!validCoupons.includes(normalizedCoupon)) {
         return res.status(400).json({
@@ -11653,7 +11882,7 @@ async function registerRoutes(app2) {
         usedCoupons: newUsedCoupons,
         couponExtensionDays: newExtensionDays,
         lastCouponUsedAt: /* @__PURE__ */ new Date()
-      }).where(eq6(users.id, userId));
+      }).where(eq7(users.id, userId));
       console.log(`\u2705 Coupon "${normalizedCoupon}" redeemed by ${user2.email}, trial extended to ${newTrialExpiresAt}`);
       return res.status(200).json({
         success: true,
@@ -11683,7 +11912,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -11729,7 +11958,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
-      }).where(eq6(users.id, userId));
+      }).where(eq7(users.id, userId));
       res.json({
         success: true,
         message: "\uAD6C\uB3C5\uC774 \uD574\uC9C0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
@@ -11753,7 +11982,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2 || !user2.stripeCustomerId) {
         return res.status(404).json({
@@ -11830,7 +12059,7 @@ async function registerRoutes(app2) {
         if (customerId && subscriptionId) {
           try {
             let user2 = await db4.query.users.findFirst({
-              where: eq6(users.stripeCustomerId, customerId)
+              where: eq7(users.stripeCustomerId, customerId)
             });
             if (!user2) {
               console.log(`\u26A0\uFE0F User not found by Stripe customer ID ${customerId}, trying email fallback...`);
@@ -11838,7 +12067,7 @@ async function registerRoutes(app2) {
               if (customer && !customer.deleted && customer.email) {
                 console.log(`\u{1F50D} Searching for user by email: ${customer.email}`);
                 user2 = await db4.query.users.findFirst({
-                  where: eq6(users.email, customer.email)
+                  where: eq7(users.email, customer.email)
                 });
                 if (user2) {
                   console.log(`\u2705 Found user by email fallback: ${customer.email}`);
@@ -11869,7 +12098,7 @@ async function registerRoutes(app2) {
                 subscriptionStartDate: new Date(subscription.created * 1e3),
                 subscriptionEndDate: periodEnd,
                 hasUsedTrial: true
-              }).where(eq6(users.id, user2.id));
+              }).where(eq7(users.id, user2.id));
               console.log(`\u2705 [Webhook Success] User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
               console.log(`\u{1F4CA} [Webhook Success] Details: userId=${user2.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
@@ -11895,7 +12124,7 @@ async function registerRoutes(app2) {
         console.log("\u{1F504} Subscription updated:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq6(users.stripeSubscriptionId, subscription.id)
+            where: eq7(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             if (subscription.cancel_at_period_end) {
@@ -11903,14 +12132,14 @@ async function registerRoutes(app2) {
               await db4.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq6(users.id, user2.id));
+              }).where(eq7(users.id, user2.id));
               console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === "active") {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
               await db4.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq6(users.id, user2.id));
+              }).where(eq7(users.id, user2.id));
               console.log(`\u2705 Subscription reactivated for user ${user2.email}`);
             }
           }
@@ -11924,7 +12153,7 @@ async function registerRoutes(app2) {
         console.log("\u274C Subscription deleted:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq6(users.stripeSubscriptionId, subscription.id)
+            where: eq7(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const periodEnd = new Date(subscription.current_period_end * 1e3);
@@ -11942,7 +12171,7 @@ async function registerRoutes(app2) {
         if (invoice.subscription) {
           try {
             const user2 = await db4.query.users.findFirst({
-              where: eq6(users.stripeSubscriptionId, invoice.subscription)
+              where: eq7(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               const subscription = await stripe2.subscriptions.retrieve(invoice.subscription);
@@ -11954,7 +12183,7 @@ async function registerRoutes(app2) {
                 updates.subscriptionStatus = "active";
                 console.log(`\u2705 Trial ended, subscription now active for user ${user2.email}`);
               }
-              await db4.update(users).set(updates).where(eq6(users.id, user2.id));
+              await db4.update(users).set(updates).where(eq7(users.id, user2.id));
               console.log(`\u{1F4B3} Renewed subscription for user ${user2.email} until ${periodEnd}`);
             }
           } catch (error) {
@@ -11969,7 +12198,7 @@ async function registerRoutes(app2) {
         if (invoice.subscription) {
           try {
             const user2 = await db4.query.users.findFirst({
-              where: eq6(users.stripeSubscriptionId, invoice.subscription)
+              where: eq7(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               console.log(`\u26A0\uFE0F Payment failed for user ${user2.email} - Stripe will retry automatically`);
@@ -11986,7 +12215,7 @@ async function registerRoutes(app2) {
         console.log("\u23F0 Trial ending soon for subscription:", subscription.id);
         try {
           const user2 = await db4.query.users.findFirst({
-            where: eq6(users.stripeSubscriptionId, subscription.id)
+            where: eq7(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const trialEnd = new Date(subscription.trial_end * 1e3);
@@ -12013,7 +12242,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F50D} Syncing subscription for email: ${email}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12059,7 +12288,7 @@ async function registerRoutes(app2) {
         subscriptionStatus: activeSubscription.status,
         subscriptionEndDate,
         subscriptionStartDate: new Date(activeSubscription.created * 1e3)
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       console.log(`\u2705 Database updated for user ${email}`);
       return res.json({
         success: true,
@@ -12086,7 +12315,7 @@ async function registerRoutes(app2) {
   app2.get("/api/admin/check-production-db", protectAdminEndpoint, async (req, res) => {
     try {
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, "user_1762200564967_t6whya")
+        where: eq7(users.id, "user_1762200564967_t6whya")
       });
       res.json({
         userFound: !!user2,
@@ -12133,7 +12362,7 @@ async function registerRoutes(app2) {
             continue;
           }
           const user2 = await db4.query.users.findFirst({
-            where: eq6(users.email, customer.email)
+            where: eq7(users.email, customer.email)
           });
           if (!user2) {
             console.warn(`\u26A0\uFE0F No database user for email ${customer.email}`);
@@ -12151,7 +12380,7 @@ async function registerRoutes(app2) {
             subscriptionStatus: subscription.status,
             subscriptionEndDate,
             subscriptionStartDate: new Date(subscription.created * 1e3)
-          }).where(eq6(users.id, user2.id));
+          }).where(eq7(users.id, user2.id));
           console.log(`\u2705 Synced ${customer.email}`);
           results.synced++;
         } catch (error) {
@@ -12197,7 +12426,7 @@ async function registerRoutes(app2) {
         });
       }
       const existingUser = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       if (existingUser) {
         if (existingUser.emailVerified) {
@@ -12216,7 +12445,7 @@ async function registerRoutes(app2) {
           password: hashedPassword2,
           verificationCode: verificationCode2,
           verificationCodeExpires: verificationCodeExpires2
-        }).where(eq6(users.email, email)).returning();
+        }).where(eq7(users.email, email)).returning();
         console.log("\u2705 User updated with new verification code:", {
           id: updatedUser[0].id,
           email: updatedUser[0].email
@@ -12294,7 +12523,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email}, ID: ${user2.id})` : "No");
       if (user2) {
@@ -12390,7 +12619,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       if (!user2) {
         console.log("\u26A0\uFE0F User not found, but returning success for security");
@@ -12409,7 +12638,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       console.log("\u2705 Reset token saved to database");
       try {
         console.log("\u{1F4E7} Attempting to send password reset email...");
@@ -12463,7 +12692,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, decoded.email)
+        where: eq7(users.email, decoded.email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12488,7 +12717,7 @@ async function registerRoutes(app2) {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       console.log("\u2705 Password reset successful for:", decoded.email);
       res.json({
         success: true,
@@ -12528,14 +12757,14 @@ async function registerRoutes(app2) {
       console.log("\u{1F50D} Looking for user with email:", decoded.email);
       const user2 = await db4.query.users.findFirst({
         where: and(
-          eq6(users.email, decoded.email),
-          eq6(users.verificationToken, token)
+          eq7(users.email, decoded.email),
+          eq7(users.verificationToken, token)
         )
       });
       if (!user2) {
         console.log("\u274C User not found with email and token combo");
         const userByEmail = await db4.query.users.findFirst({
-          where: eq6(users.email, decoded.email)
+          where: eq7(users.email, decoded.email)
         });
         if (userByEmail) {
           console.log("\u26A0\uFE0F User exists but token mismatch");
@@ -12568,7 +12797,7 @@ async function registerRoutes(app2) {
         emailVerified: true,
         verificationToken: null,
         verificationTokenExpires: null
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       console.log("\u2705 Email verified successfully for:", user2.email);
       res.json({
         success: true,
@@ -12593,7 +12822,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -12628,7 +12857,7 @@ async function registerRoutes(app2) {
         emailVerified: true,
         verificationCode: null,
         verificationCodeExpires: null
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       console.log("\u2705 Email verified successfully with code:", email);
       res.json({
         success: true,
@@ -12653,7 +12882,7 @@ async function registerRoutes(app2) {
         });
       }
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.email, email)
+        where: eq7(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -12675,7 +12904,7 @@ async function registerRoutes(app2) {
       await db4.update(users).set({
         verificationCode,
         verificationCodeExpires
-      }).where(eq6(users.id, user2.id));
+      }).where(eq7(users.id, user2.id));
       try {
         await emailNotificationService.sendVerificationCode(email, verificationCode);
         console.log("\u{1F4E7} New verification code sent to:", email);
@@ -12708,7 +12937,7 @@ async function registerRoutes(app2) {
       const decoded = jwt.verify(token, JWT_SECRET);
       console.log(`\u{1F510} [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, decoded.userId)
+        where: eq7(users.id, decoded.userId)
       });
       if (!user2) {
         console.log(`\u274C [/api/auth/verify] User not found for userId: ${decoded.userId}`);
@@ -12807,6 +13036,7 @@ async function registerRoutes(app2) {
             columns: {
               ticker: true,
               currentPrice: true,
+              marketCap: true,
               lastUpdated: true
             }
           });
@@ -12814,6 +13044,7 @@ async function registerRoutes(app2) {
             if (price.ticker && price.currentPrice) {
               stockPriceMap.set(price.ticker, {
                 currentPrice: Number(price.currentPrice),
+                marketCap: price.marketCap ? Number(price.marketCap) : null,
                 lastUpdated: price.lastUpdated
               });
             }
@@ -12825,6 +13056,7 @@ async function registerRoutes(app2) {
       const enrichedTrades = rawTrades.map((trade) => {
         const priceData = trade.ticker ? stockPriceMap.get(trade.ticker) : void 0;
         const currentPrice = priceData?.currentPrice;
+        const marketCap = priceData?.marketCap;
         const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent = void 0;
         if (currentPrice && trade.pricePerShare) {
@@ -12833,6 +13065,7 @@ async function registerRoutes(app2) {
         return {
           ...trade,
           currentPrice,
+          marketCap: marketCap || null,
           priceChangePercent: priceChangePercent !== void 0 ? Number(priceChangePercent.toFixed(2)) : void 0,
           priceLastUpdated: priceLastUpdated || null
         };
@@ -12925,7 +13158,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F4B3} Creating SetupIntent for trial user: ${userId}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -12972,7 +13205,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq7(users.id, userId));
         console.log(`\u2705 Created Stripe customer for user ${userId}: ${customerId}`);
       }
       const setupIntent = await stripe2.setupIntents.create({
@@ -13021,7 +13254,7 @@ async function registerRoutes(app2) {
       }
       console.log(`\u{1F3AF} Activating trial with card for user: ${userId}, plan: ${planType}`);
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -13076,7 +13309,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq6(users.id, userId));
+        await db4.update(users).set({ stripeCustomerId: customerId }).where(eq7(users.id, userId));
         console.log(`\u2705 Created Stripe customer: ${customerId}`);
       }
       await stripe2.paymentMethods.attach(paymentMethodId, {
@@ -13116,7 +13349,7 @@ async function registerRoutes(app2) {
         subscriptionEndDate: subscriptionEnd,
         hasUsedTrial: false
         // No trial used - immediate billing
-      }).where(eq6(users.id, userId));
+      }).where(eq7(users.id, userId));
       console.log(`\u2705 Subscription created for user ${userId} - billing immediately`);
       const subscriptionMessage = "\uAD6C\uB3C5\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uACB0\uC81C \uC644\uB8CC \uD6C4 \uC989\uC2DC \uD504\uB9AC\uBBF8\uC5C4 \uAE30\uB2A5\uC744 \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
       res.json({
@@ -13147,7 +13380,7 @@ async function registerRoutes(app2) {
       console.log(`\u{1F511} [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
       const accessLevel = await subscriptionService.getUserAccessLevel(userId);
       const user2 = await db4.query.users.findFirst({
-        where: eq6(users.id, userId)
+        where: eq7(users.id, userId)
       });
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
@@ -13251,16 +13484,16 @@ async function registerRoutes(app2) {
       const tradeId = req.params.id;
       const language = req.query.language || "en";
       const trade = await db4.query.insiderTrades.findFirst({
-        where: eq6(insiderTrades.id, tradeId)
+        where: eq7(insiderTrades.id, tradeId)
       });
       if (!trade) {
         return res.status(404).json({ error: "Trade not found" });
       }
       if (trade.comprehensiveAnalysis && trade.analysisGeneratedAt) {
         const cacheAge = Date.now() - new Date(trade.analysisGeneratedAt).getTime();
-        const SIX_HOURS = 6 * 60 * 60 * 1e3;
-        if (cacheAge < SIX_HOURS) {
-          console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / 6e4)} minutes old) - saved GPT API call`);
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1e3;
+        if (cacheAge < SEVEN_DAYS) {
+          console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - saved GPT API call`);
           const cachedData = trade.comprehensiveAnalysis;
           const cachedLanguage = cachedData._language || "en";
           if (cachedLanguage !== language) {
@@ -13306,7 +13539,7 @@ async function registerRoutes(app2) {
           console.log(`\u2705 Returning cached analysis in ${language}`);
           return res.json(trade.comprehensiveAnalysis);
         } else {
-          console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - regenerating analysis`);
+          console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (24 * 60 * 60 * 1e3))} days old) - regenerating analysis`);
         }
       }
       const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
@@ -13401,28 +13634,26 @@ async function registerRoutes(app2) {
           const dateB = new Date(b.publishedDate).getTime();
           return dateB - dateA;
         });
-        const translatedNewsItems = await Promise.all(
-          newsItems.map(async (article) => ({
-            title: await translateText(article.title, language),
-            summary: await translateText(article.summary, language),
-            sentiment: article.sentiment,
-            published: new Date(article.publishedDate),
-            relevanceScore: article.relevanceScore / 100,
-            // Convert to 0-1 scale
-            source: article.source
-          }))
-        );
-        const positiveCount = translatedNewsItems.filter(
+        const englishNewsItems = newsItems.map((article) => ({
+          title: article.title,
+          summary: article.summary,
+          sentiment: article.sentiment,
+          published: new Date(article.publishedDate),
+          relevanceScore: article.relevanceScore / 100,
+          // Convert to 0-1 scale
+          source: article.source
+        }));
+        const positiveCount = englishNewsItems.filter(
           (n) => n.sentiment === "POSITIVE" || n.sentiment === "BULLISH"
         ).length;
-        const negativeCount = translatedNewsItems.filter(
+        const negativeCount = englishNewsItems.filter(
           (n) => n.sentiment === "NEGATIVE" || n.sentiment === "BEARISH"
         ).length;
         newsAnalysis = {
           totalNews: newsCorrelationResult.relatedNews.length,
           positiveCount,
           negativeCount,
-          majorNews: translatedNewsItems,
+          majorNews: englishNewsItems,
           // Additional insights from news correlation
           correlationScore: newsCorrelationResult.correlationScore,
           aiInsights: newsCorrelationResult.aiInsights
@@ -13432,9 +13663,9 @@ async function registerRoutes(app2) {
         const isBuy = trade.tradeType.toUpperCase() === "BUY" || trade.tradeType.toUpperCase() === "PURCHASE";
         const fallbackTitle = `${trade.traderTitle || "Insider"} ${isBuy ? "purchased" : "sold"} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`;
         const fallbackSummary = isBuy ? `Total value $${(trade.totalValue / 1e3).toFixed(0)}K - Bullish signal detected` : `$${(trade.totalValue / 1e3).toFixed(0)}K position reduced - Monitoring recommended`;
-        const translatedFallbackNews = [{
-          title: await translateText(fallbackTitle, language),
-          summary: await translateText(fallbackSummary, language),
+        const englishFallbackNews = [{
+          title: fallbackTitle,
+          summary: fallbackSummary,
           sentiment: isBuy ? "BULLISH" : "BEARISH",
           published: new Date(trade.filedDate),
           relevanceScore: 0.95,
@@ -13444,7 +13675,7 @@ async function registerRoutes(app2) {
           totalNews: 1,
           positiveCount: isBuy ? 1 : 0,
           negativeCount: isBuy ? 0 : 1,
-          majorNews: translatedFallbackNews
+          majorNews: englishFallbackNews
         };
       }
       const comprehensiveAnalysis = {
@@ -13461,54 +13692,31 @@ async function registerRoutes(app2) {
             const neutralNews = totalNews - positiveNews - negativeNews;
             const latestNews = newsCorrelationResult.relatedNews.sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())[0];
             let newsContext = "";
-            if (language === "ko") {
-              newsContext = `\uCD5C\uADFC 30\uC77C\uAC04 ${totalNews}\uAC74\uC758 \uAD00\uB828 \uB274\uC2A4\uAC00 \uBCF4\uB3C4\uB418\uC5C8\uC73C\uBA70, `;
-              newsContext += `\uAE0D\uC815 ${positiveNews}\uAC74, \uBD80\uC815 ${negativeNews}\uAC74, \uC911\uB9BD ${neutralNews}\uAC74\uC73C\uB85C `;
-              if (positiveNews > negativeNews) {
-                newsContext += "\uC804\uBC18\uC801\uC73C\uB85C \uAE0D\uC815\uC801\uC778 \uC2DC\uC7A5 \uBD84\uC704\uAE30\uB97C \uBCF4\uC774\uACE0 \uC788\uC2B5\uB2C8\uB2E4. ";
-              } else if (negativeNews > positiveNews) {
-                newsContext += "\uC2DC\uC7A5\uC758 \uC6B0\uB824\uAC00 \uAC10\uC9C0\uB418\uACE0 \uC788\uC2B5\uB2C8\uB2E4. ";
-              } else {
-                newsContext += "\uC2DC\uC7A5\uC740 \uC911\uB9BD\uC801\uC778 \uD0DC\uB3C4\uB97C \uC720\uC9C0\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4. ";
-              }
-              if (latestNews) {
-                newsContext += `\uD2B9\uD788 "${latestNews.title}" \uB274\uC2A4\uAC00 \uC8FC\uBAA9\uBC1B\uACE0 \uC788\uC73C\uBA70, `;
-              }
-              const isBuy = trade.tradeType.toUpperCase().includes("BUY") || trade.tradeType.toUpperCase().includes("PURCHASE");
-              if (isBuy && positiveNews > negativeNews) {
-                newsContext += "\uAE0D\uC815\uC801\uC778 \uB274\uC2A4 \uD750\uB984\uACFC \uB0B4\uBD80\uC790 \uB9E4\uC218\uAC00 \uB9DE\uBB3C\uB824 \uAC15\uB825\uD55C \uB9E4\uC218 \uC2E0\uD638\uB97C \uD615\uC131\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4. ";
-              } else if (!isBuy && negativeNews > positiveNews) {
-                newsContext += "\uBD80\uC815\uC801\uC778 \uB274\uC2A4\uC640 \uB0B4\uBD80\uC790 \uB9E4\uB3C4\uAC00 \uB3D9\uC2DC\uC5D0 \uBC1C\uC0DD\uD558\uC5EC \uC8FC\uC758\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4. ";
-              } else if (isBuy && negativeNews > positiveNews) {
-                newsContext += "\uBD80\uC815\uC801\uC778 \uB274\uC2A4\uC5D0\uB3C4 \uBD88\uAD6C\uD558\uACE0 \uB0B4\uBD80\uC790\uAC00 \uB9E4\uC218\uC5D0 \uB098\uC11C \uC5ED\uBC1C\uC0C1 \uD22C\uC790 \uAE30\uD68C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4. ";
-              }
+            newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
+            newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
+            if (positiveNews > negativeNews) {
+              newsContext += "Overall market sentiment is positive. ";
+            } else if (negativeNews > positiveNews) {
+              newsContext += "Market concerns have been detected. ";
             } else {
-              newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
-              newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
-              if (positiveNews > negativeNews) {
-                newsContext += "Overall market sentiment is positive. ";
-              } else if (negativeNews > positiveNews) {
-                newsContext += "Market concerns have been detected. ";
-              } else {
-                newsContext += "Market sentiment remains neutral. ";
-              }
-              if (latestNews) {
-                newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
-              }
-              const isBuy = trade.tradeType.toUpperCase().includes("BUY") || trade.tradeType.toUpperCase().includes("PURCHASE");
-              if (isBuy && positiveNews > negativeNews) {
-                newsContext += "The convergence of positive news flow and insider buying creates a strong buy signal. ";
-              } else if (!isBuy && negativeNews > positiveNews) {
-                newsContext += "The combination of negative news and insider selling warrants caution. ";
-              } else if (isBuy && negativeNews > positiveNews) {
-                newsContext += "Insider buying despite negative news may present a contrarian opportunity. ";
-              }
+              newsContext += "Market sentiment remains neutral. ";
+            }
+            if (latestNews) {
+              newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
+            }
+            const isBuy = trade.tradeType.toUpperCase().includes("BUY") || trade.tradeType.toUpperCase().includes("PURCHASE");
+            if (isBuy && positiveNews > negativeNews) {
+              newsContext += "The convergence of positive news flow and insider buying creates a strong buy signal. ";
+            } else if (!isBuy && negativeNews > positiveNews) {
+              newsContext += "The combination of negative news and insider selling warrants caution. ";
+            } else if (isBuy && negativeNews > positiveNews) {
+              newsContext += "Insider buying despite negative news may present a contrarian opportunity. ";
             }
             summary = newsContext + summary;
           }
           return summary;
         })(),
-        actionableRecommendation: `${analysis.signalType} ${t("signal")} - ${analysis.recommendation}`,
+        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation}`,
         priceTargets: {
           // Use AI-generated percentage targets to calculate actual price targets
           conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
@@ -13520,49 +13728,69 @@ async function registerRoutes(app2) {
         riskAssessment: {
           level: analysis.riskLevel,
           factors: analysis.keyInsights,
-          mitigation: t("mitigation")
+          mitigation: "Diversified investment and stop-loss recommended"
         },
         marketContext: {
           sentiment: analysis.signalType === "BUY" ? "BULLISH" : analysis.signalType === "SELL" ? "BEARISH" : "NEUTRAL",
-          reasoning: analysis.keyInsights[0] || t("analyzingMarket")
+          reasoning: analysis.keyInsights[0] || "Analyzing market conditions"
         },
         catalysts: analysis.keyInsights,
         timeHorizon: analysis.timeHorizon,
         confidence: analysis.significanceScore,
         newsAnalysis
       };
-      if (language !== "en" && comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
-        comprehensiveAnalysis.catalysts = await Promise.all(
-          comprehensiveAnalysis.catalysts.map((catalyst) => translateText(catalyst, language))
-        );
-      }
-      if (language !== "en" && comprehensiveAnalysis.marketContext.reasoning) {
-        comprehensiveAnalysis.marketContext.reasoning = await translateText(
-          comprehensiveAnalysis.marketContext.reasoning,
-          language
-        );
-      }
-      if (language !== "en" && comprehensiveAnalysis.executiveSummary) {
-        comprehensiveAnalysis.executiveSummary = await translateText(
-          comprehensiveAnalysis.executiveSummary,
-          language
-        );
-      }
-      if (language !== "en" && comprehensiveAnalysis.actionableRecommendation) {
-        comprehensiveAnalysis.actionableRecommendation = await translateText(
-          comprehensiveAnalysis.actionableRecommendation,
-          language
-        );
-      }
-      comprehensiveAnalysis._language = language;
+      comprehensiveAnalysis._language = "en";
       try {
         await db4.update(insiderTrades).set({
           comprehensiveAnalysis,
           analysisGeneratedAt: /* @__PURE__ */ new Date()
-        }).where(eq6(insiderTrades.id, tradeId));
-        console.log(`\u{1F4BE} Cached analysis saved to database for trade ${tradeId}`);
+        }).where(eq7(insiderTrades.id, tradeId));
+        console.log(`\u{1F4BE} Cached analysis saved to database in English for trade ${tradeId}`);
       } catch (cacheError) {
         console.error("\u26A0\uFE0F Failed to cache analysis (continuing):", cacheError);
+      }
+      if (language !== "en") {
+        console.log(`\u{1F30D} Translating new analysis to ${language} before returning...`);
+        if (comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
+          comprehensiveAnalysis.catalysts = await Promise.all(
+            comprehensiveAnalysis.catalysts.map((catalyst) => translateText(catalyst, language))
+          );
+        }
+        if (comprehensiveAnalysis.marketContext.reasoning) {
+          comprehensiveAnalysis.marketContext.reasoning = await translateText(
+            comprehensiveAnalysis.marketContext.reasoning,
+            language
+          );
+        }
+        if (comprehensiveAnalysis.executiveSummary) {
+          comprehensiveAnalysis.executiveSummary = await translateText(
+            comprehensiveAnalysis.executiveSummary,
+            language
+          );
+        }
+        if (comprehensiveAnalysis.actionableRecommendation) {
+          comprehensiveAnalysis.actionableRecommendation = await translateText(
+            comprehensiveAnalysis.actionableRecommendation,
+            language
+          );
+        }
+        if (comprehensiveAnalysis.riskAssessment?.mitigation) {
+          comprehensiveAnalysis.riskAssessment.mitigation = await translateText(
+            comprehensiveAnalysis.riskAssessment.mitigation,
+            language
+          );
+        }
+        if (comprehensiveAnalysis.newsAnalysis?.majorNews && Array.isArray(comprehensiveAnalysis.newsAnalysis.majorNews)) {
+          comprehensiveAnalysis.newsAnalysis.majorNews = await Promise.all(
+            comprehensiveAnalysis.newsAnalysis.majorNews.map(async (news) => ({
+              ...news,
+              title: await translateText(news.title, language),
+              summary: await translateText(news.summary, language)
+            }))
+          );
+        }
+        comprehensiveAnalysis._language = language;
+        console.log(`\u2705 Analysis translated to ${language} for response`);
       }
       res.json(comprehensiveAnalysis);
     } catch (error) {
@@ -14117,14 +14345,16 @@ async function registerRoutes(app2) {
           columns: {
             ticker: true,
             currentPrice: true,
-            lastUpdated: true
+            lastUpdated: true,
+            marketCap: true
           }
         });
         prices.forEach((price) => {
           if (price.ticker && price.currentPrice) {
             stockPriceMap.set(price.ticker, {
               price: Number(price.currentPrice),
-              lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date()
+              lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date(),
+              marketCap: price.marketCap || null
             });
           }
         });
@@ -14237,6 +14467,7 @@ async function registerRoutes(app2) {
         const stockPriceData = stockPriceMap.get(metrics.ticker);
         const currentPrice = stockPriceData?.price;
         const priceLastUpdated = stockPriceData?.lastUpdated;
+        const marketCap = stockPriceData?.marketCap;
         let priceChangePercent = void 0;
         if (currentPrice && metrics.avgTradeValue > 0) {
           priceChangePercent = (currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue * 100;
@@ -14261,6 +14492,8 @@ async function registerRoutes(app2) {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
           priceChangePercent: priceChangePercent !== void 0 ? Math.round(priceChangePercent * 10) / 10 : void 0,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
+          marketCap: marketCap || null,
+          // Add market cap
           // enhancedTrade 객체 추가 (frontend compatibility)
           enhancedTrade: {
             currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
@@ -14419,6 +14652,38 @@ async function registerRoutes(app2) {
       res.status(500).json({
         success: false,
         error: "\uC77C\uAD04 \uB274\uC2A4 \uBD84\uC11D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+      });
+    }
+  });
+  app2.get("/api/exchange-rates", async (req, res) => {
+    try {
+      const rates = await exchangeRateService.getAllExchangeRates();
+      res.json({
+        success: true,
+        data: rates
+      });
+    } catch (error) {
+      console.error("\uD658\uC728 \uC870\uD68C \uC2E4\uD328:", error);
+      res.status(500).json({
+        success: false,
+        error: "\uD658\uC728 \uC815\uBCF4\uB97C \uAC00\uC838\uC624\uB294\uB370 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
+      });
+    }
+  });
+  app2.post("/api/exchange-rates/update", async (req, res) => {
+    try {
+      await exchangeRateService.updateExchangeRates();
+      const rates = await exchangeRateService.getAllExchangeRates();
+      res.json({
+        success: true,
+        data: rates,
+        message: "\uD658\uC728 \uC815\uBCF4\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC5C5\uB370\uC774\uD2B8\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+      });
+    } catch (error) {
+      console.error("\uD658\uC728 \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
+      res.status(500).json({
+        success: false,
+        error: "\uD658\uC728 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."
       });
     }
   });
@@ -15315,6 +15580,9 @@ async function registerRoutes(app2) {
       });
     }
   });
+  exchangeRateService.initialize().catch((err) => {
+    console.error("\u26A0\uFE0F Failed to initialize exchange rate service:", err);
+  });
   console.log("\u2705 API routes registered with WebSocket support, enhanced data collection, and push notifications");
   return httpServer;
 }
@@ -15351,6 +15619,7 @@ var init_routes = __esm({
     init_insider_credibility_service();
     init_data_integrity_service();
     init_subscription_service();
+    init_exchange_rate_service();
     init_();
     init_2();
     init_3();
@@ -16921,13 +17190,13 @@ __export(cron_jobs_exports, {
 import cron from "node-cron";
 import Stripe3 from "stripe";
 import { drizzle as drizzle5 } from "drizzle-orm/neon-http";
-import { eq as eq7 } from "drizzle-orm";
+import { eq as eq8 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
     try {
       const insiderProUsers = await db5.query.users.findMany({
-        where: eq7(users.subscriptionTier, "insider_pro")
+        where: eq8(users.subscriptionTier, "insider_pro")
       });
       console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
       let syncedCount = 0;
@@ -16958,7 +17227,7 @@ function startSubscriptionSyncJob() {
             await db5.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq7(users.id, user2.id));
+            }).where(eq8(users.id, user2.id));
             console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
             syncedCount++;
           } else if (dbStatusMismatch || dbEndDateMismatch) {
@@ -16972,7 +17241,7 @@ function startSubscriptionSyncJob() {
             await db5.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq7(users.id, user2.id));
+            }).where(eq8(users.id, user2.id));
             syncedCount++;
           } else {
             console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
@@ -17000,8 +17269,8 @@ function startTrialExpirationCheckJob() {
     try {
       const now = /* @__PURE__ */ new Date();
       const expiredTrialUsers = await db5.query.users.findMany({
-        where: (users2, { and: and5, lt, eq: eq8, isNotNull }) => and5(
-          eq8(users2.subscriptionStatus, "trialing"),
+        where: (users2, { and: and6, lt, eq: eq9, isNotNull }) => and6(
+          eq9(users2.subscriptionStatus, "trialing"),
           isNotNull(users2.trialExpiresAt),
           lt(users2.trialExpiresAt, now)
         )
@@ -17011,7 +17280,7 @@ function startTrialExpirationCheckJob() {
         for (const user2 of expiredTrialUsers) {
           await db5.update(users).set({
             subscriptionStatus: "inactive"
-          }).where(eq7(users.id, user2.id));
+          }).where(eq8(users.id, user2.id));
           console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
         }
       }
@@ -17029,8 +17298,8 @@ function startSubscriptionExpirationCheckJob() {
     try {
       const now = /* @__PURE__ */ new Date();
       const expiredSubscriptions = await db5.query.users.findMany({
-        where: (users2, { and: and5, eq: eq8, isNotNull, lt }) => and5(
-          eq8(users2.subscriptionStatus, "active"),
+        where: (users2, { and: and6, eq: eq9, isNotNull, lt }) => and6(
+          eq9(users2.subscriptionStatus, "active"),
           isNotNull(users2.subscriptionEndDate),
           lt(users2.subscriptionEndDate, now)
         ),
@@ -17043,7 +17312,7 @@ function startSubscriptionExpirationCheckJob() {
           try {
             await db5.update(users).set({
               subscriptionStatus: "inactive"
-            }).where(eq7(users.id, user2.id));
+            }).where(eq8(users.id, user2.id));
             console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
           } catch (updateError) {
             console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);

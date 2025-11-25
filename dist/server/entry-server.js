@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, DollarSign, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -4396,6 +4396,179 @@ function PWAInstallPrompt() {
     ] }) }) })
   ] });
 }
+const defaultRates = {
+  USD: 1,
+  KRW: 1473.27,
+  CNY: 7.09,
+  JPY: 156.98
+};
+const CurrencyContext = createContext(void 0);
+const CurrencyProvider = ({ children }) => {
+  const [currency, setCurrency] = useState(() => {
+    if (typeof window === "undefined") {
+      return "USD";
+    }
+    try {
+      const savedCurrency = localStorage.getItem("currency");
+      if (savedCurrency && ["USD", "KRW", "CNY", "JPY"].includes(savedCurrency)) {
+        console.log("💱 Using saved currency preference:", savedCurrency);
+        return savedCurrency;
+      }
+    } catch (error) {
+      console.error("Failed to load saved currency:", error);
+    }
+    return "USD";
+  });
+  const [exchangeRates, setExchangeRates] = useState(defaultRates);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("currency", currency);
+        console.log("💱 Currency preference saved:", currency);
+      } catch (error) {
+        console.error("Failed to save currency preference:", error);
+      }
+    }
+  }, [currency]);
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const response = await fetch("/api/exchange-rates");
+        if (!response.ok) {
+          throw new Error("Failed to fetch exchange rates");
+        }
+        const result = await response.json();
+        if (result.success && result.data) {
+          const validRates = {
+            USD: Number(result.data.USD) || 1,
+            KRW: Number(result.data.KRW) || defaultRates.KRW,
+            CNY: Number(result.data.CNY) || defaultRates.CNY,
+            JPY: Number(result.data.JPY) || defaultRates.JPY
+          };
+          setExchangeRates(validRates);
+          console.log("💱 Exchange rates updated:", validRates);
+        } else {
+          console.warn("Invalid exchange rate data, using defaults");
+          setExchangeRates(defaultRates);
+        }
+      } catch (error) {
+        console.error("Failed to fetch exchange rates, using defaults:", error);
+        setExchangeRates(defaultRates);
+      }
+    };
+    fetchRates();
+    const interval = setInterval(fetchRates, 24 * 60 * 60 * 1e3);
+    return () => clearInterval(interval);
+  }, []);
+  const convert = (amountInUSD) => {
+    if (!amountInUSD || amountInUSD === 0) return 0;
+    const rate = exchangeRates[currency];
+    if (!rate || rate === 0) {
+      console.warn(`Invalid exchange rate for ${currency}:`, rate);
+      return amountInUSD;
+    }
+    return amountInUSD * rate;
+  };
+  const formatCurrency2 = (amountInUSD) => {
+    if (!amountInUSD || amountInUSD === 0) {
+      if (currency === "USD") return "$0";
+      if (currency === "KRW") return "₩0";
+      if (currency === "CNY") return "¥0";
+      if (currency === "JPY") return "¥0";
+      return "$0";
+    }
+    const convertedAmount = convert(amountInUSD);
+    const currencySymbols = {
+      USD: "$",
+      KRW: "₩",
+      CNY: "¥",
+      JPY: "¥"
+    };
+    const symbol = currencySymbols[currency];
+    if (currency === "KRW") {
+      return formatKoreanWon(convertedAmount);
+    } else if (currency === "CNY") {
+      return formatChineseYuan(convertedAmount);
+    } else if (currency === "JPY") {
+      return formatJapaneseYen(convertedAmount);
+    } else {
+      const formatted = new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+        minimumFractionDigits: 0
+      }).format(convertedAmount);
+      return `${symbol}${formatted}`;
+    }
+  };
+  const formatKoreanWon = (amount) => {
+    const absAmount = Math.abs(amount);
+    const sign = amount < 0 ? "-" : "";
+    if (absAmount >= 1e12) {
+      const jo = absAmount / 1e12;
+      if (absAmount >= 1e13) {
+        return `${sign}₩${Math.round(jo).toLocaleString("ko-KR")}조`;
+      }
+      return `${sign}₩${jo.toFixed(1)}조`;
+    } else if (absAmount >= 1e8) {
+      const eok = absAmount / 1e8;
+      if (absAmount >= 1e9) {
+        return `${sign}₩${Math.round(eok).toLocaleString("ko-KR")}억`;
+      }
+      return `${sign}₩${eok.toFixed(1)}억`;
+    } else if (absAmount >= 1e4) {
+      const man = absAmount / 1e4;
+      return `${sign}₩${man.toFixed(0)}만`;
+    } else {
+      return `${sign}₩${Math.round(absAmount).toLocaleString("ko-KR")}`;
+    }
+  };
+  const formatChineseYuan = (amount) => {
+    const absAmount = Math.abs(amount);
+    const sign = amount < 0 ? "-" : "";
+    if (absAmount >= 1e8) {
+      const yi = absAmount / 1e8;
+      if (absAmount >= 1e9) {
+        return `${sign}¥${Math.round(yi).toLocaleString("zh-CN")}亿`;
+      }
+      return `${sign}¥${yi.toFixed(1)}亿`;
+    } else if (absAmount >= 1e4) {
+      const wan = absAmount / 1e4;
+      return `${sign}¥${wan.toFixed(0)}万`;
+    } else {
+      return `${sign}¥${Math.round(absAmount).toLocaleString("zh-CN")}`;
+    }
+  };
+  const formatJapaneseYen = (amount) => {
+    const absAmount = Math.abs(amount);
+    const sign = amount < 0 ? "-" : "";
+    if (absAmount >= 1e12) {
+      const chou = absAmount / 1e12;
+      if (absAmount >= 1e13) {
+        return `${sign}¥${Math.round(chou).toLocaleString("ja-JP")}兆`;
+      }
+      return `${sign}¥${chou.toFixed(1)}兆`;
+    } else if (absAmount >= 1e8) {
+      const oku = absAmount / 1e8;
+      if (absAmount >= 1e9) {
+        return `${sign}¥${Math.round(oku).toLocaleString("ja-JP")}億`;
+      }
+      return `${sign}¥${oku.toFixed(1)}億`;
+    } else if (absAmount >= 1e4) {
+      const man = absAmount / 1e4;
+      return `${sign}¥${man.toFixed(0)}万`;
+    } else {
+      return `${sign}¥${Math.round(absAmount).toLocaleString("ja-JP")}`;
+    }
+  };
+  return /* @__PURE__ */ jsx(CurrencyContext.Provider, { value: { currency, setCurrency, exchangeRates, convert, formatCurrency: formatCurrency2 }, children });
+};
+const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+  if (context === void 0) {
+    throw new Error("useCurrency must be used within a CurrencyProvider");
+  }
+  return context;
+};
 const API_BASE_URL = "/api";
 class ApiClient {
   constructor() {
@@ -4927,6 +5100,68 @@ function LanguageSelection({ onLanguageSelected }) {
     ] })
   ] }) });
 }
+function CurrencySelector() {
+  const { currency, setCurrency } = useCurrency();
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const currencies = [
+    { code: "USD", symbol: "$", name: "US Dollar" },
+    { code: "KRW", symbol: "₩", name: "Korean Won" },
+    { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+    { code: "JPY", symbol: "¥", name: "Japanese Yen" }
+  ];
+  const currentCurrency = currencies.find((c) => c.code === currency) || currencies[0];
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+  return /* @__PURE__ */ jsxs("div", { className: "relative", ref: dropdownRef, children: [
+    /* @__PURE__ */ jsxs(
+      "button",
+      {
+        onClick: () => setIsOpen(!isOpen),
+        className: "p-2 px-3 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/50 transition-all bg-neutral-900/30 flex items-center gap-2 rounded group",
+        title: "Change currency",
+        children: [
+          /* @__PURE__ */ jsx(DollarSign, { size: 14, className: "text-neutral-500 group-hover:text-neutral-300" }),
+          /* @__PURE__ */ jsxs("span", { className: "text-xs font-mono font-bold", children: [
+            currentCurrency.symbol,
+            " ",
+            currency
+          ] }),
+          /* @__PURE__ */ jsx(ChevronDown, { size: 12, className: `text-neutral-600 transition-transform ${isOpen ? "rotate-180" : ""}` })
+        ]
+      }
+    ),
+    isOpen && /* @__PURE__ */ jsx("div", { className: "absolute right-0 top-full mt-1 bg-[#0a0a0a] border border-neutral-800 shadow-[0_4px_12px_rgba(0,0,0,0.4)] z-50 min-w-[160px] rounded", children: currencies.map((curr) => /* @__PURE__ */ jsxs(
+      "button",
+      {
+        onClick: () => {
+          setCurrency(curr.code);
+          setIsOpen(false);
+        },
+        className: `w-full px-4 py-2.5 text-left text-xs font-mono hover:bg-neutral-900/70 transition-colors flex items-center justify-between gap-3 first:rounded-t last:rounded-b ${currency === curr.code ? "text-emerald-500 bg-neutral-900/50 border-l-2 border-l-emerald-500" : "text-neutral-400"}`,
+        children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx("span", { className: "text-base", children: curr.symbol }),
+            /* @__PURE__ */ jsx("span", { className: "font-bold", children: curr.code })
+          ] }),
+          currency === curr.code && /* @__PURE__ */ jsx("span", { className: "text-emerald-500 text-[10px]", children: "✓" })
+        ]
+      },
+      curr.code
+    )) })
+  ] });
+}
 const Card = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   "div",
   {
@@ -5250,7 +5485,7 @@ const EN = {
     realtime: "Real-Time Connection",
     query: "QUERY_TICKER_OR_INSIDER...",
     filter: { all: "All", buy: "Buy", sell: "Sell" },
-    table: { ticker: "Ticker", insider: "Insider", relation: "Relation", action: "Action", price: "Price", volume: "Volume", value: "Value", impact: "Impact", time: "Time" },
+    table: { ticker: "Ticker", insider: "Insider", relation: "Relation", action: "Action", price: "Price", volume: "Volume", value: "Value", impact: "vs. Market Cap", time: "Time" },
     realtimeZone: "Real-Time Signal Zone",
     encrypted: "OUTSIDER ENCRYPTED",
     encryptedForOutsiders: "ENCRYPTED FOR OUTSIDERS",
@@ -5508,7 +5743,7 @@ const KO = {
     realtime: "실시간 연결됨",
     query: "티커 또는 내부자 검색...",
     filter: { all: "전체", buy: "매수", sell: "매도" },
-    table: { ticker: "티커", insider: "내부자", relation: "직위", action: "유형", price: "가격", volume: "거래량", value: "가치", impact: "영향", time: "시간" },
+    table: { ticker: "티커", insider: "내부자", relation: "직위", action: "유형", price: "가격", volume: "거래량", value: "가치", impact: "시총대비", time: "시간" },
     realtimeZone: "실시간 시그널 구역",
     encrypted: "OUTSIDER 암호화됨",
     encryptedForOutsiders: "OUTSIDER 암호화됨",
@@ -5794,6 +6029,76 @@ const JA = {
     trial3: "3日間無料トライアル開始",
     trial7: "7日間無料トライアル開始",
     secure: "安全な支払いと自動更新"
+  },
+  data: {
+    Buy: "買い",
+    Sell: "売り",
+    // Executive titles
+    CEO: "最高経営責任者",
+    CFO: "最高財務責任者",
+    COO: "最高執行責任者",
+    CTO: "最高技術責任者",
+    CIO: "最高情報責任者",
+    CMO: "最高マーケティング責任者",
+    CRO: "最高収益責任者",
+    CAO: "最高会計責任者",
+    CHRO: "最高人事責任者",
+    CCO: "最高コンテンツ責任者",
+    // Full titles
+    "Chief Executive Officer": "最高経営責任者",
+    "Chief Financial Officer": "最高財務責任者",
+    "Chief Operating Officer": "最高執行責任者",
+    "Chief Technology Officer": "最高技術責任者",
+    "Chief Information Officer": "最高情報責任者",
+    "Chief Marketing Officer": "最高マーケティング責任者",
+    "Chief Revenue Officer": "最高収益責任者",
+    "Chief Accounting Officer": "最高会計責任者",
+    "Chief Medical Officer": "最高医療責任者",
+    "Chief Product Officer": "最高製品責任者",
+    "Chief Legal Officer": "最高法務責任者",
+    "Chief Business Officer": "最高事業責任者",
+    "Chief Commercial Officer": "最高商務責任者",
+    "Chief Content Officer": "最高コンテンツ責任者",
+    "Chief Innovation Officer": "最高イノベーション責任者",
+    // Board positions
+    Director: "取締役",
+    Chairman: "会長",
+    "Chair": "議長",
+    President: "社長",
+    "Pres": "社長",
+    // Combined titles
+    "CEO, Pres": "最高経営責任者兼社長",
+    "COB, CEO": "会長兼最高経営責任者",
+    "CFO, COO": "最高財務責任者兼最高執行責任者",
+    "CFO, Treasurer": "最高財務責任者兼財務担当",
+    "CHAIRPERSON, CEO": "議長兼最高経営責任者",
+    // Vice Presidents
+    "VP of Sales": "営業担当副社長",
+    EVP: "上級副社長",
+    SVP: "執行副社長",
+    // Ownership
+    "10%": "10%所有者",
+    "10% Owner": "10%所有者",
+    "Major Shareholder": "大株主",
+    "Co-Founder": "共同創業者",
+    // General
+    Officer: "役員",
+    Insider: "インサイダー",
+    Executive: "経営幹部",
+    // Signals
+    "Strong Buy": "強い買い",
+    "Hold": "保有",
+    "Strong Sell": "強い売り",
+    // Risk levels
+    "Low": "低",
+    "Medium": "中",
+    "High": "高",
+    // Time horizons
+    "1-2 weeks": "1-2週間",
+    "2-4 weeks": "2-4週間",
+    "1-3 months": "1-3ヶ月",
+    "3-6 months": "3-6ヶ月",
+    "6-12 months": "6-12ヶ月"
   }
 };
 const ZH = {
@@ -5850,6 +6155,76 @@ const ZH = {
     trial3: "开始 3 天免费试用",
     trial7: "开始 7 天免费试用",
     secure: "安全支付和自动续订"
+  },
+  data: {
+    Buy: "买入",
+    Sell: "卖出",
+    // Executive titles
+    CEO: "首席执行官",
+    CFO: "首席财务官",
+    COO: "首席运营官",
+    CTO: "首席技术官",
+    CIO: "首席信息官",
+    CMO: "首席营销官",
+    CRO: "首席收入官",
+    CAO: "首席会计官",
+    CHRO: "首席人力资源官",
+    CCO: "首席内容官",
+    // Full titles
+    "Chief Executive Officer": "首席执行官",
+    "Chief Financial Officer": "首席财务官",
+    "Chief Operating Officer": "首席运营官",
+    "Chief Technology Officer": "首席技术官",
+    "Chief Information Officer": "首席信息官",
+    "Chief Marketing Officer": "首席营销官",
+    "Chief Revenue Officer": "首席收入官",
+    "Chief Accounting Officer": "首席会计官",
+    "Chief Medical Officer": "首席医疗官",
+    "Chief Product Officer": "首席产品官",
+    "Chief Legal Officer": "首席法务官",
+    "Chief Business Officer": "首席商务官",
+    "Chief Commercial Officer": "首席商业官",
+    "Chief Content Officer": "首席内容官",
+    "Chief Innovation Officer": "首席创新官",
+    // Board positions
+    Director: "董事",
+    Chairman: "董事长",
+    "Chair": "主席",
+    President: "总裁",
+    "Pres": "总裁",
+    // Combined titles
+    "CEO, Pres": "首席执行官兼总裁",
+    "COB, CEO": "董事长兼首席执行官",
+    "CFO, COO": "首席财务官兼首席运营官",
+    "CFO, Treasurer": "首席财务官兼财务主管",
+    "CHAIRPERSON, CEO": "主席兼首席执行官",
+    // Vice Presidents
+    "VP of Sales": "销售副总裁",
+    EVP: "执行副总裁",
+    SVP: "高级副总裁",
+    // Ownership
+    "10%": "10%持股人",
+    "10% Owner": "10%持股人",
+    "Major Shareholder": "大股东",
+    "Co-Founder": "联合创始人",
+    // General
+    Officer: "高管",
+    Insider: "内部人",
+    Executive: "管理层",
+    // Signals
+    "Strong Buy": "强烈买入",
+    "Hold": "持有",
+    "Strong Sell": "强烈卖出",
+    // Risk levels
+    "Low": "低",
+    "Medium": "中",
+    "High": "高",
+    // Time horizons
+    "1-2 weeks": "1-2周",
+    "2-4 weeks": "2-4周",
+    "1-3 months": "1-3个月",
+    "3-6 months": "3-6个月",
+    "6-12 months": "6-12个月"
   }
 };
 const TRANSLATIONS = {
@@ -5869,12 +6244,10 @@ function formatCurrency(val, showDecimals = true) {
 function formatNumber(val) {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(val);
 }
-function formatPercent(val) {
-  return `${val > 0 ? "+" : ""}${val.toFixed(2)}%`;
-}
 function TradeDetailModal({ isOpen, onClose, trade }) {
   var _a, _b, _c;
   const { language } = useLanguage();
+  const { formatCurrency: formatCurrency2 } = useCurrency();
   const [newsExpanded, setNewsExpanded] = useState(true);
   const gradientId = useId();
   const [stockPrice, setStockPrice] = useState(null);
@@ -6067,7 +6440,10 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
             /* @__PURE__ */ jsx("div", { className: "flex items-center gap-2 mt-0", children: /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-600 font-mono", children: trade.ticker }) })
           ] })
         ] }),
-        /* @__PURE__ */ jsx("button", { onClick: onClose, className: "p-1.5 hover:bg-neutral-900 transition-colors", "data-testid": "button-close-modal", children: /* @__PURE__ */ jsx(X, { size: 16, className: "text-neutral-500" }) })
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(CurrencySelector, {}),
+          /* @__PURE__ */ jsx("button", { onClick: onClose, className: "p-1.5 hover:bg-neutral-900 transition-colors", "data-testid": "button-close-modal", children: /* @__PURE__ */ jsx(X, { size: 16, className: "text-neutral-500" }) })
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-4 border-b border-neutral-800", children: [
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5 border-r border-neutral-800", children: [
@@ -6076,7 +6452,7 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5 border-r border-neutral-800", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.priceShare.toUpperCase() }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency(trade.pricePerShare) })
+          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency2(trade.pricePerShare) })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5 border-r border-neutral-800", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.sharesTraded.toUpperCase() }),
@@ -6087,7 +6463,18 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.totalValue.toUpperCase() }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency(trade.totalValue, false) })
+          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency2(trade.totalValue, false) }),
+          (stockPrice == null ? void 0 : stockPrice.marketCap) && stockPrice.marketCap > 0 && /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-500 font-mono mt-1", children: (() => {
+            const ratio = trade.totalValue / stockPrice.marketCap * 100;
+            let percentStr;
+            if (ratio >= 10) percentStr = Math.round(ratio) + "%";
+            else if (ratio >= 1) percentStr = ratio.toFixed(1) + "%";
+            else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + "%";
+            else if (ratio >= 1e-3) percentStr = ratio.toFixed(3) + "%";
+            else percentStr = ratio.toFixed(4) + "%";
+            const prefix = language === "ko" ? "시총대비 " : language === "ja" ? "時価総額比 " : language === "zh" ? "市值比 " : "Market cap ratio: ";
+            return prefix + percentStr;
+          })() })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto", children: [
@@ -6218,12 +6605,12 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
             /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-3 pt-2.5 border-t border-neutral-800 mt-2.5", children: [
               /* @__PURE__ */ jsxs("div", { children: [
                 /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5", children: t.basePrice.toUpperCase() }),
-                /* @__PURE__ */ jsx("div", { className: "text-sm text-neutral-300 font-mono", children: formatCurrency(trade.pricePerShare) })
+                /* @__PURE__ */ jsx("div", { className: "text-sm text-neutral-300 font-mono", children: formatCurrency2(trade.pricePerShare) })
               ] }),
               /* @__PURE__ */ jsxs("div", { children: [
                 /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-0.5", children: t.currentPrice.toUpperCase() }),
                 /* @__PURE__ */ jsxs("div", { className: `text-sm font-mono flex items-center gap-1.5 ${priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
-                  formatCurrency(currentPrice),
+                  formatCurrency2(currentPrice),
                   /* @__PURE__ */ jsxs("span", { className: "text-[10px]", children: [
                     priceChange >= 0 ? "+" : "",
                     priceChange.toFixed(2),
@@ -6309,17 +6696,17 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
                 /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.conservative.toUpperCase() }),
                 /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-neutral-600 rounded-sm", style: { width: "60%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.conservative) || trade.pricePerShare * 1.05) })
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.conservative) || trade.pricePerShare * 1.05) })
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
                 /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.realistic.toUpperCase() }),
                 /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-emerald-500 rounded-sm", style: { width: "80%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.realistic) || trade.pricePerShare * 1.19) })
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.realistic) || trade.pricePerShare * 1.19) })
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
                 /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.optimistic.toUpperCase() }),
                 /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-amber-500 rounded-sm", style: { width: "100%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.optimistic) || trade.pricePerShare * 1.43) })
+                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.optimistic) || trade.pricePerShare * 1.43) })
               ] })
             ] })
           ] }),
@@ -6932,11 +7319,13 @@ function mapInsiderTradeToTerminal(trade) {
     value: trade.totalValue,
     date: new Date(trade.filedDate).toISOString(),
     priceChange: trade.priceVariance || 0,
+    marketCap: trade.marketCap || 0,
     isVerified: trade.isVerified || false
   };
 }
 function LiveTradingTerminal() {
   const { language } = useLanguage();
+  useCurrency();
   const { accessLevel, setAccessLevel } = useAccess();
   const { isAuthenticated } = useAuth();
   const [, navigate2] = useLocation();
@@ -7054,6 +7443,7 @@ function LiveTradingTerminal() {
             ": ",
             (/* @__PURE__ */ new Date()).toLocaleTimeString(language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })
           ] }),
+          /* @__PURE__ */ jsx(CurrencySelector, {}),
           /* @__PURE__ */ jsx(
             "button",
             {
@@ -7098,7 +7488,7 @@ function LiveTradingTerminal() {
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto relative custom-scrollbar", children: [
       /* @__PURE__ */ jsx("div", { className: "absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 z-0" }),
-      /* @__PURE__ */ jsxs("div", { className: "sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3", children: [
+      /* @__PURE__ */ jsxs("div", { className: "sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 gap-x-3 md:gap-x-6 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3", children: [
         /* @__PURE__ */ jsx("div", { className: "pl-2", children: t.table.ticker }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:block", children: t.table.insider }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:block", children: t.table.relation }),
@@ -7218,6 +7608,7 @@ function LiveTradingTerminal() {
 }
 function TradeRow({ trade, onClick, tData }) {
   const { language } = useLanguage();
+  const { formatCurrency: formatCurrency2 } = useCurrency();
   const isBuy = trade.type === "Buy";
   const typeClass = isBuy ? "text-emerald-500" : "text-rose-500";
   const typeBg = "bg-transparent";
@@ -7245,16 +7636,15 @@ function TradeRow({ trade, onClick, tData }) {
           /* @__PURE__ */ jsx(ActionIcon, { size: 10, className: typeClass }),
           /* @__PURE__ */ jsx("span", { className: "hidden md:inline", children: tData[trade.type] || trade.type })
         ] }) }),
-        /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency(trade.price) }) }),
+        /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency2(trade.price) }) }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatNumber(trade.shares) }) }),
-        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency(trade.value, false) }) }),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-end", children: [
-          trade.priceChange !== 0 && /* @__PURE__ */ jsxs("span", { className: `flex items-center gap-1 font-mono ${trade.priceChange > 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
-            trade.priceChange > 0 ? /* @__PURE__ */ jsx(TrendingUp, { size: 10 }) : /* @__PURE__ */ jsx(TrendingDown, { size: 10 }),
-            formatPercent(trade.priceChange)
-          ] }),
-          trade.priceChange === 0 && /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[10px]", children: "—" })
-        ] }),
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency2(trade.value) }) }),
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: trade.marketCap && trade.marketCap > 0 ? /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono text-[11px]", children: (() => {
+          const ratio = trade.value / trade.marketCap * 100;
+          if (ratio >= 10) return Math.round(ratio) + "%";
+          if (ratio >= 1) return ratio.toFixed(1) + "%";
+          return ratio.toFixed(2) + "%";
+        })() }) : /* @__PURE__ */ jsx("span", { className: "text-neutral-600 text-[10px]", children: "-" }) }),
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end pr-2", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[10px] font-mono", children: timeAgo }) })
       ]
     }
@@ -10086,11 +10476,18 @@ const ProfileView = ({ lang, onRedeemCoupon }) => {
 };
 const SettingsView = ({ lang, setLang }) => {
   const t = TRANSLATIONS[lang].settings;
+  const { currency, setCurrency } = useCurrency();
   const languages = [
     { code: "en", label: "English" },
     { code: "ko", label: "한국어" },
     { code: "ja", label: "日本語" },
     { code: "zh", label: "中文" }
+  ];
+  const currencies = [
+    { code: "USD", label: "US Dollar", symbol: "$" },
+    { code: "KRW", label: "Korean Won", symbol: "₩" },
+    { code: "CNY", label: "Chinese Yuan", symbol: "¥" },
+    { code: "JPY", label: "Japanese Yen", symbol: "¥" }
   ];
   return /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col h-full overflow-hidden bg-[#050505]", children: [
     /* @__PURE__ */ jsxs("div", { className: "p-6 border-b border-neutral-900", children: [
@@ -10111,6 +10508,31 @@ const SettingsView = ({ lang, setLang }) => {
               onChange: (e) => setLang(e.target.value),
               className: "w-full bg-[#050505] border border-neutral-800 text-neutral-300 p-3 text-sm focus:outline-none focus:border-neutral-600 appearance-none",
               children: languages.map((l) => /* @__PURE__ */ jsx("option", { value: l.code, children: l.label }, l.code))
+            }
+          ),
+          /* @__PURE__ */ jsx("div", { className: "absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs", children: "▼" })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 mb-4", children: [
+          /* @__PURE__ */ jsx(DollarSign, { className: "text-neutral-500", size: 18 }),
+          /* @__PURE__ */ jsx("h2", { className: "text-base font-bold text-neutral-300", children: "Currency" })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+          /* @__PURE__ */ jsx(
+            "select",
+            {
+              value: currency,
+              onChange: (e) => setCurrency(e.target.value),
+              className: "w-full bg-[#050505] border border-neutral-800 text-neutral-300 p-3 text-sm focus:outline-none focus:border-neutral-600 appearance-none",
+              children: currencies.map((c) => /* @__PURE__ */ jsxs("option", { value: c.code, children: [
+                c.symbol,
+                " ",
+                c.label,
+                " (",
+                c.code,
+                ")"
+              ] }, c.code))
             }
           ),
           /* @__PURE__ */ jsx("div", { className: "absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs", children: "▼" })
@@ -10177,6 +10599,7 @@ const SettingsView = ({ lang, setLang }) => {
   ] });
 };
 const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails }) => {
+  const { formatCurrency: formatCurrency2 } = useCurrency();
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
   const topTier = data.slice(0, 3);
@@ -10266,11 +10689,11 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
       /* @__PURE__ */ jsxs("div", { className: "mt-6 pt-4 border-t border-neutral-900 grid grid-cols-1 gap-2", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
           /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.avgPrice }),
-          /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency(stock.avgBuyPrice) })
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency2(stock.avgBuyPrice) })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
           /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.curPrice }),
-          /* @__PURE__ */ jsx("span", { className: `${stock.priceChange >= 0 ? "text-emerald-600" : "text-rose-600"} font-mono font-bold`, children: formatCurrency(stock.currentPrice) })
+          /* @__PURE__ */ jsx("span", { className: `${stock.priceChange >= 0 ? "text-emerald-600" : "text-rose-600"} font-mono font-bold`, children: formatCurrency2(stock.currentPrice) })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
           /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.totalVol }),
@@ -10298,7 +10721,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "md:col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50", children: [
               /* @__PURE__ */ jsx("div", { className: "text-[9px] text-neutral-500 uppercase mb-0.5", children: t.buyPrice }),
-              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-400 font-mono font-bold", children: formatCurrency(buyer.price) }),
+              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-400 font-mono font-bold", children: formatCurrency2(buyer.price) }),
               /* @__PURE__ */ jsxs("div", { className: `text-[10px] font-bold mt-1 ${buyer.priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
                 buyer.priceChange > 0 ? "↗" : "↘",
                 " ",
@@ -10314,7 +10737,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "md:col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50 h-full", children: [
               /* @__PURE__ */ jsx("div", { className: "text-[9px] text-neutral-500 uppercase mb-0.5", children: t.totalAmount }),
-              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-500 font-bold font-mono", children: formatCurrency(buyer.amount) })
+              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-500 font-bold font-mono", children: formatCurrency2(buyer.amount) })
             ] })
           ]
         },
@@ -11730,7 +12153,8 @@ function AppContent() {
                 lang.code
               )) })
             ] })
-          ] })
+          ] }),
+          /* @__PURE__ */ jsx(CurrencySelector, {})
         ] })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-hidden relative w-full", children: /* @__PURE__ */ jsxs("main", { className: "h-full overflow-hidden w-full", children: [
@@ -11754,12 +12178,12 @@ function App() {
     keepAlive();
     return () => clearInterval(interval);
   }, []);
-  return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsx(LanguageProvider, { children: /* @__PURE__ */ jsx(AccessProvider, { children: /* @__PURE__ */ jsxs(TooltipProvider, { children: [
+  return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsx(LanguageProvider, { children: /* @__PURE__ */ jsx(CurrencyProvider, { children: /* @__PURE__ */ jsx(AccessProvider, { children: /* @__PURE__ */ jsxs(TooltipProvider, { children: [
     /* @__PURE__ */ jsx(AppContent, {}),
     /* @__PURE__ */ jsx(AuthModal, {}),
     /* @__PURE__ */ jsx(PWAInstallPrompt, {}),
     /* @__PURE__ */ jsx(Toaster, {})
-  ] }) }) }) }) });
+  ] }) }) }) }) }) });
 }
 function useStaticLocation() {
   return ["/", () => {

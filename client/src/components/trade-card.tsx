@@ -133,9 +133,9 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
                   </Badge>
                 )}
               </div>
-              {formatMarketCap((trade as any).marketCap) && (
+              {formatMarketCap(trade.marketCap) && (
                 <div className="text-xs text-muted-foreground mb-1">
-                  시가총액: {formatMarketCap((trade as any).marketCap)}
+                  시가총액: {formatMarketCap(trade.marketCap)}
                 </div>
               )}
             {trade.traderName && (
@@ -183,9 +183,16 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             <div className="text-lg font-bold text-foreground" data-testid="total-value">
               {formatCurrency(trade.totalValue)}
             </div>
-            {(trade as any).marketCap && (trade as any).marketCap > 0 && (
+            {trade.marketCap && trade.marketCap > 0 && (
               <div className="text-xs font-normal text-muted-foreground mt-1">
-                시총대비: {((trade.totalValue / (trade as any).marketCap) * 100).toFixed(4)}%
+                시총대비: {(() => {
+                  const ratio = (trade.totalValue / trade.marketCap!) * 100;
+                  if (ratio >= 10) return Math.round(ratio) + '%';
+                  if (ratio >= 1) return ratio.toFixed(1) + '%';
+                  if (ratio >= 0.01) return ratio.toFixed(2) + '%';
+                  if (ratio >= 0.001) return ratio.toFixed(3) + '%';
+                  return ratio.toFixed(4) + '%';
+                })()}
               </div>
             )}
             {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
