@@ -4155,35 +4155,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1000000; // Normalize to millions
         const buyCountScore = metrics.buyCount * 5; // 5 points per buy trade
 
-        // 🎯 C-level Executive Weighting - executives have higher impact
-        let executiveWeightedInsiderScore = 0;
-        const uniqueInsidersArray = Array.from(metrics.uniqueInsiders);
-
-        for (const insiderName of uniqueInsidersArray) {
-          const insiderTrades = metrics.trades.filter(t => t.traderName === insiderName);
-          const title = insiderTrades[0]?.traderTitle?.toLowerCase() || '';
-
-          let executiveMultiplier = 1.0;
-          if (title.includes('ceo') || title.includes('president')) {
-            executiveMultiplier = 1.3; // CEO/President → 130%
-          } else if (title.includes('cfo') || title.includes('coo')) {
-            executiveMultiplier = 1.2; // CFO/COO → 120%
-          } else if (title.includes('director')) {
-            executiveMultiplier = 1.1; // Director → 110%
-          }
-
-          executiveWeightedInsiderScore += 10 * executiveMultiplier;
-        }
+        // 🎯 Unique Insiders Score - all insiders treated equally (executive weighting removed)
+        const uniqueInsiderScore = metrics.uniqueInsiders.size * 10; // Simple count, 10 points per unique insider
 
         // Use log scale to prevent extremely large trades from dominating the score
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2; // Log scale normalization
 
         // 🔥 1단계: 기본 신호 강도 계산 (Base Signal Strength) - 시간 제외
         const baseSignalStrength = Math.round(
-          netBuyingScore * 0.40 +           // Net buying (40%, increased from 30%)
-          buyCountScore * 0.15 +            // Buy count (15%)
-          executiveWeightedInsiderScore * 0.25 +  // Weighted insiders (25%, increased from 20%)
-          avgValueScore * 0.05              // Avg value (5%)
+          netBuyingScore * 0.50 +           // Net buying (40% → 50%, pure dollar focus)
+          buyCountScore * 0.25 +            // Buy count (15% → 25%, transaction frequency)
+          uniqueInsiderScore * 0.20 +       // Unique insiders (25% → 20%, no executive bias)
+          avgValueScore * 0.05              // Avg value (5%, maintained)
         );
 
         // 🔥 2단계: 시간 감쇠 점수 (Exponential Time Decay)
@@ -4237,8 +4220,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 패턴 기본 보너스를 신호 강도에 추가
         const signalWithPatternBonus = baseSignalStrength + (patternBaseBonus * 0.15);
 
-        // 🔥 최종 점수 = 신호 강도 × 시간 감쇠 × 패턴 부스트 (곱셈 모델)
-        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier);
+        // 🔥 시총대비 비율 부스트 멀티플라이어 (소형주 선호)
+        let marketCapRatioMultiplier = 1.0;
+        if (marketCap && marketCap > 0) {
+          const marketCapRatio = (metrics.netBuying / marketCap) * 100;
+
+          if (marketCapRatio >= 0.1) {
+            marketCapRatioMultiplier = 1.5;  // 0.1% 이상: 매우 높음 (소형주)
+          } else if (marketCapRatio >= 0.05) {
+            marketCapRatioMultiplier = 1.3;  // 0.05-0.1%: 높음
+          } else if (marketCapRatio >= 0.01) {
+            marketCapRatioMultiplier = 1.15; // 0.01-0.05%: 중간
+          }
+          // else: 1.0 (0.01% 미만: 대형주, 부스트 없음)
+        }
+
+        // 🔥 최종 점수 = 신호 강도 × 시간 감쇠 × 패턴 부스트 × 시총대비 부스트 (곱셈 모델)
+        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier * marketCapRatioMultiplier);
         
         // Determine recommendation
         if (metrics.score >= 80) {

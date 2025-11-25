@@ -14369,28 +14369,14 @@ async function registerRoutes(app2) {
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1e6;
         const buyCountScore = metrics.buyCount * 5;
-        let executiveWeightedInsiderScore = 0;
-        const uniqueInsidersArray = Array.from(metrics.uniqueInsiders);
-        for (const insiderName of uniqueInsidersArray) {
-          const insiderTrades2 = metrics.trades.filter((t) => t.traderName === insiderName);
-          const title = insiderTrades2[0]?.traderTitle?.toLowerCase() || "";
-          let executiveMultiplier = 1;
-          if (title.includes("ceo") || title.includes("president")) {
-            executiveMultiplier = 1.3;
-          } else if (title.includes("cfo") || title.includes("coo")) {
-            executiveMultiplier = 1.2;
-          } else if (title.includes("director")) {
-            executiveMultiplier = 1.1;
-          }
-          executiveWeightedInsiderScore += 10 * executiveMultiplier;
-        }
+        const uniqueInsiderScore = metrics.uniqueInsiders.size * 10;
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2;
         const baseSignalStrength = Math.round(
-          netBuyingScore * 0.4 + // Net buying (40%, increased from 30%)
-          buyCountScore * 0.15 + // Buy count (15%)
-          executiveWeightedInsiderScore * 0.25 + // Weighted insiders (25%, increased from 20%)
+          netBuyingScore * 0.5 + // Net buying (40% → 50%, pure dollar focus)
+          buyCountScore * 0.25 + // Buy count (15% → 25%, transaction frequency)
+          uniqueInsiderScore * 0.2 + // Unique insiders (25% → 20%, no executive bias)
           avgValueScore * 0.05
-          // Avg value (5%)
+          // Avg value (5%, maintained)
         );
         const daysSinceLastTrade = metrics.lastTradeDate ? (Date.now() - metrics.lastTradeDate.getTime()) / (1e3 * 60 * 60 * 24) : 30;
         const decayRate = 2;
@@ -14425,7 +14411,18 @@ async function registerRoutes(app2) {
           }
         }
         const signalWithPatternBonus = baseSignalStrength + patternBaseBonus * 0.15;
-        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier);
+        let marketCapRatioMultiplier = 1;
+        if (marketCap && marketCap > 0) {
+          const marketCapRatio = metrics.netBuying / marketCap * 100;
+          if (marketCapRatio >= 0.1) {
+            marketCapRatioMultiplier = 1.5;
+          } else if (marketCapRatio >= 0.05) {
+            marketCapRatioMultiplier = 1.3;
+          } else if (marketCapRatio >= 0.01) {
+            marketCapRatioMultiplier = 1.15;
+          }
+        }
+        metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier * marketCapRatioMultiplier);
         if (metrics.score >= 80) {
           metrics.recommendation = "STRONG_BUY";
         } else if (metrics.score >= 50) {
