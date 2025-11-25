@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { TRANSLATIONS, formatCurrency, formatNumber, formatPercent, type Language } from '@/lib/translations';
+import { TRANSLATIONS, formatNumber, formatPercent, type Language } from '@/lib/translations';
+import { useCurrency } from '@/contexts/currency-context';
 import type { InsiderTrade } from '@shared/schema';
 import { apiClient, queryKeys } from '@/lib/api';
 import { useAccess } from '@/contexts/access-context';
@@ -10,6 +11,7 @@ import { useLanguage } from '@/contexts/language-context';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLocation } from 'wouter';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { CurrencySelector } from '@/components/currency-selector';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
@@ -26,6 +28,7 @@ interface TerminalTrade {
   value: number;
   date: string;
   priceChange: number;
+  marketCap?: number;
   isVerified: boolean;
 }
 
@@ -42,12 +45,14 @@ function mapInsiderTradeToTerminal(trade: InsiderTrade): TerminalTrade {
     value: trade.totalValue,
     date: new Date(trade.filedDate).toISOString(),
     priceChange: trade.priceVariance || 0,
+    marketCap: (trade as any).marketCap || 0,
     isVerified: trade.isVerified || false,
   };
 }
 
 export default function LiveTradingTerminal() {
   const { language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const { accessLevel, setAccessLevel } = useAccess();
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
@@ -198,7 +203,8 @@ export default function LiveTradingTerminal() {
             <span className="text-[10px] text-neutral-600 font-mono uppercase tracking-wider">
               {language === 'ko' ? '업데이트됨' : language === 'ja' ? '更新' : language === 'zh' ? '更新时间' : 'UPDATED'}: {new Date().toLocaleTimeString(language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
             </span>
-            <button 
+            <CurrencySelector />
+            <button
               className="p-2 border border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 transition-colors bg-neutral-900/30"
               onClick={() => refetch()}
               data-testid="button-refresh"
@@ -250,7 +256,7 @@ export default function LiveTradingTerminal() {
         <div className="absolute inset-0 min-h-full pointer-events-none bg-[linear-gradient(to_right,#121212_1px,transparent_1px),linear-gradient(to_bottom,#121212_1px,transparent_1px)] bg-[size:24px_24px] opacity-20 z-0"></div>
 
         {/* Table Header */}
-        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3">
+        <div className="sticky top-0 bg-[#050505] border-b border-neutral-800 z-30 grid grid-cols-5 md:grid-cols-9 gap-x-3 md:gap-x-6 text-[10px] text-neutral-400 uppercase tracking-widest font-mono px-4 py-3">
           <div className="pl-2">{t.table.ticker}</div>
           <div className="hidden md:block">{t.table.insider}</div>
           <div className="hidden md:block">{t.table.relation}</div>
@@ -419,6 +425,7 @@ interface TradeRowProps {
 
 function TradeRow({ trade, onClick, tData }: TradeRowProps) {
   const { language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const isBuy = trade.type === 'Buy';
   const typeClass = isBuy ? 'text-emerald-500' : 'text-rose-500';
   const typeBg = 'bg-transparent';
@@ -475,19 +482,17 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
 
       {/* Value */}
       <div className="flex items-center justify-end">
-        <span className="text-neutral-300 font-mono">{formatCurrency(trade.value, false)}</span>
+        <span className="text-neutral-300 font-mono">{formatCurrency(trade.value)}</span>
       </div>
 
-      {/* Impact */}
+      {/* Market Cap Ratio (시총대비) */}
       <div className="flex items-center justify-end">
-        {trade.priceChange !== 0 && (
-          <span className={`flex items-center gap-1 font-mono ${trade.priceChange > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {trade.priceChange > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-            {formatPercent(trade.priceChange)}
+        {trade.marketCap && trade.marketCap > 0 ? (
+          <span className="text-neutral-300 font-mono text-[11px]">
+            {((trade.value / trade.marketCap) * 100).toFixed(4)}%
           </span>
-        )}
-        {trade.priceChange === 0 && (
-          <span className="text-neutral-500 text-[10px]">—</span>
+        ) : (
+          <span className="text-neutral-600 text-[10px]">N/A</span>
         )}
       </div>
 

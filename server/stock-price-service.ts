@@ -55,7 +55,7 @@ export class StockPriceService {
   async getStockPrice(ticker: string): Promise<any> {
     const upperTicker = ticker.toUpperCase();
     const cached = this.cache.get(upperTicker);
-    
+
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       return cached.data;
     }
@@ -78,9 +78,27 @@ export class StockPriceService {
       const quote = result.indicators?.quote?.[0];
       const currentPrice = meta.regularMarketPrice || quote?.close?.[quote.close.length - 1];
       const previousClose = meta.previousClose;
-      
+
       const change = currentPrice - previousClose;
       const changePercent = (change / previousClose) * 100;
+
+      // Get market cap from Finnhub (Yahoo Finance doesn't provide it reliably)
+      let marketCap = 0;
+      try {
+        const finnhubKey = process.env.FINNHUB_API_KEY;
+        if (finnhubKey) {
+          const finnhubResponse = await axios.get(
+            `https://finnhub.io/api/v1/stock/profile2?symbol=${upperTicker}&token=${finnhubKey}`,
+            { timeout: 5000 }
+          );
+          // Finnhub returns market cap in millions of dollars
+          marketCap = finnhubResponse.data?.marketCapitalization
+            ? Math.round(finnhubResponse.data.marketCapitalization * 1000000)
+            : 0;
+        }
+      } catch (finnhubError) {
+        console.warn(`Finnhub API failed for ${upperTicker}, skipping market cap`);
+      }
 
       const priceData = {
         ticker: upperTicker,
@@ -89,7 +107,7 @@ export class StockPriceService {
         change: change || 0,
         changePercent: changePercent || 0,
         volume: meta.regularMarketVolume || 0,
-        marketCap: meta.marketCap || 0,
+        marketCap: marketCap,
       };
 
       this.cache.set(upperTicker, { data: priceData, timestamp: Date.now() });
@@ -97,7 +115,7 @@ export class StockPriceService {
 
     } catch (error) {
       console.error(`Failed to fetch stock price for ${upperTicker}:`, error);
-      
+
       // Return null instead of mock data - only use real data
       return null;
     }

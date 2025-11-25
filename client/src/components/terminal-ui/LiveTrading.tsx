@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Trade, Language } from './types';
-import { formatCurrency, formatNumber, formatPercent, TRANSLATIONS } from '@/lib/translations';
+import { formatNumber, formatPercent, TRANSLATIONS } from '@/lib/translations';
+import { useCurrency } from '@/contexts/currency-context';
 import { Search, Download, Lock, Clock, Zap, AlertTriangle } from 'lucide-react';
 
 interface LiveTradingProps {
@@ -13,6 +14,7 @@ interface LiveTradingProps {
 
 const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, isPro, onUpgrade }) => {
   const [filter, setFilter] = useState<'All' | 'Buy' | 'Sell'>('All');
+  const { formatCurrency } = useCurrency();
   const langKey = lang.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].live;
   const tData = TRANSLATIONS[langKey].data;
@@ -131,7 +133,7 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
                                     <div className="text-right blur-[2px] font-mono text-neutral-600 text-[10px]">TYPE_??</div>
                                     <div className="text-right hidden md:block blur-[2px] font-mono text-neutral-600 text-[10px]">00,000</div>
                                     <div className="text-right blur-[2px] font-mono text-neutral-600 text-[10px]">$$,$$$,$$$</div>
-                                    <div className="text-right pr-2 blur-[2px] font-mono text-neutral-600 text-[10px]">+0.00%</div>
+                                    <div className="text-right pr-2 blur-[2px] font-mono text-neutral-600 text-[10px]">0.000%</div>
                             </div>
                         ))}
                         
@@ -169,9 +171,13 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
                             <div className="hidden md:block text-right text-neutral-400">{formatNumber(trade.shares)}</div>
                             <div className="text-right text-neutral-200">{formatCurrency(trade.value)}</div>
                             <div className="text-right pr-2">
-                                <span className={`${trade.priceChange > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                    {formatPercent(trade.priceChange)}
-                                </span>
+                                {trade.marketCap && trade.marketCap > 0 ? (
+                                    <span className="text-neutral-300">
+                                        {((trade.value / trade.marketCap) * 100).toFixed(4)}%
+                                    </span>
+                                ) : (
+                                    <span className="text-neutral-600 text-[9px]">N/A</span>
+                                )}
                             </div>
                         </div>
                         ))}

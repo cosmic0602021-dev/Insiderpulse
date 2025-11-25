@@ -255,3 +255,24 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
 
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
+
+// Exchange rates for multi-currency support
+export const exchangeRates = pgTable("exchange_rates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  baseCurrency: varchar("base_currency", { length: 3 }).notNull().default("USD"), // Always USD
+  targetCurrency: varchar("target_currency", { length: 3 }).notNull(), // KRW, CNY, JPY, etc.
+  rate: decimal("rate", { precision: 15, scale: 6 }).notNull(), // Exchange rate with high precision
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  source: text("source").notNull().default("frankfurter"), // API source
+});
+
+// Create unique index for base+target currency pair
+export const exchangeRatesIndex = sql`CREATE UNIQUE INDEX IF NOT EXISTS "idx_exchange_rates_pair" ON "exchange_rates" ("base_currency", "target_currency")`;
+
+export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+  id: true,
+  lastUpdated: true,
+});
+
+export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;

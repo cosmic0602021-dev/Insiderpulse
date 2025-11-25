@@ -4,7 +4,9 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
-import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
+import { useCurrency } from '@/contexts/currency-context';
+import { CurrencySelector } from '@/components/currency-selector';
+import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useState, useEffect, useMemo, useId } from 'react';
 
 interface StockPriceData {
@@ -23,6 +25,7 @@ interface TradeDetailModalProps {
 
 export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalProps) {
   const { language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [newsExpanded, setNewsExpanded] = useState(true);
   const gradientId = useId(); // Generate unique ID to avoid conflicts
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
@@ -286,9 +289,12 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 hover:bg-neutral-900 transition-colors" data-testid="button-close-modal">
-              <X size={16} className="text-neutral-500" />
-            </button>
+            <div className="flex items-center gap-2">
+              <CurrencySelector />
+              <button onClick={onClose} className="p-1.5 hover:bg-neutral-900 transition-colors" data-testid="button-close-modal">
+                <X size={16} className="text-neutral-500" />
+              </button>
+            </div>
           </div>
 
           {/* Stat Blocks with vertical dividers */}

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { LanguageProvider, useLanguage, type Language } from "@/contexts/language-context";
+import { CurrencyProvider } from "@/contexts/currency-context";
 import { AccessProvider } from "@/contexts/access-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useState, useEffect } from "react";
@@ -314,14 +315,16 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <LanguageProvider>
-          <AccessProvider>
-            <TooltipProvider>
-              <AppContent />
-              <AuthModal />
-              <PWAInstallPrompt />
-              <Toaster />
-            </TooltipProvider>
-          </AccessProvider>
+          <CurrencyProvider>
+            <AccessProvider>
+              <TooltipProvider>
+                <AppContent />
+                <AuthModal />
+                <PWAInstallPrompt />
+                <Toaster />
+              </TooltipProvider>
+            </AccessProvider>
+          </CurrencyProvider>
         </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>

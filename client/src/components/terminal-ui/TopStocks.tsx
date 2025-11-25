@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { StockRecommendation, Language, Trade } from './types';
-import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
+import { formatNumber, TRANSLATIONS } from '@/lib/translations';
+import { useCurrency } from '@/contexts/currency-context';
 import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye } from 'lucide-react';
 
 interface TopStocksProps {
@@ -14,6 +15,7 @@ interface TopStocksProps {
 }
 
 const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails }) => {
+  const { formatCurrency } = useCurrency();
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
 

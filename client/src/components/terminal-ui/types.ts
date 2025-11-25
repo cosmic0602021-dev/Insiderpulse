@@ -12,10 +12,11 @@ export interface Trade {
   filingDate: string;
   priceChange: number;
   currentPrice: number;
+  marketCap?: number;
   isVerified: boolean;
   secFilingUrl?: string;
   accessionNumber?: string;
-  
+
   aiScore: number;
   aiConfidence: number;
   aiRecommendation: 'Strong Buy' | 'Buy' | 'Hold' | 'Sell';
@@ -24,7 +25,7 @@ export interface Trade {
   summary: string;
   catalysts: string[];
   timeHorizon: string;
-  
+
   newsAnalysis: {
     positive: number;
     negative: number;

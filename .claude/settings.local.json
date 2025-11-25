@@ -104,7 +104,11 @@
       "Bash(git tag:*)",
       "Bash(unzip:*)",
       "Bash(xargs:*)",
-      "Bash(fuser:*)"
+      "Bash(fuser:*)",
+      "Bash(git config:*)",
+      "WebFetch(domain:docs.replit.com)",
+      "WebFetch(domain:frankfurter.dev)",
+      "Bash(npm run db:push:*)"
     ],
     "deny": [],
     "ask": []

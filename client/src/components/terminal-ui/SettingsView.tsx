@@ -1,7 +1,8 @@
 import React from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
-import { Settings, Globe, Monitor, CreditCard, Bell, BellOff } from 'lucide-react';
+import { Settings, Globe, Monitor, CreditCard, Bell, BellOff, DollarSign } from 'lucide-react';
+import { useCurrency, type Currency } from '@/contexts/currency-context';
 
 interface SettingsViewProps {
   lang: Language;
@@ -10,12 +11,20 @@ interface SettingsViewProps {
 
 const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
   const t = TRANSLATIONS[lang].settings;
+  const { currency, setCurrency } = useCurrency();
 
   const languages: { code: Language; label: string }[] = [
     { code: 'en', label: 'English' },
     { code: 'ko', label: '한국어' },
     { code: 'ja', label: '日本語' },
     { code: 'zh', label: '中文' },
+  ];
+
+  const currencies: { code: Currency; label: string; symbol: string }[] = [
+    { code: 'USD', label: 'US Dollar', symbol: '$' },
+    { code: 'KRW', label: 'Korean Won', symbol: '₩' },
+    { code: 'CNY', label: 'Chinese Yuan', symbol: '¥' },
+    { code: 'JPY', label: 'Japanese Yen', symbol: '¥' },
   ];
 
   return (
@@ -41,6 +50,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                     >
                         {languages.map(l => (
                             <option key={l.code} value={l.code}>{l.label}</option>
+                        ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs">▼</div>
+                </div>
+            </div>
+
+            {/* Currency Settings */}
+            <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+                 <div className="flex items-center gap-3 mb-4">
+                    <DollarSign className="text-neutral-500" size={18} />
+                    <h2 className="text-base font-bold text-neutral-300">Currency</h2>
+                </div>
+                <div className="relative">
+                    <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as Currency)}
+                        className="w-full bg-[#050505] border border-neutral-800 text-neutral-300 p-3 text-sm focus:outline-none focus:border-neutral-600 appearance-none"
+                    >
+                        {currencies.map(c => (
+                            <option key={c.code} value={c.code}>{c.symbol} {c.label} ({c.code})</option>
                         ))}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs">▼</div>

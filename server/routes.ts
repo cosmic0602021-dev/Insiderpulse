@@ -32,6 +32,7 @@ import { newsCorrelationService } from "./news-correlation-service";
 import { insiderCredibilityService } from "./insider-credibility-service";
 import { dataIntegrityService } from "./data-integrity-service";
 import { subscriptionService } from "./subscription-service";
+import { exchangeRateService } from "./exchange-rate-service";
 
 // Initialize database
 const db = drizzle(process.env.DATABASE_URL!, { schema });
@@ -2167,7 +2168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Enrich trades with current stock prices for percentage calculation
       const uniqueTickers = [...new Set(rawTrades.map(t => t.ticker).filter(Boolean))];
-      const stockPriceMap = new Map<string, { currentPrice: number; lastUpdated: Date | null }>();
+      const stockPriceMap = new Map<string, { currentPrice: number; marketCap: number | null; lastUpdated: Date | null }>();
 
       if (uniqueTickers.length > 0) {
         try {
@@ -2176,6 +2177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             columns: {
               ticker: true,
               currentPrice: true,
+              marketCap: true,
               lastUpdated: true,
             }
           });
@@ -2184,6 +2186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (price.ticker && price.currentPrice) {
               stockPriceMap.set(price.ticker, {
                 currentPrice: Number(price.currentPrice),
+                marketCap: price.marketCap ? Number(price.marketCap) : null,
                 lastUpdated: price.lastUpdated,
               });
             }
@@ -2197,6 +2200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enrichedTrades = rawTrades.map(trade => {
         const priceData = trade.ticker ? stockPriceMap.get(trade.ticker) : undefined;
         const currentPrice = priceData?.currentPrice;
+        const marketCap = priceData?.marketCap;
         const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent: number | undefined = undefined;
 
@@ -2207,6 +2211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           ...trade,
           currentPrice,
+          marketCap: marketCap || null,
           priceChangePercent: priceChangePercent !== undefined ? Number(priceChangePercent.toFixed(2)) : undefined,
           priceLastUpdated: priceLastUpdated || null,
         };
@@ -4496,6 +4501,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Exchange rate endpoints
+  app.get('/api/exchange-rates', async (req, res) => {
+    try {
+      const rates = await exchangeRateService.getAllExchangeRates();
+      res.json({
+        success: true,
+        data: rates
+      });
+    } catch (error) {
+      console.error('환율 조회 실패:', error);
+      res.status(500).json({
+        success: false,
+        error: '환율 정보를 가져오는데 실패했습니다.'
+      });
+    }
+  });
+
+  app.post('/api/exchange-rates/update', async (req, res) => {
+    try {
+      await exchangeRateService.updateExchangeRates();
+      const rates = await exchangeRateService.getAllExchangeRates();
+      res.json({
+        success: true,
+        data: rates,
+        message: '환율 정보가 성공적으로 업데이트되었습니다.'
+      });
+    } catch (error) {
+      console.error('환율 업데이트 실패:', error);
+      res.status(500).json({
+        success: false,
+        error: '환율 업데이트에 실패했습니다.'
+      });
+    }
+  });
+
   // Get stock price history by ticker
   app.get('/api/stocks/:ticker/history', async (req, res) => {
     try {
@@ -5624,6 +5664,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Failed to send test notification',
       });
     }
+  });
+
+  // Initialize exchange rate service
+  exchangeRateService.initialize().catch(err => {
+    console.error('⚠️ Failed to initialize exchange rate service:', err);
   });
 
   console.log('✅ API routes registered with WebSocket support, enhanced data collection, and push notifications');

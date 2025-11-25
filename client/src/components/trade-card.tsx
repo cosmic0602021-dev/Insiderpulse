@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { useCurrency } from "@/contexts/currency-context";
 import type { InsiderTrade } from "@shared/schema";
 
 interface TradeCardProps {
@@ -65,14 +66,13 @@ function CompanyLogo({ ticker, companyName, size = 'lg' }: {
 
 export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value);
+  const formatMarketCap = (marketCap: number | null | undefined) => {
+    if (!marketCap || marketCap === 0) return null;
+
+    // Use formatCurrency for all market cap values
+    return formatCurrency(marketCap);
   };
 
   const formatDate = (date: Date | string) => {
@@ -133,6 +133,11 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
                   </Badge>
                 )}
               </div>
+              {formatMarketCap((trade as any).marketCap) && (
+                <div className="text-xs text-muted-foreground mb-1">
+                  시가총액: {formatMarketCap((trade as any).marketCap)}
+                </div>
+              )}
             {trade.traderName && (
               <div className="mb-1">
                 <div className="text-sm font-medium text-foreground" data-testid="trader-name">
@@ -178,6 +183,11 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             <div className="text-lg font-bold text-foreground" data-testid="total-value">
               {formatCurrency(trade.totalValue)}
             </div>
+            {(trade as any).marketCap && (trade as any).marketCap > 0 && (
+              <div className="text-xs font-normal text-muted-foreground mt-1">
+                시총대비: {((trade.totalValue / (trade as any).marketCap) * 100).toFixed(4)}%
+              </div>
+            )}
             {trade.ownershipPercentage && trade.ownershipPercentage > 0 && (
               <div className="text-xs font-normal text-muted-foreground mt-1">
                 {trade.ownershipPercentage}% {t('tradeCard.ownership')}
