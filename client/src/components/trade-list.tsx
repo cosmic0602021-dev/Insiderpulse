@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar as CalendarIcon, Search, SortDesc, Filter } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import TradeCard from './trade-card';
+import { TransactionTypeFilter } from './transaction-type-filter';
 import type { InsiderTrade } from "@shared/schema";
 
 interface TradeListProps {
@@ -18,9 +19,11 @@ interface TradeListProps {
   onLoadMore?: () => void;
   onDateRangeChange?: (fromDate?: Date, toDate?: Date) => void;
   onSortChange?: (sortBy: string) => void;
+  onTransactionTypeChange?: (filterType: 'core' | 'all') => void;
+  transactionTypeFilter?: 'core' | 'all';
 }
 
-export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore, onDateRangeChange, onSortChange }: TradeListProps) {
+export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore, onDateRangeChange, onSortChange, onTransactionTypeChange, transactionTypeFilter = 'core' }: TradeListProps) {
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,23 +136,32 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
         </div>
         
         {showFilters && (
-          <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-md">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{t('tradeList.dateRange')}:</span>
-              <Select value={dateFilter} onValueChange={handleDateFilterChange}>
-                <SelectTrigger className="w-[140px]" data-testid="select-date-filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('tradeList.dateRange.all')}</SelectItem>
-                  <SelectItem value="today">{t('tradeList.dateRange.today')}</SelectItem>
-                  <SelectItem value="week">{t('tradeList.dateRange.week')}</SelectItem>
-                  <SelectItem value="month">{t('tradeList.dateRange.month')}</SelectItem>
-                  <SelectItem value="3months">{t('tradeList.dateRange.threeMonths')}</SelectItem>
-                  <SelectItem value="6months">{t('tradeList.dateRange.sixMonths')}</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-4 p-4 bg-muted/50 rounded-md">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{t('tradeList.dateRange')}:</span>
+                <Select value={dateFilter} onValueChange={handleDateFilterChange}>
+                  <SelectTrigger className="w-[140px]" data-testid="select-date-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('tradeList.dateRange.all')}</SelectItem>
+                    <SelectItem value="today">{t('tradeList.dateRange.today')}</SelectItem>
+                    <SelectItem value="week">{t('tradeList.dateRange.week')}</SelectItem>
+                    <SelectItem value="month">{t('tradeList.dateRange.month')}</SelectItem>
+                    <SelectItem value="3months">{t('tradeList.dateRange.threeMonths')}</SelectItem>
+                    <SelectItem value="6months">{t('tradeList.dateRange.sixMonths')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {onTransactionTypeChange && (
+                <TransactionTypeFilter
+                  value={transactionTypeFilter}
+                  onChange={onTransactionTypeChange}
+                />
+              )}
             </div>
 
             <div className="text-sm text-muted-foreground">

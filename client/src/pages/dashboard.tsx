@@ -21,6 +21,16 @@ export default function Dashboard() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [dateRange, setDateRange] = useState<{ fromDate?: Date; toDate?: Date }>({});
   const [sortBy, setSortBy] = useState<string>('filedDate');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
+
+  // Map filter type to transaction types array
+  const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
+    if (filterType === 'core') {
+      return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
+    }
+    // For 'all', don't specify transactionTypes to get everything
+    return undefined;
+  };
 
   // Modal state for trade details
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
@@ -40,9 +50,10 @@ export default function Dashboard() {
       offset: 0,
       from: dateRange.fromDate?.toISOString().split('T')[0],
       to: dateRange.toDate?.toISOString().split('T')[0],
-      sortBy
+      sortBy,
+      transactionTypeFilter
     }),
-    queryFn: () => apiClient.getInsiderTrades(100, 0, dateRange.fromDate, dateRange.toDate, sortBy),
+    queryFn: () => apiClient.getInsiderTrades(100, 0, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter)),
     staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates
   });
 
@@ -120,7 +131,7 @@ export default function Dashboard() {
     setLoadingMore(true);
     try {
       const newOffset = currentOffset + 20;
-      const rawMoreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy);
+      const rawMoreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter));
 
       // 🚨 추가 데이터도 검증
       const validation = dataValidator.validateTrades(rawMoreTrades);
@@ -158,6 +169,13 @@ export default function Dashboard() {
 
   const handleSortChange = (newSortBy: string) => {
     setSortBy(newSortBy);
+    setCurrentOffset(0);
+    setAllTrades([]);
+    setHasMoreData(true);
+  };
+
+  const handleTransactionTypeChange = (filterType: 'core' | 'all') => {
+    setTransactionTypeFilter(filterType);
     setCurrentOffset(0);
     setAllTrades([]);
     setHasMoreData(true);
@@ -350,6 +368,8 @@ export default function Dashboard() {
               onLoadMore={handleLoadMore}
               onDateRangeChange={handleDateRangeChange}
               onSortChange={handleSortChange}
+              onTransactionTypeChange={handleTransactionTypeChange}
+              transactionTypeFilter={transactionTypeFilter}
               onViewDetails={handleTradeClick}
             />
           )}

@@ -1181,6 +1181,17 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.billingCycleLabel': 'Billing Cycle:',
     'checkout.priceWithTax': '${price}/{interval} (세금별도)',
     'checkout.termsAgreement': 'Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing.',
+
+    // Transaction Filter
+    'transactionFilter.coreOnly': 'Core Trades Only',
+    'transactionFilter.allTrades': 'All Trades (Advanced)',
+    'transactionFilter.helpModalTitle': 'Filter Explanation',
+    'transactionFilter.coreOnlyDescription': 'Shows only trades where insiders used their own money to buy, or intentionally decided to sell. These are considered the most meaningful signals.',
+    'transactionFilter.allTradesDescription': 'Shows all transaction types including option exercises, automatic sales (10b5-1), RSU vesting, bond conversions, and other derivative/compensation-based trades. Advanced users only.',
+
+    // Common
+    'common.recommended': 'Recommended',
+    'common.advanced': 'Advanced',
   },
   ko: {
     // Navigation
@@ -2103,6 +2114,17 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.billingCycleLabel': '결제 주기:',
     'checkout.priceWithTax': '${price}/{interval} (세금별도)',
     'checkout.termsAgreement': '무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.',
+
+    // Transaction Filter
+    'transactionFilter.coreOnly': '핵심 거래만 보기',
+    'transactionFilter.allTrades': '전체 거래 보기 (고급)',
+    'transactionFilter.helpModalTitle': '필터 설명',
+    'transactionFilter.coreOnlyDescription': '내부자가 자기 자금으로 실제로 매수하거나, 의도적으로 매도한 거래만 보여줍니다. 이런 거래가 "진짜 신호"로 가장 많이 활용됩니다.',
+    'transactionFilter.allTradesDescription': '옵션 행사, 자동 매도(10b5-1), 보상성 주식(RSU), 채권 전환 등 다양한 파생·보상 거래까지 모두 보여줍니다. 전문가용이며 복잡한 정보가 포함됩니다.',
+
+    // Common
+    'common.recommended': '추천',
+    'common.advanced': '고급',
   },
   ja: {
     // Navigation
@@ -2893,6 +2915,17 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.billingCycleLabel': '請求サイクル:',
     'checkout.priceWithTax': '${price}/{interval} (税別)',
     'checkout.termsAgreement': '無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。',
+
+    // Transaction Filter
+    'transactionFilter.coreOnly': 'コア取引のみ',
+    'transactionFilter.allTrades': '全取引（上級）',
+    'transactionFilter.helpModalTitle': 'フィルター説明',
+    'transactionFilter.coreOnlyDescription': 'インサイダーが自己資金で実際に購入したり、意図的に売却した取引のみを表示します。これらは「本当のシグナル」として最も活用されます。',
+    'transactionFilter.allTradesDescription': 'オプション行使、自動売却(10b5-1)、RSU付与、債券転換など、様々なデリバティブ・報酬取引まで全て表示します。上級者向けで複雑な情報が含まれます。',
+
+    // Common
+    'common.recommended': '推奨',
+    'common.advanced': '上級',
   },
   zh: {
     // Navigation
@@ -3683,6 +3716,17 @@ const translations: Record<Language, Record<string, string>> = {
     'checkout.billingCycleLabel': '计费周期:',
     'checkout.priceWithTax': '${price}/{interval} (不含税)',
     'checkout.termsAgreement': '免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。',
+
+    // Transaction Filter
+    'transactionFilter.coreOnly': '仅核心交易',
+    'transactionFilter.allTrades': '全部交易（高级）',
+    'transactionFilter.helpModalTitle': '筛选器说明',
+    'transactionFilter.coreOnlyDescription': '仅显示内部人员用自己的资金实际购买或有意出售的交易。这些被视为"真实信号"，最常被使用。',
+    'transactionFilter.allTradesDescription': '显示所有交易类型，包括期权行使、自动出售(10b5-1)、RSU归属、债券转换等各种衍生品/补偿性交易。仅供高级用户使用，包含复杂信息。',
+
+    // Common
+    'common.recommended': '推荐',
+    'common.advanced': '高级',
   },
 };
 

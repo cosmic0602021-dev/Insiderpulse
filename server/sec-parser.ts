@@ -35,7 +35,7 @@ export async function parseSecForm4(xmlData: string, accessionNumber: string): P
 
         try {
           const trades = parseForm4XML(result, accessionNumber);
-          resolve(trades ? [trades] : []);
+          resolve(trades);
         } catch (parseError) {
           console.error(`❌ Form 4 parsing error for ${accessionNumber}:`, parseError);
           resolve([]);
@@ -49,50 +49,63 @@ export async function parseSecForm4(xmlData: string, accessionNumber: string): P
   }
 }
 
-function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | null {
+function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
   const doc = xmlData.ownershipDocument || xmlData;
-  
+
   // Extract issuer information - use direct ticker from SEC data
   const issuer = doc.issuer?.[0] || {};
   const companyName = issuer.issuerName?.[0]?.value?.[0] || issuer.issuerName?.[0];
   const ticker = issuer.issuerTradingSymbol?.[0]?.value?.[0] || issuer.issuerTradingSymbol?.[0] || '';
   const cik = issuer.issuerCik?.[0]?.value?.[0] || issuer.issuerCik?.[0] || '';
-  
+
   // Extract reporting owner information
   const reportingOwner = doc.reportingOwner?.[0] || {};
   const ownerInfo = reportingOwner.reportingOwnerId?.[0] || {};
   const traderName = ownerInfo.rptOwnerName?.[0]?.value?.[0] || ownerInfo.rptOwnerName?.[0];
-  
+
   console.log(`🔍 [DEBUG] Parsing accession ${accessionNumber}:`);
   console.log(`   Company: ${companyName} | Trader: ${traderName} | Ticker: ${ticker} | CIK: ${cik}`);
-  
+
   // Skip processing if critical data is missing
   if (!companyName || !traderName) {
     console.warn(`⚠️ Missing critical data for ${accessionNumber} - company: ${companyName}, trader: ${traderName}`);
-    return null;
+    return [];
   }
-  
+
   // Extract relationship information
   const relationship = reportingOwner.reportingOwnerRelationship?.[0] || {};
   const traderTitle = determineTraderTitle(relationship);
-  
-  // CRITICAL: Only process nonDerivativeTable for common stock transactions
+
+  // CRITICAL: Only process nonDerivativeTable for common stock transactions (Table I)
+  // This includes BOTH Direct (D) and Indirect (I) ownership transactions
   const nonDerivativeTable = doc.nonDerivativeTable?.[0];
   const transactions = nonDerivativeTable?.nonDerivativeTransaction || [];
-  
+
   if (transactions.length === 0) {
     console.log(`⚠️ No non-derivative transactions found for ${accessionNumber}`);
-    return null;
+    return [];
   }
-  
-  // Process all transactions and find valid P/S transactions
-  let validTransaction = null;
+
+  // 🔧 NEW: Collect ALL valid transactions (Direct + Indirect) instead of just the first one
+  const validTransactions: Array<{
+    shares: number;
+    pricePerShare: number;
+    totalValue: number;
+    transactionCode: string;
+    transactionDate: string;
+    ownershipNature: string; // Direct or Indirect
+  }> = [];
+
   for (const transaction of transactions) {
     const transactionCoding = transaction.transactionCoding?.[0] || {};
     const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
-    
-    console.log(`   🔍 Transaction code: ${transactionCode}`);
-    
+
+    // Extract ownership nature (Direct vs Indirect)
+    const ownershipNature = transaction.ownershipNature?.[0]?.directOrIndirectOwnership?.[0]?.value?.[0] ||
+                           transaction.ownershipNature?.[0]?.directOrIndirectOwnership?.[0] || 'D';
+
+    console.log(`   🔍 Transaction code: ${transactionCode} | Ownership: ${ownershipNature === 'D' ? 'Direct' : 'Indirect'}`);
+
     // Process P, S, M, A, U transactions - expanded for more coverage
     // P=BUY, S=SELL, M=BUY(option exercise), A=BUY(award), U=TRANSFER
     const validCodes = ['P', 'S', 'M', 'A', 'U'];
@@ -100,20 +113,20 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
       console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not ${validCodes.join('/')})`);
       continue;
     }
-    
+
     const transactionAmounts = transaction.transactionAmounts?.[0] || {};
     const shares = parseFloat(transactionAmounts.transactionShares?.[0]?.value?.[0] || transactionAmounts.transactionShares?.[0]);
     let pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || transactionAmounts.transactionPricePerShare?.[0]);
-    
+
     // Get transaction date
     const transactionDate = transaction.transactionDate?.[0]?.value?.[0] || transaction.transactionDate?.[0];
-    
+
     // Validate transaction data - allow $0 for transfer transactions (U code)
     if (isNaN(shares) || shares <= 0) {
       console.log(`   ⚠️ Invalid shares: ${shares}`);
       continue;
     }
-    
+
     // Allow $0 price for transfer/conversion transactions (U code)
     if (transactionCode === 'U') {
       // For transfers, price can be $0 - use $1 as default for calculations
@@ -127,50 +140,64 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade | nul
         console.log(`   ⚠️ Invalid price: $${pricePerShare}`);
         continue;
       }
-      
+
       // Reasonable price range for non-transfer transactions
       if (pricePerShare > 10000) {
         console.log(`   ⚠️ Price too high: $${pricePerShare}`);
         continue;
       }
     }
-    
-    // Extract ownership information
-    const postTransactionAmounts = transaction.postTransactionAmounts?.[0] || {};
-    const sharesOwnedFollowing = parseFloat(postTransactionAmounts.sharesOwnedFollowingTransaction?.[0]?.value?.[0] || postTransactionAmounts.sharesOwnedFollowingTransaction?.[0]) || 0;
-    
-    console.log(`   ✅ Valid transaction found: ${transactionCode} - ${shares} shares at $${pricePerShare}`);
-    
-    // Calculate ownership percentage - this will be updated with actual market data later
-    const ownershipPercentage = 0; // Will be calculated later if needed
-    
+
     const totalValue = shares * pricePerShare;
-    
-    validTransaction = {
-      companyName,
-      ticker: ticker || '', // Use ticker from SEC data
-      traderName,
-      traderTitle,
-      tradeType: (transactionCode === 'P' || transactionCode === 'M' || transactionCode === 'A') ? 'BUY' as const : 
-                (transactionCode === 'S') ? 'SELL' as const : 'TRANSFER' as const,
+
+    console.log(`   ✅ Valid transaction: ${transactionCode} - ${shares} shares at $${pricePerShare} = $${totalValue.toLocaleString()} (${ownershipNature === 'D' ? 'Direct' : 'Indirect'})`);
+
+    // 🔧 NEW: Collect ALL transactions instead of breaking after first one
+    validTransactions.push({
       shares: Math.round(shares),
       pricePerShare,
       totalValue,
-      ownershipPercentage,
-      filedDate: new Date(transactionDate || new Date()),
-      accessionNumber,
-      secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`
-    };
-    
-    // Return the first valid transaction found
-    break;
+      transactionCode,
+      transactionDate: transactionDate || new Date().toISOString(),
+      ownershipNature
+    });
   }
-  
-  if (!validTransaction) {
+
+  if (validTransactions.length === 0) {
     console.log(`   ⚠️ No valid P/S/M/A/U transactions found for ${accessionNumber}`);
+    return [];
   }
-  
-  return validTransaction;
+
+  // 🔧 NEW: Aggregate all transactions (Direct + Indirect) into one combined trade
+  // This gives the true total amount the insider transacted
+  const totalShares = validTransactions.reduce((sum, t) => sum + t.shares, 0);
+  const totalValue = validTransactions.reduce((sum, t) => sum + t.totalValue, 0);
+  const avgPricePerShare = totalValue / totalShares;
+
+  // Use the first transaction's details for type/date
+  const firstTransaction = validTransactions[0];
+  const tradeType = (firstTransaction.transactionCode === 'P' || firstTransaction.transactionCode === 'M' || firstTransaction.transactionCode === 'A') ? 'BUY' as const :
+            (firstTransaction.transactionCode === 'S') ? 'SELL' as const : 'TRANSFER' as const;
+
+  console.log(`   📊 AGGREGATED TOTAL: ${totalShares} shares at avg $${avgPricePerShare.toFixed(2)} = $${totalValue.toLocaleString()}`);
+  console.log(`   📝 Breakdown: ${validTransactions.length} transaction(s) combined (Direct + Indirect)`);
+
+  const aggregatedTrade: ParsedTrade = {
+    companyName,
+    ticker: ticker || '',
+    traderName,
+    traderTitle,
+    tradeType,
+    shares: totalShares,
+    pricePerShare: avgPricePerShare,
+    totalValue,
+    ownershipPercentage: 0, // Will be calculated later if needed
+    filedDate: new Date(firstTransaction.transactionDate),
+    accessionNumber,
+    secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`
+  };
+
+  return [aggregatedTrade];
 }
 
 function determineTraderTitle(relationship: any): string {

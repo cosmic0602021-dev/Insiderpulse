@@ -24,6 +24,7 @@ import { FreeZoneBanner } from '@/components/free-zone-banner';
 import { TrialTimerBanner, TrialExpiredBanner } from '@/components/trial-timer-banner';
 import { FOMOAlertManager } from '@/components/fomo-alerts';
 import { ShareButton } from '@/components/social-share';
+import { TransactionTypeFilter } from '@/components/transaction-type-filter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import { useLocation } from 'wouter';
@@ -50,9 +51,19 @@ export default function LiveTrading() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [tradeTypeFilter, setTradeTypeFilter] = useState<'all' | 'buy' | 'sell'>('all');
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
   const [loadedCount, setLoadedCount] = useState(100);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+
+  // Map filter type to transaction types array
+  const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
+    if (filterType === 'core') {
+      return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
+    }
+    // For 'all', don't specify transactionTypes to get everything
+    return undefined;
+  };
 
   // Load watchlist from localStorage
   useEffect(() => {
@@ -136,11 +147,12 @@ export default function LiveTrading() {
       limit: loadedCount,
       offset: 0,
       sortBy: 'createdAt',
-      hasRealtimeAccess: accessLevel?.hasRealtimeAccess || false // Separate cache for premium/free users
+      hasRealtimeAccess: accessLevel?.hasRealtimeAccess || false, // Separate cache for premium/free users
+      transactionTypeFilter
     }),
     queryFn: async () => {
       console.log('[LIVE TRADING] Fetching trades and access level...');
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt');
+      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt', getTransactionTypes(transactionTypeFilter));
       console.log('[LIVE TRADING] Response received:', {
         tradesCount: response.trades?.length || 0,
         hasAccessLevel: !!response.accessLevel,
@@ -427,6 +439,33 @@ export default function LiveTrading() {
                 <X className="h-5 w-5" />
               </button>
             )}
+          </div>
+
+          {/* Transaction Type Filter - Core vs All */}
+          <div className="w-full px-4 py-3 bg-red-500/20 border-2 border-red-500 backdrop-blur-xl rounded-xl">
+            <div className="flex items-center gap-3 w-full">
+              <button
+                onClick={() => setTransactionTypeFilter('core')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  transactionTypeFilter === 'core'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
+                    : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                핵심 거래만 보기 (P/S만)
+              </button>
+
+              <button
+                onClick={() => setTransactionTypeFilter('all')}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  transactionTypeFilter === 'all'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
+                    : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                전체 거래 보기 (M/A/G 포함)
+              </button>
+            </div>
           </div>
 
           {/* 거래 타입 필터 버튼 */}

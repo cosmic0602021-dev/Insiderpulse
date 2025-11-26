@@ -7,14 +7,15 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Circle, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Slot } from "@radix-ui/react-slot";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as LabelPrimitive from "@radix-ui/react-label";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Area, Line, ReferenceDot, LineChart, BarChart, Bar, Cell } from "recharts";
@@ -1808,7 +1809,16 @@ const translations = {
     "checkout.priceLabel": "Price:",
     "checkout.billingCycleLabel": "Billing Cycle:",
     "checkout.priceWithTax": "${price}/{interval} (세금별도)",
-    "checkout.termsAgreement": "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing."
+    "checkout.termsAgreement": "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing.",
+    // Transaction Filter
+    "transactionFilter.coreOnly": "Core Trades Only",
+    "transactionFilter.allTrades": "All Trades (Advanced)",
+    "transactionFilter.helpModalTitle": "Filter Explanation",
+    "transactionFilter.coreOnlyDescription": "Shows only trades where insiders used their own money to buy, or intentionally decided to sell. These are considered the most meaningful signals.",
+    "transactionFilter.allTradesDescription": "Shows all transaction types including option exercises, automatic sales (10b5-1), RSU vesting, bond conversions, and other derivative/compensation-based trades. Advanced users only.",
+    // Common
+    "common.recommended": "Recommended",
+    "common.advanced": "Advanced"
   },
   ko: {
     // Navigation
@@ -2680,7 +2690,16 @@ const translations = {
     "checkout.priceLabel": "가격:",
     "checkout.billingCycleLabel": "결제 주기:",
     "checkout.priceWithTax": "${price}/{interval} (세금별도)",
-    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다."
+    "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.",
+    // Transaction Filter
+    "transactionFilter.coreOnly": "핵심 거래만 보기",
+    "transactionFilter.allTrades": "전체 거래 보기 (고급)",
+    "transactionFilter.helpModalTitle": "필터 설명",
+    "transactionFilter.coreOnlyDescription": '내부자가 자기 자금으로 실제로 매수하거나, 의도적으로 매도한 거래만 보여줍니다. 이런 거래가 "진짜 신호"로 가장 많이 활용됩니다.',
+    "transactionFilter.allTradesDescription": "옵션 행사, 자동 매도(10b5-1), 보상성 주식(RSU), 채권 전환 등 다양한 파생·보상 거래까지 모두 보여줍니다. 전문가용이며 복잡한 정보가 포함됩니다.",
+    // Common
+    "common.recommended": "추천",
+    "common.advanced": "고급"
   },
   ja: {
     // Navigation
@@ -3430,7 +3449,16 @@ const translations = {
     "checkout.priceLabel": "価格:",
     "checkout.billingCycleLabel": "請求サイクル:",
     "checkout.priceWithTax": "${price}/{interval} (税別)",
-    "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。"
+    "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。",
+    // Transaction Filter
+    "transactionFilter.coreOnly": "コア取引のみ",
+    "transactionFilter.allTrades": "全取引（上級）",
+    "transactionFilter.helpModalTitle": "フィルター説明",
+    "transactionFilter.coreOnlyDescription": "インサイダーが自己資金で実際に購入したり、意図的に売却した取引のみを表示します。これらは「本当のシグナル」として最も活用されます。",
+    "transactionFilter.allTradesDescription": "オプション行使、自動売却(10b5-1)、RSU付与、債券転換など、様々なデリバティブ・報酬取引まで全て表示します。上級者向けで複雑な情報が含まれます。",
+    // Common
+    "common.recommended": "推奨",
+    "common.advanced": "上級"
   },
   zh: {
     // Navigation
@@ -4180,7 +4208,16 @@ const translations = {
     "checkout.priceLabel": "价格:",
     "checkout.billingCycleLabel": "计费周期:",
     "checkout.priceWithTax": "${price}/{interval} (不含税)",
-    "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。"
+    "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。",
+    // Transaction Filter
+    "transactionFilter.coreOnly": "仅核心交易",
+    "transactionFilter.allTrades": "全部交易（高级）",
+    "transactionFilter.helpModalTitle": "筛选器说明",
+    "transactionFilter.coreOnlyDescription": '仅显示内部人员用自己的资金实际购买或有意出售的交易。这些被视为"真实信号"，最常被使用。',
+    "transactionFilter.allTradesDescription": "显示所有交易类型，包括期权行使、自动出售(10b5-1)、RSU归属、债券转换等各种衍生品/补偿性交易。仅供高级用户使用，包含复杂信息。",
+    // Common
+    "common.recommended": "推荐",
+    "common.advanced": "高级"
   }
 };
 const LanguageContext = createContext(void 0);
@@ -4579,11 +4616,11 @@ class ApiClient {
     this.getTrades = async () => {
       return this.getInsiderTrades();
     };
-    this.getInsiderTrades = async (limit = 20, offset = 0, fromDate, toDate, sortBy) => {
-      const response = await this.getInsiderTradesWithAccess(limit, offset, fromDate, toDate, sortBy);
+    this.getInsiderTrades = async (limit = 20, offset = 0, fromDate, toDate, sortBy, transactionTypes) => {
+      const response = await this.getInsiderTradesWithAccess(limit, offset, fromDate, toDate, sortBy, transactionTypes);
       return response.trades;
     };
-    this.getInsiderTradesWithAccess = async (limit = 20, offset = 0, fromDate, toDate, sortBy) => {
+    this.getInsiderTradesWithAccess = async (limit = 20, offset = 0, fromDate, toDate, sortBy, transactionTypes) => {
       const params = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString()
@@ -4596,6 +4633,9 @@ class ApiClient {
       }
       if (sortBy && (sortBy === "filedDate" || sortBy === "createdAt")) {
         params.append("sortBy", sortBy);
+      }
+      if (transactionTypes && transactionTypes.length > 0) {
+        transactionTypes.forEach((type) => params.append("transactionTypes", type));
       }
       const url = `/trades?${params.toString()}`;
       console.log(`🌐 [API] Requesting: ${url}`);
@@ -5401,6 +5441,44 @@ const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => /* @_
   }
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+);
+const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  LabelPrimitive.Root,
+  {
+    ref,
+    className: cn(labelVariants(), className),
+    ...props
+  }
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+const RadioGroup = React.forwardRef(({ className, ...props }, ref) => {
+  return /* @__PURE__ */ jsx(
+    RadioGroupPrimitive.Root,
+    {
+      className: cn("grid gap-2", className),
+      ...props,
+      ref
+    }
+  );
+});
+RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
+const RadioGroupItem = React.forwardRef(({ className, ...props }, ref) => {
+  return /* @__PURE__ */ jsx(
+    RadioGroupPrimitive.Item,
+    {
+      ref,
+      className: cn(
+        "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      ),
+      ...props,
+      children: /* @__PURE__ */ jsx(RadioGroupPrimitive.Indicator, { className: "flex items-center justify-center", children: /* @__PURE__ */ jsx(Circle, { className: "h-2.5 w-2.5 fill-current text-current" }) })
+    }
+  );
+});
+RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 const Dialog = DialogPrimitive.Root;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
@@ -6899,18 +6977,6 @@ function getWebSocketUrl() {
   }
   return `${protocol}//${host}/api/ws`;
 }
-const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-);
-const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  LabelPrimitive.Root,
-  {
-    ref,
-    className: cn(labelVariants(), className),
-    ...props
-  }
-));
-Label.displayName = LabelPrimitive.Root.displayName;
 const Separator = React.forwardRef(
   ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
     SeparatorPrimitive.Root,

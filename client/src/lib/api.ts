@@ -149,9 +149,10 @@ class ApiClient {
     offset = 0,
     fromDate?: Date,
     toDate?: Date,
-    sortBy?: string
+    sortBy?: string,
+    transactionTypes?: string[]
   ): Promise<InsiderTrade[]> => {
-    const response = await this.getInsiderTradesWithAccess(limit, offset, fromDate, toDate, sortBy);
+    const response = await this.getInsiderTradesWithAccess(limit, offset, fromDate, toDate, sortBy, transactionTypes);
     return response.trades;
   }
 
@@ -160,7 +161,8 @@ class ApiClient {
     offset = 0,
     fromDate?: Date,
     toDate?: Date,
-    sortBy?: string
+    sortBy?: string,
+    transactionTypes?: string[]
   ): Promise<TradesResponse> => {
     const params = new URLSearchParams({
       limit: limit.toString(),
@@ -175,6 +177,9 @@ class ApiClient {
     }
     if (sortBy && (sortBy === 'filedDate' || sortBy === 'createdAt')) {
       params.append('sortBy', sortBy);
+    }
+    if (transactionTypes && transactionTypes.length > 0) {
+      transactionTypes.forEach(type => params.append('transactionTypes', type));
     }
 
     const url = `/trades?${params.toString()}`;
