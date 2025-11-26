@@ -5500,7 +5500,7 @@ const EN = {
     subHeader: "High-Conviction Institutional Signals",
     interval: "Calculation Interval",
     restricted: "Premium Access Required",
-    securityLevel: "INSTITUTIONAL GRADE DATA",
+    securityLevel: "INSTITUTIONAL GRADE DATA (Ranks 1-3)",
     desc: "Real-time alpha signals are reserved for INSIDER tier members.",
     clearance: "Institutional Access Required",
     cta: "Upgrade to Reveal Signals",
@@ -5715,6 +5715,10 @@ const EN = {
     secData: "Real SEC Data",
     secDesc: "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.",
     terms: "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. Cancel anytime with one click."
+  },
+  ranking: {
+    noData: "No ranking data available",
+    checkedLastNDays: "Checked insider trades from last {days} days"
   }
 };
 const KO = {
@@ -5758,7 +5762,7 @@ const KO = {
     subHeader: "기관급 고확신 매집 시그널",
     interval: "계산 간격",
     restricted: "프리미엄 액세스 필요",
-    securityLevel: "기관급 데이터",
+    securityLevel: "기관급 데이터 (1~3위)",
     desc: "실시간 알파 시그널은 INSIDER 등급 회원 전용입니다.",
     clearance: "기관 액세스 권한 필요",
     cta: "시그널 잠금 해제",
@@ -5973,6 +5977,10 @@ const KO = {
     secData: "실제 SEC 데이터",
     secDesc: "SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 정보만 제공.",
     terms: "무료 체험 종료 후 요금이 자동으로 청구됩니다. 원하지 않을 경우 자동 결제 전에 구독을 취소하세요. 언제든지 클릭 한 번으로 취소할 수 있습니다."
+  },
+  ranking: {
+    noData: "랭킹 데이터가 없습니다",
+    checkedLastNDays: "최근 {days}일 이내 내부자 거래 확인함"
   }
 };
 const JA = {
@@ -6099,6 +6107,10 @@ const JA = {
     "1-3 months": "1-3ヶ月",
     "3-6 months": "3-6ヶ月",
     "6-12 months": "6-12ヶ月"
+  },
+  ranking: {
+    noData: "ランキングデータがありません",
+    checkedLastNDays: "過去{days}日以内のインサイダー取引を確認"
   }
 };
 const ZH = {
@@ -6225,6 +6237,10 @@ const ZH = {
     "1-3 months": "1-3个月",
     "3-6 months": "3-6个月",
     "6-12 months": "6-12个月"
+  },
+  ranking: {
+    noData: "无排名数据",
+    checkedLastNDays: "检查了过去{days}天的内部交易"
   }
 };
 const TRANSLATIONS = {
@@ -6471,7 +6487,11 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
             else if (ratio >= 1) percentStr = ratio.toFixed(1) + "%";
             else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + "%";
             else if (ratio >= 1e-3) percentStr = ratio.toFixed(3) + "%";
-            else percentStr = ratio.toFixed(4) + "%";
+            else if (ratio >= 1e-4) percentStr = ratio.toFixed(4) + "%";
+            else if (ratio >= 1e-5) percentStr = ratio.toFixed(5) + "%";
+            else if (ratio >= 1e-6) percentStr = ratio.toFixed(6) + "%";
+            else if (ratio > 0) percentStr = ratio.toExponential(2) + "%";
+            else percentStr = "0%";
             const prefix = language === "ko" ? "시총대비 " : language === "ja" ? "時価総額比 " : language === "zh" ? "市值比 " : "Market cap ratio: ";
             return prefix + percentStr;
           })() })
@@ -7642,8 +7662,14 @@ function TradeRow({ trade, onClick, tData }) {
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: trade.marketCap && trade.marketCap > 0 ? /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono text-[11px]", children: (() => {
           const ratio = trade.value / trade.marketCap * 100;
           if (ratio >= 10) return Math.round(ratio) + "%";
-          if (ratio >= 1) return ratio.toFixed(1) + "%";
-          return ratio.toFixed(2) + "%";
+          else if (ratio >= 1) return ratio.toFixed(1) + "%";
+          else if (ratio >= 0.01) return ratio.toFixed(2) + "%";
+          else if (ratio >= 1e-3) return ratio.toFixed(3) + "%";
+          else if (ratio >= 1e-4) return ratio.toFixed(4) + "%";
+          else if (ratio >= 1e-5) return ratio.toFixed(5) + "%";
+          else if (ratio >= 1e-6) return ratio.toFixed(6) + "%";
+          else if (ratio > 0) return ratio.toExponential(2) + "%";
+          else return "0%";
         })() }) : /* @__PURE__ */ jsx("span", { className: "text-neutral-600 text-[10px]", children: "-" }) }),
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end pr-2", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-500 text-[10px] font-mono", children: timeAgo }) })
       ]
@@ -10764,7 +10790,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-6 relative custom-scrollbar", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative mb-8", children: [
-        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-start md:items-center justify-center rounded-sm border border-neutral-800/50 overflow-auto", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4", children: [
+        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4", children: [
           /* @__PURE__ */ jsx("div", { className: "absolute top-0 left-0 right-0 h-1 bg-neutral-800", children: /* @__PURE__ */ jsx("div", { className: "h-full w-1/3 bg-amber-600 mx-auto" }) }),
           /* @__PURE__ */ jsxs("div", { className: "mb-3 md:mb-4 mt-2", children: [
             /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-sm bg-neutral-900 border border-neutral-800 mb-2 md:mb-3", children: [

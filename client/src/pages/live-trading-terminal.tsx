@@ -492,8 +492,14 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
             {(() => {
               const ratio = (trade.value / trade.marketCap) * 100;
               if (ratio >= 10) return Math.round(ratio) + '%';
-              if (ratio >= 1) return ratio.toFixed(1) + '%';
-              return ratio.toFixed(2) + '%';
+              else if (ratio >= 1) return ratio.toFixed(1) + '%';
+              else if (ratio >= 0.01) return ratio.toFixed(2) + '%';
+              else if (ratio >= 0.001) return ratio.toFixed(3) + '%';
+              else if (ratio >= 0.0001) return ratio.toFixed(4) + '%';
+              else if (ratio >= 0.00001) return ratio.toFixed(5) + '%';
+              else if (ratio >= 0.000001) return ratio.toFixed(6) + '%';
+              else if (ratio > 0) return ratio.toExponential(2) + '%';
+              else return '0%';
             })()}
           </span>
         ) : (

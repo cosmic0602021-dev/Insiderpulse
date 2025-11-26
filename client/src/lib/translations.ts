@@ -41,7 +41,7 @@ const EN = {
     subHeader: 'High-Conviction Institutional Signals',
     interval: 'Calculation Interval',
     restricted: 'Premium Access Required',
-    securityLevel: 'INSTITUTIONAL GRADE DATA',
+    securityLevel: 'INSTITUTIONAL GRADE DATA (Ranks 1-3)',
     desc: 'Real-time alpha signals are reserved for INSIDER tier members.',
     clearance: 'Institutional Access Required',
     cta: 'Upgrade to Reveal Signals',
@@ -256,6 +256,10 @@ const EN = {
     secData: 'Real SEC Data',
     secDesc: 'All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.',
     terms: 'Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. Cancel anytime with one click.'
+  },
+  ranking: {
+    noData: 'No ranking data available',
+    checkedLastNDays: 'Checked insider trades from last {days} days'
   }
 };
 
@@ -300,7 +304,7 @@ const KO = {
     subHeader: '기관급 고확신 매집 시그널',
     interval: '계산 간격',
     restricted: '프리미엄 액세스 필요',
-    securityLevel: '기관급 데이터',
+    securityLevel: '기관급 데이터 (1~3위)',
     desc: '실시간 알파 시그널은 INSIDER 등급 회원 전용입니다.',
     clearance: '기관 액세스 권한 필요',
     cta: '시그널 잠금 해제',
@@ -515,6 +519,10 @@ const KO = {
     secData: '실제 SEC 데이터',
     secDesc: 'SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 정보만 제공.',
     terms: '무료 체험 종료 후 요금이 자동으로 청구됩니다. 원하지 않을 경우 자동 결제 전에 구독을 취소하세요. 언제든지 클릭 한 번으로 취소할 수 있습니다.'
+  },
+  ranking: {
+    noData: '랭킹 데이터가 없습니다',
+    checkedLastNDays: '최근 {days}일 이내 내부자 거래 확인함'
   }
 };
 
@@ -642,6 +650,10 @@ const JA = {
     '1-3 months': '1-3ヶ月',
     '3-6 months': '3-6ヶ月',
     '6-12 months': '6-12ヶ月'
+  },
+  ranking: {
+    noData: 'ランキングデータがありません',
+    checkedLastNDays: '過去{days}日以内のインサイダー取引を確認'
   }
 };
 
@@ -769,6 +781,10 @@ const ZH = {
     '1-3 months': '1-3个月',
     '3-6 months': '3-6个月',
     '6-12 months': '6-12个月'
+  },
+  ranking: {
+    noData: '无排名数据',
+    checkedLastNDays: '检查了过去{days}天的内部交易'
   }
 };
 

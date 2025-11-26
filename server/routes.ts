@@ -4131,6 +4131,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rankings = await Promise.all(Array.from(tickerMetrics.values()).map(async (metrics) => {
         const totalTrades = metrics.buyCount + metrics.sellCount;
 
+        // Get current price and market cap for this ticker FIRST
+        const stockPriceData = stockPriceMap.get(metrics.ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceLastUpdated = stockPriceData?.lastUpdated;
+        const marketCap = stockPriceData?.marketCap;
+
         // Calculate average price per share of BUY trades only (not all trades)
         // Only pure Purchase (P) transactions
         const buyTrades = metrics.trades.filter(t =>
@@ -4140,7 +4146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalBuyPricePerShare = buyTrades.reduce((sum, t) => sum + (t.pricePerShare || 0), 0);
         metrics.avgTradeValue = buyTrades.length > 0 ? totalBuyPricePerShare / buyTrades.length : 0;
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
-        
+
         // Calculate ranking score based on (TIMING-FOCUSED WEIGHTS):
         // - Net buying amount (30%)
         // - Recency of trades (20% - TIMING IS CRITICAL!)
@@ -4148,34 +4154,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // - Number of buying transactions (15%)
         // - Pattern bonus (10% - cluster buying, consecutive trades, etc.)
         // - Average trade value (5% - log scale to prevent extreme values from dominating)
-        
+
         // 🔥 INSIDER MOMENTUM SCORE (IMS) ALGORITHM
         // New algorithm: Final Score = Base Signal Strength × Recency Multiplier × Pattern Boost
 
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1000000; // Normalize to millions
         const buyCountScore = metrics.buyCount * 5; // 5 points per buy trade
 
-        // 🎯 Unique Insiders Score - all insiders treated equally (executive weighting removed)
-        const uniqueInsiderScore = metrics.uniqueInsiders.size * 10; // Simple count, 10 points per unique insider
+        // 🎯 Unique Insiders Score - PRIMARY SIGNAL (most important)
+        const uniqueInsiderScore = metrics.uniqueInsiders.size * 15; // 15 points per unique insider (increased weight)
+
+        // 🎯 Market Cap Ratio Score - SECONDARY SIGNAL (second most important)
+        const marketCapRatioScore = (marketCap && marketCap > 0)
+          ? (metrics.netBuying / marketCap) * 100000 // Normalize: 0.1% = 100 points
+          : 0;
 
         // Use log scale to prevent extremely large trades from dominating the score
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2; // Log scale normalization
 
         // 🔥 1단계: 기본 신호 강도 계산 (Base Signal Strength) - 시간 제외
+        // Priority: 1. Unique Insiders (45%), 2. Market Cap Ratio (25%), 3. Net Buying (20%), 4. Buy Count (10%)
         const baseSignalStrength = Math.round(
-          netBuyingScore * 0.50 +           // Net buying (40% → 50%, pure dollar focus)
-          buyCountScore * 0.25 +            // Buy count (15% → 25%, transaction frequency)
-          uniqueInsiderScore * 0.20 +       // Unique insiders (25% → 20%, no executive bias)
-          avgValueScore * 0.05              // Avg value (5%, maintained)
+          uniqueInsiderScore * 0.45 +       // Unique insiders (PRIORITY #1: 45%)
+          marketCapRatioScore * 0.25 +      // Market cap ratio (PRIORITY #2: 25%)
+          netBuyingScore * 0.20 +           // Net buying (20%, reduced from 50%)
+          buyCountScore * 0.10              // Buy count (10%, reduced from 25%)
         );
 
-        // 🔥 2단계: 시간 감쇠 점수 (Exponential Time Decay)
+        // 🔥 2단계: 시간 감쇠 점수 (Exponential Time Decay) - RELAXED
         const daysSinceLastTrade = metrics.lastTradeDate ?
           (Date.now() - metrics.lastTradeDate.getTime()) / (1000 * 60 * 60 * 24) : 30;
 
-        const decayRate = 2; // 2일마다 반감기
+        const decayRate = 7; // 7일마다 반감기 (relaxed from 2 days)
         const recencyMultiplier = Math.exp(-daysSinceLastTrade / decayRate);
-        // 0일=1.0, 1일=0.60, 2일=0.36, 4일=0.13, 7일=0.03
+        // 0일=1.0, 3.5일=0.60, 7일=0.36, 14일=0.13, 30일=0.02
 
         // 🔥 3단계: 패턴 부스트 배수 (Pattern Boost Multiplier)
         let patternMultiplier = 1.0;
@@ -4220,19 +4232,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 패턴 기본 보너스를 신호 강도에 추가
         const signalWithPatternBonus = baseSignalStrength + (patternBaseBonus * 0.15);
 
-        // 🔥 시총대비 비율 부스트 멀티플라이어 (소형주 선호)
+        // 🔥 시총대비 비율 부스트 멀티플라이어 (소형주 강력 선호 - PRIORITY #2)
         let marketCapRatioMultiplier = 1.0;
         if (marketCap && marketCap > 0) {
           const marketCapRatio = (metrics.netBuying / marketCap) * 100;
 
           if (marketCapRatio >= 0.1) {
-            marketCapRatioMultiplier = 1.5;  // 0.1% 이상: 매우 높음 (소형주)
+            marketCapRatioMultiplier = 2.0;  // 0.1% 이상: 매우 높음 (소형주, 2배 부스트)
           } else if (marketCapRatio >= 0.05) {
-            marketCapRatioMultiplier = 1.3;  // 0.05-0.1%: 높음
+            marketCapRatioMultiplier = 1.6;  // 0.05-0.1%: 높음 (1.6배)
           } else if (marketCapRatio >= 0.01) {
-            marketCapRatioMultiplier = 1.15; // 0.01-0.05%: 중간
+            marketCapRatioMultiplier = 1.3;  // 0.01-0.05%: 중간 (1.3배)
+          } else if (marketCapRatio >= 0.005) {
+            marketCapRatioMultiplier = 1.1;  // 0.005-0.01%: 약간 (1.1배)
           }
-          // else: 1.0 (0.01% 미만: 대형주, 부스트 없음)
+          // else: 1.0 (0.005% 미만: 대형주, 부스트 없음)
         }
 
         // 🔥 최종 점수 = 신호 강도 × 시간 감쇠 × 패턴 부스트 × 시총대비 부스트 (곱셈 모델)
@@ -4290,13 +4304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
 
-        // Get current price for this ticker
-        const stockPriceData = stockPriceMap.get(metrics.ticker);
-        const currentPrice = stockPriceData?.price;
-        const priceLastUpdated = stockPriceData?.lastUpdated;
-        const marketCap = stockPriceData?.marketCap;
-
-        // Calculate percentage change from average buy price
+        // Calculate percentage change from average buy price (marketCap already defined above)
         let priceChangePercent = undefined;
         if (currentPrice && metrics.avgTradeValue > 0) {
           priceChangePercent = ((currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue) * 100;
@@ -4349,34 +4357,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       // Sort by score and return top results
-      const topRankings = rankings
+      // 🔥 동적 Recency 필터: 7일 우선, 부족하면 14일/30일로 자동 확장
+      let recencyDays = 7;
+      let filteredRankings = rankings
         .filter(r => r.totalTrades >= 2) // Only include stocks with at least 2 trades
         .filter(r => r.netBuying > 0) // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
         .filter(r => r.buyTrades > 0) // Must have at least 1 buy trade
         .filter(r => {
-          // 🔥 시간 필터: 7일 이상 경과된 신호는 완전 제외
           const daysSince = r.lastTradeDate ?
             (Date.now() - new Date(r.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
-          return daysSince <= 7; // 7일 이내 거래만 추천
+          return daysSince <= recencyDays;
         })
         .filter(r => {
-          // 🔥 가격 괴리 필터: 내부자 평균 매수가 대비 현재가 괴리율 15% 이상 제외 (optional)
-          if (r.enhancedTrade?.currentPrice && r.avgTradeValue > 0) {
+          // 가격 괴리 필터: stockPriceMap에서 현재가 조회
+          const stockPriceData = stockPriceMap.get(r.ticker);
+          if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
             const priceGap = Math.abs(
-              (r.enhancedTrade.currentPrice - r.avgTradeValue) / r.avgTradeValue
+              (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
             );
             return priceGap <= 0.15; // 15% 이상 괴리 시 제외
           }
           return true; // 가격 정보 없으면 통과
-        })
+        });
+
+      // Fallback to 14 days if results < 5
+      if (filteredRankings.length < 5) {
+        console.log(`⚠️  Only ${filteredRankings.length} stocks found with 7-day filter, expanding to 14 days...`);
+        recencyDays = 14;
+        filteredRankings = rankings
+          .filter(r => r.totalTrades >= 2)
+          .filter(r => r.netBuying > 0)
+          .filter(r => r.buyTrades > 0)
+          .filter(r => {
+            const daysSince = r.lastTradeDate ?
+              (Date.now() - new Date(r.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+            return daysSince <= recencyDays;
+          })
+          .filter(r => {
+            const stockPriceData = stockPriceMap.get(r.ticker);
+            if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
+              const priceGap = Math.abs(
+                (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
+              );
+              return priceGap <= 0.15;
+            }
+            return true;
+          });
+      }
+
+      // Fallback to 30 days if still < 5
+      if (filteredRankings.length < 5) {
+        console.log(`⚠️  Only ${filteredRankings.length} stocks found with 14-day filter, expanding to 30 days...`);
+        recencyDays = 30;
+        filteredRankings = rankings
+          .filter(r => r.totalTrades >= 2)
+          .filter(r => r.netBuying > 0)
+          .filter(r => r.buyTrades > 0)
+          .filter(r => {
+            const daysSince = r.lastTradeDate ?
+              (Date.now() - new Date(r.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+            return daysSince <= recencyDays;
+          })
+          .filter(r => {
+            const stockPriceData = stockPriceMap.get(r.ticker);
+            if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
+              const priceGap = Math.abs(
+                (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
+              );
+              return priceGap <= 0.15;
+            }
+            return true;
+          });
+      }
+
+      const topRankings = filteredRankings
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
+
+      console.log(`📊 Rankings summary: ${topRankings.length} stocks (recency: ${recencyDays} days, total analyzed: ${rankings.length})`);
       
       res.json({
         rankings: topRankings,
         generatedAt: new Date().toISOString(),
         period: '30 days',
         totalStocksAnalyzed: rankings.length,
+        meta: {
+          recencyDays,
+          filteredCount: filteredRankings.length,
+        },
         // 🔍 패턴 감지 요약 추가
         patternSummary: {
           totalPatternsDetected: detectedPatterns.length,

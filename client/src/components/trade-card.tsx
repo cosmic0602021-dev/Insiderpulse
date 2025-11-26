@@ -191,7 +191,11 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
                   else if (ratio >= 1) return ratio.toFixed(1) + '%';
                   else if (ratio >= 0.01) return ratio.toFixed(2) + '%';
                   else if (ratio >= 0.001) return ratio.toFixed(3) + '%';
-                  else return ratio.toFixed(4) + '%';
+                  else if (ratio >= 0.0001) return ratio.toFixed(4) + '%';
+                  else if (ratio >= 0.00001) return ratio.toFixed(5) + '%';
+                  else if (ratio >= 0.000001) return ratio.toFixed(6) + '%';
+                  else if (ratio > 0) return ratio.toExponential(2) + '%';
+                  else return '0%';
                 })()}
               </div>
             )}

@@ -629,7 +629,11 @@ export default function Ranking() {
                           else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
                           else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
                           else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
-                          else ratioStr = ratio.toFixed(4) + '%';
+                          else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                          else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                          else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                          else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                          else ratioStr = '0%';
                           return language === 'ko' ? `시총대비: ${ratioStr}` :
                                  language === 'ja' ? `時価総額比: ${ratioStr}` :
                                  language === 'zh' ? `市值比: ${ratioStr}` :
@@ -832,7 +836,11 @@ export default function Ranking() {
                                   else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
                                   else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
                                   else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
-                                  else ratioStr = ratio.toFixed(4) + '%';
+                                  else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                                  else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                                  else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                                  else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                                  else ratioStr = '0%';
                                   return language === 'ko' ? `시총대비: ${ratioStr}` :
                                          language === 'ja' ? `時価総額比: ${ratioStr}` :
                                          language === 'zh' ? `市值比: ${ratioStr}` :
@@ -869,6 +877,11 @@ export default function Ranking() {
             <h3 className="text-xl font-semibold mb-2">{t('ranking.noData')}</h3>
             <p className="text-muted-foreground mb-4">
               No ranking data available for the current period.
+              {data.meta?.recencyDays && (
+                <span className="block mt-2 text-sm">
+                  {t('ranking.checkedLastNDays', { days: data.meta.recencyDays })}
+                </span>
+              )}
             </p>
             <Button onClick={handleRefresh} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />

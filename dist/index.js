@@ -1877,14 +1877,53 @@ var init_market_hours = __esm({
   }
 });
 
-// server/stock-price-service.ts
+// server/api-clients/market-cap-apis.ts
 import axios from "axios";
+async function fetchMarketCapFromFinnhub(ticker) {
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const url = `https://finnhub.io/api/v1/stock/metric?symbol=${ticker}&metric=all&token=${apiKey}`;
+    const response = await axios.get(url, { timeout: 1e4 });
+    if (response.data && response.data.metric && response.data.metric.marketCapitalization) {
+      return Math.round(response.data.metric.marketCapitalization * 1e6);
+    }
+    return null;
+  } catch (error) {
+    console.error(`Finnhub API failed for ${ticker}:`, error.message);
+    return null;
+  }
+}
+async function fetchMarketCapFromAlphaVantage(ticker) {
+  const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${ticker}&apikey=${apiKey}`;
+    const response = await axios.get(url, { timeout: 1e4 });
+    if (response.data && response.data.MarketCapitalization) {
+      return Math.round(parseFloat(response.data.MarketCapitalization));
+    }
+    return null;
+  } catch (error) {
+    console.error(`Alpha Vantage API failed for ${ticker}:`, error.message);
+    return null;
+  }
+}
+var init_market_cap_apis = __esm({
+  "server/api-clients/market-cap-apis.ts"() {
+    "use strict";
+  }
+});
+
+// server/stock-price-service.ts
+import axios2 from "axios";
 var StockPriceService, stockPriceService;
 var init_stock_price_service = __esm({
   "server/stock-price-service.ts"() {
     "use strict";
     init_storage();
     init_market_hours();
+    init_market_cap_apis();
     StockPriceService = class {
       constructor() {
         this.cache = /* @__PURE__ */ new Map();
@@ -1942,7 +1981,7 @@ var init_stock_price_service = __esm({
           return cached.data;
         }
         try {
-          const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`, {
+          const response = await axios2.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`, {
             timeout: 1e4,
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -1963,7 +2002,7 @@ var init_stock_price_service = __esm({
             try {
               const polygonKey = process.env.POLYGON_API_KEY;
               if (polygonKey) {
-                const polygonResponse = await axios.get(
+                const polygonResponse = await axios2.get(
                   `https://api.polygon.io/v3/reference/tickers/${upperTicker}?apiKey=${polygonKey}`,
                   { timeout: 1e4 }
                 );
@@ -1978,7 +2017,7 @@ var init_stock_price_service = __esm({
           }
           if (!marketCap || marketCap === 0) {
             try {
-              const yahooResponse = await axios.get(
+              const yahooResponse = await axios2.get(
                 `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${upperTicker}?modules=price,summaryDetail`,
                 {
                   timeout: 1e4,
@@ -1992,12 +2031,31 @@ var init_stock_price_service = __esm({
                 const yahooMarketCap = result2.price?.marketCap?.raw || result2.summaryDetail?.marketCap?.raw;
                 if (yahooMarketCap && yahooMarketCap > 0) {
                   marketCap = Math.round(yahooMarketCap);
-                  console.log(`\u2705 Got market cap from Yahoo Finance for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+                  console.log(`\u2705 Got market cap from Yahoo Finance API for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
                 }
               }
             } catch (yahooError) {
-              console.warn(`Yahoo Finance also failed for ${upperTicker}, market cap will be 0`);
+              console.warn(`Yahoo Finance API failed for ${upperTicker}, trying web scraping...`);
             }
+          }
+          if (!marketCap || marketCap === 0) {
+            console.log(`\u{1F4CA} Trying Finnhub API for ${upperTicker}...`);
+            const finnhubMarketCap = await fetchMarketCapFromFinnhub(upperTicker);
+            if (finnhubMarketCap && finnhubMarketCap > 0) {
+              marketCap = finnhubMarketCap;
+              console.log(`\u2705 Got market cap from Finnhub for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+            }
+          }
+          if (!marketCap || marketCap === 0) {
+            console.log(`\u{1F4CA} Trying Alpha Vantage API for ${upperTicker}...`);
+            const alphaMarketCap = await fetchMarketCapFromAlphaVantage(upperTicker);
+            if (alphaMarketCap && alphaMarketCap > 0) {
+              marketCap = alphaMarketCap;
+              console.log(`\u2705 Got market cap from Alpha Vantage for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+            }
+          }
+          if (!marketCap || marketCap === 0) {
+            console.warn(`\u274C All 4 APIs failed for ${upperTicker}, market cap will be 0`);
           }
           const priceData = {
             ticker: upperTicker,
@@ -2127,7 +2185,7 @@ var init_stock_price_service = __esm({
           }
           const period1 = Math.floor(startDate.getTime() / 1e3);
           const period2 = Math.floor(endDate.getTime() / 1e3);
-          const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`, {
+          const response = await axios2.get(`https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`, {
             params: {
               period1,
               period2,
@@ -2167,7 +2225,7 @@ var init_stock_price_service = __esm({
           }
           return historyData;
         } catch (error) {
-          if (axios.isAxiosError(error)) {
+          if (axios2.isAxiosError(error)) {
             const status = error.response?.status;
             const url = `https://query1.finance.yahoo.com/v8/finance/chart/${upperTicker}`;
             if (status === 404) {
@@ -2565,7 +2623,7 @@ if __name__ == '__main__':
 });
 
 // server/sec-http-client.ts
-import axios2 from "axios";
+import axios3 from "axios";
 var SecHttpClient;
 var init_sec_http_client = __esm({
   "server/sec-http-client.ts"() {
@@ -2672,7 +2730,7 @@ var init_sec_http_client = __esm({
         }
         try {
           this.lastRequestTime = Date.now();
-          const response = await axios2(axiosConfig);
+          const response = await axios3(axiosConfig);
           if (this.isSecBlocked(response)) {
             this.enterCooldown();
             throw new Error("SEC_BLOCKED: WAF detected, entering cooldown period");
@@ -6150,7 +6208,7 @@ var init_admin_metrics_service = __esm({
 });
 
 // server/ip-geolocation-service.ts
-import axios3 from "axios";
+import axios4 from "axios";
 var IPGeolocationService, ipGeolocationService;
 var init_ip_geolocation_service = __esm({
   "server/ip-geolocation-service.ts"() {
@@ -6178,7 +6236,7 @@ var init_ip_geolocation_service = __esm({
           return localData;
         }
         try {
-          const response = await axios3.get(`http://ip-api.com/json/${ipAddress}`, {
+          const response = await axios4.get(`http://ip-api.com/json/${ipAddress}`, {
             timeout: 5e3
           });
           if (response.data.status === "success") {
@@ -6210,7 +6268,7 @@ var init_ip_geolocation_service = __esm({
 });
 
 // server/efr-specific-collector.ts
-import axios4 from "axios";
+import axios5 from "axios";
 var EFRSpecificCollector, efrSpecificCollector;
 var init_efr_specific_collector = __esm({
   "server/efr-specific-collector.ts"() {
@@ -6257,7 +6315,7 @@ var init_efr_specific_collector = __esm({
                 searchType = "\uC77C\uBC18 Form 4 \uAD11\uBC94\uC704 \uAC80\uC0C9";
               }
               console.log(`\u{1F50D} EFR \uAC80\uC0C9 \uC911: ${searchType}`);
-              const response = await axios4.get(url, {
+              const response = await axios5.get(url, {
                 headers: this.headers,
                 timeout: 15e3
               });
@@ -6333,7 +6391,7 @@ var init_efr_specific_collector = __esm({
       }
       async parseEFRForm4XML(xmlUrl, trades) {
         try {
-          const response = await axios4.get(xmlUrl, {
+          const response = await axios5.get(xmlUrl, {
             headers: this.headers,
             timeout: 8e3
           });
@@ -6411,7 +6469,7 @@ var init_efr_specific_collector = __esm({
 });
 
 // server/insider-screener-collector.ts
-import axios5 from "axios";
+import axios6 from "axios";
 var InsiderScreenerCollector, insiderScreenerCollector;
 var init_insider_screener_collector = __esm({
   "server/insider-screener-collector.ts"() {
@@ -6431,7 +6489,7 @@ var init_insider_screener_collector = __esm({
         console.log("\u{1F50D} InsiderScreener.com\uC5D0\uC11C \uB0B4\uBD80\uC790 \uAC70\uB798 \uB370\uC774\uD130 \uC218\uC9D1 \uC911...");
         const trades = [];
         try {
-          const response = await axios5.get("https://www.insiderscreener.com/en/explore", {
+          const response = await axios6.get("https://www.insiderscreener.com/en/explore", {
             headers: this.headers,
             timeout: 15e3
           });
@@ -6544,7 +6602,7 @@ var init_insider_screener_collector = __esm({
         console.log(`\u{1F3AF} InsiderScreener\uC5D0\uC11C ${ticker} \uD2B9\uC815 \uC218\uC9D1 \uC911...`);
         try {
           const searchUrl = `https://www.insiderscreener.com/en/explore?search=${ticker}`;
-          const response = await axios5.get(searchUrl, {
+          const response = await axios6.get(searchUrl, {
             headers: this.headers,
             timeout: 1e4
           });
@@ -6562,7 +6620,7 @@ var init_insider_screener_collector = __esm({
 });
 
 // server/temp-scraper.ts
-import axios6 from "axios";
+import axios7 from "axios";
 var RealSecScrapingManager, newScrapingManager;
 var init_temp_scraper = __esm({
   "server/temp-scraper.ts"() {
@@ -6677,7 +6735,7 @@ var init_temp_scraper = __esm({
           for (const ticker of targetTickers) {
             try {
               const tickerUrl = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&SIC=&type=4&dateb=&owner=include&start=0&count=20&output=atom&company=${ticker}`;
-              const response = await axios6.get(tickerUrl, {
+              const response = await axios7.get(tickerUrl, {
                 headers: this.headers,
                 timeout: 1e4
               });
@@ -6693,7 +6751,7 @@ var init_temp_scraper = __esm({
             console.log(`\u{1F4C4} SEC RSS \uD398\uC774\uC9C0 \uC218\uC9D1 \uC911: ${page.start}~${page.start + page.count - 1}`);
             const rssUrl = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&CIK=&type=4&company=&dateb=&owner=include&start=${page.start}&count=${page.count}&output=atom`;
             try {
-              const response = await axios6.get(rssUrl, {
+              const response = await axios7.get(rssUrl, {
                 headers: this.headers,
                 timeout: 1e4
               });
@@ -6745,7 +6803,7 @@ var init_temp_scraper = __esm({
       }
       async parseForm4XML(xmlUrl, trades) {
         try {
-          const response = await axios6.get(xmlUrl, {
+          const response = await axios7.get(xmlUrl, {
             headers: this.headers,
             timeout: 5e3
           });
@@ -8600,14 +8658,14 @@ ${tradeInfo}
 });
 
 // server/finnhub-collector.ts
-import axios7 from "axios";
+import axios8 from "axios";
 async function getCompanyNews(symbol, daysBack = 30) {
   try {
     const toDate = /* @__PURE__ */ new Date();
     const fromDate = /* @__PURE__ */ new Date();
     fromDate.setDate(fromDate.getDate() - daysBack);
     const formatDate = (date2) => date2.toISOString().split("T")[0];
-    const response = await axios7.get(
+    const response = await axios8.get(
       `https://finnhub.io/api/v1/company-news`,
       {
         params: {
@@ -8656,7 +8714,7 @@ var init_finnhub_collector = __esm({
 });
 
 // server/news-correlation-service.ts
-import axios8 from "axios";
+import axios9 from "axios";
 import OpenAI3 from "openai";
 var NewsCorrelationService, newsCorrelationService;
 var init_news_correlation_service = __esm({
@@ -8757,7 +8815,7 @@ var init_news_correlation_service = __esm({
         if (!this.newsApiKey) return [];
         try {
           const query = `"${ticker}" OR "${companyName}"`;
-          const response = await axios8.get("https://newsapi.org/v2/everything", {
+          const response = await axios9.get("https://newsapi.org/v2/everything", {
             params: {
               q: query,
               from: startDate.toISOString().split("T")[0],
@@ -8778,7 +8836,7 @@ var init_news_correlation_service = __esm({
       async fetchFromAlphaVantageNews(ticker, startDate, endDate) {
         if (!this.newsApiKey) return [];
         try {
-          const response = await axios8.get("https://www.alphavantage.co/query", {
+          const response = await axios9.get("https://www.alphavantage.co/query", {
             params: {
               function: "NEWS_SENTIMENT",
               tickers: ticker,
@@ -9972,7 +10030,7 @@ var init_subscription_service = __esm({
 });
 
 // server/exchange-rate-service.ts
-import axios9 from "axios";
+import axios10 from "axios";
 import { eq as eq5, and as and5 } from "drizzle-orm";
 var ExchangeRateService, exchangeRateService;
 var init_exchange_rate_service = __esm({
@@ -9996,7 +10054,7 @@ var init_exchange_rate_service = __esm({
         try {
           console.log("\u{1F4B1} Fetching exchange rates from Frankfurter API...");
           const symbols = this.SUPPORTED_CURRENCIES.join(",");
-          const response = await axios9.get(`${this.FRANKFURTER_API}?base=${this.BASE_CURRENCY}&symbols=${symbols}`, {
+          const response = await axios10.get(`${this.FRANKFURTER_API}?base=${this.BASE_CURRENCY}&symbols=${symbols}`, {
             timeout: 1e4
           });
           if (!response.data || !response.data.rates) {
@@ -10580,7 +10638,7 @@ var init_marketbeat_collector = __esm({
 });
 
 // server/scrapers/sec-rss-scraper.ts
-import axios10 from "axios";
+import axios11 from "axios";
 import * as cheerio from "cheerio";
 var SecRssScraper, secRssScraper;
 var init_sec_rss_scraper = __esm({
@@ -10613,7 +10671,7 @@ var init_sec_rss_scraper = __esm({
       async getLatestForm4Filings() {
         try {
           console.log("\u{1F504} SEC RSS\uC5D0\uC11C \uCD5C\uC2E0 Form 4 \uD30C\uC77C\uB9C1 \uC218\uC9D1 \uC911...");
-          const response = await axios10.get(this.RSS_URLS.form4Latest, {
+          const response = await axios11.get(this.RSS_URLS.form4Latest, {
             headers: this.headers,
             timeout: 15e3
           });
@@ -10670,7 +10728,7 @@ var init_sec_rss_scraper = __esm({
        */
       async parseForm4FromRSSItem(item) {
         try {
-          const response = await axios10.get(item.link, {
+          const response = await axios11.get(item.link, {
             headers: {
               ...this.headers,
               "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -14361,6 +14419,10 @@ async function registerRoutes(app2) {
       }
       const rankings = await Promise.all(Array.from(tickerMetrics.values()).map(async (metrics) => {
         const totalTrades = metrics.buyCount + metrics.sellCount;
+        const stockPriceData = stockPriceMap.get(metrics.ticker);
+        const currentPrice = stockPriceData?.price;
+        const priceLastUpdated = stockPriceData?.lastUpdated;
+        const marketCap = stockPriceData?.marketCap;
         const buyTrades = metrics.trades.filter(
           (t) => t.tradeType === "BUY" || t.tradeType === "PURCHASE" || t.transactionCode === "P"
         );
@@ -14369,17 +14431,18 @@ async function registerRoutes(app2) {
         metrics.netBuying = metrics.totalBuyValue - metrics.totalSellValue;
         const netBuyingScore = Math.max(0, metrics.netBuying) / 1e6;
         const buyCountScore = metrics.buyCount * 5;
-        const uniqueInsiderScore = metrics.uniqueInsiders.size * 10;
+        const uniqueInsiderScore = metrics.uniqueInsiders.size * 15;
+        const marketCapRatioScore = marketCap && marketCap > 0 ? metrics.netBuying / marketCap * 1e5 : 0;
         const avgValueScore = Math.log10(metrics.avgTradeValue + 1) * 2;
         const baseSignalStrength = Math.round(
-          netBuyingScore * 0.5 + // Net buying (40% → 50%, pure dollar focus)
-          buyCountScore * 0.25 + // Buy count (15% → 25%, transaction frequency)
-          uniqueInsiderScore * 0.2 + // Unique insiders (25% → 20%, no executive bias)
-          avgValueScore * 0.05
-          // Avg value (5%, maintained)
+          uniqueInsiderScore * 0.45 + // Unique insiders (PRIORITY #1: 45%)
+          marketCapRatioScore * 0.25 + // Market cap ratio (PRIORITY #2: 25%)
+          netBuyingScore * 0.2 + // Net buying (20%, reduced from 50%)
+          buyCountScore * 0.1
+          // Buy count (10%, reduced from 25%)
         );
         const daysSinceLastTrade = metrics.lastTradeDate ? (Date.now() - metrics.lastTradeDate.getTime()) / (1e3 * 60 * 60 * 24) : 30;
-        const decayRate = 2;
+        const decayRate = 7;
         const recencyMultiplier = Math.exp(-daysSinceLastTrade / decayRate);
         let patternMultiplier = 1;
         let patternBaseBonus = 0;
@@ -14415,11 +14478,13 @@ async function registerRoutes(app2) {
         if (marketCap && marketCap > 0) {
           const marketCapRatio = metrics.netBuying / marketCap * 100;
           if (marketCapRatio >= 0.1) {
-            marketCapRatioMultiplier = 1.5;
+            marketCapRatioMultiplier = 2;
           } else if (marketCapRatio >= 0.05) {
-            marketCapRatioMultiplier = 1.3;
+            marketCapRatioMultiplier = 1.6;
           } else if (marketCapRatio >= 0.01) {
-            marketCapRatioMultiplier = 1.15;
+            marketCapRatioMultiplier = 1.3;
+          } else if (marketCapRatio >= 5e-3) {
+            marketCapRatioMultiplier = 1.1;
           }
         }
         metrics.score = Math.round(signalWithPatternBonus * recencyMultiplier * patternMultiplier * marketCapRatioMultiplier);
@@ -14461,10 +14526,6 @@ async function registerRoutes(app2) {
           secFilingUrl: t.secFilingUrl,
           accessionNumber: t.accessionNumber
         })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const stockPriceData = stockPriceMap.get(metrics.ticker);
-        const currentPrice = stockPriceData?.price;
-        const priceLastUpdated = stockPriceData?.lastUpdated;
-        const marketCap = stockPriceData?.marketCap;
         let priceChangePercent = void 0;
         if (currentPrice && metrics.avgTradeValue > 0) {
           priceChangePercent = (currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue * 100;
@@ -14526,23 +14587,65 @@ async function registerRoutes(app2) {
           })).then((labels) => labels.join(", ")) : null
         };
       }));
-      const topRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
+      let recencyDays = 7;
+      let filteredRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
         const daysSince = r.lastTradeDate ? (Date.now() - new Date(r.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
-        return daysSince <= 7;
+        return daysSince <= recencyDays;
       }).filter((r) => {
-        if (r.enhancedTrade?.currentPrice && r.avgTradeValue > 0) {
+        const stockPriceData = stockPriceMap.get(r.ticker);
+        if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
           const priceGap = Math.abs(
-            (r.enhancedTrade.currentPrice - r.avgTradeValue) / r.avgTradeValue
+            (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
           );
           return priceGap <= 0.15;
         }
         return true;
-      }).sort((a, b) => b.score - a.score).slice(0, limit);
+      });
+      if (filteredRankings.length < 5) {
+        console.log(`\u26A0\uFE0F  Only ${filteredRankings.length} stocks found with 7-day filter, expanding to 14 days...`);
+        recencyDays = 14;
+        filteredRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
+          const daysSince = r.lastTradeDate ? (Date.now() - new Date(r.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        }).filter((r) => {
+          const stockPriceData = stockPriceMap.get(r.ticker);
+          if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
+            const priceGap = Math.abs(
+              (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
+            );
+            return priceGap <= 0.15;
+          }
+          return true;
+        });
+      }
+      if (filteredRankings.length < 5) {
+        console.log(`\u26A0\uFE0F  Only ${filteredRankings.length} stocks found with 14-day filter, expanding to 30 days...`);
+        recencyDays = 30;
+        filteredRankings = rankings.filter((r) => r.totalTrades >= 2).filter((r) => r.netBuying > 0).filter((r) => r.buyTrades > 0).filter((r) => {
+          const daysSince = r.lastTradeDate ? (Date.now() - new Date(r.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        }).filter((r) => {
+          const stockPriceData = stockPriceMap.get(r.ticker);
+          if (stockPriceData && stockPriceData.price && r.avgTradeValue > 0) {
+            const priceGap = Math.abs(
+              (stockPriceData.price - r.avgTradeValue) / r.avgTradeValue
+            );
+            return priceGap <= 0.15;
+          }
+          return true;
+        });
+      }
+      const topRankings = filteredRankings.sort((a, b) => b.score - a.score).slice(0, limit);
+      console.log(`\u{1F4CA} Rankings summary: ${topRankings.length} stocks (recency: ${recencyDays} days, total analyzed: ${rankings.length})`);
       res.json({
         rankings: topRankings,
         generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
         period: "30 days",
         totalStocksAnalyzed: rankings.length,
+        meta: {
+          recencyDays,
+          filteredCount: filteredRankings.length
+        },
         // 🔍 패턴 감지 요약 추가
         patternSummary: {
           totalPatternsDetected: detectedPatterns.length,

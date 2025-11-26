@@ -198,7 +198,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
           <div className="relative mb-8">
              {/* Restricted Overlay for Top 3 */}
              {!isPro && (
-                <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-start md:items-center justify-center rounded-sm border border-neutral-800/50 overflow-auto">
+                <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50">
                     <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4">
 
                         {/* Status Bar */}

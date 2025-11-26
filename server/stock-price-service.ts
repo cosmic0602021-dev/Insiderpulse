@@ -2,6 +2,7 @@ import axios from 'axios';
 import { storage } from './storage';
 import type { InsertStockPrice, InsertStockPriceHistory } from '@shared/schema';
 import { shouldUpdateStockPrices } from './utils/market-hours';
+import { fetchMarketCapFromFinnhub, fetchMarketCapFromAlphaVantage } from './api-clients/market-cap-apis';
 
 export class StockPriceService {
   private cache = new Map<string, { data: any; timestamp: number }>();
@@ -123,12 +124,39 @@ export class StockPriceService {
             const yahooMarketCap = result.price?.marketCap?.raw || result.summaryDetail?.marketCap?.raw;
             if (yahooMarketCap && yahooMarketCap > 0) {
               marketCap = Math.round(yahooMarketCap);
-              console.log(`✅ Got market cap from Yahoo Finance for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+              console.log(`✅ Got market cap from Yahoo Finance API for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
             }
           }
         } catch (yahooError) {
-          console.warn(`Yahoo Finance also failed for ${upperTicker}, market cap will be 0`);
+          console.warn(`Yahoo Finance API failed for ${upperTicker}, trying web scraping...`);
         }
+      }
+
+      // Step 3: Try Finnhub API
+      if (!marketCap || marketCap === 0) {
+        console.log(`📊 Trying Finnhub API for ${upperTicker}...`);
+        const finnhubMarketCap = await fetchMarketCapFromFinnhub(upperTicker);
+
+        if (finnhubMarketCap && finnhubMarketCap > 0) {
+          marketCap = finnhubMarketCap;
+          console.log(`✅ Got market cap from Finnhub for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+        }
+      }
+
+      // Step 4: Try Alpha Vantage API (final fallback)
+      if (!marketCap || marketCap === 0) {
+        console.log(`📊 Trying Alpha Vantage API for ${upperTicker}...`);
+        const alphaMarketCap = await fetchMarketCapFromAlphaVantage(upperTicker);
+
+        if (alphaMarketCap && alphaMarketCap > 0) {
+          marketCap = alphaMarketCap;
+          console.log(`✅ Got market cap from Alpha Vantage for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+        }
+      }
+
+      // Final warning if all 4 APIs failed
+      if (!marketCap || marketCap === 0) {
+        console.warn(`❌ All 4 APIs failed for ${upperTicker}, market cap will be 0`);
       }
 
       const priceData = {

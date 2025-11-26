@@ -136,7 +136,17 @@
       "Bash(timeout 80 node:*)",
       "Bash(timeout 120 node:*)",
       "Bash(npm run build:client:*)",
-      "Bash(do echo \"Updating $ticker...\")"
+      "Bash(do echo \"Updating $ticker...\")",
+      "Bash(then echo '✅ Server started after $i seconds')",
+      "Bash(then echo \"✅ Server ready ($i seconds)\")",
+      "Bash(then echo \"✅ Ready\")",
+      "Bash(do if curl -s http://localhost:5000/api/rankings?limit=2)",
+      "Bash(then curl -s http://localhost:5000/api/rankings?limit=2)",
+      "Bash(exit 1)",
+      "WebFetch(domain:www.google.com)",
+      "Bash(date:*)",
+      "Bash(then echo '✅ Server ready ($i seconds)' curl -s http://localhost:5000/api/health)",
+      "Bash(timeout 180 node:*)"
     ],
     "deny": [],
     "ask": []

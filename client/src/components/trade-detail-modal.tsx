@@ -347,7 +347,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                     else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
                     else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
                     else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
-                    else percentStr = ratio.toFixed(4) + '%';
+                    else if (ratio >= 0.0001) percentStr = ratio.toFixed(4) + '%';
+                    else if (ratio >= 0.00001) percentStr = ratio.toFixed(5) + '%';
+                    else if (ratio >= 0.000001) percentStr = ratio.toFixed(6) + '%';
+                    else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
+                    else percentStr = '0%';
 
                     const prefix = language === 'ko' ? '시총대비 ' :
                                   language === 'ja' ? '時価総額比 ' :
