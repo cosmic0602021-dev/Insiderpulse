@@ -221,7 +221,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
              {/* Restricted Overlay for Top 3 */}
              {!isPro && (
                 <div className="absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50">
-                    <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4">
+                    <div className="max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl">
 
                         {/* Status Bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-neutral-800">
@@ -236,7 +236,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                             <h2 className="text-base md:text-lg font-bold text-neutral-200 uppercase tracking-wider mb-1.5">
                                 {t.restricted}
                             </h2>
-                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest">
+                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-xs md:text-sm font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest">
                                 {t.securityLevel}
                             </div>
                         </div>

@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, DollarSign, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -5132,7 +5132,6 @@ function CurrencySelector() {
         className: "p-2 px-3 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/50 transition-all bg-neutral-900/30 flex items-center gap-2 rounded group",
         title: "Change currency",
         children: [
-          /* @__PURE__ */ jsx(DollarSign, { size: 14, className: "text-neutral-500 group-hover:text-neutral-300" }),
           /* @__PURE__ */ jsxs("span", { className: "text-xs font-mono font-bold", children: [
             currentCurrency.symbol,
             " ",
@@ -10730,7 +10729,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         ] }),
         stock.marketCap && stock.marketCap > 0 && /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
           /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.marketCapRatio }),
-          /* @__PURE__ */ jsx("span", { className: "text-purple-600 font-mono font-bold", children: (() => {
+          /* @__PURE__ */ jsx("span", { className: "text-amber-400 font-mono font-bold", children: (() => {
             const ratio = stock.totalBuyAmount / stock.marketCap * 100;
             let ratioStr;
             if (ratio >= 10) ratioStr = Math.round(ratio) + "%";
@@ -10810,7 +10809,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-6 relative custom-scrollbar", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative mb-8", children: [
-        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl m-3 my-4", children: [
+        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl", children: [
           /* @__PURE__ */ jsx("div", { className: "absolute top-0 left-0 right-0 h-1 bg-neutral-800", children: /* @__PURE__ */ jsx("div", { className: "h-full w-1/3 bg-amber-600 mx-auto" }) }),
           /* @__PURE__ */ jsxs("div", { className: "mb-3 md:mb-4 mt-2", children: [
             /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-sm bg-neutral-900 border border-neutral-800 mb-2 md:mb-3", children: [
@@ -10818,7 +10817,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
               /* @__PURE__ */ jsx(ShieldCheck, { size: 28, className: "text-neutral-600 hidden md:block" })
             ] }),
             /* @__PURE__ */ jsx("h2", { className: "text-base md:text-lg font-bold text-neutral-200 uppercase tracking-wider mb-1.5", children: t.restricted }),
-            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[9px] md:text-[10px] font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest", children: t.securityLevel })
+            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-xs md:text-sm font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest", children: t.securityLevel })
           ] }),
           /* @__PURE__ */ jsx("div", { className: "space-y-2 md:space-y-3 mb-3 md:mb-5 border-t border-b border-neutral-900 py-2.5 md:py-4", children: /* @__PURE__ */ jsx("p", { className: "text-[10px] md:text-xs text-neutral-400 font-mono leading-relaxed", children: t.desc }) }),
           /* @__PURE__ */ jsxs(

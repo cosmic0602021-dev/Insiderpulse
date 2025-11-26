@@ -1,4 +1,4 @@
-import { DollarSign, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useCurrency, type Currency } from '@/contexts/currency-context';
 import { useState, useRef, useEffect } from 'react';
 
@@ -40,7 +40,6 @@ export function CurrencySelector() {
         className="p-2 px-3 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/50 transition-all bg-neutral-900/30 flex items-center gap-2 rounded group"
         title="Change currency"
       >
-        <DollarSign size={14} className="text-neutral-500 group-hover:text-neutral-300" />
         <span className="text-xs font-mono font-bold">{currentCurrency.symbol} {currency}</span>
         <ChevronDown size={12} className={`text-neutral-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
