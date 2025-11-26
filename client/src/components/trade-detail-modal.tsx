@@ -338,29 +338,34 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
               <div className="text-lg font-light text-neutral-200">
                 {formatCurrency(trade.totalValue, false)}
               </div>
-              {stockPrice?.marketCap && stockPrice.marketCap > 0 && (
-                <div className="text-[10px] text-neutral-500 font-mono mt-1">
-                  {(() => {
-                    const ratio = (trade.totalValue / stockPrice.marketCap) * 100;
-                    let percentStr;
-                    if (ratio >= 10) percentStr = Math.round(ratio) + '%';
-                    else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
-                    else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
-                    else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
-                    else if (ratio >= 0.0001) percentStr = ratio.toFixed(4) + '%';
-                    else if (ratio >= 0.00001) percentStr = ratio.toFixed(5) + '%';
-                    else if (ratio >= 0.000001) percentStr = ratio.toFixed(6) + '%';
-                    else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
-                    else percentStr = '0%';
+              {(() => {
+                // Use marketCap from trade object (passed from ranking) or from stockPrice API
+                const marketCap = (trade as any).marketCap || stockPrice?.marketCap;
+                if (marketCap && marketCap > 0) {
+                  const ratio = (trade.totalValue / marketCap) * 100;
+                  let percentStr;
+                  if (ratio >= 10) percentStr = Math.round(ratio) + '%';
+                  else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
+                  else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
+                  else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
+                  else if (ratio >= 0.0001) percentStr = ratio.toFixed(4) + '%';
+                  else if (ratio >= 0.00001) percentStr = ratio.toFixed(5) + '%';
+                  else if (ratio >= 0.000001) percentStr = ratio.toFixed(6) + '%';
+                  else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
+                  else percentStr = '0%';
 
-                    const prefix = language === 'ko' ? '시총대비 ' :
-                                  language === 'ja' ? '時価総額比 ' :
-                                  language === 'zh' ? '市值比 ' :
-                                  'Market cap ratio: ';
-                    return prefix + percentStr;
-                  })()}
-                </div>
-              )}
+                  const prefix = language === 'ko' ? '시총대비 ' :
+                                language === 'ja' ? '時価総額比 ' :
+                                language === 'zh' ? '市值比 ' :
+                                'Market cap ratio: ';
+                  return (
+                    <div className="text-[10px] text-amber-400 font-mono mt-1 font-bold">
+                      {prefix + percentStr}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
 

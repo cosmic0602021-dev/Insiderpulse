@@ -61,8 +61,8 @@ export default function LiveTrading() {
     if (filterType === 'core') {
       return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
     }
-    // For 'all', don't specify transactionTypes to get everything
-    return undefined;
+    // For 'all', send 'ALL' to get everything
+    return ['ALL'];
   };
 
   // Load watchlist from localStorage
@@ -357,6 +357,11 @@ export default function LiveTrading() {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] text-white relative">
+      {/* 🚨 ABSOLUTE TEST MARKER */}
+      <div style={{position: 'fixed', top: 0, left: 0, zIndex: 99999, background: 'red', color: 'white', padding: '20px', fontSize: '24px', width: '100%'}}>
+        ✅ REACT IS RENDERING! {new Date().toLocaleTimeString()}
+      </div>
+
       {/* Stripe Mesh Gradient Background */}
       <StripeMeshGradient variant="blue" opacity={0.3} animate={true} />
 
@@ -419,6 +424,13 @@ export default function LiveTrading() {
                 <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
               </Badge>
             </div>
+          </div>
+
+          {/* 🚨 TEST MARKER - If you see this, code is updated! */}
+          <div className="w-full py-4 text-center">
+            <h2 className="text-4xl font-bold text-red-500 animate-pulse">
+              ⚠️ 새 버전 로드됨! 2025-11-26 15:26 ⚠️
+            </h2>
           </div>
 
           {/* Search Bar - Premium glass style */}

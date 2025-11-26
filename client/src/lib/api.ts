@@ -179,7 +179,7 @@ class ApiClient {
       params.append('sortBy', sortBy);
     }
     if (transactionTypes && transactionTypes.length > 0) {
-      transactionTypes.forEach(type => params.append('transactionTypes', type));
+      params.append('transactionTypes', transactionTypes.join(','));
     }
 
     const url = `/trades?${params.toString()}`;

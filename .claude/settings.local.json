@@ -147,7 +147,8 @@
       "Bash(date:*)",
       "Bash(then echo '✅ Server ready ($i seconds)' curl -s http://localhost:5000/api/health)",
       "Bash(timeout 180 node:*)",
-      "Bash(then echo \"✅ 서버 준비 완료 ($i초)\")"
+      "Bash(then echo \"✅ 서버 준비 완료 ($i초)\")",
+      "Bash(then echo \"✅ 서버 재시작 완료 ($i초)\")"
     ],
     "deny": [],
     "ask": []

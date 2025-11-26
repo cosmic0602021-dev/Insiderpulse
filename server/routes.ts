@@ -2111,9 +2111,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Transaction type filtering - defaults to pure buy/sell only
       // This filters out grants, option exercises, awards, etc.
       const transactionFilter = req.query.transactionTypes as string;
-      const transactionTypes = transactionFilter
-        ? transactionFilter.split(',')
-        : ['BUY', 'SELL']; // Default: pure buy/sell only (schema-valid values)
+      let transactionTypes: string[] | undefined;
+      if (transactionFilter) {
+        // If 'ALL' is specified, don't filter by transaction type
+        if (transactionFilter.toUpperCase() === 'ALL') {
+          transactionTypes = undefined;
+        } else {
+          transactionTypes = transactionFilter.split(',');
+        }
+      } else {
+        // Default: pure buy/sell only (schema-valid values)
+        transactionTypes = ['BUY', 'SELL'];
+      }
 
       // Ticker filter
       const ticker = req.query.ticker as string;

@@ -63,6 +63,7 @@ export default function LiveTradingTerminal() {
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadedCount, setLoadedCount] = useState(100);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].live;
@@ -71,15 +72,31 @@ export default function LiveTradingTerminal() {
 
   const isPro = accessLevel?.hasRealtimeAccess || false;
 
+  // Helper: Map transaction filter to transaction types
+  const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
+    if (filterType === 'core') {
+      return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
+    }
+    return ['ALL']; // 'ALL' means no filtering (show all)
+  };
+
   // Fetch trades with access level
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
       limit: loadedCount,
       offset: 0,
-      sortBy: 'createdAt'
+      sortBy: 'createdAt',
+      transactionTypes: getTransactionTypes(transactionTypeFilter)
     }),
     queryFn: async () => {
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, undefined, undefined, 'createdAt');
+      const response = await apiClient.getInsiderTradesWithAccess(
+        loadedCount,
+        0,
+        undefined,
+        undefined,
+        'createdAt',
+        getTransactionTypes(transactionTypeFilter)
+      );
       if (response.accessLevel) {
         setAccessLevel(response.accessLevel);
       }
@@ -248,6 +265,30 @@ export default function LiveTradingTerminal() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* 🔥 Transaction Type Filter - Core vs All */}
+        <div className="flex bg-amber-500/10 border-2 border-amber-500 p-3 gap-3">
+          <button
+            onClick={() => setTransactionTypeFilter('core')}
+            className={`flex-1 px-4 py-2 text-[10px] uppercase tracking-wider font-medium transition-all ${
+              transactionTypeFilter === 'core'
+                ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/50'
+                : 'bg-[#0a0a0a] text-neutral-600 border border-neutral-800 hover:text-neutral-400'
+            }`}
+          >
+            ⚡ 핵심 거래만 (P/S)
+          </button>
+          <button
+            onClick={() => setTransactionTypeFilter('all')}
+            className={`flex-1 px-4 py-2 text-[10px] uppercase tracking-wider font-medium transition-all ${
+              transactionTypeFilter === 'all'
+                ? 'bg-amber-900/30 text-amber-400 border border-amber-500/50'
+                : 'bg-[#0a0a0a] text-neutral-600 border border-neutral-800 hover:text-neutral-400'
+            }`}
+          >
+            📊 전체 거래 (M/A/G 포함)
+          </button>
         </div>
       </div>
 
