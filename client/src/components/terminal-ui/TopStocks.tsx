@@ -41,6 +41,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
         filingDate: buyer.date || new Date().toISOString(),
         priceChange: buyer.priceChange,
         currentPrice: stock.currentPrice,
+        marketCap: stock.marketCap,
         isVerified: true,
         secFilingUrl: buyer.secFilingUrl,
         accessionNumber: buyer.accessionNumber,
@@ -117,6 +118,27 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                          <span className="text-neutral-600 uppercase">{t.totalVol}</span>
                          <span className="text-emerald-600 font-mono">{formatNumber(stock.totalBuyAmount)}</span>
                      </div>
+                     {stock.marketCap && stock.marketCap > 0 && (
+                       <div className="flex justify-between text-xs">
+                         <span className="text-neutral-600 uppercase">{t.marketCapRatio}</span>
+                         <span className="text-amber-400 font-mono font-bold">
+                           {(() => {
+                             const ratio = (stock.totalBuyAmount / stock.marketCap) * 100;
+                             let ratioStr;
+                             if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                             else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                             else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                             else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                             else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                             else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                             else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                             else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                             else ratioStr = '0%';
+                             return ratioStr;
+                           })()}
+                         </span>
+                       </div>
+                     )}
                 </div>
             </div>
 

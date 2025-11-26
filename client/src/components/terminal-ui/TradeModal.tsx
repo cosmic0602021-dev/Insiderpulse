@@ -190,6 +190,27 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                                     <div className="text-xs md:text-sm font-bold">{formatPercent(trade.priceChange)}</div>
                                 </div>
                             </div>
+                            {trade.marketCap && trade.marketCap > 0 && (
+                              <div className="bg-neutral-900/30 border border-neutral-800 p-3 col-span-2">
+                                <div className="text-[10px] text-neutral-600 uppercase mb-1">{lang === 'ko' ? '시총대비' : 'vs Market Cap'}</div>
+                                <div className="text-sm md:text-lg font-mono text-amber-400 font-bold">
+                                  {(() => {
+                                    const ratio = (trade.value / trade.marketCap) * 100;
+                                    let ratioStr;
+                                    if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                                    else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                                    else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                                    else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                                    else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                                    else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                                    else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                                    else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                                    else ratioStr = '0%';
+                                    return ratioStr;
+                                  })()}
+                                </div>
+                              </div>
+                            )}
                         </div>
                     </div>
 

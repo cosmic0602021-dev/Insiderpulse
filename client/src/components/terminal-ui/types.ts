@@ -57,6 +57,7 @@ export interface StockRecommendation {
   currentPrice: number;
   priceChange: number;
   totalBuyAmount: number;
+  marketCap?: number;
   lastTradeDate: string;
   buyers: Array<{
     name: string;

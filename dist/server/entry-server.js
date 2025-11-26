@@ -5513,6 +5513,7 @@ const EN = {
     avgPrice: "Insider Avg Price",
     curPrice: "Cur Price",
     totalVol: "Total Vol",
+    marketCapRatio: "vs Market Cap",
     buyPrice: "Buy Price",
     shareCount: "Share Count",
     totalAmount: "Total Amount",
@@ -5775,6 +5776,7 @@ const KO = {
     avgPrice: "내부자 평균 매수가",
     curPrice: "현재가",
     totalVol: "총 매수액",
+    marketCapRatio: "시총대비",
     buyPrice: "내부자 매수가",
     shareCount: "매수 주식 수",
     totalAmount: "총 매수액",
@@ -10647,6 +10649,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
       filingDate: buyer.date || (/* @__PURE__ */ new Date()).toISOString(),
       priceChange: buyer.priceChange,
       currentPrice: stock.currentPrice,
+      marketCap: stock.marketCap,
       isVerified: true,
       secFilingUrl: buyer.secFilingUrl,
       accessionNumber: buyer.accessionNumber,
@@ -10724,6 +10727,23 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
           /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.totalVol }),
           /* @__PURE__ */ jsx("span", { className: "text-emerald-600 font-mono", children: formatNumber(stock.totalBuyAmount) })
+        ] }),
+        stock.marketCap && stock.marketCap > 0 && /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-xs", children: [
+          /* @__PURE__ */ jsx("span", { className: "text-neutral-600 uppercase", children: t.marketCapRatio }),
+          /* @__PURE__ */ jsx("span", { className: "text-purple-600 font-mono font-bold", children: (() => {
+            const ratio = stock.totalBuyAmount / stock.marketCap * 100;
+            let ratioStr;
+            if (ratio >= 10) ratioStr = Math.round(ratio) + "%";
+            else if (ratio >= 1) ratioStr = ratio.toFixed(1) + "%";
+            else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + "%";
+            else if (ratio >= 1e-3) ratioStr = ratio.toFixed(3) + "%";
+            else if (ratio >= 1e-4) ratioStr = ratio.toFixed(4) + "%";
+            else if (ratio >= 1e-5) ratioStr = ratio.toFixed(5) + "%";
+            else if (ratio >= 1e-6) ratioStr = ratio.toFixed(6) + "%";
+            else if (ratio > 0) ratioStr = ratio.toExponential(2) + "%";
+            else ratioStr = "0%";
+            return ratioStr;
+          })() })
         ] })
       ] })
     ] }),

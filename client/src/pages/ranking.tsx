@@ -621,7 +621,7 @@ export default function Ranking() {
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
                     {/* Market cap ratio display */}
                     {item.marketCap && item.marketCap > 0 && (
-                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                      <p className="text-xs text-amber-400 font-bold mt-0.5">
                         {(() => {
                           const ratio = (item.netBuying / item.marketCap) * 100;
                           let ratioStr;
