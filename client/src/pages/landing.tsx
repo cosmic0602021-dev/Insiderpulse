@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 import { ArrowRight, Terminal, FileText, Hash, ShieldCheck, Building2, TrendingUp, TrendingDown } from "lucide-react";
+import { LandingDisclaimerModal } from "@/components/landing-disclaimer-modal";
 import {
   AreaChart,
   Area,
@@ -344,6 +345,7 @@ export default function LandingPage() {
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
   // Redirect authenticated users to trades page
   useEffect(() => {
@@ -367,7 +369,18 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [components.length]);
 
+  // Check if disclaimer was already accepted
   const handleEnter = () => {
+    const hasAccepted = localStorage.getItem('disclaimer-accepted');
+    if (hasAccepted) {
+      navigate('/trades');
+    } else {
+      setShowDisclaimer(true);
+    }
+  };
+
+  const handleDisclaimerAccept = () => {
+    setShowDisclaimer(false);
     navigate('/trades');
   };
 
@@ -442,11 +455,19 @@ export default function LandingPage() {
         <button
           onClick={handleEnter}
           className="mt-12 group flex items-center gap-3 text-neutral-500 hover:text-emerald-500 transition-all duration-300"
+          data-testid="button-initialize-system"
         >
           <span className="text-xs font-mono tracking-[0.2em] uppercase border-b border-transparent group-hover:border-emerald-500/50 pb-1">Initialize_System</span>
           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
         </button>
       </div>
+
+      {/* Disclaimer Modal - Shows after Initialize_System button click */}
+      <LandingDisclaimerModal 
+        open={showDisclaimer} 
+        onAccept={handleDisclaimerAccept}
+        onClose={() => setShowDisclaimer(false)}
+      />
     </div>
   );
 }
