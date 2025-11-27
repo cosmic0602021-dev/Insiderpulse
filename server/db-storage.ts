@@ -36,7 +36,8 @@ export class DatabaseStorage implements IStorage {
     sortBy: 'createdAt' | 'filedDate' = 'filedDate',
     transactionTypes?: string[],
     filterBy?: 'createdAt' | 'filedDate',
-    ticker?: string
+    ticker?: string,
+    includeDerivatives = false  // 새 파라미터: false = 핵심거래만 (Table 1), true = 전체거래 (Table 1 + 2)
   ): Promise<InsiderTrade[]> {
     const conditions = [];
 
@@ -47,6 +48,11 @@ export class DatabaseStorage implements IStorage {
     // Filter by ticker if provided
     if (ticker) {
       conditions.push(eq(insiderTrades.ticker, ticker.toUpperCase()));
+    }
+
+    // Filter derivatives: 핵심거래는 Table 1만, 전체거래는 Table 1 + Table 2
+    if (!includeDerivatives) {
+      conditions.push(eq(insiderTrades.isDerivative, false));
     }
 
     // Use filterBy if provided, otherwise default to sortBy for backward compatibility

@@ -12,6 +12,7 @@ import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLocation } from 'wouter';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { CurrencySelector } from '@/components/currency-selector';
+import { TransactionTypeFilter } from '@/components/transaction-type-filter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
@@ -244,51 +245,41 @@ export default function LiveTradingTerminal() {
               data-testid="input-search"
             />
           </div>
-          <div className="flex bg-[#0a0a0a] border border-neutral-800 p-1 gap-1 w-full md:w-auto overflow-x-auto">
-            {[
-              { key: 'All', label: t.filter.all },
-              { key: 'Buy', label: t.filter.buy },
-              { key: 'Sell', label: t.filter.sell }
-            ].map((f) => (
-              <button 
-                key={f.key}
-                onClick={() => setFilter(f.key as any)}
-                className={`px-4 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all whitespace-nowrap flex-1 md:flex-none ${
-                  (filter === f.key) && f.key === 'All' ? 'bg-neutral-800 text-white' :
-                  (filter === f.key) && f.key === 'Buy' ? 'bg-emerald-900/20 text-emerald-500 border border-emerald-900/30' :
-                  (filter === f.key) && f.key === 'Sell' ? 'bg-rose-900/20 text-rose-500 border border-rose-900/30' :
-                  'text-neutral-600 hover:text-neutral-400'
-                }`}
-                data-testid={`button-filter-${f.key.toLowerCase()}`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* Unified Filter Bar - All/Buy/Sell + Core/All Trades */}
+          <div className="w-full flex justify-center">
+            <div className="max-w-3xl w-full flex flex-col md:flex-row gap-3 bg-neutral-900/50 border border-neutral-800 p-3 rounded-lg">
+            {/* Left: Trade Type Filter (All/Buy/Sell) */}
+            <div className="flex bg-[#0a0a0a] border border-neutral-800 p-1 gap-1 flex-1">
+              {[
+                { key: 'All', label: t.filter.all },
+                { key: 'Buy', label: t.filter.buy },
+                { key: 'Sell', label: t.filter.sell }
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key as any)}
+                  className={`flex-1 px-3 py-2 text-[10px] uppercase tracking-wider font-medium transition-all rounded ${
+                    (filter === f.key) && f.key === 'All' ? 'bg-neutral-800 text-white' :
+                    (filter === f.key) && f.key === 'Buy' ? 'bg-emerald-900/20 text-emerald-500 border border-emerald-900/30' :
+                    (filter === f.key) && f.key === 'Sell' ? 'bg-rose-900/20 text-rose-500 border border-rose-900/30' :
+                    'text-neutral-600 hover:text-neutral-400'
+                  }`}
+                  data-testid={`button-filter-${f.key.toLowerCase()}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
-        {/* 🔥 Transaction Type Filter - Core vs All */}
-        <div className="flex bg-amber-500/10 border-2 border-amber-500 p-3 gap-3">
-          <button
-            onClick={() => setTransactionTypeFilter('core')}
-            className={`flex-1 px-4 py-2 text-[10px] uppercase tracking-wider font-medium transition-all ${
-              transactionTypeFilter === 'core'
-                ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/50'
-                : 'bg-[#0a0a0a] text-neutral-600 border border-neutral-800 hover:text-neutral-400'
-            }`}
-          >
-            ⚡ 핵심 거래만 (P/S)
-          </button>
-          <button
-            onClick={() => setTransactionTypeFilter('all')}
-            className={`flex-1 px-4 py-2 text-[10px] uppercase tracking-wider font-medium transition-all ${
-              transactionTypeFilter === 'all'
-                ? 'bg-amber-900/30 text-amber-400 border border-amber-500/50'
-                : 'bg-[#0a0a0a] text-neutral-600 border border-neutral-800 hover:text-neutral-400'
-            }`}
-          >
-            📊 전체 거래 (M/A/G 포함)
-          </button>
+            {/* Right: Transaction Detail Filter (Core/All) */}
+            <div className="flex-1">
+              <TransactionTypeFilter
+                value={transactionTypeFilter}
+                onChange={setTransactionTypeFilter}
+              />
+            </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -528,7 +519,17 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
 
       {/* Market Cap Ratio (시총대비) - 별도 컬럼 */}
       <div className="flex items-center justify-end">
-        {trade.marketCap && trade.marketCap > 0 ? (
+        {(() => {
+          // Debug: Log missing marketCap
+          if (!trade.marketCap || trade.marketCap === 0) {
+            console.log(`⚠️ Missing marketCap for ${trade.ticker}:`, {
+              ticker: trade.ticker,
+              marketCap: trade.marketCap,
+              value: trade.value
+            });
+          }
+          return trade.marketCap && trade.marketCap > 0;
+        })() ? (
           <span className="text-neutral-300 font-mono text-[11px]">
             {(() => {
               const ratio = (trade.value / trade.marketCap) * 100;

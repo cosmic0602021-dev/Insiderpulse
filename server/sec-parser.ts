@@ -13,6 +13,10 @@ export interface ParsedTrade {
   filedDate: Date;
   accessionNumber: string;
   secFilingUrl: string;
+  // Derivative securities (Table 2) fields
+  isDerivative?: boolean;
+  underlyingShares?: number;
+  derivativeType?: string;
 }
 
 export async function parseSecForm4(xmlData: string, accessionNumber: string): Promise<ParsedTrade[]> {
@@ -76,17 +80,23 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
   const relationship = reportingOwner.reportingOwnerRelationship?.[0] || {};
   const traderTitle = determineTraderTitle(relationship);
 
-  // CRITICAL: Only process nonDerivativeTable for common stock transactions (Table I)
-  // This includes BOTH Direct (D) and Indirect (I) ownership transactions
+  // Process BOTH Table 1 (Non-Derivative) and Table 2 (Derivative Securities)
+  // Table 1: Common stock direct transactions
+  // Table 2: Stock options, warrants, convertible bonds, etc.
   const nonDerivativeTable = doc.nonDerivativeTable?.[0];
-  const transactions = nonDerivativeTable?.nonDerivativeTransaction || [];
+  const nonDerivTransactions = nonDerivativeTable?.nonDerivativeTransaction || [];
 
-  if (transactions.length === 0) {
-    console.log(`⚠️ No non-derivative transactions found for ${accessionNumber}`);
+  const derivativeTable = doc.derivativeTable?.[0];
+  const derivTransactions = derivativeTable?.derivativeTransaction || [];
+
+  if (nonDerivTransactions.length === 0 && derivTransactions.length === 0) {
+    console.log(`⚠️ No transactions found (neither Table 1 nor Table 2) for ${accessionNumber}`);
     return [];
   }
 
-  // 🔧 NEW: Collect ALL valid transactions (Direct + Indirect) instead of just the first one
+  console.log(`   📊 Found ${nonDerivTransactions.length} non-derivative transactions (Table 1) and ${derivTransactions.length} derivative transactions (Table 2)`);
+
+  // 🔧 NEW: Collect ALL valid transactions (Direct + Indirect + Derivatives) instead of just the first one
   const validTransactions: Array<{
     shares: number;
     pricePerShare: number;
@@ -94,9 +104,14 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
     transactionCode: string;
     transactionDate: string;
     ownershipNature: string; // Direct or Indirect
+    isDerivative: boolean; // Table 2 거래 여부
+    underlyingShares?: number; // 파생상품의 underlying shares
+    derivativeType?: string; // 파생상품 종류
   }> = [];
 
-  for (const transaction of transactions) {
+  // 1. Process Table 1 (Non-Derivative Securities)
+  console.log(`   📋 Processing Table 1 (Non-Derivative)...`);
+  for (const transaction of nonDerivTransactions) {
     const transactionCoding = transaction.transactionCoding?.[0] || {};
     const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
 
@@ -159,7 +174,79 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
       totalValue,
       transactionCode,
       transactionDate: transactionDate || new Date().toISOString(),
-      ownershipNature
+      ownershipNature,
+      isDerivative: false, // Table 1 (Non-Derivative)
+      underlyingShares: undefined,
+      derivativeType: undefined
+    });
+  }
+
+  // 2. Process Table 2 (Derivative Securities - Options, Warrants, etc.)
+  console.log(`   📋 Processing Table 2 (Derivative)...`);
+  for (const transaction of derivTransactions) {
+    const transactionCoding = transaction.transactionCoding?.[0] || {};
+    const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
+
+    console.log(`   🔍 Derivative transaction code: ${transactionCode}`);
+
+    // Process same transaction codes as Table 1
+    const validCodes = ['P', 'S', 'M', 'A', 'U'];
+    if (!validCodes.includes(transactionCode)) {
+      console.log(`   ⏭️ Skipping derivative transaction with code '${transactionCode}'`);
+      continue;
+    }
+
+    // Get underlying security information
+    const underlyingSecurity = transaction.underlyingSecurity?.[0] || {};
+    const underlyingShares = parseFloat(
+      underlyingSecurity.underlyingSecurityShares?.[0]?.value?.[0] ||
+      underlyingSecurity.underlyingSecurityShares?.[0] || 0
+    );
+
+    // Get derivative type (e.g., "Stock Option", "Warrant", etc.)
+    const securityTitle = transaction.securityTitle?.[0];
+    const derivativeType =
+      securityTitle?.value?.[0] ||
+      securityTitle ||
+      'Unknown Derivative';
+
+    // Get transaction date
+    const transactionDate = transaction.transactionDate?.[0]?.value?.[0] || transaction.transactionDate?.[0];
+
+    // For derivatives, we use underlying shares as the "shares" count
+    // Price is usually $0 for options, so we calculate based on underlying value
+    const transactionAmounts = transaction.transactionAmounts?.[0] || {};
+    let pricePerShare = parseFloat(
+      transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] ||
+      transactionAmounts.transactionPricePerShare?.[0] || 0
+    );
+
+    // Validate underlying shares
+    if (isNaN(underlyingShares) || underlyingShares <= 0) {
+      console.log(`   ⚠️ Invalid underlying shares: ${underlyingShares}`);
+      continue;
+    }
+
+    // For derivatives with $0 price (options, grants), use $1 default for calculations
+    if (isNaN(pricePerShare) || pricePerShare <= 0) {
+      pricePerShare = 1.0;
+      console.log(`   🔄 Derivative with $0 price - using default $1`);
+    }
+
+    const totalValue = underlyingShares * pricePerShare;
+
+    console.log(`   ✅ Valid derivative: ${transactionCode} - ${derivativeType} - ${underlyingShares} underlying shares at $${pricePerShare} = $${totalValue.toLocaleString()}`);
+
+    validTransactions.push({
+      shares: Math.round(underlyingShares), // Use underlying shares
+      pricePerShare,
+      totalValue,
+      transactionCode,
+      transactionDate: transactionDate || new Date().toISOString(),
+      ownershipNature: 'D', // Derivatives are typically direct
+      isDerivative: true, // Table 2 (Derivative)
+      underlyingShares: Math.round(underlyingShares),
+      derivativeType
     });
   }
 
@@ -179,8 +266,19 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
   const tradeType = (firstTransaction.transactionCode === 'P' || firstTransaction.transactionCode === 'M' || firstTransaction.transactionCode === 'A') ? 'BUY' as const :
             (firstTransaction.transactionCode === 'S') ? 'SELL' as const : 'TRANSFER' as const;
 
+  // Check if any/all transactions are derivatives
+  const hasDerivatives = validTransactions.some(t => t.isDerivative);
+  const allDerivatives = validTransactions.every(t => t.isDerivative);
+  const derivativeCount = validTransactions.filter(t => t.isDerivative).length;
+  const nonDerivativeCount = validTransactions.filter(t => !t.isDerivative).length;
+
   console.log(`   📊 AGGREGATED TOTAL: ${totalShares} shares at avg $${avgPricePerShare.toFixed(2)} = $${totalValue.toLocaleString()}`);
-  console.log(`   📝 Breakdown: ${validTransactions.length} transaction(s) combined (Direct + Indirect)`);
+  console.log(`   📝 Breakdown: ${validTransactions.length} transaction(s) combined (${nonDerivativeCount} Table 1, ${derivativeCount} Table 2)`);
+
+  // Calculate derivative-specific aggregates
+  const derivativeTransactions = validTransactions.filter(t => t.isDerivative);
+  const totalUnderlyingShares = derivativeTransactions.reduce((sum, t) => sum + (t.underlyingShares || 0), 0);
+  const derivativeTypes = [...new Set(derivativeTransactions.map(t => t.derivativeType).filter(Boolean))].join(', ');
 
   const aggregatedTrade: ParsedTrade = {
     companyName,
@@ -194,7 +292,11 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
     ownershipPercentage: 0, // Will be calculated later if needed
     filedDate: new Date(firstTransaction.transactionDate),
     accessionNumber,
-    secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`
+    secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`,
+    // Derivative fields: only set if ALL transactions are derivatives
+    isDerivative: allDerivatives,
+    underlyingShares: hasDerivatives ? totalUnderlyingShares : undefined,
+    derivativeType: hasDerivatives ? (derivativeTypes || undefined) : undefined
   };
 
   return [aggregatedTrade];

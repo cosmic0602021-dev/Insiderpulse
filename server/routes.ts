@@ -2112,16 +2112,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This filters out grants, option exercises, awards, etc.
       const transactionFilter = req.query.transactionTypes as string;
       let transactionTypes: string[] | undefined;
+      let includeDerivatives = false;
+
       if (transactionFilter) {
         // If 'ALL' is specified, don't filter by transaction type
         if (transactionFilter.toUpperCase() === 'ALL') {
-          transactionTypes = undefined;
+          transactionTypes = undefined;  // 모든 transaction code
+          includeDerivatives = true;     // Table 1 + Table 2 (전체거래)
         } else {
           transactionTypes = transactionFilter.split(',');
+          includeDerivatives = false;    // Table 1만 (핵심거래)
         }
       } else {
         // Default: pure buy/sell only (schema-valid values)
-        transactionTypes = ['BUY', 'SELL'];
+        transactionTypes = ['BUY', 'SELL'];  // 핵심거래 (P/S만)
+        includeDerivatives = false;          // Table 1만
       }
 
       // Ticker filter
@@ -2163,7 +2168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
 
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker, includeDerivatives);
 
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
@@ -2212,6 +2217,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const marketCap = priceData?.marketCap;
         const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent: number | undefined = undefined;
+
+        // Debug: Log missing marketCap
+        if (!marketCap || marketCap === 0) {
+          console.log(`⚠️ Missing marketCap for ${trade.ticker}: marketCap=${marketCap}`);
+        }
 
         if (currentPrice && trade.pricePerShare) {
           priceChangePercent = ((currentPrice - trade.pricePerShare) / trade.pricePerShare) * 100;
@@ -4053,7 +4063,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
 
-      const trades = await storage.getInsiderTrades(1000, 0, false, fromDate);
+      // Ranking은 핵심거래만 집계 (Table 1, P/S만) - 실제 돈을 쓴 거래만
+      const trades = await storage.getInsiderTrades(1000, 0, false, fromDate, undefined, 'filedDate', undefined, undefined, undefined, false);
       
       // Group trades by ticker and calculate ranking metrics
       const tickerMetrics = new Map();
@@ -4130,7 +4141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             stockPriceMap.set(price.ticker, {
               price: Number(price.currentPrice),
               lastUpdated: price.lastUpdated || new Date(),
-              marketCap: price.marketCap || null
+              marketCap: price.marketCap ? Number(price.marketCap) : null
             });
           }
         });
@@ -4337,7 +4348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
-          marketCap: marketCap || null, // Add market cap
+          marketCap: marketCap ? Number(marketCap) : null, // Add market cap
           // enhancedTrade 객체 추가 (frontend compatibility)
           enhancedTrade: {
             currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
@@ -4815,6 +4826,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Failed to start massive data collection:', error);
       res.status(500).json({ error: 'Failed to start massive data collection' });
+    }
+  });
+
+  // Force MarketCap update for all tickers
+  app.post('/api/admin/force-marketcap-update', protectAdminEndpoint, async (req, res) => {
+    try {
+      console.log('🔄 Starting forced marketCap update...');
+
+      const trades = await storage.getInsiderTrades(2000, 0, false);
+      const uniqueTickers = [...new Set(trades.map(t => t.ticker).filter(Boolean))];
+
+      let updated = 0, failed = 0, skipped = 0;
+
+      for (const ticker of uniqueTickers) {
+        try {
+          const priceData = await stockPriceService.getStockPrice(ticker as string);
+
+          if (priceData && priceData.marketCap && priceData.marketCap > 0) {
+            updated++;
+            const marketCapB = (priceData.marketCap / 1e9).toFixed(2);
+            console.log(`✅ ${ticker}: $${marketCapB}B (market cap: ${priceData.marketCap})`);
+          } else {
+            skipped++;
+            console.log(`⚠️ ${ticker}: No market cap data available`);
+          }
+
+          // Rate limiting: 12 seconds between requests for Polygon.io free tier
+          await new Promise(resolve => setTimeout(resolve, 12000));
+        } catch (error: any) {
+          failed++;
+          console.error(`❌ ${ticker} failed:`, error.message);
+        }
+      }
+
+      console.log(`📈 MarketCap update complete: ${updated} updated, ${skipped} skipped, ${failed} failed`);
+
+      res.json({
+        success: true,
+        updated,
+        skipped,
+        failed,
+        total: uniqueTickers.length,
+        message: `Updated ${updated}/${uniqueTickers.length} tickers`
+      });
+    } catch (error) {
+      console.error('❌ Force MarketCap update failed:', error);
+      res.status(500).json({ error: 'MarketCap update failed' });
     }
   });
 
@@ -5750,8 +5808,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error('⚠️ Failed to initialize exchange rate service:', err);
   });
 
+  // Debug MarketCap status on startup
+  debugMarketCapStatus().catch(err => {
+    console.error('⚠️ Failed to debug market cap status:', err);
+  });
+
   console.log('✅ API routes registered with WebSocket support, enhanced data collection, and push notifications');
   return httpServer;
+}
+
+// Debug function to check MarketCap coverage
+async function debugMarketCapStatus() {
+  try {
+    console.log('\n🔍 ===== MarketCap Debug Info =====');
+
+    const { sql } = await import('drizzle-orm');
+
+    const result = await db.execute(sql`
+      SELECT
+        COUNT(*) as total,
+        COUNT(CASE WHEN market_cap IS NOT NULL THEN 1 END) as with_marketcap,
+        COUNT(CASE WHEN market_cap > 0 THEN 1 END) as positive_marketcap
+      FROM stock_prices
+    `);
+
+    const stats = result.rows[0];
+    console.log('📊 Stock Prices Table Coverage:');
+    console.log(`   Total entries: ${stats.total}`);
+    console.log(`   With marketCap: ${stats.with_marketcap} (${stats.total > 0 ? ((stats.with_marketcap / stats.total) * 100).toFixed(1) : 0}%)`);
+    console.log(`   Positive marketCap: ${stats.positive_marketcap} (${stats.total > 0 ? ((stats.positive_marketcap / stats.total) * 100).toFixed(1) : 0}%)`);
+    console.log('=====================================\n');
+  } catch (error) {
+    console.error('❌ MarketCap debug failed:', error);
+  }
 }
 
 // Function to broadcast updates to all connected clients

@@ -447,21 +447,21 @@ export default function Ranking() {
           <Card
             key={item.ticker}
             ref={el => cardRefs.current[index] = el}
-            className={`hover-elevate cursor-pointer relative ${isLocked ? 'overflow-hidden' : ''}`}
+            className={`hover-elevate cursor-pointer relative ${isLocked ? 'overflow-hidden h-auto' : ''}`}
             data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
             onClick={() => handleStockClick(item, index)}
           >
             {/* Lock Overlay for Top 3 (Free Users Only) */}
             {isLocked && (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-                <div className="text-center p-6 space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 mb-2">
-                    <Lock className="w-8 h-8 text-amber-500" />
+              <div className="p-4">
+                <div className="text-center p-3 space-y-1.5 bg-black/85 backdrop-blur-md rounded-lg border border-amber-500/30 shadow-xl">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500/20 mb-0.5">
+                    <Lock className="w-7 h-7 text-amber-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-lg font-bold text-white">
                     {t('ranking.lockedTitle') || `Premium Feature: #${index + 1} Ranking`}
                   </h3>
-                  <p className="text-sm text-gray-300 max-w-xs">
+                  <p className="text-xs text-gray-300 max-w-xs">
                     {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns'}
                   </p>
                   <Button
@@ -469,7 +469,7 @@ export default function Ranking() {
                       e.stopPropagation();
                       setLocation('/premium-checkout');
                     }}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-6 py-2"
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-4 py-1.5 text-sm"
                   >
                     <Crown className="w-4 h-4 mr-2" />
                     {t('ranking.unlockButton') || 'Unlock Top Rankings'}
@@ -477,24 +477,27 @@ export default function Ranking() {
                 </div>
               </div>
             )}
-            {/* 공유 버튼 */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className="absolute top-2 right-2 z-10 hover:bg-muted/50"
-              onClick={(e) => {
-                e.stopPropagation(); // 카드 클릭 이벤트 방지
-                shareRankingCard(index);
-              }}
-            >
-              {sharedCardIndex === index ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Share2 className="h-4 w-4" />
-              )}
-            </Button>
+            {/* 공유 버튼 - only show if not locked */}
+            {!isLocked && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute top-2 right-2 z-10 hover:bg-muted/50"
+                onClick={(e) => {
+                  e.stopPropagation(); // 카드 클릭 이벤트 방지
+                  shareRankingCard(index);
+                }}
+              >
+                {sharedCardIndex === index ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
+              </Button>
+            )}
 
-            <CardContent className={`p-3 sm:p-6 relative ${isLocked ? 'blur-sm' : ''}`}>
+            {!isLocked && (
+            <CardContent className="p-3 sm:p-6 relative">
               {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
                 <img
@@ -864,6 +867,7 @@ export default function Ranking() {
                 </div>
               ) : null}
             </CardContent>
+            )}
           </Card>
         );
         })}

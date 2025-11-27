@@ -76,6 +76,10 @@ export const insiderTrades = pgTable("insider_trades", {
   marketPrice: real("market_price"), // Actual market price on filing date for comparison
   priceVariance: real("price_variance"), // Percentage difference between filed and market price
   secFilingUrl: text("sec_filing_url"), // Direct link to SEC filing for transparency
+  // Derivative securities (Table 2) fields
+  isDerivative: boolean("is_derivative").notNull().default(false), // Table 2 거래 여부
+  underlyingShares: bigint("underlying_shares", { mode: "number" }), // 파생상품의 underlying shares
+  derivativeType: varchar("derivative_type", { length: 100 }), // 파생상품 종류 (옵션, 워런트 등)
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   // Add index on accessionNumber for fast duplicate checking
