@@ -238,8 +238,8 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
           <div className="relative mb-8">
              {/* Restricted Overlay for Top 3 - Compact size matching inner box */}
              {!isPro && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                    <div className="max-w-sm w-full mx-4 bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 md:p-5 relative text-center shadow-2xl rounded-sm pointer-events-auto">
+                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[16rem] sm:max-w-sm md:max-w-md">
+                    <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2.5 sm:p-3 md:p-5 relative text-center shadow-2xl rounded-sm">
 
                         {/* Status Bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-neutral-800 rounded-t-sm overflow-hidden">
