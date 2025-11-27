@@ -14,7 +14,7 @@ const EN = {
   sidebar: {
     modules: 'Modules',
     live: 'Live Trading',
-    analysis: 'Recommended Stocks',
+    analysis: 'Top Insider Activity', // Changed from 'Recommended Stocks'
     config: 'Configuration',
     watched: 'Watched Assets',
     noData: 'NO_DATA_STREAM'
@@ -37,18 +37,18 @@ const EN = {
     noRecords: 'NO_RECORDS_FOUND'
   },
   top: {
-    header: 'Top Alpha Signals',
-    subHeader: 'High-Conviction Institutional Signals',
+    header: 'Top Insider Activity', // Changed from 'Top Alpha Signals'
+    subHeader: 'High-Volume Insider Transactions', // Changed from 'High-Conviction Institutional Signals'
     interval: 'Calculation Interval',
     restricted: 'Premium Access Required',
     securityLevel: 'INSTITUTIONAL GRADE DATA (Ranks 1-3)',
-    desc: 'Real-time alpha signals are reserved for INSIDER tier members.',
+    desc: 'Real-time data is reserved for INSIDER tier members.', // Changed from 'alpha signals'
     clearance: 'Institutional Access Required',
-    cta: 'Upgrade to Reveal Signals',
+    cta: 'Upgrade to Reveal Data', // Changed from 'Signals'
     aes: 'AES-256 ENCRYPTED',
     blind: 'BLIND_TRUST_MODE',
-    signal: 'Signal Strength',
-    strongBuy: 'Strong Buy',
+    signal: 'Activity Level', // Changed from 'Signal Strength'
+    strongBuy: 'High Buy Volume', // Changed from 'High Net Buying' for App Store compliance
     insiders: 'Insiders',
     institutional: 'Insider Purchases',
     avgPrice: 'Insider Avg Price',
@@ -78,16 +78,16 @@ const EN = {
     tradePrice: 'Trade Price',
     currentPrice: 'Current Price',
     relatedNews: 'Related News & Sentiment',
-    aiAnalysis: 'AI Analysis',
-    signal: 'Signal',
-    confidence: 'Confidence',
-    keyInsight: 'Key Insight',
-    priceTargets: 'Price Targets',
-    conservative: 'Conservative',
-    realistic: 'Realistic',
-    optimistic: 'Optimistic',
-    riskLevel: 'Risk Level',
-    timeHorizon: 'Time Horizon',
+    aiAnalysis: 'Data Summary', // Changed from 'AI Analysis'
+    signal: 'Activity Type', // Changed from 'Signal'
+    confidence: 'Data Quality', // Changed from 'Confidence'
+    keyInsight: 'Key Observation', // Changed from 'Key Insight'
+    priceTargets: 'Analyst Estimates (If Available)', // App Store compliance: external data only
+    conservative: 'Lower Estimate', // App Store compliance
+    realistic: 'Mid Estimate', // App Store compliance
+    optimistic: 'Upper Estimate', // App Store compliance
+    riskLevel: 'Volatility Level', // Changed from 'Risk Level'
+    timeHorizon: 'Observation Period', // Changed from 'Time Horizon'
     sentimentAnalysis: 'Sentiment Analysis',
     positive: 'Positive',
     neutral: 'Neutral',
@@ -98,19 +98,19 @@ const EN = {
     showDetails: 'Show Details',
     hideDetails: 'Hide Details',
     expandNews: 'Expand News',
-    // AI Insights
-    insightCeoBuy: 'CEO-level purchase signals strong confidence in company direction.',
-    insightCeoSell: 'Executive sale may indicate portfolio rebalancing or personal financial planning.',
-    insightCfoBuy: 'CFO purchase suggests positive outlook on company financials and valuation.',
-    insightCfoSell: 'CFO transaction likely routine diversification given insider position.',
-    insightDirectorBuy: 'Board director accumulation indicates institutional confidence in growth trajectory.',
-    insightDirectorSell: 'Director sale appears to be scheduled disposition under 10b5-1 plan.',
-    insightLargeBuy: 'Large-scale insider purchase exceeding $1M demonstrates high conviction.',
-    insightLargeSell: 'Significant insider sale may reflect profit-taking at current valuations.',
-    insightMediumBuy: 'Substantial insider buying activity detected in recent filings.',
-    insightMediumSell: 'Moderate insider selling consistent with typical executive compensation patterns.',
-    insightSmallBuy: 'Insider accumulation pattern suggests positive internal sentiment.',
-    insightSmallSell: 'Routine insider transaction within normal trading parameters.',
+    // AI Observations (Factual only - NO investment advice)
+    insightCeoBuy: 'CEO purchased shares as disclosed in SEC Form 4 filing.',
+    insightCeoSell: 'CEO sold shares as disclosed in SEC Form 4 filing.',
+    insightCfoBuy: 'CFO purchased shares as reported to SEC.',
+    insightCfoSell: 'CFO sold shares as reported to SEC.',
+    insightDirectorBuy: 'Board director purchased shares as disclosed to SEC.',
+    insightDirectorSell: 'Board director sold shares as disclosed to SEC.',
+    insightLargeBuy: 'Large-scale insider purchase exceeding $1M reported to SEC.',
+    insightLargeSell: 'Significant insider sale reported to SEC.',
+    insightMediumBuy: 'Insider purchase activity detected in recent SEC filings.',
+    insightMediumSell: 'Insider sale activity detected in recent SEC filings.',
+    insightSmallBuy: 'Insider purchase transaction reported to SEC.',
+    insightSmallSell: 'Insider sale transaction reported to SEC.',
     // News items
     newsEarnings: 'Company reports strong quarterly earnings',
     newsProduct: 'New product line announced for Q2',
@@ -211,10 +211,9 @@ const EN = {
     Officer: 'Officer',
     Insider: 'Insider',
     Executive: 'Executive',
-    // Signals (Buy and Sell already defined above)
-    'Strong Buy': 'Strong Buy',
+    // Transaction types (App Store compliance - removed investment advice)
+    // 'Strong Buy' and 'Strong Sell' removed per compliance requirements
     'Hold': 'Hold',
-    'Strong Sell': 'Strong Sell',
     // Risk levels
     'Low': 'Low',
     'Medium': 'Medium',
@@ -245,17 +244,17 @@ const EN = {
     afterTrial7: '7 days free, then $112/year',
     features: [
       'Real-time insider trade alerts (no 48h delay)',
-      'Pure buy/sell signals only (no grants, options)',
-      'AI-powered trade analysis & predictions',
-      'Advanced pattern detection & signals',
+      'Pure buy/sell transactions only (no grants, options)',
+      'AI-powered transaction categorization & data summarization',
+      'Advanced pattern detection & data aggregation',
       'Executive trade tracking (CEO, CFO, etc.)',
       'Live data updates & push notifications',
       'Historical insider performance analytics',
-      'Exclusive market intelligence reports'
+      'Comprehensive market data reports'
     ],
     secure: 'Secure Payment & Auto-Renewal',
     secData: 'Real SEC Data',
-    secDesc: 'All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.',
+    secDesc: 'All data sourced directly from SEC filings. No fake data - only real, verified information.',
     terms: 'Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. Cancel anytime with one click.'
   },
   ranking: {
@@ -278,7 +277,7 @@ const KO = {
   sidebar: {
     modules: '모듈',
     live: '실시간 거래',
-    analysis: '추천 주식',
+    analysis: '내부자 활동 TOP', // Changed from '추천 주식'
     config: '설정',
     watched: '관심 종목',
     noData: '데이터 스트림 없음'
@@ -291,30 +290,30 @@ const KO = {
     query: '티커 또는 내부자 검색...',
     filter: { all: '전체', buy: '매수', sell: '매도' },
     table: { ticker: '티커', insider: '내부자', relation: '직위', action: '유형', price: '가격', volume: '거래량', value: '가치', impact: '시총대비', time: '시간' },
-    realtimeZone: '실시간 시그널 구역',
+    realtimeZone: '실시간 데이터 구역', // Changed from '시그널'
     encrypted: 'OUTSIDER 암호화됨',
     encryptedForOutsiders: 'OUTSIDER 암호화됨',
-    signalEncrypted: '시그널 암호화',
+    signalEncrypted: '데이터 암호화', // Changed from '시그널 암호화'
     encryptedMessage: 'OUTSIDER 사용자에게는 48시간 지연된 데이터만 보입니다.',
     upgradeAction: '실시간 데이터 잠금 해제',
     unlockRealtime: '실시간 데이터 잠금 해제',
     noRecords: '기록 없음'
   },
   top: {
-    header: '상위 알파 시그널',
-    subHeader: '기관급 고확신 매집 시그널',
+    header: '상위 내부자 활동', // Changed from '상위 알파 시그널'
+    subHeader: '대량 내부자 거래', // Changed from '기관급 고확신 매집 시그널'
     interval: '계산 간격',
     restricted: '프리미엄 액세스 필요',
     securityLevel: '기관급 데이터 (1~3위)',
-    desc: '실시간 알파 시그널은 INSIDER 등급 회원 전용입니다.',
+    desc: '실시간 데이터는 INSIDER 등급 회원 전용입니다.', // Changed from '알파 시그널'
     clearance: '기관 액세스 권한 필요',
-    cta: '시그널 잠금 해제',
+    cta: '데이터 잠금 해제', // Changed from '시그널 잠금 해제'
     aes: 'AES-256 암호화',
     blind: '블라인드 트러스트 모드',
-    signal: '시그널 강도',
-    strongBuy: '강력 매수',
+    signal: '활동 수준', // Changed from '시그널 강도'
+    strongBuy: '높은 매수 거래량', // App Store compliance: changed from '높은 순매수'
     insiders: '내부자',
-    institutional: '내부자 매수 내역',
+    institutional: '내부자 매수 활동', // Changed from '내부자 매수 내역'
     avgPrice: '내부자 평균 매수가',
     curPrice: '현재가',
     totalVol: '총 매수액',
@@ -342,16 +341,16 @@ const KO = {
     tradePrice: '거래 가격',
     currentPrice: '현재 가격',
     relatedNews: '관련 뉴스 & 감정',
-    aiAnalysis: 'AI 분석',
-    signal: '시그널',
-    confidence: '신뢰도',
-    keyInsight: '핵심 인사이트',
-    priceTargets: '목표 주가',
-    conservative: '보수적',
-    realistic: '현실적',
-    optimistic: '낙관적',
-    riskLevel: '위험 수준',
-    timeHorizon: '투자 기간',
+    aiAnalysis: '데이터 요약', // Changed from 'AI 분석'
+    signal: '활동 유형', // Changed from '시그널'
+    confidence: '데이터 품질', // Changed from '신뢰도'
+    keyInsight: '핵심 관찰', // Changed from '핵심 인사이트'
+    priceTargets: '애널리스트 전망치(존재 시)', // App Store compliance: external data only
+    conservative: '하단 전망치', // App Store compliance
+    realistic: '중간 전망치', // App Store compliance
+    optimistic: '상단 전망치', // App Store compliance
+    riskLevel: '변동성 수준', // Changed from '위험 수준'
+    timeHorizon: '관찰 기간', // Changed from '투자 기간'
     sentimentAnalysis: '감정 분석',
     positive: '긍정',
     neutral: '중립',
@@ -362,19 +361,19 @@ const KO = {
     showDetails: '자세히 보기',
     hideDetails: '접기',
     expandNews: '뉴스 펼쳐보기',
-    // AI Insights
-    insightCeoBuy: 'CEO급 매수로 회사 방향에 대한 강한 확신을 보여줍니다.',
-    insightCeoSell: '임원 매도는 포트폴리오 재조정 또는 개인 재무 계획을 나타낼 수 있습니다.',
-    insightCfoBuy: 'CFO 매수는 회사 재무 및 가치에 대한 긍정적 전망을 시사합니다.',
-    insightCfoSell: 'CFO 거래는 내부자 포지션에 따른 일상적 분산투자로 보입니다.',
-    insightDirectorBuy: '이사회 이사의 매집은 성장 궤도에 대한 기관 신뢰를 나타냅니다.',
-    insightDirectorSell: '이사 매도는 10b5-1 계획에 따른 예정된 처분으로 보입니다.',
-    insightLargeBuy: '100만 달러를 초과하는 대규모 내부자 매수는 높은 확신을 보여줍니다.',
-    insightLargeSell: '대규모 내부자 매도는 현재 가치에서의 차익 실현을 반영할 수 있습니다.',
-    insightMediumBuy: '최근 제출 서류에서 상당한 내부자 매수 활동이 감지되었습니다.',
-    insightMediumSell: '적당한 내부자 매도는 일반적인 임원 보상 패턴과 일치합니다.',
-    insightSmallBuy: '내부자 매집 패턴은 긍정적인 내부 심리를 시사합니다.',
-    insightSmallSell: '정상적인 거래 범위 내의 일상적인 내부자 거래입니다.',
+    // AI Observations (Factual only - NO investment advice) - App Store compliance
+    insightCeoBuy: 'SEC Form 4 공시에 CEO 주식 매수 거래가 기록되었습니다.',
+    insightCeoSell: 'SEC Form 4 공시에 CEO 주식 매도 거래가 기록되었습니다.',
+    insightCfoBuy: 'SEC 공시에 CFO 주식 매수 거래가 보고되었습니다.',
+    insightCfoSell: 'SEC 공시에 CFO 주식 매도 거래가 보고되었습니다.',
+    insightDirectorBuy: 'SEC 공시에 이사회 이사의 매수 활동이 기록되었습니다.',
+    insightDirectorSell: 'SEC 공시에 이사회 이사의 매도 활동이 기록되었습니다.',
+    insightLargeBuy: 'SEC 공시에 100만 달러를 초과하는 내부자 매수 거래가 보고되었습니다.',
+    insightLargeSell: 'SEC 공시에 대규모 내부자 매도 거래가 보고되었습니다.',
+    insightMediumBuy: '최근 SEC 제출 서류에서 내부자 매수 활동이 감지되었습니다.',
+    insightMediumSell: '최근 SEC 제출 서류에서 내부자 매도 활동이 감지되었습니다.',
+    insightSmallBuy: 'SEC에 내부자 매수 거래가 보고되었습니다.',
+    insightSmallSell: 'SEC에 내부자 매도 거래가 보고되었습니다.',
     // News items
     newsEarnings: '회사가 강한 분기 실적을 발표했습니다',
     newsProduct: 'Q2에 새로운 제품 라인 발표',
@@ -475,10 +474,9 @@ const KO = {
     Officer: '임원',
     Insider: '내부자',
     Executive: '경영진',
-    // Signals (Buy and Sell already defined above as 매수/매도)
-    'Strong Buy': '강력 매수',
+    // Transaction types (App Store compliance - removed investment advice)
+    // '강력 매수' and '강력 매도' removed per compliance requirements
     'Hold': '보유',
-    'Strong Sell': '강력 매도',
     // Risk levels
     'Low': '낮음',
     'Medium': '중간',
@@ -509,17 +507,17 @@ const KO = {
     afterTrial7: '7일 무료 체험 후 연 $112',
     features: [
       '실시간 내부자 거래 알림 (48시간 지연 없음)',
-      '순수 매수/매도 시그널만 제공 (스톡옵션 제외)',
-      'AI 기반 거래 분석 및 예측',
-      '고급 패턴 감지 및 시그널',
+      '순수 매수/매도 거래만 제공 (스톡옵션 제외)',
+      'AI 기반 거래 분류 및 데이터 요약',
+      '고급 패턴 감지 및 데이터 집계',
       '임원 거래 추적 (CEO, CFO 등)',
       '실시간 데이터 업데이트 및 푸시 알림',
       '과거 내부자 성과 분석',
-      '독점 시장 정보 보고서'
+      '포괄적인 시장 데이터 보고서'
     ],
     secure: '안전 결제 및 자동 갱신',
     secData: '실제 SEC 데이터',
-    secDesc: 'SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 정보만 제공.',
+    secDesc: 'SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 검증된 정보만 제공.',
     terms: '무료 체험 종료 후 요금이 자동으로 청구됩니다. 원하지 않을 경우 자동 결제 전에 구독을 취소하세요. 언제든지 클릭 한 번으로 취소할 수 있습니다.'
   },
   ranking: {
@@ -558,7 +556,7 @@ const JA = {
   sidebar: {
     ...EN.sidebar,
     live: 'ライブトレーディング',
-    analysis: 'おすすめ銘柄',
+    analysis: 'インサイダー活動トップ', // App Store compliance: changed from 'おすすめ銘柄'
     config: '設定',
     watched: 'ウォッチリスト',
   },
@@ -638,10 +636,9 @@ const JA = {
     Officer: '役員',
     Insider: 'インサイダー',
     Executive: '経営幹部',
-    // Signals
-    'Strong Buy': '強い買い',
+    // Transaction types (App Store compliance - removed investment advice)
+    // '強い買い' and '強い売り' removed per compliance requirements
     'Hold': '保有',
-    'Strong Sell': '強い売り',
     // Risk levels
     'Low': '低',
     'Medium': '中',
@@ -689,7 +686,7 @@ const ZH = {
   sidebar: {
     ...EN.sidebar,
     live: '实时交易',
-    analysis: '推荐股票',
+    analysis: '内部人活动排行', // App Store compliance: changed from '推荐股票'
     config: '配置',
     watched: '关注列表',
   },
@@ -769,10 +766,9 @@ const ZH = {
     Officer: '高管',
     Insider: '内部人',
     Executive: '管理层',
-    // Signals
-    'Strong Buy': '强烈买入',
+    // Transaction types (App Store compliance - removed investment advice)
+    // '强烈买入' and '强烈卖出' removed per compliance requirements
     'Hold': '持有',
-    'Strong Sell': '强烈卖出',
     // Risk levels
     'Low': '低',
     'Medium': '中',
