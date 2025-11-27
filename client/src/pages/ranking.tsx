@@ -69,6 +69,7 @@ interface RankingsResponse {
 }
 
 export default function Ranking() {
+  console.log('🔴🔴🔴 RANKING PAGE LOADED - NEW CODE! 🔴🔴🔴', new Date().toISOString());
   const { t, language } = useLanguage();
   const { accessLevel } = useAccess();
   const [, setLocation] = useLocation();
@@ -626,10 +627,15 @@ export default function Ranking() {
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
-                    {/* Market cap ratio display */}
-                    {item.marketCap && item.marketCap > 0 && (
-                      <p className="text-xs text-amber-400 font-bold mt-0.5">
+                    <p className="text-xs text-red-500 font-bold mt-0.5">🔴 TEST MESSAGE - 시총대비 코드 실행됨!</p>
+                    {/* Market cap ratio display - DEBUG: Always show */}
+                    <p className="text-xs text-amber-400 font-bold mt-0.5">
                         {(() => {
+                          console.log('🔍 marketCap:', item.marketCap, 'ticker:', item.ticker);
+                          // DEBUG: Check if marketCap exists
+                          if (!item.marketCap) {
+                            return `DEBUG: marketCap missing (${item.ticker})`;
+                          }
                           const ratio = (item.netBuying / item.marketCap) * 100;
                           let ratioStr;
                           if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
@@ -647,7 +653,6 @@ export default function Ranking() {
                                  `vs Market Cap: ${ratioStr}`;
                         })()}
                       </p>
-                    )}
                   </div>
                 </div>
               </div>

@@ -47,8 +47,8 @@ const EN = {
     cta: 'Upgrade to Reveal Data', // Changed from 'Signals'
     aes: 'AES-256 ENCRYPTED',
     blind: 'BLIND_TRUST_MODE',
-    signal: 'Activity Level', // Changed from 'Signal Strength'
-    strongBuy: 'High Buy Volume', // Changed from 'High Net Buying' for App Store compliance
+    signal: 'Buy Intensity', // Changed from 'Signal Strength'
+    strongBuy: 'Strong Buy', // Changed from 'High Net Buying' for App Store compliance
     insiders: 'Insiders',
     institutional: 'Insider Purchases',
     avgPrice: 'Insider Avg Price',
@@ -312,8 +312,8 @@ const KO = {
     cta: '데이터 잠금 해제', // Changed from '시그널 잠금 해제'
     aes: 'AES-256 암호화',
     blind: '블라인드 트러스트 모드',
-    signal: '활동 수준', // Changed from '시그널 강도'
-    strongBuy: '높은 매수 거래량', // App Store compliance: changed from '높은 순매수'
+    signal: '매수 강도', // Changed from '시그널 강도'
+    strongBuy: '강한 매수', // App Store compliance: changed from '높은 순매수'
     insiders: '내부자',
     institutional: '내부자 매수 활동', // Changed from '내부자 매수 내역'
     avgPrice: '내부자 평균 매수가',
@@ -547,6 +547,8 @@ const JA = {
   },
   top: {
     ...EN.top,
+    signal: '購入強度',
+    strongBuy: '強い買い',
     buyPrice: '購入価格',
     shareCount: '株式数',
     totalAmount: '総額',
@@ -684,6 +686,8 @@ const ZH = {
   },
   top: {
     ...EN.top,
+    signal: '买入强度',
+    strongBuy: '强劲买入',
     buyPrice: '购买价格',
     shareCount: '股数',
     totalAmount: '总额',
