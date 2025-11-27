@@ -550,7 +550,8 @@ const JA = {
     buyPrice: '購入価格',
     shareCount: '株式数',
     totalAmount: '総額',
-    buyOnly: '買いのみ'
+    buyOnly: '買いのみ',
+    marketCapRatio: '時価総額比'
   },
   modal: {
     ...EN.modal,
@@ -686,7 +687,8 @@ const ZH = {
     buyPrice: '购买价格',
     shareCount: '股数',
     totalAmount: '总额',
-    buyOnly: '仅买入'
+    buyOnly: '仅买入',
+    marketCapRatio: '市值比'
   },
   modal: {
     ...EN.modal,

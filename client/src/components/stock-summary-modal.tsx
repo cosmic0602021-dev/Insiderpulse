@@ -523,9 +523,27 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   </div>
 
                   {/* Amount */}
-                  <div className="text-right shrink-0 w-16">
+                  <div className="text-right shrink-0 w-20">
                     <div className="text-[9px] text-neutral-500">{formatNumber(buyer.shares)} {langKey === 'ko' ? '주' : 'sh'}</div>
                     <div className="text-[10px] text-emerald-500 font-bold font-mono">{formatCurrency(buyer.amount)}</div>
+                    {stock.marketCap && stock.marketCap > 0 && (
+                      <div className="text-[8px] text-amber-400 font-mono font-bold mt-0.5">
+                        {(() => {
+                          const ratio = (buyer.amount / stock.marketCap) * 100;
+                          let ratioStr;
+                          if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                          else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                          else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                          else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                          else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                          else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                          else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                          else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                          else ratioStr = '0%';
+                          return `${tTop.marketCapRatio}: ${ratioStr}`;
+                        })()}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
