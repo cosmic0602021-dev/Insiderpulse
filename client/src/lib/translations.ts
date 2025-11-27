@@ -82,10 +82,12 @@ const EN = {
     signal: 'Activity Type', // Changed from 'Signal'
     confidence: 'Data Quality', // Changed from 'Confidence'
     keyInsight: 'Key Observation', // Changed from 'Key Insight'
-    priceTargets: 'Analyst Estimates (If Available)', // App Store compliance: external data only
-    conservative: 'Lower Estimate', // App Store compliance
-    realistic: 'Mid Estimate', // App Store compliance
-    optimistic: 'Upper Estimate', // App Store compliance
+    priceTargets: 'Reference Price Range', // App Store compliance: historical insider prices only
+    priceRangeSubtitle: 'Historical Insider Prices', // App Store compliance
+    priceRangeDisclaimer: 'For reference only. Not a forecast or investment recommendation.', // App Store compliance
+    conservative: 'Min Price', // App Store compliance: actual trade price range
+    realistic: 'Avg Price', // App Store compliance: actual trade price
+    optimistic: 'Max Price', // App Store compliance: actual trade price range
     riskLevel: 'Volatility Level', // Changed from 'Risk Level'
     timeHorizon: 'Observation Period', // Changed from 'Time Horizon'
     sentimentAnalysis: 'Sentiment Analysis',
@@ -345,10 +347,12 @@ const KO = {
     signal: '활동 유형', // Changed from '시그널'
     confidence: '데이터 품질', // Changed from '신뢰도'
     keyInsight: '핵심 관찰', // Changed from '핵심 인사이트'
-    priceTargets: '애널리스트 전망치(존재 시)', // App Store compliance: external data only
-    conservative: '하단 전망치', // App Store compliance
-    realistic: '중간 전망치', // App Store compliance
-    optimistic: '상단 전망치', // App Store compliance
+    priceTargets: '참고 가격대', // App Store compliance: historical insider prices only
+    priceRangeSubtitle: '역사적 내부자 거래가', // App Store compliance
+    priceRangeDisclaimer: '참고용입니다. 예측 또는 투자 권유가 아닙니다.', // App Store compliance
+    conservative: '최저가', // App Store compliance: actual trade price range
+    realistic: '평균가', // App Store compliance: actual trade price
+    optimistic: '최고가', // App Store compliance: actual trade price range
     riskLevel: '변동성 수준', // Changed from '위험 수준'
     timeHorizon: '관찰 기간', // Changed from '투자 기간'
     sentimentAnalysis: '감정 분석',
@@ -551,7 +555,13 @@ const JA = {
   modal: {
     ...EN.modal,
     share: '株',
-    volume: '出来高'
+    volume: '出来高',
+    priceTargets: '参考価格帯', // App Store compliance
+    priceRangeSubtitle: '過去のインサイダー取引価格', // App Store compliance
+    priceRangeDisclaimer: '参考用です。予測や投資推奨ではありません。', // App Store compliance
+    conservative: '最低価格', // App Store compliance
+    realistic: '平均価格', // App Store compliance
+    optimistic: '最高価格', // App Store compliance
   },
   sidebar: {
     ...EN.sidebar,
@@ -681,7 +691,13 @@ const ZH = {
   modal: {
     ...EN.modal,
     share: '股',
-    volume: '成交量'
+    volume: '成交量',
+    priceTargets: '参考价格区间', // App Store compliance
+    priceRangeSubtitle: '历史内幕交易价格', // App Store compliance
+    priceRangeDisclaimer: '仅供参考，不是预测或投资建议。', // App Store compliance
+    conservative: '最低价', // App Store compliance
+    realistic: '平均价', // App Store compliance
+    optimistic: '最高价', // App Store compliance
   },
   sidebar: {
     ...EN.sidebar,

@@ -1,4 +1,5 @@
-import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp } from 'lucide-react';
+// Modified for App Store compliance: price target safe mode - removed all investment predictions
+import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -452,47 +453,32 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               </div>
             </div>
 
-            {/* Price Targets Compact */}
+            {/* Reference Price Range (Historical Insider Prices) - App Store Compliance */}
             <div className="border border-neutral-800 bg-neutral-950/30 p-2">
               <div className="flex items-center gap-1 mb-1">
                 <Target size={9} className="text-neutral-500" />
-                <span className="text-[8px] text-neutral-500 uppercase font-mono">{langKey === 'ko' ? '목표가' : 'Targets'}</span>
+                <span className="text-[8px] text-neutral-500 uppercase font-mono">
+                  {langKey === 'ko' ? '참고 가격대' : langKey === 'ja' ? '参考価格帯' : langKey === 'zh' ? '参考价格区间' : 'Reference Range'}
+                </span>
               </div>
-              {(() => {
-                // Calculate news sentiment bonus from comprehensiveAnalysis
-                const newsAnalysis = comprehensiveAnalysis?.newsAnalysis;
-                let newsMultiplier = 1.0;
-                if (newsAnalysis && newsAnalysis.totalNews > 0) {
-                  const positiveRatio = newsAnalysis.positiveCount / newsAnalysis.totalNews;
-                  const negativeRatio = newsAnalysis.negativeCount / newsAnalysis.totalNews;
-                  // Positive news adds up to +5%, negative news subtracts up to -3%
-                  newsMultiplier = 1 + (positiveRatio * 0.05) - (negativeRatio * 0.03);
-                }
-
-                const baseTargets = aiAnalysis?.priceTargets || { conservative: 0, realistic: 0, optimistic: 0 };
-                const adjustedTargets = {
-                  conservative: baseTargets.conservative * newsMultiplier,
-                  realistic: baseTargets.realistic * newsMultiplier,
-                  optimistic: baseTargets.optimistic * newsMultiplier
-                };
-
-                return (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[9px]">
-                      <span className="text-neutral-600">{langKey === 'ko' ? '보수' : 'Low'}</span>
-                      <span className="text-neutral-400 font-mono">{formatCurrency(adjustedTargets.conservative)}</span>
-                    </div>
-                    <div className="flex justify-between text-[9px]">
-                      <span className="text-emerald-600">{langKey === 'ko' ? '현실' : 'Mid'}</span>
-                      <span className="text-emerald-400 font-mono font-bold">{formatCurrency(adjustedTargets.realistic)}</span>
-                    </div>
-                    <div className="flex justify-between text-[9px]">
-                      <span className="text-amber-600">{langKey === 'ko' ? '낙관' : 'High'}</span>
-                      <span className="text-amber-400 font-mono">{formatCurrency(adjustedTargets.optimistic)}</span>
-                    </div>
-                  </div>
-                );
-              })()}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-neutral-600">{langKey === 'ko' ? '평균 매수가' : 'Avg Buy'}</span>
+                  <span className="text-emerald-400 font-mono font-bold">{formatCurrency(stats.avgPrice)}</span>
+                </div>
+                <div className="flex justify-between text-[9px]">
+                  <span className="text-neutral-600">{langKey === 'ko' ? '현재가' : 'Current'}</span>
+                  <span className={`font-mono ${priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatCurrency(currentPrice)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-0.5 pt-1 border-t border-neutral-800/50">
+                  <Info size={7} className="text-neutral-600 shrink-0" />
+                  <span className="text-[6px] text-neutral-600">
+                    {langKey === 'ko' ? '참고용' : langKey === 'ja' ? '参考用' : langKey === 'zh' ? '仅供参考' : 'Reference only'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

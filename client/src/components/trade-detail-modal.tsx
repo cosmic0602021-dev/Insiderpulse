@@ -1,4 +1,5 @@
-import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+// Modified for App Store compliance: price target safe mode - removed all investment predictions
+import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -610,51 +611,50 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
               </div>
 
-              {/* Price Targets */}
+              {/* Reference Price Range (Historical Insider Prices) - App Store Compliance */}
               <div className="border border-neutral-800 bg-neutral-950/30">
-                <div className="px-3 py-2 border-b border-neutral-800 flex items-center gap-2">
-                  <Target size={11} className="text-neutral-500" />
-                  <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
-                    {t.priceTargets.toUpperCase()}
-                  </span>
+                <div className="px-3 py-2 border-b border-neutral-800">
+                  <div className="flex items-center gap-2">
+                    <Target size={11} className="text-neutral-500" />
+                    <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono">
+                      {t.priceTargets?.toUpperCase() || 'REFERENCE PRICE RANGE'}
+                    </span>
+                  </div>
+                  <div className="text-[7px] text-neutral-600 mt-0.5 font-mono">
+                    {(t as any).priceRangeSubtitle || 'Historical Insider Prices'}
+                  </div>
                 </div>
                 <div className="p-3 space-y-2.5">
-                  {/* Conservative */}
+                  {/* Insider Trade Price - The only factual data we show */}
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t.conservative.toUpperCase()}
+                    <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono">
+                      {t.tradePrice?.toUpperCase() || 'INSIDER TRADE PRICE'}
                     </span>
-                    <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
-                      <div className="h-full bg-neutral-600 rounded-sm" style={{ width: '60%' }}></div>
-                    </div>
-                    <span className="text-xs text-neutral-300 font-mono w-14 text-right">
-                      {formatCurrency(aiAnalysis?.priceTargets.conservative || trade.pricePerShare * 1.05)}
+                    <span className="text-lg text-emerald-500 font-mono font-bold">
+                      {formatCurrency(trade.pricePerShare)}
                     </span>
                   </div>
 
-                  {/* Realistic */}
+                  {/* Current Market Price */}
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t.realistic.toUpperCase()}
+                    <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono">
+                      {t.currentPrice?.toUpperCase() || 'CURRENT PRICE'}
                     </span>
-                    <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-sm" style={{ width: '80%' }}></div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-mono ${priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {formatCurrency(currentPrice)}
+                      </span>
+                      <span className={`text-[9px] font-mono ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
+                      </span>
                     </div>
-                    <span className="text-xs text-neutral-300 font-mono w-14 text-right">
-                      {formatCurrency(aiAnalysis?.priceTargets.realistic || trade.pricePerShare * 1.19)}
-                    </span>
                   </div>
 
-                  {/* Optimistic */}
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24">
-                      {t.optimistic.toUpperCase()}
-                    </span>
-                    <div className="flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-sm" style={{ width: '100%' }}></div>
-                    </div>
-                    <span className="text-xs text-neutral-300 font-mono w-14 text-right">
-                      {formatCurrency(aiAnalysis?.priceTargets.optimistic || trade.pricePerShare * 1.43)}
+                  {/* Disclaimer */}
+                  <div className="flex items-start gap-1.5 pt-2 border-t border-neutral-800/50">
+                    <Info size={9} className="text-neutral-600 mt-0.5 shrink-0" />
+                    <span className="text-[7px] text-neutral-600 leading-relaxed">
+                      {(t as any).priceRangeDisclaimer || 'For reference only. Not a forecast or investment recommendation.'}
                     </span>
                   </div>
                 </div>
