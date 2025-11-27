@@ -198,7 +198,7 @@ export default function PaymentSuccess() {
               All Premium Features Unlocked
             </CardTitle>
             <CardDescription className="text-slate-300">
-              You now have full access to real-time insider trading intelligence
+              You now have full access to real-time insider trading data and analytics
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

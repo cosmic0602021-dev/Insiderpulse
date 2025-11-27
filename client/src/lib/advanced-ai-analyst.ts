@@ -9,9 +9,9 @@ import { MarketIntelligence, getCachedMarketIntelligence } from './market-intell
 interface ComprehensiveInsight {
   executiveSummary: string;
   keyFindings: string[];
-  investmentThesis: string; // Now contains factual observations only, NOT investment advice
+  tradeContext: string; // Factual observations about transaction context (NOT investment advice)
   risksAndConcerns: string[];
-  actionableRecommendations: string[]; // Now contains factual data points only, NOT advice
+  keyDataPoints: string[]; // Factual data points only (NOT recommendations)
   timeHorizon: '단기 (1-3개월)' | '중기 (3-12개월)' | '장기 (1년+)';
   confidenceLevel: number; // 0-100 - represents data quality, NOT investment confidence
   priceTargets: {
@@ -188,16 +188,16 @@ export class AdvancedAIAnalyst {
     const isBuy = currentTrade.tradeType?.toUpperCase().includes('BUY');
 
     if (isBuy && buyTrades.length > sellTrades.length * 2) {
-      insights.push("💡 강력한 내부자 매수 신호: 최근 3개월간 매수 거래가 매도를 압도");
+      insights.push("💡 대규모 내부자 매수 활동: 최근 3개월간 매수 거래가 매도를 압도");
     }
 
     if (!isBuy && sellTrades.length > buyTrades.length) {
-      insights.push("⚠️ 내부자 매도 증가: 이익 실현 또는 미래 전망에 대한 우려 가능성");
+      insights.push("📊 내부자 매도 활동: SEC Form 4에 다수의 매도 거래가 기록되었습니다");
     }
 
     const traderTitle = (currentTrade.traderTitle || '').toUpperCase();
     if (traderTitle.includes('CEO') && isBuy) {
-      insights.push("🎯 CEO 직접 매수: 회사 미래에 대한 최고 경영진의 강한 확신 표시");
+      insights.push("📊 CEO 매수 거래: 최고 경영진의 매수 거래가 SEC에 공시되었습니다");
     }
 
     return insights;
@@ -213,9 +213,9 @@ export class AdvancedAIAnalyst {
     // P/E 기반 분석
     if (financials.peRatio) {
       if (financials.peRatio < 15) {
-        insights.push(`📊 밸류에이션 매력적: P/E ${financials.peRatio.toFixed(1)}배로 저평가 구간`);
+        insights.push(`📊 밸류에이션 지표: P/E ${financials.peRatio.toFixed(1)}배 (참고용)`);
       } else if (financials.peRatio > 30) {
-        insights.push(`⚠️ 고평가 우려: P/E ${financials.peRatio.toFixed(1)}배로 시장 평균 대비 높은 수준`);
+        insights.push(`📊 밸류에이션 지표: P/E ${financials.peRatio.toFixed(1)}배 시장 평균 대비 높음 (참고용)`);
       }
     }
 
@@ -394,9 +394,9 @@ export class AdvancedAIAnalyst {
     return {
       executiveSummary,
       keyFindings: keyFindings.slice(0, 4),
-      investmentThesis: insiderPatternAnalysis,
+      tradeContext: insiderPatternAnalysis,
       risksAndConcerns: risks.slice(0, 3),
-      actionableRecommendations: actionableInsights.slice(0, 3),
+      keyDataPoints: actionableInsights.slice(0, 3),
       timeHorizon: this.determineTimeHorizon(trade, insiderAnalysis.confidence),
       confidenceLevel: insiderAnalysis.confidence,
       priceTargets,

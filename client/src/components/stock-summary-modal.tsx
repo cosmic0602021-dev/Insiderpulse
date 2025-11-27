@@ -137,6 +137,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     };
   }, [stock]);
 
+  // Modified for App Store compliance: price target safe mode - NO PRICE TARGET CALCULATIONS
   const aiAnalysis = useMemo(() => {
     if (!stock || !stats) return null;
 
@@ -153,108 +154,26 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     let insight = '';
     if (langKey === 'ko') {
       if (isManyBuyers && isLargeAmount) {
-        insight = `${stats.buyerCount}명의 내부자가 동시에 대규모 매수. 강력한 확신 신호.`;
+        insight = `${stats.buyerCount}명의 내부자가 동시에 대규모 매수 거래 발생.`;
       } else if (isManyBuyers) {
-        insight = `${stats.buyerCount}명의 내부자가 동시 매수. 긍정적 전망 공유.`;
+        insight = `${stats.buyerCount}명의 내부자가 동시 매수 활동 감지됨.`;
       } else {
-        insight = '다수 내부자 동시 매수는 회사에 대한 확신을 나타냄.';
+        insight = '다수 내부자 동시 매수 활동이 기록되었습니다.';
       }
     } else {
       if (isManyBuyers && isLargeAmount) {
-        insight = `${stats.buyerCount} insiders made large simultaneous buys. Strong conviction.`;
+        insight = `${stats.buyerCount} insiders made large simultaneous purchases.`;
       } else if (isManyBuyers) {
-        insight = `${stats.buyerCount} insiders bought simultaneously. Positive outlook.`;
+        insight = `${stats.buyerCount} insiders bought simultaneously.`;
       } else {
-        insight = 'Multiple insider buys indicate confidence.';
+        insight = 'Multiple insider purchases detected.';
       }
     }
-
-    // Data-driven price target algorithm based on historical insider trade analysis
-    // Historical data shows:
-    // - 1 insider: median 0.6%, p75 4.5%, avg 8.9%
-    // - 2 insiders: median 2.9%, p75 7.4%, avg 54.5%
-    // - 3-4 insiders: median 10.1%, p75 22.2%, avg 19.6%
-
-    // Base returns by cluster size (from historical data)
-    let baseMedian: number, baseP75: number, baseAvg: number;
-
-    // All values from actual historical data analysis (429 trades)
-    if (stats.buyerCount >= 3) {
-      // 3+ insiders: strong cluster signal
-      // Historical (10 events): median 10.06%, p75 22.20%, p90 35.69%
-      baseMedian = 0.10;  // 10%
-      baseP75 = 0.22;     // 22%
-      baseAvg = 0.36;     // 36%
-    } else if (stats.buyerCount >= 2) {
-      // 2 insiders: moderate cluster signal
-      // Historical (30 events): median 2.92%, p75 7.37%, p90 30.28%
-      baseMedian = 0.03;  // 3%
-      baseP75 = 0.07;     // 7%
-      baseAvg = 0.30;     // 30%
-    } else {
-      // 1 insider: single insider signal
-      // Historical (334 events): median 0.60%, p75 4.50%, p90 10.19%
-      baseMedian = 0.01;  // 1%
-      baseP75 = 0.05;     // 5%
-      baseAvg = 0.10;     // 10%
-    }
-
-    // Adjustment factor based on total investment size
-    // Historical data shows $1M-5M trades have ~8.7% avg return
-    const investmentBonus = stats.totalAmount >= 5000000 ? 0.03 :
-                            stats.totalAmount >= 1000000 ? 0.02 :
-                            stats.totalAmount >= 500000 ? 0.01 : 0;
-
-    // Position-based bonus (from historical win rate and return data)
-    // CEO: median 2.31%, win rate 64%
-    // CFO: median 0.80%, win rate 60%
-    // Director: median 0.60%, win rate 56%
-    const buyers = stock.buyers;
-    const hasCEO = buyers.some(b =>
-      b.relation?.toUpperCase().includes('CEO') ||
-      b.relation?.toUpperCase().includes('CHIEF EXECUTIVE')
-    );
-    const hasCFO = buyers.some(b =>
-      b.relation?.toUpperCase().includes('CFO') ||
-      b.relation?.toUpperCase().includes('CHIEF FINANCIAL')
-    );
-    const hasPresident = buyers.some(b =>
-      b.relation?.toUpperCase().includes('PRESIDENT')
-    );
-
-    // Calculate position bonus
-    let positionBonus = 0;
-    if (hasCEO) {
-      positionBonus = 0.02; // +2% for CEO involvement
-    } else if (hasPresident) {
-      positionBonus = 0.015; // +1.5% for President
-    } else if (hasCFO) {
-      positionBonus = 0.01; // +1% for CFO involvement
-    }
-
-    // Extra bonus for CEO in cluster (3+ insiders with CEO)
-    const clusterWithCEOBonus = (stats.buyerCount >= 3 && hasCEO) ? 0.03 : 0;
-
-    // Apply all bonuses
-    const totalBonus = investmentBonus + positionBonus + clusterWithCEOBonus;
-    const adjustedMedian = baseMedian + totalBonus;
-    const adjustedP75 = baseP75 + (totalBonus * 1.5);
-    const adjustedAvg = baseAvg + (totalBonus * 2);
-
-    // Note: News sentiment bonus will be applied in the final calculation
-    // using comprehensiveAnalysis.newsAnalysis if available
-
-    const priceTargets = {
-      conservative: stats.avgPrice * (1 + adjustedMedian),   // Based on median return
-      realistic: stats.avgPrice * (1 + adjustedP75),         // Based on 75th percentile
-      optimistic: stats.avgPrice * (1 + adjustedAvg)         // Based on average (includes outliers)
-    };
 
     return {
       signal: 'BUY' as const,
       confidence,
       insight,
-      priceTargets,
       riskLevel: isLargeAmount ? t.riskLow : t.riskMedium,
       timeHorizon: isManyBuyers ? (langKey === 'ko' ? '2-4주' : '2-4 weeks') : (langKey === 'ko' ? '3-6주' : '3-6 weeks')
     };
@@ -398,6 +317,33 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               <div className={`text-base md:text-lg font-bold ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
               </div>
+              {(() => {
+                const marketCap = stock?.marketCap;
+                if (marketCap && marketCap > 0 && stats) {
+                  const ratio = (stats.totalAmount / marketCap) * 100;
+                  let percentStr;
+                  if (ratio >= 10) percentStr = Math.round(ratio) + '%';
+                  else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
+                  else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
+                  else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
+                  else if (ratio >= 0.0001) percentStr = ratio.toFixed(4) + '%';
+                  else if (ratio >= 0.00001) percentStr = ratio.toFixed(5) + '%';
+                  else if (ratio >= 0.000001) percentStr = ratio.toFixed(6) + '%';
+                  else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
+                  else percentStr = '0%';
+
+                  const prefix = langKey === 'ko' ? '시총대비 ' :
+                                langKey === 'ja' ? '時価総額比 ' :
+                                langKey === 'zh' ? '市值比 ' :
+                                'vs Cap: ';
+                  return (
+                    <div className="text-[9px] md:text-[10px] text-amber-400 font-mono mt-0.5 font-bold">
+                      {prefix + percentStr}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
 
@@ -531,7 +477,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               </div>
               <div className="flex items-center gap-1 text-emerald-500">
                 <AlertTriangle size={10} />
-                <span className="text-[10px] font-bold">{(tData as any)[aiAnalysis?.riskLevel] || aiAnalysis?.riskLevel || t.riskLow}</span>
+                <span className="text-[10px] font-bold">{(tData as any)[aiAnalysis?.riskLevel || ''] || aiAnalysis?.riskLevel || t.riskLow}</span>
               </div>
             </div>
             <div className="border border-neutral-800 bg-neutral-950/30 p-2">
@@ -539,7 +485,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 {langKey === 'ko' ? '목표 달성' : 'TARGET'}
               </div>
               <div className="text-[10px] text-neutral-200 font-mono font-bold">
-                {(tData as any)[comprehensiveAnalysis?.timeHorizon] || (tData as any)[aiAnalysis?.timeHorizon] || comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주' : '2-4 weeks')}
+                {(tData as any)[comprehensiveAnalysis?.timeHorizon || ''] || (tData as any)[aiAnalysis?.timeHorizon || ''] || comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주' : '2-4 weeks')}
               </div>
             </div>
           </div>

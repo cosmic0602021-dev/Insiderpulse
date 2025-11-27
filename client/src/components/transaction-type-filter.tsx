@@ -65,7 +65,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
               <div className="border-l-2 border-neutral-400 pl-4">
                 <h4 className="font-semibold text-white mb-1">핵심 거래만 보기 (추천)</h4>
                 <p className="text-sm text-neutral-400 leading-relaxed">
-                  내부자가 실제로 <span className="text-white">자기 돈을 써서 산 매수</span> 또는 <span className="text-white">스스로 판단해 판 매도</span>만 보여줍니다. 이런 거래가 '진짜 의도'가 반영된 신호로 평가됩니다.
+                  내부자가 실제로 <span className="text-white">자기 돈을 써서 산 매수</span> 또는 <span className="text-white">스스로 판단해 판 매도</span>만 보여줍니다. 이런 거래는 실제 자금 이동을 나타내는 거래입니다.
                 </p>
               </div>
 

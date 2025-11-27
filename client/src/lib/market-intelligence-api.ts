@@ -30,7 +30,7 @@ interface InsiderTradePattern {
   patternDescription: string;
 }
 
-interface MarketIntelligence {
+export interface MarketIntelligence {
   symbol: string;
   news: NewsArticle[];
   financials: FinancialMetrics;
@@ -297,13 +297,14 @@ function analyzeInsiderTradePattern(trades: any[], symbol: string): InsiderTrade
   };
 }
 
+// Modified for App Store compliance: removed investment advice language
 function generatePatternDescription(buys: number, sells: number, netActivity: number, confidence: string): string {
   if (buys > sells * 2) {
-    return `강한 매수 신호: 지난 30일간 ${buys}건의 매수 vs ${sells}건의 매도. 임원진 신뢰도 ${confidence}`;
+    return `높은 매수 활동: 지난 30일간 ${buys}건의 매수 vs ${sells}건의 매도. 임원진 참여도 ${confidence}`;
   } else if (sells > buys * 2) {
-    return `매도 신호 주의: 지난 30일간 ${sells}건의 매도 vs ${buys}건의 매수. 내부자들의 이익실현 가능성`;
+    return `매도 활동 증가: 지난 30일간 ${sells}건의 매도 vs ${buys}건의 매수. 내부자 매도 거래 기록됨`;
   } else {
-    return `중립적 패턴: 매수 ${buys}건, 매도 ${sells}건으로 균형잡힌 거래 활동`;
+    return `균형잡힌 패턴: 매수 ${buys}건, 매도 ${sells}건으로 균형잡힌 거래 활동`;
   }
 }
 

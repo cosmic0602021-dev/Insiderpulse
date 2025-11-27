@@ -26,18 +26,14 @@ interface InsiderTradeData {
   recentNews?: NewsContext[]; // Optional recent news for context
 }
 
+// Modified for App Store compliance: price target safe mode
 interface AIAnalysisResult {
   significanceScore: number; // 1-100
   signalType: 'BUY' | 'SELL' | 'HOLD';
   keyInsights: string[];
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  recommendation: string;
-  priceTargets: {
-    conservative: number; // percentage change (e.g., 3 means +3%)
-    realistic: number;
-    optimistic: number;
-  };
   timeHorizon: string; // e.g., "1-2 weeks", "2-4 weeks"
+  // Note: priceTargets and recommendation removed per App Store compliance
 }
 
 export class AIAnalysisService {
@@ -63,7 +59,9 @@ export class AIAnalysisService {
             role: "system",
             content: `You are a data analyst specializing in SEC Form 4 insider trading data analysis.
                      Analyze insider trading data and provide ONLY factual, objective summaries.
-                     DO NOT provide investment advice, recommendations, or opinions.
+                     DO NOT provide investment advice, recommendations, predictions, or opinions.
+                     DO NOT calculate or suggest price targets or future price movements.
+                     Focus only on factual observations about the transaction itself.
                      Always respond with valid JSON in the exact format specified.`
           },
           {
@@ -149,47 +147,36 @@ ${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- Potential catalys
 
 Provide analysis in this exact JSON format:
 {
-  "significanceScore": <1-100 integer based on trade importance>,
-  "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
-  "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
-  "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
-  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' and recent news' : ''}>",
-  "priceTargets": {
-    "conservative": <percentage as number, e.g., 3 for +3%>,
-    "realistic": <percentage as number>,
-    "optimistic": <percentage as number>
-  },
-  "timeHorizon": "<specific time frame like '1-2 weeks' or '2-4 weeks'>"
+  "significanceScore": <1-100 integer based on trade size and executive level>,
+  "signalType": "<BUY|SELL|HOLD based on transaction type>",
+  "keyInsights": ["<factual observation 1>", "<factual observation 2>", "<factual observation 3>"],
+  "riskLevel": "<LOW|MEDIUM|HIGH based on volatility indicators>",
+  "timeHorizon": "<observation period like '1-2 weeks' or '2-4 weeks'>"
 }
 
 Guidelines:
 - significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ', or trades aligned with major news events' : ''}
-- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? '. Consider news sentiment alignment' : ''}
-- keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' incorporating recent news context' : ''}
-- riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
-- recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' considering both trade data and news sentiment' : ''}
-- priceTargets: Realistic percentage gains/losses based on trade significance. For BUY signals: conservative 2-5%, realistic 5-12%, optimistic 10-25%. For SELL: use negative percentages.
-- timeHorizon: Be realistic for insider trading momentum. Large executive buys: "1-2 weeks". Cluster buying: "3-7 days". Small trades: "2-4 weeks". Most insider signals play out within 1 month, NOT 3-6 months.
+- signalType: BUY for insider buying transactions, SELL for insider selling transactions, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? '. Note news context' : ''}
+- keyInsights: 3 specific FACTUAL observations about this trade (NOT predictions or recommendations)${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' incorporating recent news context' : ''}
+  * Example: "CEO purchased $2M worth of shares" NOT "Stock will likely increase"
+  * Example: "Large insider sale following earnings report" NOT "Consider selling"
+- riskLevel: HIGH for volatile stocks or large transactions, LOW for stable stocks with routine trades
+- timeHorizon: Historical observation period. Large executive buys: "1-2 weeks". Cluster buying: "3-7 days". Small trades: "2-4 weeks".
+- IMPORTANT: DO NOT include any price predictions, targets, or investment recommendations
 `;
   }
 
+  // Modified for App Store compliance: price target safe mode
   private validateAnalysisResult(result: any): AIAnalysisResult {
     return {
       significanceScore: Math.max(1, Math.min(100, Math.round(result.significanceScore || 50))),
       signalType: ['BUY', 'SELL', 'HOLD'].includes(result.signalType) ? result.signalType : 'HOLD',
       keyInsights: Array.isArray(result.keyInsights) ? result.keyInsights.slice(0, 3) : [
-        'Insider trading activity detected',
-        'Position size indicates confidence level',
-        'Market timing may provide investment signal'
+        'Insider trading activity detected in SEC Form 4 filing',
+        'Transaction recorded at reported price per share',
+        'Position size and timing noted in public disclosure'
       ],
       riskLevel: ['LOW', 'MEDIUM', 'HIGH'].includes(result.riskLevel) ? result.riskLevel : 'MEDIUM',
-      recommendation: typeof result.recommendation === 'string' ? result.recommendation :
-        'Monitor for additional insider activity before making investment decisions',
-      priceTargets: {
-        conservative: result.priceTargets?.conservative || 3,
-        realistic: result.priceTargets?.realistic || 7,
-        optimistic: result.priceTargets?.optimistic || 15
-      },
       timeHorizon: typeof result.timeHorizon === 'string' ? result.timeHorizon : '2-4 weeks'
     };
   }
@@ -259,27 +246,19 @@ Guidelines:
         significanceScore += 5;
       }
 
-      // Use historical price targets if we have enough samples
-      const priceTargets = historicalPriceTargets.sampleSize >= 5
-        ? {
-            conservative: historicalPriceTargets.conservative,
-            realistic: historicalPriceTargets.realistic,
-            optimistic: historicalPriceTargets.optimistic
-          }
-        : this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
-
+      // Modified for App Store compliance: price target safe mode - NO PRICE PREDICTIONS
       // Use historical time horizon if we have enough samples
       const timeHorizon = historicalTimeHorizon.sampleSize >= 3
         ? historicalTimeHorizon.recommended
         : this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
 
-      // Use data-driven insights or fall back to basic ones
+      // Use data-driven insights or fall back to basic ones - FACTUAL ONLY
       const keyInsights = dataInsights.insights.length >= 2
         ? dataInsights.insights.slice(0, 3)
         : [
-            `${isExecutive ? 'Executive' : 'Insider'} ${tradeData.tradeType.toLowerCase()} transaction`,
-            `Trade value of $${(tradeData.totalValue / 1000000).toFixed(1)}M indicates ${isLargeTrade ? 'high' : 'moderate'} conviction`,
-            `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? 'significant' : 'minor'} stake`
+            `${isExecutive ? 'Executive' : 'Insider'} ${tradeData.tradeType.toLowerCase()} transaction recorded in SEC filing`,
+            `Trade value of $${(tradeData.totalValue / 1000000).toFixed(1)}M reported at $${tradeData.pricePerShare.toFixed(2)} per share`,
+            `${tradeData.ownershipPercentage}% ownership position disclosed in Form 4`
           ];
 
       return {
@@ -287,59 +266,30 @@ Guidelines:
         signalType,
         keyInsights,
         riskLevel: historicalRisk.calculatedRiskLevel,
-        recommendation: `${signalType === 'BUY' ? 'Consider buying' : signalType === 'SELL' ? 'Consider reducing position' : 'Monitor for additional signals'} based on ${isExecutive ? 'executive' : 'insider'} ${tradeData.tradeType.toLowerCase()} activity`,
-        priceTargets,
         timeHorizon
       };
     } catch (error) {
+      // Modified for App Store compliance: price target safe mode
       // If historical analysis fails, fall back to simple rules
       console.error('Historical analysis failed, using simple fallback:', error);
 
-      const priceTargets = this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
       const timeHorizon = this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
 
       return {
         significanceScore: Math.min(100, significanceScore),
         signalType,
         keyInsights: [
-          `${isExecutive ? 'Executive' : 'Insider'} ${tradeData.tradeType.toLowerCase()} transaction`,
-          `Trade value of $${(tradeData.totalValue / 1000000).toFixed(1)}M indicates ${isLargeTrade ? 'high' : 'moderate'} conviction`,
-          `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? 'significant' : 'minor'} stake`
+          `${isExecutive ? 'Executive' : 'Insider'} ${tradeData.tradeType.toLowerCase()} transaction recorded in SEC filing`,
+          `Trade value of $${(tradeData.totalValue / 1000000).toFixed(1)}M reported at $${tradeData.pricePerShare.toFixed(2)} per share`,
+          `${tradeData.ownershipPercentage}% ownership position disclosed in Form 4`
         ],
         riskLevel: isLargeTrade && !isBuy ? 'HIGH' : isExecutive && isBuy ? 'LOW' : 'MEDIUM',
-        recommendation: `${signalType === 'BUY' ? 'Consider buying' : signalType === 'SELL' ? 'Consider reducing position' : 'Monitor for additional signals'} based on ${isExecutive ? 'executive' : 'insider'} ${tradeData.tradeType.toLowerCase()} activity`,
-        priceTargets,
         timeHorizon
       };
     }
   }
 
-  private getDefaultPriceTargets(
-    isBuy: boolean,
-    isExecutive: boolean,
-    isLargeTrade: boolean,
-    totalValue: number
-  ): { conservative: number; realistic: number; optimistic: number } {
-    const isMediumTrade = totalValue > 100000;
-
-    if (isBuy) {
-      if (isExecutive && isLargeTrade) {
-        return { conservative: 5, realistic: 12, optimistic: 25 };
-      } else if (isExecutive || isLargeTrade) {
-        return { conservative: 3, realistic: 8, optimistic: 18 };
-      } else if (isMediumTrade) {
-        return { conservative: 2, realistic: 5, optimistic: 12 };
-      } else {
-        return { conservative: 1, realistic: 3, optimistic: 8 };
-      }
-    } else {
-      if (isLargeTrade) {
-        return { conservative: -3, realistic: -8, optimistic: -15 };
-      } else {
-        return { conservative: -1, realistic: -3, optimistic: -7 };
-      }
-    }
-  }
+  // Modified for App Store compliance: getDefaultPriceTargets removed
 
   private getDefaultTimeHorizon(
     isExecutive: boolean,

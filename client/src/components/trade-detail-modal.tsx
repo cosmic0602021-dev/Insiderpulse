@@ -58,32 +58,24 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].modal;
 
-  // Use existing trade data instead of fetching
+  // Modified for App Store compliance: price target safe mode
+  // Use existing trade data instead of fetching - NO PRICE TARGET CALCULATIONS
   const aiAnalysis = useMemo(() => {
     if (!trade) return null;
-    
+
     // Use existing aiAnalysis from trade if available
     if (trade.aiAnalysis && typeof trade.aiAnalysis === 'object' && 'signal' in trade.aiAnalysis) {
       const ai = trade.aiAnalysis as any;
-      // Calculate price targets from percentage values
-      const conservativePct = ai.priceTargets?.conservative || 3;
-      const realisticPct = ai.priceTargets?.realistic || 7;
-      const optimisticPct = ai.priceTargets?.optimistic || 15;
 
       return {
         signal: (ai.signal || 'BUY') as 'BUY' | 'SELL' | 'HOLD',
         confidence: ai.significanceScore || 75,
         insight: (ai.keyInsights?.[0] || t.insightSmallBuy) as string,
-        priceTargets: {
-          conservative: trade.pricePerShare * (1 + conservativePct / 100),
-          realistic: trade.pricePerShare * (1 + realisticPct / 100),
-          optimistic: trade.pricePerShare * (1 + optimisticPct / 100)
-        },
         riskLevel: (ai.riskLevel === 'LOW' ? t.riskLow : ai.riskLevel === 'MEDIUM' ? t.riskMedium : t.riskHigh) as string,
         timeHorizon: ai.timeHorizon || '2-4 weeks'
       };
     }
-    
+
     // Fallback defaults - generate dynamic insight based on trade data
     const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'Buy';
     const traderTitle = trade.traderTitle?.toLowerCase() || '';
@@ -105,63 +97,10 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
       insight = isBuy ? t.insightSmallBuy : t.insightSmallSell;
     }
 
-    // Generate realistic price targets and time horizon based on trade characteristics
     const isExecutive = traderTitle.includes('ceo') || traderTitle.includes('cfo') ||
                         traderTitle.includes('president') || traderTitle.includes('director');
     const isLargeTrade = totalValue > 1000000;
     const isMediumTrade = totalValue > 100000;
-
-    let priceTargets;
-    let timeHorizon;
-
-    if (isBuy) {
-      if (isExecutive && isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.05,
-          realistic: trade.pricePerShare * 1.12,
-          optimistic: trade.pricePerShare * 1.25
-        };
-        timeHorizon = '1-2 weeks';
-      } else if (isExecutive || isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.03,
-          realistic: trade.pricePerShare * 1.08,
-          optimistic: trade.pricePerShare * 1.18
-        };
-        timeHorizon = '2-3 weeks';
-      } else if (isMediumTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.02,
-          realistic: trade.pricePerShare * 1.05,
-          optimistic: trade.pricePerShare * 1.12
-        };
-        timeHorizon = '2-4 weeks';
-      } else {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.01,
-          realistic: trade.pricePerShare * 1.03,
-          optimistic: trade.pricePerShare * 1.08
-        };
-        timeHorizon = '3-4 weeks';
-      }
-    } else {
-      // SELL signals - negative targets
-      if (isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 0.97,
-          realistic: trade.pricePerShare * 0.92,
-          optimistic: trade.pricePerShare * 0.85
-        };
-        timeHorizon = '1-2 weeks';
-      } else {
-        priceTargets = {
-          conservative: trade.pricePerShare * 0.99,
-          realistic: trade.pricePerShare * 0.97,
-          optimistic: trade.pricePerShare * 0.93
-        };
-        timeHorizon = '2-3 weeks';
-      }
-    }
 
     // Calculate confidence based on trade characteristics
     let confidence = 50;
@@ -173,9 +112,8 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
       signal: isBuy ? 'BUY' as const : 'SELL' as const,
       confidence: Math.min(95, confidence),
       insight,
-      priceTargets,
       riskLevel: isLargeTrade && !isBuy ? t.riskHigh : isExecutive && isBuy ? t.riskLow : t.riskMedium,
-      timeHorizon
+      timeHorizon: '2-4 weeks'
     };
   }, [trade, t]);
 

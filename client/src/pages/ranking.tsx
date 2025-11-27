@@ -226,14 +226,12 @@ export default function Ranking() {
           ticker: ticker,
           currentPrice,
           marketCap: item.marketCap, // Add marketCap from ranking item
-          predictionAccuracy: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
-          impactPrediction: buyRatio > 0.7 ? `+${(Math.random() * 5 + 2).toFixed(1)}%` : `-${(Math.random() * 3 + 1).toFixed(1)}%`,
+          dataQuality: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
           aiInsight: comprehensiveAnalysis
             ? comprehensiveAnalysis.executiveSummary
-            : `${companyName}의 최근 내부자 거래 패턴을 분석한 결과, ${recentTrade.tradeType === 'BUY' ? '긍정적인' : '주의 깊게 관찰해야 할'} 신호를 보이고 있습니다.`,
+            : `${companyName}의 최근 내부자 거래 활동이 SEC Form 4에 기록되었습니다.`,
           comprehensiveAnalysis: comprehensiveAnalysis || {
-            executiveSummary: `${companyName}에 대한 분석을 진행 중입니다.`,
-            actionableRecommendation: '추가 정보를 수집하고 있습니다.',
+            executiveSummary: `${companyName}에 대한 데이터를 수집 중입니다.`,
             // App Store Compliance: priceTargets now shows actual insider trade prices, not predictions
             priceTargets: {
               conservative: recentTrade.pricePerShare,   // Actual trade price (min)
@@ -463,7 +461,7 @@ export default function Ranking() {
                     {t('ranking.lockedTitle') || `Premium Feature: #${index + 1} Ranking`}
                   </h3>
                   <p className="text-xs text-gray-300 max-w-xs">
-                    {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns'}
+                    {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see top stocks ranked by insider trading activity'}
                   </p>
                   <Button
                     onClick={(e) => {
