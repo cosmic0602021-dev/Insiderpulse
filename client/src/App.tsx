@@ -42,6 +42,7 @@ import TopStocksTerminal from '@/pages/top-stocks-terminal';
 import { View } from "@/components/terminal-ui/types";
 import { TRANSLATIONS } from "@/lib/translations";
 import { AuthModal } from "@/components/auth-modal";
+import { DisclaimerModal } from "@/components/disclaimer-modal";
 
 function PublicRouter() {
   return (
@@ -323,6 +324,7 @@ export default function App() {
             <AccessProvider>
               <TooltipProvider>
                 <AppContent />
+                <DisclaimerModal />
                 <AuthModal />
                 <PWAInstallPrompt />
                 <Toaster />
