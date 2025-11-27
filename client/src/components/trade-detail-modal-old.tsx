@@ -1034,7 +1034,7 @@ export function TradeDetailModal({
                                 isBearish ? 'bg-red-600 text-white' :
                                 'bg-gray-600 text-white'
                               }`}>
-                                {isBullish ? t('tradeDetail.buyRecommendation') : isBearish ? t('tradeDetail.sellRecommendation') : t('tradeDetail.holdRecommendation')}
+                                {isBullish ? t('tradeDetail.buyActivity') : isBearish ? t('tradeDetail.sellActivity') : t('tradeDetail.neutralActivity')}
                               </Badge>
                               <div className="text-center px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border">
                                 <p className="text-xs text-muted-foreground">{t('tradeDetail.confidenceLevel')}</p>

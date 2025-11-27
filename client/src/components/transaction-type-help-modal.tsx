@@ -33,7 +33,7 @@ export function TransactionTypeHelpModal({ open, onOpenChange }: TransactionType
                 {t('transactionFilter.coreOnly')}
               </h3>
               <span className="text-xs bg-emerald-900/30 text-emerald-500 px-2 py-1 rounded uppercase font-medium">
-                {t('common.recommended')}
+                {t('common.coreOnly')}
               </span>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed pl-7">
