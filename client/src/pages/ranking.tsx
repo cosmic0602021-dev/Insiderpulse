@@ -32,11 +32,12 @@ interface Insider {
   secFilingUrl?: string;
 }
 
+// Modified for App Store compliance: changed recommendation terminology to activity levels
 interface RankingItem {
   ticker: string;
   companyName: string;
   score: number;
-  recommendation: 'STRONG_BUY' | 'BUY' | 'HOLD';
+  recommendation: 'STRONG_BUY' | 'BUY' | 'HOLD';  // Legacy field - displays as activity level
   totalTrades: number;
   buyTrades: number;
   sellTrades: number;
@@ -233,11 +234,12 @@ export default function Ranking() {
           comprehensiveAnalysis: comprehensiveAnalysis || {
             executiveSummary: `${companyName}에 대한 분석을 진행 중입니다.`,
             actionableRecommendation: '추가 정보를 수집하고 있습니다.',
+            // App Store Compliance: priceTargets now shows actual insider trade prices, not predictions
             priceTargets: {
-              conservative: recentTrade.pricePerShare * 0.95,
-              realistic: recentTrade.pricePerShare * 1.05,
-              optimistic: recentTrade.pricePerShare * 1.15,
-              timeHorizon: '3-6개월'
+              conservative: recentTrade.pricePerShare,   // Actual trade price (min)
+              realistic: recentTrade.pricePerShare,       // Actual trade price (avg)
+              optimistic: recentTrade.pricePerShare,      // Actual trade price (max)
+              timeHorizon: '참고용'  // Reference only
             },
             riskAssessment: {
               level: 'MEDIUM',
@@ -262,25 +264,27 @@ export default function Ranking() {
     }
   };
 
+  // App Store Compliance: Changed from investment recommendations to activity level indicators
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case 'STRONG_BUY':
-        return 'bg-green-500';
+        return 'bg-green-500';  // High activity level
       case 'BUY':
-        return 'bg-blue-500';
+        return 'bg-blue-500';   // Moderate activity level
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-500';   // Low activity level
     }
   };
 
+  // App Store Compliance: Displays activity level, NOT investment advice
   const getRecommendationText = (recommendation: string) => {
     switch (recommendation) {
       case 'STRONG_BUY':
-        return t('ranking.strongBuy');
+        return t('ranking.strongBuy');  // "High Buy Volume" in translations
       case 'BUY':
-        return t('ranking.buy');
+        return t('ranking.buy');        // "Buy Activity" in translations
       default:
-        return t('ranking.hold');
+        return t('ranking.hold');       // "Low Activity" in translations
     }
   };
 

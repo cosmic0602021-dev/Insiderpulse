@@ -21,7 +21,7 @@ import LiveTrading from "@/pages/live-trading";
 import LiveTradingTerminal from "@/pages/live-trading-terminal";
 import Ranking from "@/pages/ranking";
 import PasswordDemo from "@/pages/password-demo";
-import EnhancedInsiderTradingDashboard from "@/components/EnhancedInsiderTradingDashboard";
+// EnhancedInsiderTradingDashboard removed for App Store compliance - contained investment advice language
 import PremiumCheckout from "@/pages/premium-checkout";
 import PaymentSuccess from "@/pages/payment-success";
 import SignupPage from "@/pages/signup";
@@ -72,7 +72,7 @@ function AppRouter() {
       <Route path="/search" component={Search} />
       <Route path="/ranking" component={Ranking} />
       <Route path="/password-demo" component={PasswordDemo} />
-      <Route path="/enhanced-dashboard" component={EnhancedInsiderTradingDashboard} />
+      {/* Enhanced dashboard removed for App Store compliance */}
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/settings" component={Settings} />

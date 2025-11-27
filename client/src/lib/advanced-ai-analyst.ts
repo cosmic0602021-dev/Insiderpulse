@@ -430,32 +430,33 @@ export class AdvancedAIAnalyst {
     }
   }
 
+  // App Store Compliance: Factual observations only, NO investment recommendations
   private static generateActionableInsights(trade: InsiderTrade, currentPrice: number, confidence: number, valuationAnalysis: any): string[] {
     const insights = [];
     const isBuy = trade.tradeType?.toUpperCase().includes('BUY');
+    const tradePrice = trade.pricePerShare || currentPrice;
 
-    if (isBuy && confidence > 70) {
-      insights.push(`💎 내부자 평균 매수가: $${(currentPrice * 0.95).toFixed(2)}`);
-      insights.push(`🎯 분석 가격대: $${(currentPrice * 1.15).toFixed(2)} - $${(currentPrice * 1.25).toFixed(2)}`);
-      insights.push(`⏰ 내부자 보유 기간 패턴: 중장기`);
-    } else if (isBuy && confidence > 50) {
-      insights.push(`📊 현재가 대비 내부자 매수가: 약 5-10% 차이`);
-      insights.push(`🛡️ 내부자 거래 규모: 포트폴리오 비중 분석 필요`);
-    } else if (!isBuy) {
-      insights.push(`⏳ 내부자 매도 패턴: 계획된 매도 가능성 분석`);
-      insights.push(`📈 기술적 지지선: 추가 데이터 필요`);
+    if (isBuy) {
+      insights.push(`📊 내부자 거래가: $${tradePrice.toFixed(2)}`);
+      insights.push(`📈 현재 시장가: $${currentPrice.toFixed(2)}`);
+      insights.push(`📋 SEC Form 4 공시 완료`);
+    } else {
+      insights.push(`📊 내부자 매도가: $${tradePrice.toFixed(2)}`);
+      insights.push(`📈 현재 시장가: $${currentPrice.toFixed(2)}`);
+      insights.push(`📋 SEC Form 4 공시 완료`);
     }
 
     return insights;
   }
 
+  // App Store Compliance: Returns actual price data, NOT predictions
+  // priceTargets field now represents historical insider trade price range
   private static calculatePriceTargets(currentPrice: number, valuationAnalysis: any, confidence: number) {
-    const baseMultiplier = confidence / 100;
-
+    // Return current price as reference - no predictions or forecasts
     return {
-      conservative: currentPrice * (1 + 0.05 * baseMultiplier),
-      realistic: currentPrice * (1 + 0.15 * baseMultiplier),
-      optimistic: currentPrice * (1 + 0.25 * baseMultiplier)
+      conservative: currentPrice,   // Current market price (for reference)
+      realistic: currentPrice,      // Current market price (for reference)
+      optimistic: currentPrice      // Current market price (for reference)
     };
   }
 
