@@ -61,8 +61,9 @@ export class AIAnalysisService {
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst specializing in insider trading analysis. 
-                     Analyze insider trading data and provide actionable investment insights.
+            content: `You are a data analyst specializing in SEC Form 4 insider trading data analysis.
+                     Analyze insider trading data and provide ONLY factual, objective summaries.
+                     DO NOT provide investment advice, recommendations, or opinions.
                      Always respond with valid JSON in the exact format specified.`
           },
           {

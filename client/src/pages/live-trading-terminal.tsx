@@ -78,7 +78,7 @@ export default function LiveTradingTerminal() {
     if (filterType === 'core') {
       return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
     }
-    return ['ALL']; // 'ALL' means no filtering (show all)
+    return undefined; // undefined means no filtering (show all transaction types)
   };
 
   // Fetch trades with access level

@@ -444,16 +444,13 @@ export default function Ranking() {
           const isLocked = !isPremium && index < 3; // Top 3 locked for free users
 
           return (
-          <Card
-            key={item.ticker}
-            ref={el => cardRefs.current[index] = el}
-            className={`hover-elevate cursor-pointer relative ${isLocked ? 'overflow-hidden h-auto' : ''}`}
-            data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
-            onClick={() => handleStockClick(item, index)}
-          >
-            {/* Lock Overlay for Top 3 (Free Users Only) */}
-            {isLocked && (
-              <div className="p-4">
+            isLocked ? (
+            <Card
+              key={item.ticker}
+              className="hover-elevate cursor-pointer"
+              onClick={() => setLocation('/premium-checkout')}
+            >
+              <CardContent className="p-4">
                 <div className="text-center p-3 space-y-1.5 bg-black/85 backdrop-blur-md rounded-lg border border-amber-500/30 shadow-xl">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500/20 mb-0.5">
                     <Lock className="w-7 h-7 text-amber-500" />
@@ -475,28 +472,33 @@ export default function Ranking() {
                     {t('ranking.unlockButton') || 'Unlock Top Rankings'}
                   </Button>
                 </div>
-              </div>
-            )}
-            {/* 공유 버튼 - only show if not locked */}
-            {!isLocked && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute top-2 right-2 z-10 hover:bg-muted/50"
-                onClick={(e) => {
-                  e.stopPropagation(); // 카드 클릭 이벤트 방지
-                  shareRankingCard(index);
-                }}
-              >
-                {sharedCardIndex === index ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Share2 className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+              </CardContent>
+            </Card>
+          ) : (
+          <Card
+            key={item.ticker}
+            ref={el => cardRefs.current[index] = el}
+            className="hover-elevate cursor-pointer relative"
+            data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
+            onClick={() => handleStockClick(item, index)}
+          >
+            {/* 공유 버튼 */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 z-10 hover:bg-muted/50"
+              onClick={(e) => {
+                e.stopPropagation(); // 카드 클릭 이벤트 방지
+                shareRankingCard(index);
+              }}
+            >
+              {sharedCardIndex === index ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+            </Button>
 
-            {!isLocked && (
             <CardContent className="p-3 sm:p-6 relative">
               {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
@@ -867,8 +869,8 @@ export default function Ranking() {
                 </div>
               ) : null}
             </CardContent>
-            )}
           </Card>
+          )
         );
         })}
       </div>

@@ -61,8 +61,8 @@ export default function LiveTrading() {
     if (filterType === 'core') {
       return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
     }
-    // For 'all', send 'ALL' to get everything
-    return ['ALL'];
+    // For 'all', return undefined to get all transaction types
+    return undefined;
   };
 
   // Load watchlist from localStorage
@@ -196,29 +196,34 @@ export default function LiveTrading() {
     const validation = dataValidator.validateTrades(allTrades);
     const freshness = dataFreshnessMonitor.checkDataFreshness(validation.validTrades);
 
-    // 매수/매도만 필터링 (GRANT, OPTION_EXERCISE 등 제외)
-    const buySellTrades = validation.validTrades.filter(trade => {
-      const tradeType = trade.tradeType?.toUpperCase() || '';
-      return tradeType.includes('BUY') ||
-             tradeType.includes('PURCHASE') ||
-             tradeType.includes('SELL') ||
-             tradeType.includes('SALE');
-    });
+    // transactionTypeFilter에 따라 필터링
+    let filteredTrades = validation.validTrades;
+    if (transactionTypeFilter === 'core') {
+      // 핵심 거래만: 매수/매도만 필터링 (GRANT, OPTION_EXERCISE 등 제외)
+      filteredTrades = validation.validTrades.filter(trade => {
+        const tradeType = trade.tradeType?.toUpperCase() || '';
+        return tradeType.includes('BUY') ||
+               tradeType.includes('PURCHASE') ||
+               tradeType.includes('SELL') ||
+               tradeType.includes('SALE');
+      });
+    }
+    // transactionTypeFilter === 'all'이면 모든 거래 타입 표시
 
     const quality: DataQualityStatus = {
-      isValid: buySellTrades.length > 0,
+      isValid: filteredTrades.length > 0,
       isFresh: freshness.isFresh,
-      validTradeCount: buySellTrades.length,
+      validTradeCount: filteredTrades.length,
       totalTradeCount: validation.summary.total,
       lastUpdateAge: freshness.lastTradeAge,
       issues: [...validation.summary.issues, ...freshness.warnings]
     };
 
     return {
-      trades: buySellTrades,
+      trades: filteredTrades,
       quality
     };
-  }, [allTrades]);
+  }, [allTrades, transactionTypeFilter]);
 
   // Update state based on validated data - Fixed: Use allTrades as dependency to prevent infinite loop
   // This ensures the effect only runs when the source data changes, not when the computed object reference changes
