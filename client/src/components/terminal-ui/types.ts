@@ -1,10 +1,11 @@
+// Modified for App Store compliance: removed all investment recommendation terminology
 export interface Trade {
   id: string;
   ticker: string;
   companyName: string;
   insider: string;
   relation: string;
-  type: 'Buy' | 'Sell';
+  type: 'Buy' | 'Sell';  // SEC filing transaction type (factual)
   shares: number;
   price: number;
   value: number;
@@ -17,12 +18,12 @@ export interface Trade {
   secFilingUrl?: string;
   accessionNumber?: string;
 
-  aiScore: number;
-  aiConfidence: number;
-  aiRecommendation: 'Strong Buy' | 'Buy' | 'Hold' | 'Sell';
-  riskLevel: 'Low' | 'Medium' | 'High';
-  sentiment: 'Bullish' | 'Bearish' | 'Neutral';
-  summary: string;
+  aiScore: number;  // Data quality score, NOT investment signal
+  aiConfidence: number;  // Data reliability, NOT investment confidence
+  aiRecommendation: 'Strong Buy' | 'Buy' | 'Hold' | 'Sell';  // Legacy field - displays as Activity Type
+  riskLevel: 'Low' | 'Medium' | 'High';  // Volatility level, NOT investment risk
+  sentiment: 'Bullish' | 'Bearish' | 'Neutral';  // Market sentiment from news, NOT recommendation
+  summary: string;  // Factual observation only
   catalysts: string[];
   timeHorizon: string;
 
@@ -34,10 +35,10 @@ export interface Trade {
   };
   newsItems: NewsItem[];
 
-  targets: {
-    conservative: number;
-    realistic: number;
-    optimistic: number;
+  targets: {  // Historical insider prices, NOT price predictions
+    conservative: number;  // Min insider trade price
+    realistic: number;     // Avg insider trade price
+    optimistic: number;    // Max insider trade price
   };
 }
 

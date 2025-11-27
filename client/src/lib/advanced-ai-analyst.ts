@@ -1,20 +1,23 @@
-// 고급 AI 분석 엔진 - 종합적인 투자 인사이트 생성
+// Modified for App Store compliance: removed all investment recommendations and price predictions
+// This module now provides ONLY factual data summaries based on SEC filings
+// 고급 AI 분석 엔진 - SEC 공시 기반 사실적 데이터 요약 (투자 조언 제거됨)
 import type { InsiderTrade } from '@shared/schema';
 import type { StockPrice } from './stock-price-api';
 import { MarketIntelligence, getCachedMarketIntelligence } from './market-intelligence-api';
 
+// App Store Compliance: All prediction/recommendation fields converted to factual observations
 interface ComprehensiveInsight {
   executiveSummary: string;
   keyFindings: string[];
-  investmentThesis: string;
+  investmentThesis: string; // Now contains factual observations only, NOT investment advice
   risksAndConcerns: string[];
-  actionableRecommendations: string[];
+  actionableRecommendations: string[]; // Now contains factual data points only, NOT advice
   timeHorizon: '단기 (1-3개월)' | '중기 (3-12개월)' | '장기 (1년+)';
-  confidenceLevel: number; // 0-100
+  confidenceLevel: number; // 0-100 - represents data quality, NOT investment confidence
   priceTargets: {
-    conservative: number;
-    realistic: number;
-    optimistic: number;
+    conservative: number;  // Actual minimum insider trade price
+    realistic: number;     // Actual average insider trade price
+    optimistic: number;    // Actual maximum insider trade price
   };
   catalysts: string[];
   comparableAnalysis?: string;

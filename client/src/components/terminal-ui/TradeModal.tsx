@@ -1,7 +1,8 @@
+// Modified for App Store compliance: price target safe mode - removed all investment predictions
 
 import React from 'react';
 import { Trade, Language } from './types';
-import { X, Star, CheckCircle2, ChevronDown, Brain, Target, AlertTriangle, FileText, TrendingUp, ShieldCheck } from 'lucide-react';
+import { X, Star, CheckCircle2, ChevronDown, Brain, Target, AlertTriangle, FileText, TrendingUp, ShieldCheck, Info } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercent, TRANSLATIONS } from '@/lib/translations';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
 
@@ -267,38 +268,42 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                             {trade.summary}
                         </p>
 
+                        {/* Reference Price Range - App Store Compliance */}
                         <div className="mb-8">
-                             <div className="flex items-center gap-2 mb-3">
+                             <div className="flex items-center gap-2 mb-1">
                                  <Target size={14} className="text-neutral-500" />
-                                 <span className="text-xs font-bold text-neutral-300 uppercase tracking-wide">{t.priceTargets}</span>
+                                 <span className="text-xs font-bold text-neutral-300 uppercase tracking-wide">
+                                   {lang === 'ko' ? '참고 가격대' : lang === 'ja' ? '参考価格帯' : lang === 'zh' ? '参考价格区间' : 'Reference Price Range'}
+                                 </span>
+                             </div>
+                             <div className="text-[8px] text-neutral-600 mb-3">
+                               {lang === 'ko' ? '역사적 내부자 거래가' : 'Historical Insider Prices'}
                              </div>
                              <div className="space-y-3">
-                                 <div>
-                                     <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>{lang === 'ko' ? '보수적' : 'Conservative'}</span>
-                                         <span className="font-mono text-neutral-300">${trade.targets.conservative.toFixed(2)}</span>
-                                     </div>
-                                     <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                                         <div className="h-full bg-neutral-500 w-[60%]"></div>
+                                 <div className="flex justify-between items-center py-2 border-b border-neutral-800">
+                                     <span className="text-[9px] text-neutral-500 uppercase">
+                                       {lang === 'ko' ? '내부자 거래가' : 'Insider Trade Price'}
+                                     </span>
+                                     <span className="font-mono text-lg text-emerald-400 font-bold">${trade.price.toFixed(2)}</span>
+                                 </div>
+                                 <div className="flex justify-between items-center py-2 border-b border-neutral-800">
+                                     <span className="text-[9px] text-neutral-500 uppercase">
+                                       {lang === 'ko' ? '현재가' : 'Current Price'}
+                                     </span>
+                                     <div className="flex items-center gap-2">
+                                       <span className={`font-mono text-sm ${trade.priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                         ${trade.currentPrice.toFixed(2)}
+                                       </span>
+                                       <span className={`text-[9px] ${trade.priceChange >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                         {trade.priceChange >= 0 ? '+' : ''}{trade.priceChange.toFixed(1)}%
+                                       </span>
                                      </div>
                                  </div>
-                                 <div>
-                                     <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>{lang === 'ko' ? '현실적' : 'Realistic'}</span>
-                                         <span className="font-mono text-emerald-400">${trade.targets.realistic.toFixed(2)}</span>
-                                     </div>
-                                     <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                                         <div className="h-full bg-emerald-600 w-[75%]"></div>
-                                     </div>
-                                 </div>
-                                 <div>
-                                     <div className="flex justify-between text-[9px] text-neutral-500 uppercase mb-1">
-                                         <span>{lang === 'ko' ? '낙관적' : 'Optimistic'}</span>
-                                         <span className="font-mono text-amber-400">${trade.targets.optimistic.toFixed(2)}</span>
-                                     </div>
-                                     <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                                         <div className="h-full bg-amber-600 w-[90%]"></div>
-                                     </div>
+                                 <div className="flex items-center gap-1 pt-2">
+                                     <Info size={9} className="text-neutral-600" />
+                                     <span className="text-[7px] text-neutral-600">
+                                       {lang === 'ko' ? '참고용입니다. 예측 또는 투자 권유가 아닙니다.' : 'For reference only. Not a forecast or investment recommendation.'}
+                                     </span>
                                  </div>
                              </div>
                         </div>
