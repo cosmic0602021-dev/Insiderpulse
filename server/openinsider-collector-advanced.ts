@@ -538,8 +538,11 @@ class AdvancedOpenInsiderCollector {
         filingDate = this.parseDate(cells[headerMap['filing_date']]) || new Date().toISOString().split('T')[0];
         tradeDate = this.parseDate(cells[headerMap['trade_date']]) || filingDate;
         
-        // Extract transaction code from the raw row
-        transactionCode = this.extractTransactionCode(row, cells[0] || '');
+        // Extract transaction code from the TRANSACTION column (e.g., "P - Purchase", "S - Sale")
+        // NOT from the first column which contains SEC filing type codes (D, M, A, etc.)
+        const transactionCell = cells[headerMap['transaction']] || '';
+        transactionCode = this.extractTransactionCodeFromCell(transactionCell);
+        console.log(`📋 Transaction cell: '${transactionCell?.substring(0, 30)}' -> code: '${transactionCode}'`);
         
         console.log(`📅 Dates via mapping: filing=${filingDate}, trade=${tradeDate}`);
       } else {
@@ -675,7 +678,44 @@ class AdvancedOpenInsiderCollector {
   }
 
   /**
-   * 🔤 EXTRACT TRANSACTION CODE
+   * 🔤 EXTRACT TRANSACTION CODE FROM TRANSACTION CELL
+   * Parses "P - Purchase", "S - Sale", "S - Sale+OE", "A - Award", "M - Option Exercise" etc. from the transaction column
+   * 
+   * NOTE: Only P (Purchase) and S (Sale) are processed as insider trades.
+   * Other codes (A-Award, M-Option Exercise, G-Gift, etc.) are logged but filtered out
+   * by parseTradeTypeFromCode() as they represent non-trading transactions.
+   */
+  private extractTransactionCodeFromCell(transactionCell: string): string {
+    if (!transactionCell) return '';
+    
+    const cellText = transactionCell.trim();
+    
+    // Pattern 1: Extract any SEC transaction code "X - Description" format
+    // This includes P, S, A, M, G, F, X, C, W, U, D
+    const dashPattern = /^([A-Z])\s*-/i;
+    const dashMatch = cellText.match(dashPattern);
+    if (dashMatch) {
+      return dashMatch[1].toUpperCase();
+    }
+    
+    // Pattern 2: Just look for single letter code at the start
+    if (cellText.length >= 1 && /^[A-Z]$/i.test(cellText[0])) {
+      return cellText[0].toUpperCase();
+    }
+    
+    // Pattern 3: Check for keywords (fallback)
+    const lowerText = cellText.toLowerCase();
+    if (lowerText.includes('purchase') || lowerText.includes('buy')) return 'P';
+    if (lowerText.includes('sale') || lowerText.includes('sell')) return 'S';
+    if (lowerText.includes('award') || lowerText.includes('grant')) return 'A';
+    if (lowerText.includes('option') || lowerText.includes('exercise')) return 'M';
+    if (lowerText.includes('gift')) return 'G';
+    
+    return '';
+  }
+
+  /**
+   * 🔤 EXTRACT TRANSACTION CODE (LEGACY)
    * Identifies P,S,A,M,G,F,X,C,W,U,D transaction codes
    */
   private extractTransactionCode(row: string, firstCell: string): string {
@@ -708,16 +748,27 @@ class AdvancedOpenInsiderCollector {
 
   /**
    * 📊 MAP TRANSACTION CODE TO TRADE TYPE
+   * Only P (Purchase) and S (Sale) are processed as actual insider trades.
+   * Other SEC codes represent non-trading transactions:
+   * - A: Award/Grant of stock
+   * - M: Option Exercise
+   * - G: Gift
+   * - F: Payment of tax with shares
+   * - X: Exercise of derivative
+   * - C: Conversion of derivative security
+   * - W: Acquisition/disposition in exchange
+   * - U: Tender of shares
+   * - D: Disposition to issuer
    */
   private parseTradeTypeFromCode(code: string): string | null {
     // Only allow pure purchases (P) and sales (S)
     const mappings: { [key: string]: string } = {
-      'P': 'BUY',   // Purchase
-      'S': 'SELL',  // Sale
+      'P': 'BUY',   // Purchase - actual market buy
+      'S': 'SELL',  // Sale - actual market sale
     };
 
     // Return null for all other codes (grants, options, etc.)
-    // This will cause the trade to be skipped
+    // These are filtered because they don't represent open-market transactions
     return mappings[code] || null;
   }
 
