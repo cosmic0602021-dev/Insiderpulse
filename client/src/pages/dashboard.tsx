@@ -46,14 +46,14 @@ export default function Dashboard() {
   
   const { data: rawTrades, isLoading: tradesLoading, refetch: refetchTrades, error: tradesError } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: 100, // Increased for Top Stocks calculation
+      limit: 200, // Increased for better historical coverage (premium users)
       offset: 0,
       from: dateRange.fromDate?.toISOString().split('T')[0],
       to: dateRange.toDate?.toISOString().split('T')[0],
       sortBy,
       transactionTypeFilter
     }),
-    queryFn: () => apiClient.getInsiderTrades(100, 0, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter)),
+    queryFn: () => apiClient.getInsiderTrades(200, 0, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter)),
     staleTime: 1 * 60 * 1000, // 1 minute for more frequent updates
   });
 
@@ -117,8 +117,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (trades && currentOffset === 0) {
       setAllTrades(trades);
-      // Set hasMoreData based on first page size
-      setHasMoreData(trades.length >= 20);
+      // Set hasMoreData based on first page size - we loaded 200 initially
+      setHasMoreData(trades.length >= 200);
     }
   }, [trades, currentOffset]);
   
@@ -130,8 +130,12 @@ export default function Dashboard() {
 
     setLoadingMore(true);
     try {
-      const newOffset = currentOffset + 20;
-      const rawMoreTrades = await apiClient.getInsiderTrades(20, newOffset, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter));
+      // Calculate next offset based on how many trades we already have
+      const loadedCount = allTrades.length > 0 ? allTrades.length : (trades?.length || 200);
+      const newOffset = loadedCount;
+      const batchSize = 50; // Load 50 more trades at a time
+      console.log(`📊 Load more: fetching ${batchSize} trades from offset ${newOffset}`);
+      const rawMoreTrades = await apiClient.getInsiderTrades(batchSize, newOffset, dateRange.fromDate, dateRange.toDate, sortBy, getTransactionTypes(transactionTypeFilter));
 
       // 🚨 추가 데이터도 검증
       const validation = dataValidator.validateTrades(rawMoreTrades);
@@ -142,15 +146,13 @@ export default function Dashboard() {
       }
 
       if (validMoreTrades.length === 0) {
+        console.log('📊 No more trades to load');
         setHasMoreData(false);
       } else {
+        console.log(`📊 Loaded ${validMoreTrades.length} more trades`);
         setAllTrades(prev => [...prev, ...validMoreTrades]);
-        setCurrentOffset(newOffset);
-
-        // If we got less than requested amount, probably no more data
-        if (validMoreTrades.length < 20) {
-          setHasMoreData(false);
-        }
+        // Only set hasMoreData to true if we got at least the batch size
+        setHasMoreData(validMoreTrades.length >= batchSize);
       }
     } catch (error) {
       console.error('Failed to load more trades:', error);
