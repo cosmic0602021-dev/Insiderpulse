@@ -74,3 +74,22 @@ Currently implements a basic user system with:
 **Font Services**: Google Fonts integration for typography (Inter for UI text, JetBrains Mono for data display), chosen for optimal readability in financial data contexts.
 
 The architecture emphasizes real-time data processing, type safety throughout the stack, and scalable design patterns suitable for handling high-frequency financial data updates. The system is designed to be responsive to market conditions while providing reliable, actionable insights to users.
+
+## Data Access Tiers
+
+### Free Users
+- **48-Hour Delay**: Only see trades collected more than 48 hours ago (`createdAt <= 48h ago`)
+- **Sorting**: Data sorted by `filedDate DESC` for better user experience (most recent SEC filings first)
+- **Pagination**: Initial load of 200 trades, "Load More" button adds 100 more per click
+- **Total Available**: ~2,380 historical trades accessible
+
+### Premium Users
+- **Real-Time Access**: See all data including latest collections
+- **No Delay Filter**: Full access to all collected trades
+- **Same sorting**: `filedDate DESC` for consistency
+
+### Important Distinction
+- `createdAt`: When we collected/processed the filing (used for 48h delay filter)
+- `filedDate`: When the insider filed with SEC (used for sorting)
+
+This allows free users to see the most recent SEC filings that have been in our system for 48+ hours.

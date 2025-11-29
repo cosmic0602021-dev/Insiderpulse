@@ -63,7 +63,10 @@ export default function LiveTradingTerminal() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadedCount, setLoadedCount] = useState(100);
+  const [loadedCount, setLoadedCount] = useState(200);
+  const [allLoadedTrades, setAllLoadedTrades] = useState<InsiderTrade[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
@@ -81,21 +84,21 @@ export default function LiveTradingTerminal() {
     return undefined; // undefined means no filtering (show all transaction types)
   };
 
-  // Fetch trades with access level
+  // Fetch trades with access level - use filedDate for sorting to show most recent filings first
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: loadedCount,
+      limit: 200,
       offset: 0,
-      sortBy: 'createdAt',
+      sortBy: 'filedDate',
       transactionTypes: getTransactionTypes(transactionTypeFilter)
     }),
     queryFn: async () => {
       const response = await apiClient.getInsiderTradesWithAccess(
-        loadedCount,
+        200,
         0,
         undefined,
         undefined,
-        'createdAt',
+        'filedDate',
         getTransactionTypes(transactionTypeFilter)
       );
       if (response.accessLevel) {
@@ -108,7 +111,48 @@ export default function LiveTradingTerminal() {
     refetchOnWindowFocus: true,
   });
 
-  const allTrades = useMemo(() => tradesResponse?.trades || [], [tradesResponse?.trades]);
+  // Initialize allLoadedTrades when tradesResponse changes
+  useEffect(() => {
+    if (tradesResponse?.trades && tradesResponse.trades.length > 0) {
+      setAllLoadedTrades(tradesResponse.trades);
+      setHasMoreData(tradesResponse.trades.length >= 200);
+    }
+  }, [tradesResponse?.trades]);
+
+  // Load more handler
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreData) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const offset = allLoadedTrades.length;
+      const batchSize = 100;
+      console.log(`📊 Loading more trades from offset ${offset}`);
+      
+      const response = await apiClient.getInsiderTradesWithAccess(
+        batchSize,
+        offset,
+        undefined,
+        undefined,
+        'filedDate',
+        getTransactionTypes(transactionTypeFilter)
+      );
+      
+      if (response.trades.length === 0) {
+        setHasMoreData(false);
+      } else {
+        setAllLoadedTrades(prev => [...prev, ...response.trades]);
+        setHasMoreData(response.trades.length >= batchSize);
+        console.log(`📊 Loaded ${response.trades.length} more trades, total: ${allLoadedTrades.length + response.trades.length}`);
+      }
+    } catch (error) {
+      console.error('Failed to load more trades:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const allTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse?.trades || []);
 
   // WebSocket connection for real-time updates
   const wsUrl = getWebSocketUrl();
@@ -425,6 +469,31 @@ export default function LiveTradingTerminal() {
                 tData={tData}
               />
             ))}
+            
+            {/* Load More Button */}
+            <div className="flex justify-center py-6 border-t border-neutral-900">
+              {hasMoreData ? (
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="px-6 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-[11px] font-mono uppercase tracking-widest border border-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-testid="button-load-more"
+                >
+                  {isLoadingMore ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 border border-neutral-500 border-t-transparent rounded-full animate-spin"></span>
+                      {tCommon.loading || 'Loading...'}
+                    </span>
+                  ) : (
+                    <span>{tCommon.loadMore || 'Load More Historical Data'}</span>
+                  )}
+                </button>
+              ) : (
+                <span className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">
+                  {tCommon.noMoreData || 'All historical data loaded'}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
