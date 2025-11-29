@@ -310,14 +310,14 @@ export default function LiveTradingTerminal() {
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <div className="relative flex-1 w-full md:max-w-md group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors" size={14} />
+          <div className="relative w-full md:w-[500px] group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-neutral-300 transition-colors" size={18} />
             <input 
               type="text" 
               placeholder={t.query}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0a0a0a] text-sm text-neutral-300 border border-neutral-800 pl-10 pr-4 py-3 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-600 transition-colors"
+              className="w-full bg-[#0a0a0a] text-base text-neutral-200 border-2 border-neutral-700 pl-12 pr-6 py-4 focus:outline-none focus:border-emerald-600 font-mono placeholder:text-neutral-500 transition-colors rounded-lg"
               data-testid="input-search"
             />
           </div>
