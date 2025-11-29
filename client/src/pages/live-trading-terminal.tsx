@@ -77,11 +77,13 @@ export default function LiveTradingTerminal() {
   const isPro = accessLevel?.hasRealtimeAccess || false;
 
   // Helper: Map transaction filter to transaction types
-  const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
+  // 핵심거래: P/S 코드만 (자발적 매수/매도)
+  // 전체거래: 'ALL' 전달 → 백엔드에서 모든 거래 유형 + 파생상품 포함
+  const getTransactionTypes = (filterType: 'core' | 'all'): string[] => {
     if (filterType === 'core') {
       return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
     }
-    return undefined; // undefined means no filtering (show all transaction types)
+    return ['ALL']; // 'ALL'을 명시적으로 보내서 모든 거래 유형 포함
   };
 
   // Fetch trades with access level - use filedDate for sorting to show most recent filings first
@@ -110,6 +112,12 @@ export default function LiveTradingTerminal() {
     refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
+
+  // Reset allLoadedTrades when transaction filter changes
+  useEffect(() => {
+    setAllLoadedTrades([]);
+    setHasMoreData(true);
+  }, [transactionTypeFilter]);
 
   // Initialize allLoadedTrades when tradesResponse changes
   useEffect(() => {

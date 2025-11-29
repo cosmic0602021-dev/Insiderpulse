@@ -2155,19 +2155,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let transactionTypes: string[] | undefined;
       let includeDerivatives = false;
 
+      console.log(`📋 [/api/trades] Transaction filter received: "${transactionFilter}"`);
+
       if (transactionFilter) {
         // If 'ALL' is specified, don't filter by transaction type
         if (transactionFilter.toUpperCase() === 'ALL') {
           transactionTypes = undefined;  // 모든 transaction code
           includeDerivatives = true;     // Table 1 + Table 2 (전체거래)
+          console.log(`   ✅ ALL mode: transactionTypes=undefined, includeDerivatives=true`);
         } else {
           transactionTypes = transactionFilter.split(',');
           includeDerivatives = false;    // Table 1만 (핵심거래)
+          console.log(`   🔹 Core mode: transactionTypes=${JSON.stringify(transactionTypes)}, includeDerivatives=false`);
         }
       } else {
         // Default: pure buy/sell only (schema-valid values)
         transactionTypes = ['BUY', 'SELL'];  // 핵심거래 (P/S만)
         includeDerivatives = false;          // Table 1만
+        console.log(`   🔸 Default mode: transactionTypes=['BUY', 'SELL'], includeDerivatives=false`);
       }
 
       // Ticker filter

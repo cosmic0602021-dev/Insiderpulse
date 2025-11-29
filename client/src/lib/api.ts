@@ -327,13 +327,13 @@ export const queryKeys = {
   stats: ['stats'] as const,
   trades: {
     all: ['trades'] as const,
-    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) =>
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[] }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
   },
   tradesList: {
     all: ['trades', 'list'] as const,
-    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string }) =>
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[] }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
   },
