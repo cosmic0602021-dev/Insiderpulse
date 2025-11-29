@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('authUser', JSON.stringify(newUser));
     apiClient.setToken(newToken);
 
-    queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+    queryClient.invalidateQueries({ queryKey: ['trades'] });
     console.log('🔄 [AUTH CONTEXT] Invalidated trades cache to refetch with new access level');
 
     console.log('✅ [AUTH CONTEXT] User logged in and state updated');
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('authUser');
     apiClient.setToken(null);
 
-    queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+    queryClient.invalidateQueries({ queryKey: ['trades'] });
     console.log('🔄 [AUTH CONTEXT] Logged out - invalidated trades cache');
   };
 
