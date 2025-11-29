@@ -78,18 +78,17 @@ The architecture emphasizes real-time data processing, type safety throughout th
 ## Data Access Tiers
 
 ### Free Users
-- **48-Hour Delay**: Only see trades collected more than 48 hours ago (`createdAt <= 48h ago`)
+- **48-Hour Delay**: Only see trades with SEC filing date (`filedDate`) more than 48 hours ago
 - **Sorting**: Data sorted by `filedDate DESC` for better user experience (most recent SEC filings first)
 - **Pagination**: Initial load of 200 trades, "Load More" button adds 100 more per click
-- **Total Available**: ~2,380 historical trades accessible
+- **Example**: If today is Nov 29, free users can see trades filed on Nov 27 or earlier
 
 ### Premium Users
-- **Real-Time Access**: See all data including latest collections
+- **Real-Time Access**: See all data including latest filings
 - **No Delay Filter**: Full access to all collected trades
 - **Same sorting**: `filedDate DESC` for consistency
 
-### Important Distinction
-- `createdAt`: When we collected/processed the filing (used for 48h delay filter)
-- `filedDate`: When the insider filed with SEC (used for sorting)
-
-This allows free users to see the most recent SEC filings that have been in our system for 48+ hours.
+### Technical Notes
+- `filedDate`: When the insider filed with SEC (used for both filtering and sorting)
+- `createdAt`: When we collected/processed the filing (internal use only)
+- The 48-hour delay is now based on SEC filing date, not collection time

@@ -2150,13 +2150,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let filterBy: 'createdAt' | 'filedDate' | undefined = undefined;
 
       if (!hasRealtimeAccess) {
-        // Free users: Force 48-hour delay filter regardless of request
+        // Free users: Force 48-hour delay filter based on SEC filing date
+        // Use full ISO timestamp for precise 48-hour comparison (not truncated to midnight)
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-        adjustedToDate = fortyEightHoursAgo.toISOString().split('T')[0];
-        filterBy = 'createdAt'; // Always filter by collection date for free users
+        adjustedToDate = fortyEightHoursAgo.toISOString(); // Full timestamp for precise comparison
+        filterBy = 'filedDate'; // Filter by SEC filing date for free users
         console.log(`🔒 Free user access - applying 48-hour delay filter`);
-        console.log(`   Cutoff date: ${adjustedToDate}`);
-        console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Cutoff timestamp: ${adjustedToDate}`);
+        console.log(`   Filter: trades with filedDate <= ${adjustedToDate} (filed more than 48h ago)`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       } else {
