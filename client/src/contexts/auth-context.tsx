@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User } from '@shared/schema';
 import { apiClient } from '@/lib/api';
+import { queryClient } from '@/lib/queryClient';
 
 interface AuthContextType {
   user: User | null;
@@ -90,8 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(newToken);
     localStorage.setItem('authToken', newToken);
     localStorage.setItem('authUser', JSON.stringify(newUser));
-    // Set token in API client
     apiClient.setToken(newToken);
+
+    queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+    console.log('🔄 [AUTH CONTEXT] Invalidated trades cache to refetch with new access level');
 
     console.log('✅ [AUTH CONTEXT] User logged in and state updated');
     console.log('   💾 Token saved to localStorage');
@@ -103,8 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    // Remove token from API client
     apiClient.setToken(null);
+
+    queryClient.invalidateQueries({ queryKey: ['/api/trades'] });
+    console.log('🔄 [AUTH CONTEXT] Logged out - invalidated trades cache');
   };
 
   // Manual refresh user data from server
