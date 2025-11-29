@@ -227,6 +227,7 @@ export default function Ranking() {
           ticker: ticker,
           currentPrice,
           marketCap: item.marketCap, // Add marketCap from ranking item
+          totalValue: item.netBuying, // Use combined net buying for all insiders (for market cap ratio)
           dataQuality: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
           aiInsight: comprehensiveAnalysis
             ? comprehensiveAnalysis.executiveSummary
