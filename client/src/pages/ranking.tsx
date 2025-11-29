@@ -59,6 +59,12 @@ interface RankingItem {
     significance: string;
   }>;
   patternSignals?: string | null;
+  // Enhanced trade info from API
+  enhancedTrade?: {
+    currentPrice?: number;
+    pricePerShare?: number;
+    priceLastUpdated?: string | null;
+  };
 }
 
 interface RankingsResponse {
@@ -66,6 +72,10 @@ interface RankingsResponse {
   generatedAt: string;
   period: string;
   totalStocksAnalyzed: number;
+  meta?: {
+    recencyDays: number;
+    filteredCount?: number;
+  };
 }
 
 export default function Ranking() {
@@ -628,16 +638,11 @@ export default function Ranking() {
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
-                    <p className="text-xs text-red-500 font-bold mt-0.5">🔴 TEST MESSAGE - 시총대비 코드 실행됨!</p>
-                    {/* Market cap ratio display - DEBUG: Always show */}
-                    <p className="text-xs text-amber-400 font-bold mt-0.5">
+                    {/* Market cap ratio display */}
+                    {item.marketCap && item.marketCap > 0 && (
+                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
                         {(() => {
-                          console.log('🔍 marketCap:', item.marketCap, 'ticker:', item.ticker);
-                          // DEBUG: Check if marketCap exists
-                          if (!item.marketCap) {
-                            return `DEBUG: marketCap missing (${item.ticker})`;
-                          }
-                          const ratio = (item.netBuying / item.marketCap) * 100;
+                          const ratio = (item.netBuying / item.marketCap!) * 100;
                           let ratioStr;
                           if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
                           else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
@@ -654,6 +659,7 @@ export default function Ranking() {
                                  `vs Market Cap: ${ratioStr}`;
                         })()}
                       </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -893,7 +899,7 @@ export default function Ranking() {
               No ranking data available for the current period.
               {data.meta?.recencyDays && (
                 <span className="block mt-2 text-sm">
-                  {t('ranking.checkedLastNDays', { days: data.meta.recencyDays })}
+                  {t('ranking.checkedLastNDays').replace('{days}', String(data.meta.recencyDays))}
                 </span>
               )}
             </p>
@@ -910,15 +916,6 @@ export default function Ranking() {
         isOpen={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         trade={selectedTradeData}
-        onAddToWatchlist={(trade) => {
-          if (trade.ticker && !watchlist.includes(trade.ticker)) {
-            setWatchlist(prev => [...prev, trade.ticker!]);
-            setSelectedTradeForAlert(trade);
-            setShowWatchlistModal(true);
-            setShowTradeModal(false);
-          }
-        }}
-        isInWatchlist={selectedTradeData?.ticker ? watchlist.includes(selectedTradeData.ticker) : false}
       />
 
       {/* 워치리스트 추가 성공 모달 */}

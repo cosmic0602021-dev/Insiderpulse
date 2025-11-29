@@ -312,7 +312,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
             <div className="px-2 py-2 border-t md:border-t-0 border-neutral-800 col-span-2 md:col-span-1">
               <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '수익률' : 'RETURN'}
+                {langKey === 'ko' ? '내부자 평균 수익률' : 
+                 langKey === 'ja' ? '内部者平均リターン' :
+                 langKey === 'zh' ? '内部人士平均收益' :
+                 'INSIDER AVG RETURN'}
               </div>
               <div className={`text-base md:text-lg font-bold ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%

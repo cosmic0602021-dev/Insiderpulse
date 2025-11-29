@@ -275,7 +275,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 {t.totalValue.toUpperCase()}
               </div>
               <div className="text-lg font-light text-neutral-200">
-                {formatCurrency(trade.totalValue, false)}
+                {formatCurrency(trade.totalValue)}
               </div>
               {(() => {
                 // Use marketCap from trade object (passed from ranking) or from stockPrice API
