@@ -658,6 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cancel-subscription", async (req, res) => {
     try {
       const userId = getUserIdFromToken(req);
+      const { feedback } = req.body || {};
 
       if (!userId) {
         return res.status(401).json({
@@ -738,6 +739,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionEndDate: periodEnd,
         })
         .where(eq(users.id, userId));
+
+      // Send cancellation feedback email if feedback is provided
+      if (feedback && feedback.trim()) {
+        try {
+          const nodemailer = await import('nodemailer');
+          const transporter = nodemailer.default.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: false,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          });
+
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || 'noreply@insidertrack.pro',
+            to: 'scottnim7777@gmail.com',
+            subject: `[InsiderTrack] 구독 취소 피드백 - ${user.email}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #333;">구독 취소 피드백</h2>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>사용자:</strong> ${user.email}</p>
+                  <p><strong>구독 상태:</strong> ${user.subscriptionStatus}</p>
+                  <p><strong>취소 시간:</strong> ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
+                  <p><strong>구독 종료일:</strong> ${periodEnd.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
+                </div>
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                  <h3 style="margin-top: 0; color: #856404;">피드백 내용:</h3>
+                  <p style="white-space: pre-wrap;">${feedback}</p>
+                </div>
+              </div>
+            `,
+          });
+          console.log(`📧 Cancellation feedback email sent for user ${user.email}`);
+        } catch (emailError) {
+          console.error('❌ Failed to send cancellation feedback email:', emailError);
+        }
+      }
 
       res.json({
         success: true,

@@ -73,6 +73,7 @@ export default function ProfilePage() {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelFeedback, setCancelFeedback] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [isRedeemingCoupon, setIsRedeemingCoupon] = useState(false);
   const [couponStatus, setCouponStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -124,6 +125,7 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
+        body: JSON.stringify({ feedback: cancelFeedback }),
       });
 
       let data;
@@ -149,6 +151,7 @@ export default function ProfilePage() {
         }
 
         setShowCancelDialog(false);
+        setCancelFeedback('');
       } else {
         throw new Error(data.message || '구독 해지에 실패했습니다.');
       }
@@ -517,6 +520,18 @@ export default function ProfilePage() {
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="my-4">
+            <label className="block text-xs text-neutral-400 mb-2">
+              해지 사유를 알려주시면 서비스 개선에 도움이 됩니다 (선택)
+            </label>
+            <textarea
+              value={cancelFeedback}
+              onChange={(e) => setCancelFeedback(e.target.value)}
+              placeholder="해지 사유를 입력해주세요..."
+              className="w-full h-24 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-sm text-neutral-300 text-sm placeholder-neutral-600 resize-none focus:outline-none focus:border-neutral-700"
+              data-testid="input-cancel-feedback"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800">
               취소

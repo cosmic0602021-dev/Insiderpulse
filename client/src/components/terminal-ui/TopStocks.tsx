@@ -76,16 +76,18 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
         <div className="flex flex-col lg:flex-row gap-8">
             {/* Left: Stock Info */}
             <div className="w-full lg:w-1/4 border-r-0 lg:border-r border-neutral-900 pr-0 lg:pr-6 pb-6 lg:pb-0 border-b lg:border-b-0">
-                <div className="flex items-baseline gap-3 mb-2">
-                    <span className={`text-4xl font-black select-none ${stock.rank <= 3 ? 'text-amber-500' : 'text-neutral-800'}`}>0{stock.rank}</span>
-                    <h3 className="text-xl font-bold text-neutral-200 tracking-wide">{stock.ticker}</h3>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-baseline gap-3">
+                        <span className={`text-4xl font-black select-none ${stock.rank <= 3 ? 'text-amber-500' : 'text-neutral-800'}`}>0{stock.rank}</span>
+                        <h3 className="text-xl font-bold text-neutral-200 tracking-wide">{stock.ticker}</h3>
+                    </div>
                     {onViewDetails && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onViewDetails(stock);
                             }}
-                            className="ml-3 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105"
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105"
                         >
                             <Eye size={12} />
                             {lang === 'ko' ? '자세히 보기' : 'View Details'}
