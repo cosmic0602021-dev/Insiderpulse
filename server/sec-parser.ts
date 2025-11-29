@@ -25,7 +25,7 @@ export async function parseSecForm4(xmlData: string, accessionNumber: string): P
       explicitArray: true,
       mergeAttrs: false,
       normalize: true,
-      normalizeTags: true,
+      // REMOVED normalizeTags: true - it was converting camelCase to lowercase causing parsing failures
       trim: true
     });
 
@@ -189,19 +189,14 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
 
     console.log(`   🔍 Derivative transaction code: ${transactionCode}`);
 
-    // Process same transaction codes as Table 1
-    const validCodes = ['P', 'S', 'M', 'A', 'U'];
-    if (!validCodes.includes(transactionCode)) {
+    // EXPANDED: Include more derivative-specific transaction codes
+    // P=Purchase, S=Sale, M=Exercise, A=Award/Grant, U=Transfer, 
+    // C=Conversion, D=Disposition, F=PayExercise, G=Gift, X=Exercise, J=Other
+    const validDerivativeCodes = ['P', 'S', 'M', 'A', 'U', 'C', 'D', 'F', 'G', 'X', 'J'];
+    if (!validDerivativeCodes.includes(transactionCode)) {
       console.log(`   ⏭️ Skipping derivative transaction with code '${transactionCode}'`);
       continue;
     }
-
-    // Get underlying security information
-    const underlyingSecurity = transaction.underlyingSecurity?.[0] || {};
-    const underlyingShares = parseFloat(
-      underlyingSecurity.underlyingSecurityShares?.[0]?.value?.[0] ||
-      underlyingSecurity.underlyingSecurityShares?.[0] || 0
-    );
 
     // Get derivative type (e.g., "Stock Option", "Warrant", etc.)
     const securityTitle = transaction.securityTitle?.[0];
@@ -213,39 +208,67 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
     // Get transaction date
     const transactionDate = transaction.transactionDate?.[0]?.value?.[0] || transaction.transactionDate?.[0];
 
-    // For derivatives, we use underlying shares as the "shares" count
-    // Price is usually $0 for options, so we calculate based on underlying value
+    // Get underlying security information
+    const underlyingSecurity = transaction.underlyingSecurity?.[0] || {};
+    const underlyingSharesRaw = parseFloat(
+      underlyingSecurity.underlyingSecurityShares?.[0]?.value?.[0] ||
+      underlyingSecurity.underlyingSecurityShares?.[0] || 0
+    );
+
+    // Get transaction amounts - for warrants/options this is the NUMBER of derivatives
     const transactionAmounts = transaction.transactionAmounts?.[0] || {};
-    let pricePerShare = parseFloat(
+    const derivativeCount = parseFloat(
+      transactionAmounts.transactionShares?.[0]?.value?.[0] ||
+      transactionAmounts.transactionShares?.[0] || 0
+    );
+
+    // Use underlying shares if available, otherwise use derivative count
+    const sharesCount = underlyingSharesRaw > 0 ? underlyingSharesRaw : derivativeCount;
+
+    // Get conversion/exercise price (e.g., $6.315 for warrants)
+    const conversionPrice = parseFloat(
+      transaction.conversionOrExercisePrice?.[0]?.value?.[0] ||
+      transaction.conversionOrExercisePrice?.[0] || 0
+    );
+
+    // Get transaction price (often $0 for derivatives)
+    let transactionPrice = parseFloat(
       transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] ||
       transactionAmounts.transactionPricePerShare?.[0] || 0
     );
 
-    // Validate underlying shares
-    if (isNaN(underlyingShares) || underlyingShares <= 0) {
-      console.log(`   ⚠️ Invalid underlying shares: ${underlyingShares}`);
+    // Use conversion price as fallback for display
+    let pricePerShare = transactionPrice > 0 ? transactionPrice : conversionPrice;
+
+    console.log(`   📊 Derivative details: ${derivativeType}`);
+    console.log(`      - derivativeCount: ${derivativeCount}, underlyingShares: ${underlyingSharesRaw}`);
+    console.log(`      - transactionPrice: $${transactionPrice}, conversionPrice: $${conversionPrice}`);
+
+    // Validate: must have either underlying shares or derivative count
+    if (isNaN(sharesCount) || sharesCount <= 0) {
+      console.log(`   ⚠️ Invalid shares count: underlyingShares=${underlyingSharesRaw}, derivativeCount=${derivativeCount}`);
       continue;
     }
 
-    // For derivatives with $0 price (options, grants), use $1 default for calculations
-    if (isNaN(pricePerShare) || pricePerShare <= 0) {
-      pricePerShare = 1.0;
-      console.log(`   🔄 Derivative with $0 price - using default $1`);
+    // For derivatives with no price info, use $0 (we'll still record the transaction)
+    if (isNaN(pricePerShare) || pricePerShare < 0) {
+      pricePerShare = 0;
+      console.log(`   🔄 Derivative with no price info - using $0`);
     }
 
-    const totalValue = underlyingShares * pricePerShare;
+    const totalValue = sharesCount * pricePerShare;
 
-    console.log(`   ✅ Valid derivative: ${transactionCode} - ${derivativeType} - ${underlyingShares} underlying shares at $${pricePerShare} = $${totalValue.toLocaleString()}`);
+    console.log(`   ✅ Valid derivative: ${transactionCode} - ${derivativeType} - ${sharesCount} shares at $${pricePerShare} = $${totalValue.toLocaleString()}`);
 
     validTransactions.push({
-      shares: Math.round(underlyingShares), // Use underlying shares
+      shares: Math.round(sharesCount),
       pricePerShare,
       totalValue,
       transactionCode,
       transactionDate: transactionDate || new Date().toISOString(),
       ownershipNature: 'D', // Derivatives are typically direct
       isDerivative: true, // Table 2 (Derivative)
-      underlyingShares: Math.round(underlyingShares),
+      underlyingShares: Math.round(sharesCount),
       derivativeType
     });
   }
