@@ -10,12 +10,13 @@ interface SidebarProps {
   lang: Language;
   isPro: boolean;
   isAuthenticated: boolean;
+  userEmail?: string;
   onLoginClick: () => void;
   onLogout: () => void;
   onCloseMobile?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro, isAuthenticated, onLoginClick, onLogout, onCloseMobile }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro, isAuthenticated, userEmail, onLoginClick, onLogout, onCloseMobile }) => {
   const t = TRANSLATIONS[lang].sidebar;
   const common = TRANSLATIONS[lang].common;
 
@@ -72,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
                 <div className="flex items-center gap-3 px-3 py-2 mb-2 border border-neutral-900 bg-[#050505]">
                     <div className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-900' : 'bg-amber-900'}`}></div>
                     <div className="overflow-hidden">
-                        <div className="text-[10px] font-medium text-neutral-400 truncate mono">USER_ID: 7777</div>
+                        <div className="text-[10px] font-medium text-neutral-400 truncate mono">{userEmail || 'Unknown User'}</div>
                         <div className={`text-[9px] uppercase font-bold ${isPro ? 'text-emerald-700' : 'text-amber-700'}`}>
                             {isPro ? common.tierPro : common.tierFree}
                         </div>

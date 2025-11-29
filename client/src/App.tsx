@@ -197,6 +197,7 @@ function AppContent() {
           lang={terminalLang} 
           isPro={isPro}
           isAuthenticated={isAuthenticated}
+          userEmail={user?.email}
           onLoginClick={() => openAuthModal('login')}
           onLogout={logout}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
