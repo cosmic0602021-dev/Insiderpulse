@@ -316,7 +316,7 @@ export default function LiveTradingTerminal() {
               placeholder={t.query}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0a0a0a] text-xs text-neutral-300 border border-neutral-800 pl-10 pr-4 py-2.5 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-800 transition-colors"
+              className="w-full bg-[#0a0a0a] text-sm text-neutral-300 border border-neutral-800 pl-10 pr-4 py-3 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-600 transition-colors"
               data-testid="input-search"
             />
           </div>

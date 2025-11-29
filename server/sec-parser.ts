@@ -255,51 +255,73 @@ function parseForm4XML(xmlData: any, accessionNumber: string): ParsedTrade[] {
     return [];
   }
 
-  // 🔧 NEW: Aggregate all transactions (Direct + Indirect) into one combined trade
-  // This gives the true total amount the insider transacted
-  const totalShares = validTransactions.reduce((sum, t) => sum + t.shares, 0);
-  const totalValue = validTransactions.reduce((sum, t) => sum + t.totalValue, 0);
-  const avgPricePerShare = totalValue / totalShares;
-
-  // Use the first transaction's details for type/date
-  const firstTransaction = validTransactions[0];
-  const tradeType = (firstTransaction.transactionCode === 'P' || firstTransaction.transactionCode === 'M' || firstTransaction.transactionCode === 'A') ? 'BUY' as const :
-            (firstTransaction.transactionCode === 'S') ? 'SELL' as const : 'TRANSFER' as const;
-
-  // Check if any/all transactions are derivatives
-  const hasDerivatives = validTransactions.some(t => t.isDerivative);
-  const allDerivatives = validTransactions.every(t => t.isDerivative);
-  const derivativeCount = validTransactions.filter(t => t.isDerivative).length;
-  const nonDerivativeCount = validTransactions.filter(t => !t.isDerivative).length;
-
-  console.log(`   📊 AGGREGATED TOTAL: ${totalShares} shares at avg $${avgPricePerShare.toFixed(2)} = $${totalValue.toLocaleString()}`);
-  console.log(`   📝 Breakdown: ${validTransactions.length} transaction(s) combined (${nonDerivativeCount} Table 1, ${derivativeCount} Table 2)`);
-
-  // Calculate derivative-specific aggregates
-  const derivativeTransactions = validTransactions.filter(t => t.isDerivative);
-  const totalUnderlyingShares = derivativeTransactions.reduce((sum, t) => sum + (t.underlyingShares || 0), 0);
-  const derivativeTypes = [...new Set(derivativeTransactions.map(t => t.derivativeType).filter(Boolean))].join(', ');
-
-  const aggregatedTrade: ParsedTrade = {
-    companyName,
-    ticker: ticker || '',
-    traderName,
-    traderTitle,
-    tradeType,
-    shares: totalShares,
-    pricePerShare: avgPricePerShare,
-    totalValue,
-    ownershipPercentage: 0, // Will be calculated later if needed
-    filedDate: new Date(firstTransaction.transactionDate),
-    accessionNumber,
-    secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`,
-    // Derivative fields: only set if ALL transactions are derivatives
-    isDerivative: allDerivatives,
-    underlyingShares: hasDerivatives ? totalUnderlyingShares : undefined,
-    derivativeType: hasDerivatives ? (derivativeTypes || undefined) : undefined
+  // 🔧 UPDATED: Return SEPARATE records for Table I and Table II instead of aggregating
+  // This allows "핵심거래만" (core) vs "전체거래" (all) filtering to work properly
+  const parsedTrades: ParsedTrade[] = [];
+  
+  // Helper to determine trade type from transaction code
+  const getTradeType = (code: string): 'BUY' | 'SELL' | 'TRANSFER' => {
+    if (code === 'P' || code === 'M' || code === 'A') return 'BUY';
+    if (code === 'S') return 'SELL';
+    return 'TRANSFER';
   };
 
-  return [aggregatedTrade];
+  // Separate Table I (non-derivative) and Table II (derivative) transactions
+  const table1Transactions = validTransactions.filter(t => !t.isDerivative);
+  const table2Transactions = validTransactions.filter(t => t.isDerivative);
+
+  console.log(`   📊 Returning ${table1Transactions.length} Table I records + ${table2Transactions.length} Table II records (SEPARATE, not aggregated)`);
+
+  // Create individual records for Table I transactions
+  table1Transactions.forEach((t, index) => {
+    const uniqueAccession = table1Transactions.length > 1 
+      ? `${accessionNumber}-T1-${index}` 
+      : accessionNumber;
+    
+    parsedTrades.push({
+      companyName,
+      ticker: ticker || '',
+      traderName,
+      traderTitle,
+      tradeType: getTradeType(t.transactionCode),
+      shares: t.shares,
+      pricePerShare: t.pricePerShare,
+      totalValue: t.totalValue,
+      ownershipPercentage: 0,
+      filedDate: new Date(t.transactionDate),
+      accessionNumber: uniqueAccession,
+      secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`,
+      isDerivative: false,
+      underlyingShares: undefined,
+      derivativeType: undefined
+    });
+  });
+
+  // Create individual records for Table II (derivative) transactions
+  table2Transactions.forEach((t, index) => {
+    const uniqueAccession = `${accessionNumber}-T2-${index}`;
+    
+    parsedTrades.push({
+      companyName,
+      ticker: ticker || '',
+      traderName,
+      traderTitle,
+      tradeType: getTradeType(t.transactionCode),
+      shares: t.shares,
+      pricePerShare: t.pricePerShare,
+      totalValue: t.totalValue,
+      ownershipPercentage: 0,
+      filedDate: new Date(t.transactionDate),
+      accessionNumber: uniqueAccession,
+      secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`,
+      isDerivative: true,
+      underlyingShares: t.underlyingShares,
+      derivativeType: t.derivativeType
+    });
+  });
+
+  console.log(`   ✅ Created ${parsedTrades.length} separate trade records for ${accessionNumber}`);
+  return parsedTrades;
 }
 
 function determineTraderTitle(relationship: any): string {
