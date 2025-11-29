@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 'lucide-react';
 import { TRANSLATIONS, formatNumber, formatPercent, type Language } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
 import type { InsiderTrade } from '@shared/schema';
@@ -17,13 +17,17 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
 // Map InsiderTrade to terminal UI Trade interface
+// 'Other' includes GRANT, OPTION_EXERCISE, DISPOSITION (non-core trades)
+type TradeTypeUI = 'Buy' | 'Sell' | 'Other';
+
 interface TerminalTrade {
   id: string;
   ticker: string;
   companyName: string;
   insider: string;
   relation: string;
-  type: 'Buy' | 'Sell';
+  type: TradeTypeUI;
+  rawType: string; // Original trade type from API (for display purposes)
   shares: number;
   price: number;
   value: number;
@@ -33,6 +37,18 @@ interface TerminalTrade {
   isVerified: boolean;
 }
 
+// Map trade type to UI category
+function mapTradeTypeToUI(tradeType: string): TradeTypeUI {
+  const upperType = tradeType.toUpperCase();
+  if (upperType === 'BUY' || upperType === 'PURCHASE') {
+    return 'Buy';
+  } else if (upperType === 'SELL' || upperType === 'SALE') {
+    return 'Sell';
+  }
+  // GRANT, OPTION_EXERCISE, DISPOSITION, etc. are 'Other'
+  return 'Other';
+}
+
 function mapInsiderTradeToTerminal(trade: InsiderTrade): TerminalTrade {
   return {
     id: trade.id,
@@ -40,7 +56,8 @@ function mapInsiderTradeToTerminal(trade: InsiderTrade): TerminalTrade {
     companyName: trade.companyName,
     insider: trade.traderName,
     relation: trade.traderTitle || 'Unknown',
-    type: trade.tradeType === 'BUY' ? 'Buy' : 'Sell',
+    type: mapTradeTypeToUI(trade.tradeType),
+    rawType: trade.tradeType, // Keep original type for display
     shares: trade.shares,
     price: trade.pricePerShare,
     value: trade.totalValue,
@@ -76,36 +93,34 @@ export default function LiveTradingTerminal() {
 
   const isPro = accessLevel?.hasRealtimeAccess || false;
 
-  // Helper: Map transaction filter to transaction types
-  // 핵심거래: P/S 코드만 (자발적 매수/매도)
-  // 전체거래: 'ALL' 전달 → 백엔드에서 모든 거래 유형 + 파생상품 포함
-  const getTransactionTypes = (filterType: 'core' | 'all'): string[] => {
-    if (filterType === 'core') {
-      return ['BUY', 'SELL', 'PURCHASE', 'SALE'];
-    }
-    return ['ALL']; // 'ALL'을 명시적으로 보내서 모든 거래 유형 포함
-  };
+  // 핵심거래 타입 (자발적 매수/매도만)
+  const CORE_TRADE_TYPES = ['BUY', 'SELL', 'PURCHASE', 'SALE'];
 
-  // Fetch trades with access level - use filedDate for sorting to show most recent filings first
+  // Fetch ALL trades from backend - filtering happens on frontend for instant switching
+  // 초기 로드를 2700으로 설정하여 모든 거래 유형(GRANT, OPTION_EXERCISE 등)이 포함되도록 함
+  const INITIAL_LOAD_LIMIT = 2700;
+  
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: 200,
+      limit: INITIAL_LOAD_LIMIT,
       offset: 0,
       sortBy: 'filedDate',
-      transactionTypes: getTransactionTypes(transactionTypeFilter)
+      transactionTypes: ['ALL']
     }),
     queryFn: async () => {
+      console.log('🌐 [API] Fetching ALL trades for frontend filtering');
       const response = await apiClient.getInsiderTradesWithAccess(
-        200,
+        INITIAL_LOAD_LIMIT,
         0,
         undefined,
         undefined,
         'filedDate',
-        getTransactionTypes(transactionTypeFilter)
+        ['ALL']
       );
       if (response.accessLevel) {
         setAccessLevel(response.accessLevel);
       }
+      console.log(`📊 [API] Received ${response.trades.length} trades`);
       return response;
     },
     staleTime: 5 * 60 * 1000,
@@ -113,21 +128,15 @@ export default function LiveTradingTerminal() {
     refetchOnWindowFocus: true,
   });
 
-  // Reset allLoadedTrades when transaction filter changes
-  useEffect(() => {
-    setAllLoadedTrades([]);
-    setHasMoreData(true);
-  }, [transactionTypeFilter]);
-
   // Initialize allLoadedTrades when tradesResponse changes
   useEffect(() => {
     if (tradesResponse?.trades && tradesResponse.trades.length > 0) {
       setAllLoadedTrades(tradesResponse.trades);
-      setHasMoreData(tradesResponse.trades.length >= 200);
+      setHasMoreData(tradesResponse.trades.length >= INITIAL_LOAD_LIMIT);
     }
   }, [tradesResponse?.trades]);
 
-  // Load more handler
+  // Load more handler - always fetches ALL types
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMoreData) return;
     
@@ -143,7 +152,7 @@ export default function LiveTradingTerminal() {
         undefined,
         undefined,
         'filedDate',
-        getTransactionTypes(transactionTypeFilter)
+        ['ALL']
       );
       
       if (response.trades.length === 0) {
@@ -160,7 +169,21 @@ export default function LiveTradingTerminal() {
     }
   };
 
-  const allTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse?.trades || []);
+  // Apply transaction type filter on frontend (instant switching, no network request)
+  const allTrades = useMemo(() => {
+    const rawTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse?.trades || []);
+    
+    if (transactionTypeFilter === 'core') {
+      // 핵심거래만: BUY, SELL, PURCHASE, SALE
+      const filtered = rawTrades.filter(trade => CORE_TRADE_TYPES.includes(trade.tradeType));
+      console.log(`🔍 [Filter] Core trades: ${filtered.length}/${rawTrades.length}`);
+      return filtered;
+    }
+    
+    // 전체거래: 모든 타입 포함
+    console.log(`🔍 [Filter] All trades: ${rawTrades.length}`);
+    return rawTrades;
+  }, [allLoadedTrades, tradesResponse?.trades, transactionTypeFilter]);
 
   // WebSocket connection for real-time updates
   const wsUrl = getWebSocketUrl();
@@ -535,10 +558,24 @@ interface TradeRowProps {
 function TradeRow({ trade, onClick, tData }: TradeRowProps) {
   const { language } = useLanguage();
   const { formatCurrency } = useCurrency();
+  
+  // Determine styling based on trade type
   const isBuy = trade.type === 'Buy';
-  const typeClass = isBuy ? 'text-emerald-500' : 'text-rose-500';
+  const isSell = trade.type === 'Sell';
+  const isOther = trade.type === 'Other';
+  
+  // Type-specific styling: Buy = green, Sell = red, Other = amber/orange
+  const typeClass = isBuy 
+    ? 'text-emerald-500' 
+    : isSell 
+      ? 'text-rose-500' 
+      : 'text-amber-500';
   const typeBg = 'bg-transparent';
-  const typeBorder = isBuy ? 'border-emerald-500' : 'border-rose-500';
+  const typeBorder = isBuy 
+    ? 'border-emerald-500' 
+    : isSell 
+      ? 'border-rose-500' 
+      : 'border-amber-500';
   
   // Format time ago based on language
   const dateLocale = language === 'ko' ? ko : language === 'ja' ? ja : language === 'zh' ? zhCN : enUS;
@@ -547,7 +584,38 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
     locale: dateLocale
   });
 
-  const ActionIcon = isBuy ? ArrowUpRight : ArrowDownLeft;
+  // Icon based on trade type: Buy = ArrowUpRight, Sell = ArrowDownLeft, Other = ArrowRightLeft (neutral)
+  const ActionIcon = isBuy 
+    ? ArrowUpRight 
+    : isSell 
+      ? ArrowDownLeft 
+      : ArrowRightLeft;
+  
+  // Display label for trade type - supports multiple languages
+  const getTypeLabel = () => {
+    if (isOther) {
+      // For 'Other' trades, show translated rawType
+      const rawUpper = trade.rawType.toUpperCase();
+      if (rawUpper === 'GRANT') {
+        return language === 'ko' ? '부여' : language === 'ja' ? '付与' : language === 'zh' ? '授予' : 'GRANT';
+      }
+      if (rawUpper === 'OPTION_EXERCISE') {
+        return language === 'ko' ? '옵션행사' : language === 'ja' ? 'オプション' : language === 'zh' ? '期权行使' : 'OPTION';
+      }
+      if (rawUpper === 'DISPOSITION') {
+        return language === 'ko' ? '처분' : language === 'ja' ? '処分' : language === 'zh' ? '处置' : 'DISP';
+      }
+      if (rawUpper === 'AWARD') {
+        return language === 'ko' ? '수여' : language === 'ja' ? '授与' : language === 'zh' ? '奖励' : 'AWARD';
+      }
+      if (rawUpper === 'CONVERSION') {
+        return language === 'ko' ? '전환' : language === 'ja' ? '転換' : language === 'zh' ? '转换' : 'CONV';
+      }
+      // Default: show abbreviated raw type
+      return trade.rawType.substring(0, 4).toUpperCase();
+    }
+    return tData[trade.type] || trade.type;
+  };
 
   return (
     <div
@@ -575,7 +643,7 @@ function TradeRow({ trade, onClick, tData }: TradeRowProps) {
       <div className="flex items-center justify-end">
         <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBorder} ${typeClass} ${typeBg} rounded-sm inline-flex items-center gap-1`}>
           <ActionIcon size={10} className={typeClass} />
-          <span className="hidden md:inline">{tData[trade.type] || trade.type}</span>
+          <span className="hidden md:inline">{getTypeLabel()}</span>
         </span>
       </div>
 
