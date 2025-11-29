@@ -308,18 +308,6 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               <div className="text-base md:text-lg font-light text-emerald-500">
                 {formatCurrency(stats.totalAmount, false)}
               </div>
-            </div>
-
-            <div className="px-2 py-2 border-t md:border-t-0 border-neutral-800 col-span-2 md:col-span-1">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '내부자 평균 수익률' : 
-                 langKey === 'ja' ? '内部者平均リターン' :
-                 langKey === 'zh' ? '内部人士平均收益' :
-                 'INSIDER AVG RETURN'}
-              </div>
-              <div className={`text-base md:text-lg font-bold ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
-              </div>
               {(() => {
                 const marketCap = stock?.marketCap;
                 if (marketCap && marketCap > 0 && stats) {
@@ -340,13 +328,25 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                                 langKey === 'zh' ? '市值比 ' :
                                 'vs Cap: ';
                   return (
-                    <div className="text-[9px] md:text-[10px] text-amber-400 font-mono mt-0.5 font-bold">
+                    <div className="text-[8px] md:text-[9px] text-amber-400 font-mono mt-0.5 font-bold">
                       {prefix + percentStr}
                     </div>
                   );
                 }
                 return null;
               })()}
+            </div>
+
+            <div className="px-2 py-2 border-t md:border-t-0 border-neutral-800 col-span-2 md:col-span-1">
+              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
+                {langKey === 'ko' ? '내부자 평균 수익률' : 
+                 langKey === 'ja' ? '内部者平均リターン' :
+                 langKey === 'zh' ? '内部人士平均收益' :
+                 'INSIDER AVG RETURN'}
+              </div>
+              <div className={`text-base md:text-lg font-bold ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
+              </div>
             </div>
           </div>
 
@@ -485,10 +485,14 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             </div>
             <div className="border border-neutral-800 bg-neutral-950/30 p-2">
               <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
-                {langKey === 'ko' ? '목표 달성' : 'TARGET'}
+                {langKey === 'ko' ? '총 매수 주식수' : 
+                 langKey === 'ja' ? '総購入株数' :
+                 langKey === 'zh' ? '总购买股数' :
+                 'TOTAL SHARES'}
               </div>
               <div className="text-[10px] text-neutral-200 font-mono font-bold">
-                {(tData as any)[comprehensiveAnalysis?.timeHorizon || ''] || (tData as any)[aiAnalysis?.timeHorizon || ''] || comprehensiveAnalysis?.timeHorizon || aiAnalysis?.timeHorizon || (langKey === 'ko' ? '2-4주' : '2-4 weeks')}
+                {formatNumber(stock.buyers.reduce((sum, b) => sum + (b.shares || 0), 0))}
+                <span className="text-neutral-500 ml-1">{langKey === 'ko' ? '주' : 'sh'}</span>
               </div>
             </div>
           </div>

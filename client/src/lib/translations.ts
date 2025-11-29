@@ -48,9 +48,9 @@ const EN = {
     aes: 'AES-256 ENCRYPTED',
     blind: 'BLIND_TRUST_MODE',
     signal: 'Buy Volume', // Changed from 'Buy Intensity' - volume indicator
-    strongBuy: 'High Volume (vs Cap)', // Changed to volume-based indicator
-    mediumBuy: 'Medium Volume (vs Cap)', // Added medium volume indicator
-    lowBuy: 'Low Volume (vs Cap)', // Added low volume indicator
+    strongBuy: 'High Volume', // Volume indicator without market cap reference
+    mediumBuy: 'Medium Volume', // Volume indicator
+    lowBuy: 'Low Volume', // Volume indicator
     insiders: 'Insiders',
     institutional: 'Insider Purchases',
     avgPrice: 'Insider Avg Price',
@@ -315,9 +315,9 @@ const KO = {
     aes: 'AES-256 암호화',
     blind: '블라인드 트러스트 모드',
     signal: '매수량', // Changed to volume indicator
-    strongBuy: '높은 매수량 (시총대비)', // Changed from '강한 매수' to volume-based indicator
-    mediumBuy: '중간 매수량 (시총대비)', // Added medium volume indicator
-    lowBuy: '낮은 매수량 (시총대비)', // Added low volume indicator
+    strongBuy: '높은 매수량', // Volume indicator without market cap reference
+    mediumBuy: '중간 매수량', // Volume indicator
+    lowBuy: '낮은 매수량', // Volume indicator
     insiders: '내부자',
     institutional: '내부자 매수 활동', // Changed from '내부자 매수 내역'
     avgPrice: '내부자 평균 매수가',

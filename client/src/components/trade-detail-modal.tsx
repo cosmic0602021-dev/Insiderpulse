@@ -611,9 +611,15 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {t.timeHorizon.toUpperCase()}
+                    {language === 'ko' ? '총 거래량' : 
+                     language === 'ja' ? '総取引量' :
+                     language === 'zh' ? '总交易量' :
+                     'TOTAL VOLUME'}
                   </div>
-                  <div className="text-xs text-neutral-300 font-mono">{aiAnalysis?.timeHorizon || t.timeHorizon36}</div>
+                  <div className="text-xs text-neutral-300 font-mono">
+                    {formatNumber(trade.shares)}{' '}
+                    <span className="text-neutral-500">{language === 'ko' ? '주' : 'sh'}</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -42,6 +42,7 @@ interface RankingItem {
   currentPrice?: number;
   priceChangePercent?: number;
   priceLastUpdated?: string | null;
+  marketCap?: number | null;
   enhancedTrade: {
     currentPrice?: number;
     pricePerShare: number;
@@ -172,6 +173,7 @@ export default function TopStocksTerminal() {
       totalBuyAmount: parseNumeric(item.netBuying),
       insiderCount: item.uniqueInsiders || item.insiders?.length || 0,
       lastTradeDate: item.lastTradeDate || new Date().toISOString(),
+      marketCap: item.marketCap ? Number(item.marketCap) : undefined,
       buyers: (item.insiders || []).slice(0, 5).map((insider: RankingInsider) => {
         // Parse shares and totalValue to numbers (handle formatted strings with commas)
         const sharesNum = parseNumeric(insider.shares);
