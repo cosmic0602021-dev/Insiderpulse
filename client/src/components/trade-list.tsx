@@ -21,9 +21,10 @@ interface TradeListProps {
   onSortChange?: (sortBy: string) => void;
   onTransactionTypeChange?: (filterType: 'core' | 'all') => void;
   transactionTypeFilter?: 'core' | 'all';
+  onViewDetails?: (trade: InsiderTrade) => void;
 }
 
-export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore, onDateRangeChange, onSortChange, onTransactionTypeChange, transactionTypeFilter = 'core' }: TradeListProps) {
+export default function TradeList({ trades, loading, loadingMore = false, hasMoreData = true, onLoadMore, onDateRangeChange, onSortChange, onTransactionTypeChange, transactionTypeFilter = 'core', onViewDetails }: TradeListProps) {
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,7 +105,11 @@ export default function TradeList({ trades, loading, loadingMore = false, hasMor
 
   const handleViewDetails = (trade: InsiderTrade) => {
     console.log('Navigating to trade details:', trade.id);
-    setLocation(`/trade/${trade.id}`);
+    if (onViewDetails) {
+      onViewDetails(trade);
+    } else {
+      setLocation(`/trade/${trade.id}`);
+    }
   };
 
   return (
