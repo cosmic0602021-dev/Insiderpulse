@@ -93,8 +93,7 @@ export default function LiveTradingTerminal() {
 
   const isPro = accessLevel?.hasRealtimeAccess || false;
 
-  // 핵심거래 타입 (자발적 매수/매도만)
-  const CORE_TRADE_TYPES = ['BUY', 'SELL', 'PURCHASE', 'SALE'];
+  // 핵심거래: isDerivative=false (Table I 직접 거래만, 파생상품 제외)
 
   // Fetch ALL trades from backend - filtering happens on frontend for instant switching
   // 초기 로드를 2700으로 설정하여 모든 거래 유형(GRANT, OPTION_EXERCISE 등)이 포함되도록 함
@@ -170,18 +169,20 @@ export default function LiveTradingTerminal() {
   };
 
   // Apply transaction type filter on frontend (instant switching, no network request)
+  // 핵심거래: isDerivative=false (Table I 직접 거래만)
+  // 전체거래: 모든 거래 포함 (Table I + Table II 파생상품)
   const allTrades = useMemo(() => {
     const rawTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse?.trades || []);
     
     if (transactionTypeFilter === 'core') {
-      // 핵심거래만: BUY, SELL, PURCHASE, SALE
-      const filtered = rawTrades.filter(trade => CORE_TRADE_TYPES.includes(trade.tradeType));
-      console.log(`🔍 [Filter] Core trades: ${filtered.length}/${rawTrades.length}`);
+      // 핵심거래만: isDerivative=false (파생상품 제외, 순수 주식 직접 거래만)
+      const filtered = rawTrades.filter(trade => trade.isDerivative === false);
+      console.log(`🔍 [Filter] Core trades (isDerivative=false): ${filtered.length}/${rawTrades.length}`);
       return filtered;
     }
     
-    // 전체거래: 모든 타입 포함
-    console.log(`🔍 [Filter] All trades: ${rawTrades.length}`);
+    // 전체거래: 모든 타입 포함 (파생상품 포함)
+    console.log(`🔍 [Filter] All trades (including derivatives): ${rawTrades.length}`);
     return rawTrades;
   }, [allLoadedTrades, tradesResponse?.trades, transactionTypeFilter]);
 
