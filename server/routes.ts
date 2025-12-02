@@ -110,6 +110,57 @@ Only return the translated text, nothing else.`
   }
 }
 
+// Ranking tickers cache for AI analysis eligibility (5 min TTL)
+let rankingTickersCache: {
+  tickers: string[];
+  timestamp: number;
+} | null = null;
+const RANKING_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to fetch current ranking tickers with caching
+async function fetchRankingTickers(): Promise<string[]> {
+  // Check cache validity
+  if (rankingTickersCache && (Date.now() - rankingTickersCache.timestamp) < RANKING_CACHE_TTL) {
+    console.log('✅ Using cached ranking tickers');
+    return rankingTickersCache.tickers;
+  }
+
+  console.log('🔄 Fetching fresh ranking tickers...');
+
+  try {
+    // Make internal API call to /api/rankings/tickers
+    // We'll implement this endpoint later in step 2
+    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/rankings/tickers`);
+
+    if (!response.ok) {
+      throw new Error(`Rankings API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const tickers = data.tickers || [];
+
+    // Update cache
+    rankingTickersCache = {
+      tickers,
+      timestamp: Date.now()
+    };
+
+    console.log(`📦 Cached ${tickers.length} ranking tickers`);
+    return tickers;
+  } catch (error) {
+    console.error('❌ Failed to fetch ranking tickers:', error);
+
+    // If cache exists but expired, use it anyway (stale cache better than nothing)
+    if (rankingTickersCache) {
+      console.log('⚠️ Using stale cache due to fetch error');
+      return rankingTickersCache.tickers;
+    }
+
+    // No cache available - throw error to deny analysis (fail-safe)
+    throw new Error('Unable to fetch ranking tickers');
+  }
+}
+
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
 
@@ -2823,93 +2874,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!trade) {
-        return res.status(404).json({ error: 'Trade not found' });
+        return res.status(404).json({
+          error: 'TRADE_NOT_FOUND',
+          errorType: 'permanent',
+          message: 'Trade not found in database',
+          retryable: false
+        });
       }
 
-      // 💰 COST OPTIMIZATION: Check cache first (99% cost reduction)
-      // If analysis was generated within last 7 days, return cached result
-      if (trade.comprehensiveAnalysis && trade.analysisGeneratedAt) {
-        const cacheAge = Date.now() - new Date(trade.analysisGeneratedAt).getTime();
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      // 💰 PERMANENT CACHE: Once generated, analysis never expires
+      // This maximizes cost savings and user experience
+      if (trade.comprehensiveAnalysis) {
+        console.log(`✅ Using cached analysis - saved GPT API call`);
 
-        if (cacheAge < SEVEN_DAYS) {
-          console.log(`✅ Using cached analysis (${Math.floor(cacheAge / (60 * 60 * 1000))} hours old) - saved GPT API call`);
+        const cachedData = trade.comprehensiveAnalysis as any;
+        const cachedLanguage = cachedData._language || 'en'; // Default to English if not specified
 
-          const cachedData = trade.comprehensiveAnalysis as any;
-          const cachedLanguage = cachedData._language || 'en'; // Default to English if not specified
+        // 🌍 Translate cached data if language doesn't match
+        if (cachedLanguage !== language) {
+          console.log(`🌍 Translating cached analysis from ${cachedLanguage} to ${language}...`);
 
-          // 🌍 Translate cached data if language doesn't match
-          if (cachedLanguage !== language) {
-            console.log(`🌍 Translating cached analysis from ${cachedLanguage} to ${language}...`);
-
-            try {
-              // Translate catalysts array
-              if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
-                cachedData.catalysts = await Promise.all(
-                  cachedData.catalysts.map((catalyst: string) => translateText(catalyst, language))
-                );
-              }
-
-              // Translate executive summary
-              if (cachedData.executiveSummary) {
-                cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
-              }
-
-              // Translate market context reasoning
-              if (cachedData.marketContext?.reasoning) {
-                cachedData.marketContext.reasoning = await translateText(
-                  cachedData.marketContext.reasoning,
-                  language
-                );
-              }
-
-              // Translate risk assessment mitigation
-              if (cachedData.riskAssessment?.mitigation) {
-                cachedData.riskAssessment.mitigation = await translateText(
-                  cachedData.riskAssessment.mitigation,
-                  language
-                );
-              }
-
-              // Translate news analysis (majorNews titles and summaries)
-              if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
-                cachedData.newsAnalysis.majorNews = await Promise.all(
-                  cachedData.newsAnalysis.majorNews.map(async (news: any) => ({
-                    ...news,
-                    title: await translateText(news.title, language),
-                    summary: await translateText(news.summary, language)
-                  }))
-                );
-              }
-
-              // Update language marker
-              cachedData._language = language;
-
-              console.log(`✅ Cached analysis translated from ${cachedLanguage} to ${language}`);
-              return res.json(cachedData);
-            } catch (translateError) {
-              console.error('⚠️ Translation failed, returning cached data as-is:', translateError);
-              return res.json(trade.comprehensiveAnalysis);
+          try {
+            // Translate catalysts array
+            if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
+              cachedData.catalysts = await Promise.all(
+                cachedData.catalysts.map((catalyst: string) => translateText(catalyst, language))
+              );
             }
-          }
 
-          // Return cached data as-is (language matches)
-          console.log(`✅ Returning cached analysis in ${language}`);
-          return res.json(trade.comprehensiveAnalysis);
-        } else {
-          console.log(`⏰ Cache expired (${Math.floor(cacheAge / (24 * 60 * 60 * 1000))} days old) - regenerating analysis`);
+            // Translate executive summary
+            if (cachedData.executiveSummary) {
+              cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
+            }
+
+            // Translate market context reasoning
+            if (cachedData.marketContext?.reasoning) {
+              cachedData.marketContext.reasoning = await translateText(
+                cachedData.marketContext.reasoning,
+                language
+              );
+            }
+
+            // Translate risk assessment mitigation
+            if (cachedData.riskAssessment?.mitigation) {
+              cachedData.riskAssessment.mitigation = await translateText(
+                cachedData.riskAssessment.mitigation,
+                language
+              );
+            }
+
+            // Translate news analysis (majorNews titles and summaries)
+            if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
+              cachedData.newsAnalysis.majorNews = await Promise.all(
+                cachedData.newsAnalysis.majorNews.map(async (news: any) => ({
+                  ...news,
+                  title: await translateText(news.title, language),
+                  summary: await translateText(news.summary, language)
+                }))
+              );
+            }
+
+            // Update language marker
+            cachedData._language = language;
+
+            console.log(`✅ Cached analysis translated from ${cachedLanguage} to ${language}`);
+            return res.json(cachedData);
+          } catch (translateError) {
+            console.error('⚠️ Translation failed, returning cached data as-is:', translateError);
+            return res.json(trade.comprehensiveAnalysis);
+          }
         }
+
+        // Return cached data as-is (language matches)
+        console.log(`✅ Returning cached analysis in ${language}`);
+        return res.json(trade.comprehensiveAnalysis);
       }
 
-      // Cost optimization: Block API calls for trades older than 7 days (based on when uploaded to app)
-      const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
-      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+      // Cost optimization: Only generate analysis for trades in current rankings (age-agnostic)
+      // This replaces the old 7-day age restriction with ranking-based eligibility
+      try {
+        console.log(`🔍 Checking if ${trade.ticker} is eligible for AI analysis...`);
+        const rankingTickers = await fetchRankingTickers();
+        const isEligible = rankingTickers.includes(trade.ticker || '');
 
-      if (tradeAge > ONE_WEEK) {
-        console.log(`📦 Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days since upload) - returning basic info only`);
-        return res.json({
-          isHistorical: true,
-          tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1000)),
+        if (!isEligible) {
+          console.log(`⚠️  ${trade.ticker} is not currently in rankings - analysis denied`);
+          return res.json({
+            notRanked: true,
+            message: 'AI analysis is only available for currently ranked stocks',
+            ticker: trade.ticker,
+            basicInfo: {
+              traderName: trade.traderName,
+              traderTitle: trade.traderTitle || 'Unknown',
+              companyName: trade.companyName,
+              ticker: trade.ticker || 'N/A',
+              shares: trade.shares,
+              pricePerShare: trade.pricePerShare,
+              totalValue: trade.totalValue,
+              tradeType: trade.tradeType,
+              filedDate: trade.filedDate,
+              secFilingUrl: trade.secFilingUrl,
+              ownershipPercentage: trade.ownershipPercentage || 0
+            }
+          });
+        }
+
+        console.log(`✅ ${trade.ticker} is in rankings - proceeding with AI analysis`);
+      } catch (rankingError) {
+        // Ranking API failed - deny analysis to protect costs (fail-safe)
+        console.error('❌ Ranking eligibility check failed:', rankingError);
+        return res.status(503).json({
+          error: 'RANKING_CHECK_FAILED',
+          errorType: 'temporary',
+          message: 'Unable to verify if stock is ranked. Please try again.',
+          retryable: true,
           basicInfo: {
             traderName: trade.traderName,
             traderTitle: trade.traderTitle || 'Unknown',
@@ -2925,8 +3003,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-
-      console.log(`🔄 Recent trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1000))} days old) - performing full analysis`);
 
       // Fetch recent news for context (once for both AI analysis and newsAnalysis section)
       let recentNews: any[] = [];
@@ -3064,7 +3140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate comprehensive analysis with language support
       const comprehensiveAnalysis = {
         executiveSummary: (() => {
-          let summary = analysis.recommendation;
+          let summary = analysis.recommendation || analysis.keyInsights[0] || 'Insider trading activity detected';
 
           // Integrate news analysis into executive summary
           if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
@@ -3113,14 +3189,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           return summary;
         })(),
-        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation}`,
-        priceTargets: {
+        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation || 'Insider activity detected'}`,
+        priceTargets: analysis.priceTargets ? {
           // Use AI-generated percentage targets to calculate actual price targets
           conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
           realistic: trade.pricePerShare * (1 + analysis.priceTargets.realistic / 100),
           optimistic: trade.pricePerShare * (1 + analysis.priceTargets.optimistic / 100),
           timeHorizon: analysis.timeHorizon // Use AI-generated time horizon instead of hardcoded value
-        },
+        } : null,
         riskAssessment: {
           level: analysis.riskLevel,
           factors: analysis.keyInsights,
@@ -4528,6 +4604,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating rankings:', error);
       res.status(500).json({ error: 'Failed to generate stock rankings' });
+    }
+  });
+
+  // Lightweight rankings endpoint - returns only ticker symbols for AI analysis eligibility check
+  app.get('/api/rankings/tickers', async (req, res) => {
+    try {
+      console.log('🎯 Fetching ranking tickers for AI analysis eligibility check...');
+
+      // Use same logic as /api/rankings but only extract tickers
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const recentTrades = await db.query.insiderTrades.findMany({
+        where: (trades, { gte }) => gte(trades.filedDate, thirtyDaysAgo),
+      });
+
+      console.log(`📊 Found ${recentTrades.length} trades in last 30 days for ticker extraction`);
+
+      // Same aggregation logic as rankings
+      const stockMap = new Map<string, {
+        ticker: string;
+        totalValue: number;
+        buyValue: number;
+        sellValue: number;
+        buyTrades: number;
+        sellTrades: number;
+        lastTradeDate: string;
+      }>();
+
+      recentTrades.forEach(trade => {
+        if (!trade.ticker || !['BUY', 'PURCHASE', 'SALE', 'SELL'].includes(trade.tradeType)) {
+          return;
+        }
+
+        const ticker = trade.ticker;
+        if (!stockMap.has(ticker)) {
+          stockMap.set(ticker, {
+            ticker,
+            totalValue: 0,
+            buyValue: 0,
+            sellValue: 0,
+            buyTrades: 0,
+            sellTrades: 0,
+            lastTradeDate: trade.filedDate,
+          });
+        }
+
+        const stock = stockMap.get(ticker)!;
+        const isBuy = trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE';
+
+        if (isBuy) {
+          stock.buyValue += trade.totalValue;
+          stock.buyTrades++;
+        } else {
+          stock.sellValue += trade.totalValue;
+          stock.sellTrades++;
+        }
+
+        stock.totalValue += Math.abs(trade.totalValue);
+
+        if (new Date(trade.filedDate) > new Date(stock.lastTradeDate)) {
+          stock.lastTradeDate = trade.filedDate;
+        }
+      });
+
+      // Apply same filters as rankings
+      const stocks = Array.from(stockMap.values());
+      const netBuyingStocks = stocks
+        .filter(s => (s.buyTrades + s.sellTrades) >= 2) // Minimum 2 trades
+        .filter(s => (s.buyValue - s.sellValue) > 0) // Net buying > 0
+        .filter(s => s.buyTrades > 0); // At least 1 buy trade
+
+      // Apply recency filter (same dynamic fallback as rankings: 7 -> 14 -> 30 days)
+      let recencyDays = 7;
+      let filteredStocks = netBuyingStocks.filter(s => {
+        const daysSince = s.lastTradeDate ?
+          (Date.now() - new Date(s.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+        return daysSince <= recencyDays;
+      });
+
+      if (filteredStocks.length < 5) {
+        recencyDays = 14;
+        filteredStocks = netBuyingStocks.filter(s => {
+          const daysSince = s.lastTradeDate ?
+            (Date.now() - new Date(s.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        });
+      }
+
+      if (filteredStocks.length < 5) {
+        recencyDays = 30;
+        filteredStocks = netBuyingStocks.filter(s => {
+          const daysSince = s.lastTradeDate ?
+            (Date.now() - new Date(s.lastTradeDate).getTime()) / (1000 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        });
+      }
+
+      // Extract only ticker symbols
+      const tickers = filteredStocks.map(s => s.ticker);
+
+      console.log(`✅ Returning ${tickers.length} ranking tickers (recency: ${recencyDays} days)`);
+
+      res.json({
+        tickers,
+        count: tickers.length,
+        recencyDays,
+        generatedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching ranking tickers:', error);
+      res.status(500).json({ error: 'Failed to fetch ranking tickers' });
     }
   });
 

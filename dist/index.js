@@ -137,6 +137,13 @@ var init_schema = __esm({
       // Percentage difference between filed and market price
       secFilingUrl: text("sec_filing_url"),
       // Direct link to SEC filing for transparency
+      // Derivative securities (Table 2) fields
+      isDerivative: boolean("is_derivative").notNull().default(false),
+      // Table 2 거래 여부
+      underlyingShares: bigint("underlying_shares", { mode: "number" }),
+      // 파생상품의 underlying shares
+      derivativeType: varchar("derivative_type", { length: 100 }),
+      // 파생상품 종류 (옵션, 워런트 등)
       createdAt: timestamp("created_at").defaultNow()
     }, (table) => ({
       // Add index on accessionNumber for fast duplicate checking
@@ -858,6 +865,7 @@ var init_ai_analysis = __esm({
       // 2 seconds between calls
       async analyzeInsiderTrade(tradeData) {
         try {
+          console.log(`\u{1F916} Starting AI analysis for ${tradeData.ticker}...`);
           const now = Date.now();
           const timeSinceLastCall = now - this.lastApiCall;
           if (timeSinceLastCall < this.rateLimitDelay) {
@@ -865,14 +873,27 @@ var init_ai_analysis = __esm({
           }
           this.lastApiCall = Date.now();
           const prompt = this.buildAnalysisPrompt(tradeData);
+          console.log(`\u{1F4DD} Calling OpenAI API with gpt-4o-mini...`);
           const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             // Use more cost-effective model to avoid quota issues
             messages: [
               {
                 role: "system",
-                content: `You are an expert financial analyst specializing in insider trading analysis. 
-                     Analyze insider trading data and provide actionable investment insights.
+                content: `You are an expert financial analyst specializing in insider trading pattern analysis.
+                     Provide comprehensive, data-driven insights that combine:
+                     - Transaction details and insider's role/track record
+                     - Market context and recent news sentiment correlation
+                     - Historical patterns and similar insider behaviors
+                     - Industry trends and competitive positioning
+                     - Risk factors and potential catalysts
+
+                     Your analysis should be thorough and informative, helping investors understand:
+                     - WHY the insider made this trade (timing, motivation, context)
+                     - WHAT it signals about company prospects
+                     - HOW it compares to historical insider activity
+
+                     Provide factual, data-driven insights without explicit "buy/sell" recommendations.
                      Always respond with valid JSON in the exact format specified.`
               },
               {
@@ -881,23 +902,26 @@ var init_ai_analysis = __esm({
               }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.3,
-            // Lower temperature for more consistent analysis
-            max_tokens: 500
-            // Limit tokens to reduce cost
+            temperature: 0.4,
+            // Balanced for insightful yet consistent analysis
+            max_tokens: 1e3
+            // Allow comprehensive analysis
           });
           const content = response.choices[0].message.content;
           if (!content) {
             throw new Error("No content received from AI analysis");
           }
           const result = JSON.parse(content);
+          console.log(`\u2705 OpenAI analysis completed for ${tradeData.ticker}`);
           return this.validateAnalysisResult(result);
         } catch (error) {
           if (error?.status === 429) {
-            console.warn("OpenAI rate limit exceeded, using fallback analysis");
+            console.warn("\u26A0\uFE0F OpenAI rate limit exceeded, using fallback analysis");
           } else {
-            console.error("AI analysis failed:", error);
+            console.error("\u274C AI analysis failed:", error?.message || error);
+            console.error("Full error:", error);
           }
+          console.log(`\u{1F504} Using fallback analysis for ${tradeData.ticker}`);
           return await this.generateFallbackAnalysis(tradeData);
         }
       }
@@ -927,7 +951,7 @@ ${newsItems}
 `;
         }
         return `
-Analyze this insider trading transaction and provide investment insights:
+Provide a comprehensive analysis of this insider trading transaction:
 
 **Company**: ${tradeData.companyName} (${tradeData.ticker})
 **Insider**: ${tradeData.traderName} - ${tradeData.traderTitle}
@@ -936,57 +960,67 @@ Analyze this insider trading transaction and provide investment insights:
 **Price per Share**: $${tradeData.pricePerShare}
 **Total Value**: $${tradeData.totalValue.toLocaleString()} (${tradeValue}M)
 **Ownership**: ${tradeData.ownershipPercentage}%
+**Trade Date**: ${new Date(tradeData.filedDate).toLocaleDateString()}
 ${newsSection}
-Consider these factors:
-- Executive level insider (${isExecutive ? "Yes" : "No"})
-- Large position relative to ownership (${isLargePosition ? "Yes" : "No"})
-- Trade size and market impact
-- Typical insider trading patterns
-- Market timing considerations
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Recent news sentiment and correlation with trade timing" : ""}
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- Potential catalysts or events driving the insider's decision" : ""}
 
-Provide analysis in this exact JSON format:
+**Analysis Requirements:**
+
+1. **Transaction Context** - Why did this insider trade at this specific time?
+   - Executive level: ${isExecutive ? "YES - High-ranking executive" : "No - Lower-level insider"}
+   - Position size: ${isLargePosition ? "LARGE - Significant ownership change" : "Small - Minor position adjustment"}
+   - Market timing: Consider recent stock performance and market conditions
+   ${tradeData.recentNews && tradeData.recentNews.length > 0 ? "- News correlation: How does this trade align with recent company news and events?" : ""}
+
+2. **Insider Intelligence** - What does this signal about company prospects?
+   - What might the insider know that the market doesn't?
+   - Historical pattern: Does this insider have a track record of well-timed trades?
+   - Cluster activity: Are other insiders trading similarly?
+
+3. **Risk Assessment** - What are the key considerations?
+   - Downside risks and red flags
+   - Confidence level in the signal
+   - Market volatility and external factors
+
+4. **Key Insights** - Provide 3-5 specific, actionable insights that go beyond basic transaction details.
+   Include context about company fundamentals, industry trends, or market conditions.
+
+**Response Format (JSON):**
 {
-  "significanceScore": <1-100 integer based on trade importance>,
-  "signalType": "<BUY|SELL|HOLD based on investment signal strength>",
-  "keyInsights": ["<insight 1>", "<insight 2>", "<insight 3>"],
-  "riskLevel": "<LOW|MEDIUM|HIGH based on investment risk>",
-  "recommendation": "<concise investment recommendation based on this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " and recent news" : ""}>",
-  "priceTargets": {
-    "conservative": <percentage as number, e.g., 3 for +3%>,
-    "realistic": <percentage as number>,
-    "optimistic": <percentage as number>
-  },
-  "timeHorizon": "<specific time frame like '1-2 weeks' or '2-4 weeks'>"
+  "significanceScore": <1-100 based on comprehensive analysis>,
+  "signalType": "<BUY|SELL|HOLD>",
+  "keyInsights": [
+    "<Comprehensive insight about WHY the trade happened>",
+    "<Analysis of company prospects or insider track record>",
+    "<Market context or industry trend observation>",
+    "<Risk factor or catalyst identification>",
+    "<Additional meaningful insight>"
+  ],
+  "riskLevel": "<LOW|MEDIUM|HIGH>",
+  "timeHorizon": "<e.g., '2-4 weeks', '1-3 months'>"
 }
 
-Guidelines:
+**Important Guidelines:
 - significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ", or trades aligned with major news events" : ""}
-- signalType: BUY for insider buying (especially executives), SELL for large disposals, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? ". Consider news sentiment alignment" : ""}
-- keyInsights: 3 specific, actionable observations about this trade${tradeData.recentNews && tradeData.recentNews.length > 0 ? " incorporating recent news context" : ""}
-- riskLevel: HIGH for contrarian signals or large executive sales, LOW for routine small trades
-- recommendation: One sentence summarizing investment action${tradeData.recentNews && tradeData.recentNews.length > 0 ? " considering both trade data and news sentiment" : ""}
-- priceTargets: Realistic percentage gains/losses based on trade significance. For BUY signals: conservative 2-5%, realistic 5-12%, optimistic 10-25%. For SELL: use negative percentages.
-- timeHorizon: Be realistic for insider trading momentum. Large executive buys: "1-2 weeks". Cluster buying: "3-7 days". Small trades: "2-4 weeks". Most insider signals play out within 1 month, NOT 3-6 months.
+- signalType: BUY for insider buying transactions, SELL for insider selling transactions, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? ". Note news context" : ""}
+- keyInsights: 3 specific FACTUAL observations about this trade (NOT predictions or recommendations)${tradeData.recentNews && tradeData.recentNews.length > 0 ? " incorporating recent news context" : ""}
+  * Example: "CEO purchased $2M worth of shares" NOT "Stock will likely increase"
+  * Example: "Large insider sale following earnings report" NOT "Consider selling"
+- riskLevel: HIGH for volatile stocks or large transactions, LOW for stable stocks with routine trades
+- timeHorizon: Historical observation period. Large executive buys: "1-2 weeks". Cluster buying: "3-7 days". Small trades: "2-4 weeks".
+- IMPORTANT: DO NOT include any price predictions, targets, or investment recommendations
 `;
       }
+      // Modified for App Store compliance: price target safe mode
       validateAnalysisResult(result) {
         return {
           significanceScore: Math.max(1, Math.min(100, Math.round(result.significanceScore || 50))),
           signalType: ["BUY", "SELL", "HOLD"].includes(result.signalType) ? result.signalType : "HOLD",
           keyInsights: Array.isArray(result.keyInsights) ? result.keyInsights.slice(0, 3) : [
-            "Insider trading activity detected",
-            "Position size indicates confidence level",
-            "Market timing may provide investment signal"
+            "Insider trading activity detected in SEC Form 4 filing",
+            "Transaction recorded at reported price per share",
+            "Position size and timing noted in public disclosure"
           ],
           riskLevel: ["LOW", "MEDIUM", "HIGH"].includes(result.riskLevel) ? result.riskLevel : "MEDIUM",
-          recommendation: typeof result.recommendation === "string" ? result.recommendation : "Monitor for additional insider activity before making investment decisions",
-          priceTargets: {
-            conservative: result.priceTargets?.conservative || 3,
-            realistic: result.priceTargets?.realistic || 7,
-            optimistic: result.priceTargets?.optimistic || 15
-          },
           timeHorizon: typeof result.timeHorizon === "string" ? result.timeHorizon : "2-4 weeks"
         };
       }
@@ -1038,65 +1072,36 @@ Guidelines:
           if (historicalRisk.clusterActivity.isCluster) {
             significanceScore += 5;
           }
-          const priceTargets = historicalPriceTargets.sampleSize >= 5 ? {
-            conservative: historicalPriceTargets.conservative,
-            realistic: historicalPriceTargets.realistic,
-            optimistic: historicalPriceTargets.optimistic
-          } : this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
           const timeHorizon = historicalTimeHorizon.sampleSize >= 3 ? historicalTimeHorizon.recommended : this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
           const keyInsights = dataInsights.insights.length >= 2 ? dataInsights.insights.slice(0, 3) : [
-            `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
-            `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
-            `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
+            `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction recorded in SEC filing`,
+            `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M reported at $${tradeData.pricePerShare.toFixed(2)} per share`,
+            `${tradeData.ownershipPercentage}% ownership position disclosed in Form 4`
           ];
           return {
             significanceScore: Math.min(100, Math.max(1, significanceScore)),
             signalType,
             keyInsights,
             riskLevel: historicalRisk.calculatedRiskLevel,
-            recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`,
-            priceTargets,
             timeHorizon
           };
         } catch (error) {
           console.error("Historical analysis failed, using simple fallback:", error);
-          const priceTargets = this.getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, tradeData.totalValue);
           const timeHorizon = this.getDefaultTimeHorizon(isExecutive, isLargeTrade, tradeData.totalValue);
           return {
             significanceScore: Math.min(100, significanceScore),
             signalType,
             keyInsights: [
-              `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction`,
-              `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M indicates ${isLargeTrade ? "high" : "moderate"} conviction`,
-              `${tradeData.ownershipPercentage}% ownership suggests ${tradeData.ownershipPercentage > 1 ? "significant" : "minor"} stake`
+              `${isExecutive ? "Executive" : "Insider"} ${tradeData.tradeType.toLowerCase()} transaction recorded in SEC filing`,
+              `Trade value of $${(tradeData.totalValue / 1e6).toFixed(1)}M reported at $${tradeData.pricePerShare.toFixed(2)} per share`,
+              `${tradeData.ownershipPercentage}% ownership position disclosed in Form 4`
             ],
             riskLevel: isLargeTrade && !isBuy ? "HIGH" : isExecutive && isBuy ? "LOW" : "MEDIUM",
-            recommendation: `${signalType === "BUY" ? "Consider buying" : signalType === "SELL" ? "Consider reducing position" : "Monitor for additional signals"} based on ${isExecutive ? "executive" : "insider"} ${tradeData.tradeType.toLowerCase()} activity`,
-            priceTargets,
             timeHorizon
           };
         }
       }
-      getDefaultPriceTargets(isBuy, isExecutive, isLargeTrade, totalValue) {
-        const isMediumTrade = totalValue > 1e5;
-        if (isBuy) {
-          if (isExecutive && isLargeTrade) {
-            return { conservative: 5, realistic: 12, optimistic: 25 };
-          } else if (isExecutive || isLargeTrade) {
-            return { conservative: 3, realistic: 8, optimistic: 18 };
-          } else if (isMediumTrade) {
-            return { conservative: 2, realistic: 5, optimistic: 12 };
-          } else {
-            return { conservative: 1, realistic: 3, optimistic: 8 };
-          }
-        } else {
-          if (isLargeTrade) {
-            return { conservative: -3, realistic: -8, optimistic: -15 };
-          } else {
-            return { conservative: -1, realistic: -3, optimistic: -7 };
-          }
-        }
-      }
+      // Modified for App Store compliance: getDefaultPriceTargets removed
       getDefaultTimeHorizon(isExecutive, isLargeTrade, totalValue) {
         const isMediumTrade = totalValue > 1e5;
         if (isExecutive && isLargeTrade) {
@@ -1141,13 +1146,16 @@ var init_db_storage = __esm({
         return result[0];
       }
       // Insider trading methods
-      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy, ticker) {
+      async getInsiderTrades(limit = 20, offset = 0, verifiedOnly = false, fromDate, toDate, sortBy = "filedDate", transactionTypes, filterBy, ticker, includeDerivatives = false) {
         const conditions = [];
         if (verifiedOnly) {
           conditions.push(eq2(insiderTrades.isVerified, true));
         }
         if (ticker) {
           conditions.push(eq2(insiderTrades.ticker, ticker.toUpperCase()));
+        }
+        if (!includeDerivatives) {
+          conditions.push(eq2(insiderTrades.isDerivative, false));
         }
         const filterField = filterBy || sortBy;
         if (fromDate) {
@@ -2808,7 +2816,7 @@ async function parseSecForm4(xmlData, accessionNumber) {
       explicitArray: true,
       mergeAttrs: false,
       normalize: true,
-      normalizeTags: true,
+      // REMOVED normalizeTags: true - it was converting camelCase to lowercase causing parsing failures
       trim: true
     });
     return new Promise((resolve, reject) => {
@@ -2850,13 +2858,17 @@ function parseForm4XML(xmlData, accessionNumber) {
   const relationship = reportingOwner.reportingOwnerRelationship?.[0] || {};
   const traderTitle = determineTraderTitle(relationship);
   const nonDerivativeTable = doc.nonDerivativeTable?.[0];
-  const transactions = nonDerivativeTable?.nonDerivativeTransaction || [];
-  if (transactions.length === 0) {
-    console.log(`\u26A0\uFE0F No non-derivative transactions found for ${accessionNumber}`);
+  const nonDerivTransactions = nonDerivativeTable?.nonDerivativeTransaction || [];
+  const derivativeTable = doc.derivativeTable?.[0];
+  const derivTransactions = derivativeTable?.derivativeTransaction || [];
+  if (nonDerivTransactions.length === 0 && derivTransactions.length === 0) {
+    console.log(`\u26A0\uFE0F No transactions found (neither Table 1 nor Table 2) for ${accessionNumber}`);
     return [];
   }
+  console.log(`   \u{1F4CA} Found ${nonDerivTransactions.length} non-derivative transactions (Table 1) and ${derivTransactions.length} derivative transactions (Table 2)`);
   const validTransactions = [];
-  for (const transaction of transactions) {
+  console.log(`   \u{1F4CB} Processing Table 1 (Non-Derivative)...`);
+  for (const transaction of nonDerivTransactions) {
     const transactionCoding = transaction.transactionCoding?.[0] || {};
     const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
     const ownershipNature = transaction.ownershipNature?.[0]?.directOrIndirectOwnership?.[0]?.value?.[0] || transaction.ownershipNature?.[0]?.directOrIndirectOwnership?.[0] || "D";
@@ -2889,44 +2901,132 @@ function parseForm4XML(xmlData, accessionNumber) {
         continue;
       }
     }
-    const totalValue2 = shares * pricePerShare;
-    console.log(`   \u2705 Valid transaction: ${transactionCode} - ${shares} shares at $${pricePerShare} = $${totalValue2.toLocaleString()} (${ownershipNature === "D" ? "Direct" : "Indirect"})`);
+    const totalValue = shares * pricePerShare;
+    console.log(`   \u2705 Valid transaction: ${transactionCode} - ${shares} shares at $${pricePerShare} = $${totalValue.toLocaleString()} (${ownershipNature === "D" ? "Direct" : "Indirect"})`);
     validTransactions.push({
       shares: Math.round(shares),
       pricePerShare,
-      totalValue: totalValue2,
+      totalValue,
       transactionCode,
       transactionDate: transactionDate || (/* @__PURE__ */ new Date()).toISOString(),
-      ownershipNature
+      ownershipNature,
+      isDerivative: false,
+      // Table 1 (Non-Derivative)
+      underlyingShares: void 0,
+      derivativeType: void 0
+    });
+  }
+  console.log(`   \u{1F4CB} Processing Table 2 (Derivative)...`);
+  for (const transaction of derivTransactions) {
+    const transactionCoding = transaction.transactionCoding?.[0] || {};
+    const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
+    console.log(`   \u{1F50D} Derivative transaction code: ${transactionCode}`);
+    const validDerivativeCodes = ["P", "S", "M", "A", "U", "C", "D", "F", "G", "X", "J"];
+    if (!validDerivativeCodes.includes(transactionCode)) {
+      console.log(`   \u23ED\uFE0F Skipping derivative transaction with code '${transactionCode}'`);
+      continue;
+    }
+    const securityTitle = transaction.securityTitle?.[0];
+    const derivativeType = securityTitle?.value?.[0] || securityTitle || "Unknown Derivative";
+    const transactionDate = transaction.transactionDate?.[0]?.value?.[0] || transaction.transactionDate?.[0];
+    const underlyingSecurity = transaction.underlyingSecurity?.[0] || {};
+    const underlyingSharesRaw = parseFloat(
+      underlyingSecurity.underlyingSecurityShares?.[0]?.value?.[0] || underlyingSecurity.underlyingSecurityShares?.[0] || 0
+    );
+    const transactionAmounts = transaction.transactionAmounts?.[0] || {};
+    const derivativeCount = parseFloat(
+      transactionAmounts.transactionShares?.[0]?.value?.[0] || transactionAmounts.transactionShares?.[0] || 0
+    );
+    const sharesCount = underlyingSharesRaw > 0 ? underlyingSharesRaw : derivativeCount;
+    const conversionPrice = parseFloat(
+      transaction.conversionOrExercisePrice?.[0]?.value?.[0] || transaction.conversionOrExercisePrice?.[0] || 0
+    );
+    let transactionPrice = parseFloat(
+      transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || transactionAmounts.transactionPricePerShare?.[0] || 0
+    );
+    let pricePerShare = transactionPrice > 0 ? transactionPrice : conversionPrice;
+    console.log(`   \u{1F4CA} Derivative details: ${derivativeType}`);
+    console.log(`      - derivativeCount: ${derivativeCount}, underlyingShares: ${underlyingSharesRaw}`);
+    console.log(`      - transactionPrice: $${transactionPrice}, conversionPrice: $${conversionPrice}`);
+    if (isNaN(sharesCount) || sharesCount <= 0) {
+      console.log(`   \u26A0\uFE0F Invalid shares count: underlyingShares=${underlyingSharesRaw}, derivativeCount=${derivativeCount}`);
+      continue;
+    }
+    if (isNaN(pricePerShare) || pricePerShare < 0) {
+      pricePerShare = 0;
+      console.log(`   \u{1F504} Derivative with no price info - using $0`);
+    }
+    const totalValue = sharesCount * pricePerShare;
+    console.log(`   \u2705 Valid derivative: ${transactionCode} - ${derivativeType} - ${sharesCount} shares at $${pricePerShare} = $${totalValue.toLocaleString()}`);
+    validTransactions.push({
+      shares: Math.round(sharesCount),
+      pricePerShare,
+      totalValue,
+      transactionCode,
+      transactionDate: transactionDate || (/* @__PURE__ */ new Date()).toISOString(),
+      ownershipNature: "D",
+      // Derivatives are typically direct
+      isDerivative: true,
+      // Table 2 (Derivative)
+      underlyingShares: Math.round(sharesCount),
+      derivativeType
     });
   }
   if (validTransactions.length === 0) {
     console.log(`   \u26A0\uFE0F No valid P/S/M/A/U transactions found for ${accessionNumber}`);
     return [];
   }
-  const totalShares = validTransactions.reduce((sum2, t) => sum2 + t.shares, 0);
-  const totalValue = validTransactions.reduce((sum2, t) => sum2 + t.totalValue, 0);
-  const avgPricePerShare = totalValue / totalShares;
-  const firstTransaction = validTransactions[0];
-  const tradeType = firstTransaction.transactionCode === "P" || firstTransaction.transactionCode === "M" || firstTransaction.transactionCode === "A" ? "BUY" : firstTransaction.transactionCode === "S" ? "SELL" : "TRANSFER";
-  console.log(`   \u{1F4CA} AGGREGATED TOTAL: ${totalShares} shares at avg $${avgPricePerShare.toFixed(2)} = $${totalValue.toLocaleString()}`);
-  console.log(`   \u{1F4DD} Breakdown: ${validTransactions.length} transaction(s) combined (Direct + Indirect)`);
-  const aggregatedTrade = {
-    companyName,
-    ticker: ticker || "",
-    traderName,
-    traderTitle,
-    tradeType,
-    shares: totalShares,
-    pricePerShare: avgPricePerShare,
-    totalValue,
-    ownershipPercentage: 0,
-    // Will be calculated later if needed
-    filedDate: new Date(firstTransaction.transactionDate),
-    accessionNumber,
-    secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, "")}`
+  const parsedTrades = [];
+  const getTradeType = (code) => {
+    if (code === "P" || code === "M" || code === "A") return "BUY";
+    if (code === "S") return "SELL";
+    return "TRANSFER";
   };
-  return [aggregatedTrade];
+  const table1Transactions = validTransactions.filter((t) => !t.isDerivative);
+  const table2Transactions = validTransactions.filter((t) => t.isDerivative);
+  console.log(`   \u{1F4CA} Returning ${table1Transactions.length} Table I records + ${table2Transactions.length} Table II records (SEPARATE, not aggregated)`);
+  table1Transactions.forEach((t, index) => {
+    const uniqueAccession = table1Transactions.length > 1 ? `${accessionNumber}-T1-${index}` : accessionNumber;
+    parsedTrades.push({
+      companyName,
+      ticker: ticker || "",
+      traderName,
+      traderTitle,
+      tradeType: getTradeType(t.transactionCode),
+      shares: t.shares,
+      pricePerShare: t.pricePerShare,
+      totalValue: t.totalValue,
+      ownershipPercentage: 0,
+      filedDate: new Date(t.transactionDate),
+      accessionNumber: uniqueAccession,
+      secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, "")}`,
+      isDerivative: false,
+      underlyingShares: void 0,
+      derivativeType: void 0
+    });
+  });
+  table2Transactions.forEach((t, index) => {
+    const uniqueAccession = `${accessionNumber}-T2-${index}`;
+    parsedTrades.push({
+      companyName,
+      ticker: ticker || "",
+      traderName,
+      traderTitle,
+      tradeType: getTradeType(t.transactionCode),
+      shares: t.shares,
+      pricePerShare: t.pricePerShare,
+      totalValue: t.totalValue,
+      ownershipPercentage: 0,
+      filedDate: new Date(t.transactionDate),
+      accessionNumber: uniqueAccession,
+      secFilingUrl: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, "")}`,
+      isDerivative: true,
+      underlyingShares: t.underlyingShares,
+      derivativeType: t.derivativeType
+    });
+  });
+  console.log(`   \u2705 Created ${parsedTrades.length} separate trade records for ${accessionNumber}`);
+  return parsedTrades;
 }
 function determineTraderTitle(relationship) {
   const isDirector = relationship.isDirector?.[0]?.value?.[0] === "true" || relationship.isDirector?.[0] === "true";
@@ -3901,7 +4001,9 @@ var init_openinsider_collector_advanced = __esm({
             console.log(`\u{1F3AF} Using header mapping with ${Object.keys(headerMap).length} mapped columns`);
             filingDate = this.parseDate(cells[headerMap["filing_date"]]) || (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
             tradeDate = this.parseDate(cells[headerMap["trade_date"]]) || filingDate;
-            transactionCode = this.extractTransactionCode(row, cells[0] || "");
+            const transactionCell = cells[headerMap["transaction"]] || "";
+            transactionCode = this.extractTransactionCodeFromCell(transactionCell);
+            console.log(`\u{1F4CB} Transaction cell: '${transactionCell?.substring(0, 30)}' -> code: '${transactionCode}'`);
             console.log(`\u{1F4C5} Dates via mapping: filing=${filingDate}, trade=${tradeDate}`);
           } else {
             console.log(`\u26A0\uFE0F No header mapping available, using legacy offsets`);
@@ -4006,7 +4108,34 @@ var init_openinsider_collector_advanced = __esm({
         }
       }
       /**
-       * 🔤 EXTRACT TRANSACTION CODE
+       * 🔤 EXTRACT TRANSACTION CODE FROM TRANSACTION CELL
+       * Parses "P - Purchase", "S - Sale", "S - Sale+OE", "A - Award", "M - Option Exercise" etc. from the transaction column
+       * 
+       * NOTE: Only P (Purchase) and S (Sale) are processed as insider trades.
+       * Other codes (A-Award, M-Option Exercise, G-Gift, etc.) are logged but filtered out
+       * by parseTradeTypeFromCode() as they represent non-trading transactions.
+       */
+      extractTransactionCodeFromCell(transactionCell) {
+        if (!transactionCell) return "";
+        const cellText = transactionCell.trim();
+        const dashPattern = /^([A-Z])\s*-/i;
+        const dashMatch = cellText.match(dashPattern);
+        if (dashMatch) {
+          return dashMatch[1].toUpperCase();
+        }
+        if (cellText.length >= 1 && /^[A-Z]$/i.test(cellText[0])) {
+          return cellText[0].toUpperCase();
+        }
+        const lowerText = cellText.toLowerCase();
+        if (lowerText.includes("purchase") || lowerText.includes("buy")) return "P";
+        if (lowerText.includes("sale") || lowerText.includes("sell")) return "S";
+        if (lowerText.includes("award") || lowerText.includes("grant")) return "A";
+        if (lowerText.includes("option") || lowerText.includes("exercise")) return "M";
+        if (lowerText.includes("gift")) return "G";
+        return "";
+      }
+      /**
+       * 🔤 EXTRACT TRANSACTION CODE (LEGACY)
        * Identifies P,S,A,M,G,F,X,C,W,U,D transaction codes
        */
       extractTransactionCode(row, firstCell) {
@@ -4032,13 +4161,24 @@ var init_openinsider_collector_advanced = __esm({
       }
       /**
        * 📊 MAP TRANSACTION CODE TO TRADE TYPE
+       * Only P (Purchase) and S (Sale) are processed as actual insider trades.
+       * Other SEC codes represent non-trading transactions:
+       * - A: Award/Grant of stock
+       * - M: Option Exercise
+       * - G: Gift
+       * - F: Payment of tax with shares
+       * - X: Exercise of derivative
+       * - C: Conversion of derivative security
+       * - W: Acquisition/disposition in exchange
+       * - U: Tender of shares
+       * - D: Disposition to issuer
        */
       parseTradeTypeFromCode(code) {
         const mappings = {
           "P": "BUY",
-          // Purchase
+          // Purchase - actual market buy
           "S": "SELL"
-          // Sale
+          // Sale - actual market sale
         };
         return mappings[code] || null;
       }
@@ -11574,6 +11714,34 @@ Only return the translated text, nothing else.`
     return text2;
   }
 }
+async function fetchRankingTickers() {
+  if (rankingTickersCache && Date.now() - rankingTickersCache.timestamp < RANKING_CACHE_TTL) {
+    console.log("\u2705 Using cached ranking tickers");
+    return rankingTickersCache.tickers;
+  }
+  console.log("\u{1F504} Fetching fresh ranking tickers...");
+  try {
+    const response = await fetch(`http://localhost:${process.env.PORT || 5e3}/api/rankings/tickers`);
+    if (!response.ok) {
+      throw new Error(`Rankings API returned ${response.status}`);
+    }
+    const data = await response.json();
+    const tickers = data.tickers || [];
+    rankingTickersCache = {
+      tickers,
+      timestamp: Date.now()
+    };
+    console.log(`\u{1F4E6} Cached ${tickers.length} ranking tickers`);
+    return tickers;
+  } catch (error) {
+    console.error("\u274C Failed to fetch ranking tickers:", error);
+    if (rankingTickersCache) {
+      console.log("\u26A0\uFE0F Using stale cache due to fetch error");
+      return rankingTickersCache.tickers;
+    }
+    throw new Error("Unable to fetch ranking tickers");
+  }
+}
 async function registerRoutes(app2) {
   app2.post("/api/create-payment-intent", async (req, res) => {
     try {
@@ -11976,6 +12144,7 @@ async function registerRoutes(app2) {
   app2.post("/api/cancel-subscription", async (req, res) => {
     try {
       const userId = getUserIdFromToken(req);
+      const { feedback } = req.body || {};
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -12030,6 +12199,43 @@ async function registerRoutes(app2) {
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
       }).where(eq7(users.id, userId));
+      if (feedback && feedback.trim()) {
+        try {
+          const nodemailer2 = await import("nodemailer");
+          const transporter = nodemailer2.default.createTransport({
+            host: process.env.SMTP_HOST || "smtp.gmail.com",
+            port: parseInt(process.env.SMTP_PORT || "587"),
+            secure: false,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS
+            }
+          });
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || "noreply@insidertrack.pro",
+            to: "scottnim7777@gmail.com",
+            subject: `[InsiderTrack] \uAD6C\uB3C5 \uCDE8\uC18C \uD53C\uB4DC\uBC31 - ${user2.email}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #333;">\uAD6C\uB3C5 \uCDE8\uC18C \uD53C\uB4DC\uBC31</h2>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>\uC0AC\uC6A9\uC790:</strong> ${user2.email}</p>
+                  <p><strong>\uAD6C\uB3C5 \uC0C1\uD0DC:</strong> ${user2.subscriptionStatus}</p>
+                  <p><strong>\uCDE8\uC18C \uC2DC\uAC04:</strong> ${(/* @__PURE__ */ new Date()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
+                  <p><strong>\uAD6C\uB3C5 \uC885\uB8CC\uC77C:</strong> ${periodEnd.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</p>
+                </div>
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                  <h3 style="margin-top: 0; color: #856404;">\uD53C\uB4DC\uBC31 \uB0B4\uC6A9:</h3>
+                  <p style="white-space: pre-wrap;">${feedback}</p>
+                </div>
+              </div>
+            `
+          });
+          console.log(`\u{1F4E7} Cancellation feedback email sent for user ${user2.email}`);
+        } catch (emailError) {
+          console.error("\u274C Failed to send cancellation feedback email:", emailError);
+        }
+      }
       res.json({
         success: true,
         message: "\uAD6C\uB3C5\uC774 \uD574\uC9C0\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
@@ -13058,7 +13264,24 @@ async function registerRoutes(app2) {
       const toDate = req.query.to;
       const sortBy = req.query.sortBy || "filedDate";
       const transactionFilter = req.query.transactionTypes;
-      const transactionTypes = transactionFilter ? transactionFilter.split(",") : ["BUY", "SELL"];
+      let transactionTypes;
+      let includeDerivatives = false;
+      console.log(`\u{1F4CB} [/api/trades] Transaction filter received: "${transactionFilter}"`);
+      if (transactionFilter) {
+        if (transactionFilter.toUpperCase() === "ALL") {
+          transactionTypes = void 0;
+          includeDerivatives = true;
+          console.log(`   \u2705 ALL mode: transactionTypes=undefined, includeDerivatives=true`);
+        } else {
+          transactionTypes = transactionFilter.split(",");
+          includeDerivatives = false;
+          console.log(`   \u{1F539} Core mode: transactionTypes=${JSON.stringify(transactionTypes)}, includeDerivatives=false`);
+        }
+      } else {
+        transactionTypes = ["BUY", "SELL"];
+        includeDerivatives = false;
+        console.log(`   \u{1F538} Default mode: transactionTypes=['BUY', 'SELL'], includeDerivatives=false`);
+      }
       const ticker = req.query.ticker;
       const userId = getUserIdFromToken(req);
       let hasRealtimeAccess = false;
@@ -13074,11 +13297,11 @@ async function registerRoutes(app2) {
       let filterBy = void 0;
       if (!hasRealtimeAccess) {
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1e3);
-        adjustedToDate = fortyEightHoursAgo.toISOString().split("T")[0];
-        filterBy = "createdAt";
+        adjustedToDate = fortyEightHoursAgo.toISOString();
+        filterBy = "filedDate";
         console.log(`\u{1F512} Free user access - applying 48-hour delay filter`);
-        console.log(`   Cutoff date: ${adjustedToDate}`);
-        console.log(`   Filter: trades with createdAt <= ${adjustedToDate} (collected more than 48h ago)`);
+        console.log(`   Cutoff timestamp: ${adjustedToDate}`);
+        console.log(`   Filter: trades with filedDate <= ${adjustedToDate} (filed more than 48h ago)`);
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       } else {
@@ -13088,7 +13311,7 @@ async function registerRoutes(app2) {
         console.log(`   Sort: ${sortBy}`);
         console.log(`   Request: limit=${limit}, offset=${offset}`);
       }
-      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker);
+      const rawTrades = await storage.getInsiderTrades(limit, offset, verifiedOnly, fromDate, adjustedToDate, sortBy, transactionTypes, filterBy, ticker, includeDerivatives);
       if (!hasRealtimeAccess) {
         console.log(`   Result: ${rawTrades.length} trades returned (filtered by 48h delay)`);
         if (rawTrades.length > 0) {
@@ -13130,6 +13353,9 @@ async function registerRoutes(app2) {
         const marketCap = priceData?.marketCap;
         const priceLastUpdated = priceData?.lastUpdated;
         let priceChangePercent = void 0;
+        if (!marketCap || marketCap === 0) {
+          console.log(`\u26A0\uFE0F Missing marketCap for ${trade.ticker}: marketCap=${marketCap}`);
+        }
         if (currentPrice && trade.pricePerShare) {
           priceChangePercent = (currentPrice - trade.pricePerShare) / trade.pricePerShare * 100;
         }
@@ -13558,68 +13784,93 @@ async function registerRoutes(app2) {
         where: eq7(insiderTrades.id, tradeId)
       });
       if (!trade) {
-        return res.status(404).json({ error: "Trade not found" });
+        return res.status(404).json({
+          error: "TRADE_NOT_FOUND",
+          errorType: "permanent",
+          message: "Trade not found in database",
+          retryable: false
+        });
       }
-      if (trade.comprehensiveAnalysis && trade.analysisGeneratedAt) {
-        const cacheAge = Date.now() - new Date(trade.analysisGeneratedAt).getTime();
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1e3;
-        if (cacheAge < SEVEN_DAYS) {
-          console.log(`\u2705 Using cached analysis (${Math.floor(cacheAge / (60 * 60 * 1e3))} hours old) - saved GPT API call`);
-          const cachedData = trade.comprehensiveAnalysis;
-          const cachedLanguage = cachedData._language || "en";
-          if (cachedLanguage !== language) {
-            console.log(`\u{1F30D} Translating cached analysis from ${cachedLanguage} to ${language}...`);
-            try {
-              if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
-                cachedData.catalysts = await Promise.all(
-                  cachedData.catalysts.map((catalyst) => translateText(catalyst, language))
-                );
-              }
-              if (cachedData.executiveSummary) {
-                cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
-              }
-              if (cachedData.marketContext?.reasoning) {
-                cachedData.marketContext.reasoning = await translateText(
-                  cachedData.marketContext.reasoning,
-                  language
-                );
-              }
-              if (cachedData.riskAssessment?.mitigation) {
-                cachedData.riskAssessment.mitigation = await translateText(
-                  cachedData.riskAssessment.mitigation,
-                  language
-                );
-              }
-              if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
-                cachedData.newsAnalysis.majorNews = await Promise.all(
-                  cachedData.newsAnalysis.majorNews.map(async (news) => ({
-                    ...news,
-                    title: await translateText(news.title, language),
-                    summary: await translateText(news.summary, language)
-                  }))
-                );
-              }
-              cachedData._language = language;
-              console.log(`\u2705 Cached analysis translated from ${cachedLanguage} to ${language}`);
-              return res.json(cachedData);
-            } catch (translateError) {
-              console.error("\u26A0\uFE0F Translation failed, returning cached data as-is:", translateError);
-              return res.json(trade.comprehensiveAnalysis);
+      if (trade.comprehensiveAnalysis) {
+        console.log(`\u2705 Using cached analysis - saved GPT API call`);
+        const cachedData = trade.comprehensiveAnalysis;
+        const cachedLanguage = cachedData._language || "en";
+        if (cachedLanguage !== language) {
+          console.log(`\u{1F30D} Translating cached analysis from ${cachedLanguage} to ${language}...`);
+          try {
+            if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
+              cachedData.catalysts = await Promise.all(
+                cachedData.catalysts.map((catalyst) => translateText(catalyst, language))
+              );
             }
+            if (cachedData.executiveSummary) {
+              cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
+            }
+            if (cachedData.marketContext?.reasoning) {
+              cachedData.marketContext.reasoning = await translateText(
+                cachedData.marketContext.reasoning,
+                language
+              );
+            }
+            if (cachedData.riskAssessment?.mitigation) {
+              cachedData.riskAssessment.mitigation = await translateText(
+                cachedData.riskAssessment.mitigation,
+                language
+              );
+            }
+            if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
+              cachedData.newsAnalysis.majorNews = await Promise.all(
+                cachedData.newsAnalysis.majorNews.map(async (news) => ({
+                  ...news,
+                  title: await translateText(news.title, language),
+                  summary: await translateText(news.summary, language)
+                }))
+              );
+            }
+            cachedData._language = language;
+            console.log(`\u2705 Cached analysis translated from ${cachedLanguage} to ${language}`);
+            return res.json(cachedData);
+          } catch (translateError) {
+            console.error("\u26A0\uFE0F Translation failed, returning cached data as-is:", translateError);
+            return res.json(trade.comprehensiveAnalysis);
           }
-          console.log(`\u2705 Returning cached analysis in ${language}`);
-          return res.json(trade.comprehensiveAnalysis);
-        } else {
-          console.log(`\u23F0 Cache expired (${Math.floor(cacheAge / (24 * 60 * 60 * 1e3))} days old) - regenerating analysis`);
         }
+        console.log(`\u2705 Returning cached analysis in ${language}`);
+        return res.json(trade.comprehensiveAnalysis);
       }
-      const tradeAge = Date.now() - new Date(trade.createdAt).getTime();
-      const ONE_WEEK = 7 * 24 * 60 * 60 * 1e3;
-      if (tradeAge > ONE_WEEK) {
-        console.log(`\u{1F4E6} Historical trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days since upload) - returning basic info only`);
-        return res.json({
-          isHistorical: true,
-          tradeAge: Math.floor(tradeAge / (24 * 60 * 60 * 1e3)),
+      try {
+        console.log(`\u{1F50D} Checking if ${trade.ticker} is eligible for AI analysis...`);
+        const rankingTickers = await fetchRankingTickers();
+        const isEligible = rankingTickers.includes(trade.ticker || "");
+        if (!isEligible) {
+          console.log(`\u26A0\uFE0F  ${trade.ticker} is not currently in rankings - analysis denied`);
+          return res.json({
+            notRanked: true,
+            message: "AI analysis is only available for currently ranked stocks",
+            ticker: trade.ticker,
+            basicInfo: {
+              traderName: trade.traderName,
+              traderTitle: trade.traderTitle || "Unknown",
+              companyName: trade.companyName,
+              ticker: trade.ticker || "N/A",
+              shares: trade.shares,
+              pricePerShare: trade.pricePerShare,
+              totalValue: trade.totalValue,
+              tradeType: trade.tradeType,
+              filedDate: trade.filedDate,
+              secFilingUrl: trade.secFilingUrl,
+              ownershipPercentage: trade.ownershipPercentage || 0
+            }
+          });
+        }
+        console.log(`\u2705 ${trade.ticker} is in rankings - proceeding with AI analysis`);
+      } catch (rankingError) {
+        console.error("\u274C Ranking eligibility check failed:", rankingError);
+        return res.status(503).json({
+          error: "RANKING_CHECK_FAILED",
+          errorType: "temporary",
+          message: "Unable to verify if stock is ranked. Please try again.",
+          retryable: true,
           basicInfo: {
             traderName: trade.traderName,
             traderTitle: trade.traderTitle || "Unknown",
@@ -13635,7 +13886,6 @@ async function registerRoutes(app2) {
           }
         });
       }
-      console.log(`\u{1F504} Recent trade (${Math.floor(tradeAge / (24 * 60 * 60 * 1e3))} days old) - performing full analysis`);
       let recentNews = [];
       let newsCorrelationResult = null;
       try {
@@ -13751,7 +14001,7 @@ async function registerRoutes(app2) {
       }
       const comprehensiveAnalysis = {
         executiveSummary: (() => {
-          let summary = analysis.recommendation;
+          let summary = analysis.recommendation || analysis.keyInsights[0] || "Insider trading activity detected";
           if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
             const totalNews = newsCorrelationResult.relatedNews.length;
             const positiveNews = newsCorrelationResult.relatedNews.filter(
@@ -13787,15 +14037,15 @@ async function registerRoutes(app2) {
           }
           return summary;
         })(),
-        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation}`,
-        priceTargets: {
+        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation || "Insider activity detected"}`,
+        priceTargets: analysis.priceTargets ? {
           // Use AI-generated percentage targets to calculate actual price targets
           conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
           realistic: trade.pricePerShare * (1 + analysis.priceTargets.realistic / 100),
           optimistic: trade.pricePerShare * (1 + analysis.priceTargets.optimistic / 100),
           timeHorizon: analysis.timeHorizon
           // Use AI-generated time horizon instead of hardcoded value
-        },
+        } : null,
         riskAssessment: {
           level: analysis.riskLevel,
           factors: analysis.keyInsights,
@@ -14367,7 +14617,7 @@ async function registerRoutes(app2) {
       const thirtyDaysAgo = /* @__PURE__ */ new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const fromDate = thirtyDaysAgo.toISOString().split("T")[0];
-      const trades = await storage.getInsiderTrades(1e3, 0, false, fromDate);
+      const trades = await storage.getInsiderTrades(1e3, 0, false, fromDate, void 0, "filedDate", void 0, void 0, void 0, false);
       const tickerMetrics = /* @__PURE__ */ new Map();
       for (const trade of trades) {
         if (!trade.ticker) continue;
@@ -14425,7 +14675,7 @@ async function registerRoutes(app2) {
             stockPriceMap.set(price.ticker, {
               price: Number(price.currentPrice),
               lastUpdated: price.lastUpdated || /* @__PURE__ */ new Date(),
-              marketCap: price.marketCap || null
+              marketCap: price.marketCap ? Number(price.marketCap) : null
             });
           }
         });
@@ -14563,7 +14813,7 @@ async function registerRoutes(app2) {
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : void 0,
           priceChangePercent: priceChangePercent !== void 0 ? Math.round(priceChangePercent * 10) / 10 : void 0,
           priceLastUpdated: priceLastUpdated?.toISOString() || null,
-          marketCap: marketCap || null,
+          marketCap: marketCap ? Number(marketCap) : null,
           // Add market cap
           // enhancedTrade 객체 추가 (frontend compatibility)
           enhancedTrade: {
@@ -14674,6 +14924,80 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error generating rankings:", error);
       res.status(500).json({ error: "Failed to generate stock rankings" });
+    }
+  });
+  app2.get("/api/rankings/tickers", async (req, res) => {
+    try {
+      console.log("\u{1F3AF} Fetching ranking tickers for AI analysis eligibility check...");
+      const thirtyDaysAgo = /* @__PURE__ */ new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const recentTrades = await db4.query.insiderTrades.findMany({
+        where: (trades, { gte: gte4 }) => gte4(trades.filedDate, thirtyDaysAgo)
+      });
+      console.log(`\u{1F4CA} Found ${recentTrades.length} trades in last 30 days for ticker extraction`);
+      const stockMap = /* @__PURE__ */ new Map();
+      recentTrades.forEach((trade) => {
+        if (!trade.ticker || !["BUY", "PURCHASE", "SALE", "SELL"].includes(trade.tradeType)) {
+          return;
+        }
+        const ticker = trade.ticker;
+        if (!stockMap.has(ticker)) {
+          stockMap.set(ticker, {
+            ticker,
+            totalValue: 0,
+            buyValue: 0,
+            sellValue: 0,
+            buyTrades: 0,
+            sellTrades: 0,
+            lastTradeDate: trade.filedDate
+          });
+        }
+        const stock = stockMap.get(ticker);
+        const isBuy = trade.tradeType === "BUY" || trade.tradeType === "PURCHASE";
+        if (isBuy) {
+          stock.buyValue += trade.totalValue;
+          stock.buyTrades++;
+        } else {
+          stock.sellValue += trade.totalValue;
+          stock.sellTrades++;
+        }
+        stock.totalValue += Math.abs(trade.totalValue);
+        if (new Date(trade.filedDate) > new Date(stock.lastTradeDate)) {
+          stock.lastTradeDate = trade.filedDate;
+        }
+      });
+      const stocks = Array.from(stockMap.values());
+      const netBuyingStocks = stocks.filter((s) => s.buyTrades + s.sellTrades >= 2).filter((s) => s.buyValue - s.sellValue > 0).filter((s) => s.buyTrades > 0);
+      let recencyDays = 7;
+      let filteredStocks = netBuyingStocks.filter((s) => {
+        const daysSince = s.lastTradeDate ? (Date.now() - new Date(s.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+        return daysSince <= recencyDays;
+      });
+      if (filteredStocks.length < 5) {
+        recencyDays = 14;
+        filteredStocks = netBuyingStocks.filter((s) => {
+          const daysSince = s.lastTradeDate ? (Date.now() - new Date(s.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        });
+      }
+      if (filteredStocks.length < 5) {
+        recencyDays = 30;
+        filteredStocks = netBuyingStocks.filter((s) => {
+          const daysSince = s.lastTradeDate ? (Date.now() - new Date(s.lastTradeDate).getTime()) / (1e3 * 60 * 60 * 24) : 999;
+          return daysSince <= recencyDays;
+        });
+      }
+      const tickers = filteredStocks.map((s) => s.ticker);
+      console.log(`\u2705 Returning ${tickers.length} ranking tickers (recency: ${recencyDays} days)`);
+      res.json({
+        tickers,
+        count: tickers.length,
+        recencyDays,
+        generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("\u274C Error fetching ranking tickers:", error);
+      res.status(500).json({ error: "Failed to fetch ranking tickers" });
     }
   });
   app2.post("/api/patterns/detect", async (req, res) => {
@@ -14954,6 +15278,43 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Failed to start massive data collection:", error);
       res.status(500).json({ error: "Failed to start massive data collection" });
+    }
+  });
+  app2.post("/api/admin/force-marketcap-update", protectAdminEndpoint, async (req, res) => {
+    try {
+      console.log("\u{1F504} Starting forced marketCap update...");
+      const trades = await storage.getInsiderTrades(2e3, 0, false);
+      const uniqueTickers = [...new Set(trades.map((t) => t.ticker).filter(Boolean))];
+      let updated = 0, failed = 0, skipped = 0;
+      for (const ticker of uniqueTickers) {
+        try {
+          const priceData = await stockPriceService.getStockPrice(ticker);
+          if (priceData && priceData.marketCap && priceData.marketCap > 0) {
+            updated++;
+            const marketCapB = (priceData.marketCap / 1e9).toFixed(2);
+            console.log(`\u2705 ${ticker}: $${marketCapB}B (market cap: ${priceData.marketCap})`);
+          } else {
+            skipped++;
+            console.log(`\u26A0\uFE0F ${ticker}: No market cap data available`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 12e3));
+        } catch (error) {
+          failed++;
+          console.error(`\u274C ${ticker} failed:`, error.message);
+        }
+      }
+      console.log(`\u{1F4C8} MarketCap update complete: ${updated} updated, ${skipped} skipped, ${failed} failed`);
+      res.json({
+        success: true,
+        updated,
+        skipped,
+        failed,
+        total: uniqueTickers.length,
+        message: `Updated ${updated}/${uniqueTickers.length} tickers`
+      });
+    } catch (error) {
+      console.error("\u274C Force MarketCap update failed:", error);
+      res.status(500).json({ error: "MarketCap update failed" });
     }
   });
   app2.get("/api/admin/stats/collection", protectAdminEndpoint, async (req, res) => {
@@ -15696,8 +16057,32 @@ async function registerRoutes(app2) {
   exchangeRateService.initialize().catch((err) => {
     console.error("\u26A0\uFE0F Failed to initialize exchange rate service:", err);
   });
+  debugMarketCapStatus().catch((err) => {
+    console.error("\u26A0\uFE0F Failed to debug market cap status:", err);
+  });
   console.log("\u2705 API routes registered with WebSocket support, enhanced data collection, and push notifications");
   return httpServer;
+}
+async function debugMarketCapStatus() {
+  try {
+    console.log("\n\u{1F50D} ===== MarketCap Debug Info =====");
+    const { sql: sql5 } = await import("drizzle-orm");
+    const result = await db4.execute(sql5`
+      SELECT
+        COUNT(*) as total,
+        COUNT(CASE WHEN market_cap IS NOT NULL THEN 1 END) as with_marketcap,
+        COUNT(CASE WHEN market_cap > 0 THEN 1 END) as positive_marketcap
+      FROM stock_prices
+    `);
+    const stats = result.rows[0];
+    console.log("\u{1F4CA} Stock Prices Table Coverage:");
+    console.log(`   Total entries: ${stats.total}`);
+    console.log(`   With marketCap: ${stats.with_marketcap} (${stats.total > 0 ? (stats.with_marketcap / stats.total * 100).toFixed(1) : 0}%)`);
+    console.log(`   Positive marketCap: ${stats.positive_marketcap} (${stats.total > 0 ? (stats.positive_marketcap / stats.total * 100).toFixed(1) : 0}%)`);
+    console.log("=====================================\n");
+  } catch (error) {
+    console.error("\u274C MarketCap debug failed:", error);
+  }
 }
 function broadcastUpdate(type, data) {
   if (wss) {
@@ -15709,7 +16094,7 @@ function broadcastUpdate(type, data) {
     });
   }
 }
-var db4, stripe2, openai2, wss;
+var db4, stripe2, openai2, rankingTickersCache, RANKING_CACHE_TTL, wss;
 var init_routes = __esm({
   "server/routes.ts"() {
     "use strict";
@@ -15745,6 +16130,8 @@ var init_routes = __esm({
       apiVersion: "2023-10-16"
     });
     openai2 = new OpenAI4({ apiKey: process.env.OPENAI_API_KEY });
+    rankingTickersCache = null;
+    RANKING_CACHE_TTL = 5 * 60 * 1e3;
   }
 });
 

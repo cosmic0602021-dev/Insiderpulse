@@ -5,13 +5,8 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
-import { useState, useEffect, useMemo, useId } from 'react';
+import { useState, useEffect, useMemo, useId, useCallback } from 'react';
 import { StockRecommendation } from './terminal-ui/types';
-
-// Global cache for AI analysis - shared across all users/sessions
-// Key format: "ticker_language", stores analysis data with timestamp
-const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 interface StockPriceData {
   ticker: string;
@@ -27,6 +22,12 @@ interface StockSummaryModalProps {
   stock: StockRecommendation | null;
 }
 
+type AnalysisError = {
+  type: 'not_ranked' | 'temporary_error' | 'network_error' | 'not_available';
+  message: string;
+  retryable: boolean;
+};
+
 export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalProps) {
   const { language } = useLanguage();
   const gradientId = useId();
@@ -34,6 +35,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
+  const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
 
   useEffect(() => {
     if (!isOpen || !stock?.ticker) {
@@ -54,43 +56,109 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       }
     };
 
-    // Fetch comprehensive AI analysis with caching
+    // Fetch comprehensive AI analysis with timeout and error detection
     const fetchAnalysis = async () => {
-      const cacheKey = `${stock.ticker}_${language}`;
-
-      // Check global cache first
-      const cached = analysisCache.get(cacheKey);
-      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        console.log(`✅ Using cached analysis for ${stock.ticker} (${language})`);
-        setComprehensiveAnalysis(cached.data);
-        return;
-      }
-
       setIsLoadingAnalysis(true);
-      try {
-        // First get the latest trade for this ticker
-        const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
-        if (tradesResponse.ok) {
-          const tradesData = await tradesResponse.json();
-          if (tradesData.trades && tradesData.trades.length > 0) {
-            const tradeId = tradesData.trades[0].id;
-            // Get comprehensive analysis for this trade
-            const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`);
-            if (analysisResponse.ok) {
-              const analysisData = await analysisResponse.json();
-              setComprehensiveAnalysis(analysisData);
+      setAnalysisError(null);
 
-              // Store in global cache
-              analysisCache.set(cacheKey, {
-                data: analysisData,
-                timestamp: Date.now()
+      try {
+        // Get trade ID
+        const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
+        if (!tradesResponse.ok) {
+          throw new Error(`Trades API returned ${tradesResponse.status}`);
+        }
+
+        const tradesData = await tradesResponse.json();
+        if (!tradesData.trades?.length) {
+          setAnalysisError({
+            type: 'not_available',
+            message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' :
+                     language === 'ja' ? '取引データが見つかりません。' :
+                     language === 'zh' ? '未找到交易数据。' :
+                     'No trade data found.',
+            retryable: false
+          });
+          setIsLoadingAnalysis(false);
+          return;
+        }
+
+        const tradeId = tradesData.trades[0].id;
+
+        // Fetch with 30-second timeout (AI analysis takes longer)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const analysisResponse = await fetch(
+            `/api/trades/${tradeId}/comprehensive-analysis?language=${language}`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+
+          if (!analysisResponse.ok) {
+            if (analysisResponse.status === 503) {
+              setAnalysisError({
+                type: 'temporary_error',
+                message: language === 'ko' ? '일시적인 서버 오류입니다.' :
+                         language === 'ja' ? '一時的なサーバーエラーです。' :
+                         language === 'zh' ? '临时服务器错误。' :
+                         'Temporary server error.',
+                retryable: true
               });
-              console.log(`📦 Cached analysis for ${stock.ticker} (${language})`);
+              setIsLoadingAnalysis(false);
+              return;
             }
+            throw new Error(`Analysis API returned ${analysisResponse.status}`);
+          }
+
+          const analysisData = await analysisResponse.json();
+
+          // Check for specific errors
+          if (analysisData.notRanked) {
+            setComprehensiveAnalysis(analysisData);
+            setIsLoadingAnalysis(false);
+            return;
+          }
+
+          if (analysisData.error) {
+            setAnalysisError({
+              type: analysisData.errorType === 'temporary' ? 'temporary_error' : 'not_available',
+              message: analysisData.message,
+              retryable: analysisData.retryable || false
+            });
+            setIsLoadingAnalysis(false);
+            return;
+          }
+
+          // Success!
+          setComprehensiveAnalysis(analysisData);
+          setAnalysisError(null);
+
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            setAnalysisError({
+              type: 'temporary_error',
+              message: language === 'ko' ? '요청 시간이 초과되었습니다.' :
+                       language === 'ja' ? 'リクエストがタイムアウトしました。' :
+                       language === 'zh' ? '请求超时。' :
+                       'Request timed out.',
+              retryable: true
+            });
+          } else {
+            throw fetchError;
           }
         }
       } catch (error) {
         console.error('Failed to fetch analysis:', error);
+        setAnalysisError({
+          type: 'network_error',
+          message: language === 'ko' ? '네트워크 오류가 발생했습니다.' :
+                   language === 'ja' ? 'ネットワークエラーが発生しました。' :
+                   language === 'zh' ? '发生网络错误。' :
+                   'Network error occurred.',
+          retryable: true
+        });
       } finally {
         setIsLoadingAnalysis(false);
       }
@@ -457,16 +525,257 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 <div className="pl-5 flex items-center gap-2">
                   <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-[10px] text-purple-400 font-mono">
-                    {langKey === 'ko' ? 'AI 분석 중...' : 'Analyzing...'}
+                    {langKey === 'ko' ? 'AI 분석 중...' :
+                     langKey === 'ja' ? 'AI分析中...' :
+                     langKey === 'zh' ? 'AI分析中...' :
+                     'Analyzing...'}
                   </span>
                 </div>
               ) : comprehensiveAnalysis?.executiveSummary ? (
-                <p className={`text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? 'line-clamp-1' : ''}`}>
-                {comprehensiveAnalysis.executiveSummary}
-              </p>
+                <div className="pl-5 space-y-2">
+                  {/* Executive Summary */}
+                  <p className="text-[11px] md:text-xs text-white leading-relaxed font-medium">
+                    {comprehensiveAnalysis.executiveSummary}
+                  </p>
+
+                  {/* Expanded Analysis */}
+                  {isAnalysisExpanded && (
+                    <div className="space-y-2.5 pt-1 border-t border-neutral-800/50">
+                      {/* Key Insights */}
+                      {comprehensiveAnalysis.riskAssessment?.factors && comprehensiveAnalysis.riskAssessment.factors.length > 0 && (
+                        <div className="space-y-1">
+                          <h4 className="text-[9px] font-semibold text-purple-400 uppercase tracking-wide">
+                            {langKey === 'ko' ? '📊 주요 인사이트' :
+                             langKey === 'ja' ? '📊 主要インサイト' :
+                             langKey === 'zh' ? '📊 关键见解' :
+                             '📊 Key Insights'}
+                          </h4>
+                          <ul className="space-y-1.5">
+                            {comprehensiveAnalysis.riskAssessment.factors.map((insight: string, idx: number) => (
+                              <li key={idx} className="text-[10px] text-neutral-300 leading-relaxed pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-purple-500">
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* News Analysis */}
+                      {comprehensiveAnalysis.newsAnalysis && comprehensiveAnalysis.newsAnalysis.totalNews > 0 && (
+                        <div className="space-y-1">
+                          <h4 className="text-[9px] font-semibold text-blue-400 uppercase tracking-wide">
+                            {langKey === 'ko' ? '📰 뉴스 분석 (최근 30일)' :
+                             langKey === 'ja' ? '📰 ニュース分析（過去30日）' :
+                             langKey === 'zh' ? '📰 新闻分析（最近30天）' :
+                             '📰 News Analysis (30 days)'}
+                          </h4>
+                          <div className="flex items-center gap-3 text-[9px]">
+                            <span className="text-green-400">✓ {comprehensiveAnalysis.newsAnalysis.positiveCount} {langKey === 'ko' ? '긍정' : 'Positive'}</span>
+                            <span className="text-neutral-400">○ {comprehensiveAnalysis.newsAnalysis.totalNews - comprehensiveAnalysis.newsAnalysis.positiveCount - comprehensiveAnalysis.newsAnalysis.negativeCount} {langKey === 'ko' ? '중립' : 'Neutral'}</span>
+                            <span className="text-red-400">✗ {comprehensiveAnalysis.newsAnalysis.negativeCount} {langKey === 'ko' ? '부정' : 'Negative'}</span>
+                          </div>
+                          {comprehensiveAnalysis.newsAnalysis.majorNews && comprehensiveAnalysis.newsAnalysis.majorNews.length > 0 && (
+                            <div className="space-y-1 mt-1.5">
+                              {comprehensiveAnalysis.newsAnalysis.majorNews.slice(0, 3).map((news: any, idx: number) => (
+                                <div key={idx} className="text-[9px] text-neutral-400 pl-3 border-l-2 border-neutral-700">
+                                  <span className={`font-semibold ${news.sentiment === 'BULLISH' ? 'text-green-400' : news.sentiment === 'BEARISH' ? 'text-red-400' : 'text-neutral-300'}`}>
+                                    {news.title}
+                                  </span>
+                                  {news.summary && <p className="text-neutral-500 mt-0.5">{news.summary}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Risk Assessment & Catalysts */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {comprehensiveAnalysis.riskAssessment && (
+                          <div className="space-y-1">
+                            <h4 className="text-[9px] font-semibold text-amber-400 uppercase tracking-wide">
+                              {langKey === 'ko' ? '⚠️ 리스크' :
+                               langKey === 'ja' ? '⚠️ リスク' :
+                               langKey === 'zh' ? '⚠️ 风险' :
+                               '⚠️ Risk'}
+                            </h4>
+                            <div className={`inline-block px-2 py-0.5 rounded text-[9px] font-semibold ${
+                              comprehensiveAnalysis.riskAssessment.level === 'HIGH' ? 'bg-red-900/30 text-red-400' :
+                              comprehensiveAnalysis.riskAssessment.level === 'MEDIUM' ? 'bg-amber-900/30 text-amber-400' :
+                              'bg-green-900/30 text-green-400'
+                            }`}>
+                              {comprehensiveAnalysis.riskAssessment.level}
+                            </div>
+                          </div>
+                        )}
+
+                        {comprehensiveAnalysis.timeHorizon && (
+                          <div className="space-y-1">
+                            <h4 className="text-[9px] font-semibold text-cyan-400 uppercase tracking-wide">
+                              {langKey === 'ko' ? '⏱️ 시간' :
+                               langKey === 'ja' ? '⏱️ 期間' :
+                               langKey === 'zh' ? '⏱️ 时间' :
+                               '⏱️ Horizon'}
+                            </h4>
+                            <p className="text-[9px] text-neutral-300 font-medium">{comprehensiveAnalysis.timeHorizon}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Market Context */}
+                      {comprehensiveAnalysis.marketContext?.reasoning && (
+                        <div className="space-y-1">
+                          <h4 className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wide">
+                            {langKey === 'ko' ? '📈 시장 컨텍스트' :
+                             langKey === 'ja' ? '📈 市場コンテキスト' :
+                             langKey === 'zh' ? '📈 市场背景' :
+                             '📈 Market Context'}
+                          </h4>
+                          <p className="text-[10px] text-neutral-300 leading-relaxed">
+                            {comprehensiveAnalysis.marketContext.reasoning}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Confidence Score */}
+                      {comprehensiveAnalysis.confidence && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-[9px] text-neutral-500">
+                            {langKey === 'ko' ? '신뢰도:' :
+                             langKey === 'ja' ? '信頼度:' :
+                             langKey === 'zh' ? '可信度:' :
+                             'Confidence:'}
+                          </span>
+                          <div className="flex-1 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-full ${comprehensiveAnalysis.confidence >= 70 ? 'bg-green-500' : comprehensiveAnalysis.confidence >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                              style={{ width: `${comprehensiveAnalysis.confidence}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-[9px] font-semibold text-neutral-300">{comprehensiveAnalysis.confidence}%</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : comprehensiveAnalysis?.notRanked ? (
+                <div className="pl-5 space-y-1.5">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-1">
+                      <p className="text-[10px] leading-relaxed text-amber-400">
+                        {langKey === 'ko' ? '현재 랭킹에 없는 종목입니다.' :
+                         langKey === 'ja' ? 'ランキング外の銘柄です。' :
+                         langKey === 'zh' ? '当前未排名的股票。' :
+                         'Not currently in rankings.'}
+                      </p>
+                      <p className="text-[8px] text-neutral-500 italic">
+                        {langKey === 'ko' ? '💡 랭킹 페이지에서 AI 분석 제공 종목을 확인하세요.' :
+                         langKey === 'ja' ? '💡 ランキングページでAI分析対象銘柄を確認してください。' :
+                         langKey === 'zh' ? '💡 在排名页面查看AI分析股票。' :
+                         '💡 Check the Rankings page for stocks with AI analysis.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : analysisError ? (
+                <div className="pl-5 space-y-1.5">
+                  <div className="flex items-start gap-2">
+                    {analysisError.type === 'not_ranked' ? (
+                      <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle size={12} className="text-red-500 shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1 space-y-1">
+                      <p className={`text-[10px] leading-relaxed ${
+                        analysisError.type === 'not_ranked' ? 'text-amber-400' : 'text-red-400'
+                      }`}>
+                        {analysisError.message}
+                      </p>
+
+                      {analysisError.retryable && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAnalysisError(null);
+                            setComprehensiveAnalysis(null);
+                            setIsLoadingAnalysis(true);
+                            // Trigger re-fetch
+                            const fetchAgain = async () => {
+                              try {
+                                const tradesResponse = await fetch(`/api/trades?ticker=${stock?.ticker}&limit=1`);
+                                if (!tradesResponse.ok) throw new Error(`Trades API returned ${tradesResponse.status}`);
+                                const tradesData = await tradesResponse.json();
+                                if (!tradesData.trades?.length) {
+                                  setAnalysisError({
+                                    type: 'not_available',
+                                    message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' : 'No trade data found.',
+                                    retryable: false
+                                  });
+                                  setIsLoadingAnalysis(false);
+                                  return;
+                                }
+                                const tradeId = tradesData.trades[0].id;
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                                try {
+                                  const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`, { signal: controller.signal });
+                                  clearTimeout(timeoutId);
+                                  if (!analysisResponse.ok) {
+                                    if (analysisResponse.status === 503) {
+                                      setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '일시적인 서버 오류입니다.' : 'Temporary server error.', retryable: true });
+                                      setIsLoadingAnalysis(false);
+                                      return;
+                                    }
+                                    throw new Error(`Analysis API returned ${analysisResponse.status}`);
+                                  }
+                                  const analysisData = await analysisResponse.json();
+                                  if (analysisData.notRanked) {
+                                    setComprehensiveAnalysis(analysisData);
+                                    setIsLoadingAnalysis(false);
+                                    return;
+                                  }
+                                  if (analysisData.error) {
+                                    setAnalysisError({ type: analysisData.errorType === 'temporary' ? 'temporary_error' : 'not_available', message: analysisData.message, retryable: analysisData.retryable || false });
+                                    setIsLoadingAnalysis(false);
+                                    return;
+                                  }
+                                  setComprehensiveAnalysis(analysisData);
+                                  setAnalysisError(null);
+                                } catch (fetchError: any) {
+                                  clearTimeout(timeoutId);
+                                  if (fetchError.name === 'AbortError') {
+                                    setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '요청 시간이 초과되었습니다.' : 'Request timed out.', retryable: true });
+                                  } else {
+                                    throw fetchError;
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Failed to fetch analysis:', error);
+                                setAnalysisError({ type: 'network_error', message: language === 'ko' ? '네트워크 오류가 발생했습니다.' : 'Network error occurred.', retryable: true });
+                              } finally {
+                                setIsLoadingAnalysis(false);
+                              }
+                            };
+                            fetchAgain();
+                          }}
+                          className="text-[9px] px-2 py-1 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/50 text-purple-300 rounded transition-colors"
+                        >
+                          {langKey === 'ko' ? '다시 시도' :
+                           langKey === 'ja' ? '再試行' :
+                           langKey === 'zh' ? '重试' :
+                           'Retry'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <p className="text-[10px] text-neutral-500 pl-5 italic">
-                  {langKey === 'ko' ? '분석 데이터를 불러올 수 없습니다.' : 'Unable to load analysis data.'}
+                  {langKey === 'ko' ? '분석 데이터를 불러올 수 없습니다.' :
+                   langKey === 'ja' ? '分析データを読み込めません。' :
+                   langKey === 'zh' ? '无法加载分析数据。' :
+                   'Unable to load analysis data.'}
                 </p>
               )}
             </div>

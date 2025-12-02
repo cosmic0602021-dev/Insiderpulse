@@ -7,15 +7,14 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, Circle, Newspaper, CheckCircle, ExternalLink, Brain, Target, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, Terminal, FileText, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, HelpCircle, Newspaper, CheckCircle, ExternalLink, Brain, Target, Info, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Clock, Search, Lock, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, FileText, Terminal, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, BellOff, ScanLine, EyeOff, Eye, Users, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Slot } from "@radix-ui/react-slot";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import * as LabelPrimitive from "@radix-ui/react-label";
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as LabelPrimitive from "@radix-ui/react-label";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { ResponsiveContainer, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Area, Line, ReferenceDot, LineChart, BarChart, Bar, Cell } from "recharts";
@@ -25,6 +24,7 @@ import { ko, ja, zhCN, enUS } from "date-fns/locale";
 import "html2canvas";
 import { useStripe, useElements, CardElement, Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 const useBuiltinInsertionEffect = React["useInsertionEffect"];
 const canUseDOM = !!(typeof window !== "undefined" && typeof window.document !== "undefined" && typeof window.document.createElement !== "undefined");
@@ -835,16 +835,17 @@ const translations = {
     "social.linkCopiedDesc": "Share link copied to clipboard",
     "social.copyFailed": "Copy Failed",
     "social.copyFailedDesc": "Please try again",
-    // AI Signal Feed
-    "aiSignal.title": "🤖 AI Trading Signals",
-    "aiSignal.strongBuy": "STRONG BUY",
+    // AI Transaction Feed (App Store compliance - no investment advice)
+    "aiSignal.title": "🤖 AI Transaction Analysis",
+    "aiSignal.highBuyVolume": "HIGH BUY VOLUME",
+    // Changed from 'strongBuy'
     "aiSignal.buy": "Buy",
     "aiSignal.caution": "Caution",
     "aiSignal.watch": "Watch",
-    "aiSignal.confidence": "confidence",
+    "aiSignal.confidence": "data quality",
     "aiSignal.insiders": "insiders",
     "aiSignal.volume": "net volume",
-    "aiSignal.disclaimer": "AI-generated signals based on insider activity patterns. Not financial advice.",
+    "aiSignal.disclaimer": "AI-generated categorization based on insider activity patterns. Not financial advice.",
     // Page specific
     "page.dashboard.subtitle": "Real-time insider trading monitoring and market intelligence",
     "page.livetrading.title": "Live Trading",
@@ -865,14 +866,14 @@ const translations = {
     "stats.tradingSummary": "Trading Summary",
     "stats.failedLoad": "Failed to load trading statistics. Please refresh the page.",
     "stats.fromLastWeek": "from last week",
-    // Filters and Search
+    // Filters and Search (App Store compliance - no signals terminology)
     "filter.allTypes": "All Types",
     "filter.buyOrders": "Buy Orders",
     "filter.sellOrders": "Sell Orders",
-    "filter.allSignals": "All Signals",
-    "filter.buySignal": "Buy Signal",
-    "filter.sellSignal": "Sell Signal",
-    "filter.holdSignal": "Hold Signal",
+    "filter.allSignals": "All Transaction Types",
+    "filter.buySignal": "Buy Transactions",
+    "filter.sellSignal": "Sell Transactions",
+    "filter.holdSignal": "Hold Transactions",
     "filter.buyOnly": "Buy Only",
     "filter.sellOnly": "Sell Only",
     // Placeholders
@@ -1000,7 +1001,7 @@ const translations = {
     "liveTrading.whenPriceChange": "When significant price change",
     "liveTrading.whenVolumeSpike": "When trading volume spikes",
     "liveTrading.largeTrades": "Large trades ($10M+)",
-    "liveTrading.whenRecommendedPrice": "When recommended buy price is reached",
+    "liveTrading.whenTargetPriceReached": "When target price level is reached",
     "liveTrading.dataQualityReport": "Data Quality Report",
     "liveTrading.validTrades": "Valid Trades",
     "liveTrading.todayTrades": "Today's Trades",
@@ -1024,7 +1025,7 @@ const translations = {
     "liveTrading.insiderBuyPrice": "Insider Buy Price",
     "liveTrading.insiderSellPrice": "Insider Sell Price",
     "liveTrading.avgInsiderBuyPrice": "Average Insider Buy Price",
-    "liveTrading.aiRecommendedBuyPrice": "AI Recommended Buy Price",
+    "liveTrading.historicalInsiderPrice": "Historical Insider Trade Price",
     "liveTrading.currentPrice": "Current Price",
     "liveTrading.updated": "Updated",
     "liveTrading.opportunityAfterSell": "Opportunity after insider sell",
@@ -1033,7 +1034,7 @@ const translations = {
     "liveTrading.conservative": "Conservative",
     "liveTrading.realistic": "Realistic",
     "liveTrading.optimistic": "Optimistic",
-    "liveTrading.actionableRecommendation": "Actionable Recommendation",
+    "liveTrading.actionableInsight": "Actionable Insight",
     "liveTrading.catalystsIdentified": "Catalysts identified",
     "liveTrading.follow": "Follow",
     "liveTrading.opportunistic": "Opportunistic",
@@ -1146,10 +1147,10 @@ const translations = {
     "tradeDetail.investmentStrategy": "Investment Strategy",
     "tradeDetail.additionalInsights": "Additional Insights",
     "tradeDetail.overallOpinion": "Overall Opinion",
-    "tradeDetail.buyRecommendation": "💹 Buy Recommendation",
-    "tradeDetail.sellRecommendation": "📉 Sell Recommendation",
-    "tradeDetail.holdRecommendation": "⏸️ Hold/Wait",
-    "tradeDetail.insiderBuyingActivity": "Insider buying activity is positive. Investment review is recommended.",
+    "tradeDetail.buyActivity": "💹 Buy Activity",
+    "tradeDetail.sellActivity": "📉 Sell Activity",
+    "tradeDetail.neutralActivity": "⏸️ Mixed Activity",
+    "tradeDetail.insiderBuyingActivity": "Insider buying activity detected in SEC filings.",
     "tradeDetail.insiderSellingActivity": "Insider selling activity detected. Caution is advised.",
     "tradeDetail.mixedInsiderActivity": "Mixed insider trading patterns. Further information is needed.",
     "tradeDetail.confidenceLevel": "Confidence",
@@ -1168,19 +1169,19 @@ const translations = {
     "priceChart.decreased": "Price Decreased",
     "priceChart.tradePriceLabel": "Trade Price:",
     "priceChart.currentLabel": "Current:",
-    // Ranking page
-    "ranking.title": "Top Buy Recommendations",
-    "ranking.subtitle": "AI-powered stock recommendations based on insider trading patterns",
-    "ranking.topStocks": "Top 10 Recommended Stocks",
-    "ranking.recommendation": "Recommendation",
-    "ranking.buyPotential": "Buy Potential",
+    // Ranking page (App Store compliance - no investment recommendations)
+    "ranking.title": "Top Insider Activity",
+    "ranking.subtitle": "SEC insider trading data analysis and categorization",
+    "ranking.topStocks": "Top 10 Insider Activity",
+    "ranking.recommendation": "Buy Intensity",
+    "ranking.buyPotential": "Buy Volume",
     "ranking.marketCap": "Market Cap",
     "ranking.volume": "Volume",
     "ranking.priceChange": "Price Change",
     "ranking.lastPrice": "Current Price",
     "ranking.strongBuy": "Strong Buy",
-    "ranking.buy": "Buy",
-    "ranking.hold": "Hold",
+    "ranking.buy": "Moderate Buy",
+    "ranking.hold": "Weak Buy",
     "ranking.analysis": "Analysis",
     "ranking.insiderActivity": "Insider Activity",
     "ranking.tradesLast30Days": "trades in last 30 days",
@@ -1195,10 +1196,10 @@ const translations = {
     "ranking.noData": "No ranking data available",
     "ranking.refreshData": "Refresh Data",
     "ranking.lockedTitle": "Premium Feature",
-    "ranking.lockedDescription": "Upgrade to Insider Pro to see our top stock recommendations based on insider trading patterns",
+    "ranking.lockedDescription": "Upgrade to Insider Pro to see comprehensive insider trading activity data and analysis",
     "ranking.unlockButton": "Unlock Top Rankings",
-    "ranking.recommendationReason": "Recommendation Reason:",
-    "ranking.recommendationReasonNetBuying": "Recommendation Reason: Net Buying",
+    "ranking.recommendationReason": "Activity Summary:",
+    "ranking.recommendationReasonNetBuying": "Activity Summary: Net Buying",
     "ranking.recommendationSimple": "{count} insiders buying",
     "ranking.recommendationSimpleSingle": "Large purchase {amount}",
     "ranking.buySell": "Buy / Sell",
@@ -1210,10 +1211,10 @@ const translations = {
     "ranking.lastUpdated": "Last Updated",
     "ranking.alert.noTradeData": "No recent trade information available for {company}.",
     "ranking.alert.loadFailed": "Failed to load trade data.",
-    // Ranking AI Analysis
-    "ranking.aiAnalysis.executiveSummary": "{name} ({title}) bought {shares} shares of {company} at ${price}. This is interpreted as a positive signal.",
-    "ranking.aiAnalysis.riskMitigation": "Insider buying is generally a positive signal, but diversified investment is recommended.",
-    "ranking.aiAnalysis.recommendation": "The purchase by {title} is likely based on internal company information. Consider entry near ${price}.",
+    // Ranking AI Analysis (App Store compliance - factual only)
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title}) bought {shares} shares of {company} at ${price} as reported in SEC filings.",
+    "ranking.aiAnalysis.riskMitigation": "This is factual data from SEC filings. All investment decisions are your responsibility.",
+    "ranking.aiAnalysis.recommendation": "{title} purchase transaction recorded in SEC Form 4 filing at ${price} per share.",
     "ranking.aiAnalysis.insiderBuyByTitle": "Insider buy by {title}",
     "ranking.aiAnalysis.totalTradeValue": "Total trade value: ${value}K",
     "ranking.aiAnalysis.simultaneousBuyersCount": "{count} simultaneous buyers",
@@ -1358,7 +1359,7 @@ const translations = {
     "liveTrading.insiderBuyPriceLabel": "Insider Buy Price",
     "liveTrading.insiderSellPriceLabel": "Insider Sell Price",
     "liveTrading.avgInsiderBuyPriceLabel": "Average Insider Buy Price",
-    "liveTrading.aiRecommendedBuyPriceLabel": "AI Recommended Buy Price",
+    "liveTrading.historicalInsiderPriceLabel": "Historical Insider Trade Price",
     "liveTrading.currentPriceLabel": "Current Price",
     "liveTrading.updatedLabel": "Updated",
     "liveTrading.opportunityAfterSellLabel": "Opportunity after insider sell",
@@ -1367,7 +1368,7 @@ const translations = {
     "liveTrading.conservativeLabel": "Conservative",
     "liveTrading.realisticLabel": "Realistic",
     "liveTrading.optimisticLabel": "Optimistic",
-    "liveTrading.actionableRecommendationLabel": "Actionable Recommendation",
+    "liveTrading.actionableInsightLabel": "Actionable Insight",
     "liveTrading.catalystsIdentifiedLabel": "Catalysts identified",
     "liveTrading.followLabel": "Follow",
     "liveTrading.opportunisticLabel": "Opportunistic",
@@ -1375,7 +1376,7 @@ const translations = {
     "liveTrading.executiveSummaryLabel": "Executive Summary",
     "liveTrading.keyFindingsTitle": "Key Findings:",
     "liveTrading.aiTargetPriceTitle": "AI Target Price:",
-    "liveTrading.actionableRecommendationTitle": "Actionable Recommendation:",
+    "liveTrading.actionableInsightTitle": "Actionable Insight:",
     "liveTrading.timeRangeAndCatalysts": "Time Range and Catalysts",
     "liveTrading.defaultWatchlist": "Default Watchlist",
     "liveTrading.defaultUserEmail": "User Email",
@@ -1393,7 +1394,7 @@ const translations = {
     "liveTrading.buySignal": "Buy signal",
     "liveTrading.sellSignal": "Sell signal",
     "liveTrading.additionalMarketAnalysisNeeded": "can be interpreted as signal but additional market analysis needed",
-    "liveTrading.diversifiedInvestmentRecommended": "Diversified portfolio investment recommended",
+    "liveTrading.diversifiedActivityObserved": "Diversified insider activity observed",
     "liveTrading.marketVolatility": "Market volatility",
     "liveTrading.companyPerformance": "Company performance",
     "liveTrading.generalMarketConditions": "General market conditions for insider trading",
@@ -1513,7 +1514,7 @@ const translations = {
     "liveTrading.impactPredictionCalculation": "Impact prediction calculation",
     "liveTrading.impactRangePercentage": "Impact range about 80% of average return",
     "liveTrading.actualCurrentPriceAsyncLoading": "Actual current price loaded separately asynchronously",
-    "liveTrading.recommendedBuyPriceCalculatedAfterCurrentPrice": "Recommended buy price calculated after actual current price loading",
+    "liveTrading.insiderPriceRangeCalculated": "Insider price range calculated after current price loading",
     "liveTrading.basicInsightUntilAdvancedAnalysis": "Basic insight (until advanced analysis)",
     "liveTrading.laterAsyncLoading": "Later async loading",
     "liveTrading.analysisLoadingState": "Analysis loading state",
@@ -1522,7 +1523,7 @@ const translations = {
     "liveTrading.excludeAlreadyLoadingSymbols": "Exclude already loading symbols",
     "liveTrading.updateLoadingState": "Update loading state",
     "liveTrading.updateTradeDataWithRealtimePrice": "Update trade data with real-time price info",
-    "liveTrading.aiRecommendedBuyPriceCalculation": "AI recommended buy price calculation",
+    "liveTrading.historicalPriceRangeCalculation": "Historical insider price range calculation",
     "liveTrading.startAdvancedAnalysisAfterStockLoading": "Start advanced analysis after stock price loading complete",
     "liveTrading.shortDelayBeforeAnalysisStart": "Short delay before analysis start",
     "liveTrading.forceProvideAnalysisAfter10Seconds": "Force provide fallback analysis if analysis not complete after 10 seconds",
@@ -1602,7 +1603,7 @@ const translations = {
     "liveTrading.issueList": "Issue list",
     "liveTrading.discoveredIssues": "Discovered issues",
     "liveTrading.affectedTrades": "Affected trades",
-    "liveTrading.recommendations": "Recommendations",
+    "liveTrading.insightsAndData": "Insights & Data",
     // Trade Detail Modal
     "tradeDetail.shareCount": "Share Count",
     "tradeDetail.insiderInfo": "Insider Information",
@@ -1636,7 +1637,7 @@ const translations = {
     "tradeDetail.optimistic": "Optimistic",
     "tradeDetail.riskAssessment": "Risk Assessment",
     "tradeDetail.riskLevel": "Risk Level",
-    "tradeDetail.investmentRecommendation": "Investment Recommendation",
+    "tradeDetail.dataSummary": "Data Summary",
     "tradeDetail.aiConfidence": "AI Confidence",
     "tradeDetail.analysisTimeHorizon": "Analysis Time Horizon",
     "tradeDetail.marketSentiment": "Market Sentiment",
@@ -1817,7 +1818,7 @@ const translations = {
     "transactionFilter.coreOnlyDescription": "Shows only trades where insiders used their own money to buy, or intentionally decided to sell. These are considered the most meaningful signals.",
     "transactionFilter.allTradesDescription": "Shows all transaction types including option exercises, automatic sales (10b5-1), RSU vesting, bond conversions, and other derivative/compensation-based trades. Advanced users only.",
     // Common
-    "common.recommended": "Recommended",
+    "common.coreOnly": "Core Only",
     "common.advanced": "Advanced"
   },
   ko: {
@@ -1827,7 +1828,7 @@ const translations = {
     "nav.analytics": "분석",
     "nav.alerts": "알림",
     "nav.search": "검색",
-    "nav.ranking": "추천주식",
+    "nav.ranking": "내부자 활동 TOP",
     "nav.settings": "설정",
     // Dashboard
     "dashboard.title": "인사이더트랙 프로",
@@ -1915,7 +1916,7 @@ const translations = {
     "trial.benefits.aiDesc": "패턴 인식 및 거래 의미 분석",
     "trial.benefits.alerts": "맞춤형 알림",
     "trial.benefits.alertsDesc": "관심 종목 및 조건에 맞는 알림 설정",
-    "trial.benefits.filter": "순수 매수/매도 신호만 제공",
+    "trial.benefits.filter": "실제 매수/매도 거래만 표시 (스톡옵션 제외)",
     "trial.benefits.filterDesc": "실제 자금 이동에만 집중 - 스톡그랜트, 옵션행사, 어워드 제외",
     "trial.terms.title": "무료 체험 조건",
     "trial.terms.instant": "Pro 즉시 이용 가능",
@@ -1956,8 +1957,8 @@ const translations = {
     "fomo.trialExpiringSoon": "⚠️ 체험이 {hours}시간 후 만료됩니다!",
     "fomo.upgradeToKeepAccess": "지금 업그레이드하여 실시간 접근을 유지하세요.",
     "fomo.upgradeNow": "지금 업그레이드",
-    "fomo.missedGains": "😱 {value} 상당의 내부자 거래 {count}건을 놓쳤습니다!",
-    "fomo.dontMissNext": "다음 큰 거래를 놓치지 마세요.",
+    "fomo.missedGains": "실시간 영역에 {value} 상당의 내부자 거래 {count}건이 있습니다.",
+    "fomo.dontMissNext": "실시간 데이터는 프리미엄 기능입니다.",
     "fomo.subscribeNow": "지금 구독",
     "fomo.bigTradeAlert": "속보:",
     "fomo.bought": "방금 매수했습니다",
@@ -1971,16 +1972,17 @@ const translations = {
     "social.linkCopiedDesc": "공유 링크가 클립보드에 복사되었습니다",
     "social.copyFailed": "복사 실패",
     "social.copyFailedDesc": "다시 시도해주세요",
-    // AI Signal Feed
-    "aiSignal.title": "🤖 AI 거래 시그널",
-    "aiSignal.strongBuy": "강력 매수",
+    // AI Transaction Feed (App Store compliance - no investment advice)
+    "aiSignal.title": "🤖 AI 거래 분석",
+    "aiSignal.highBuyVolume": "높은 매수 거래량",
+    // Changed from 'strongBuy'
     "aiSignal.buy": "매수",
     "aiSignal.caution": "주의",
     "aiSignal.watch": "관찰",
-    "aiSignal.confidence": "신뢰도",
+    "aiSignal.confidence": "데이터 품질",
     "aiSignal.insiders": "내부자",
     "aiSignal.volume": "순 거래량",
-    "aiSignal.disclaimer": "내부자 활동 패턴 기반 AI 생성 시그널. 투자 조언 아님.",
+    "aiSignal.disclaimer": "내부자 활동 패턴 기반 AI 생성 분류. 투자 조언 아님.",
     // Page specific
     "page.dashboard.subtitle": "실시간 내부자 거래 모니터링 및 시장 인텔리전스",
     "page.livetrading.title": "실시간 거래",
@@ -2001,14 +2003,14 @@ const translations = {
     "stats.tradingSummary": "거래 요약",
     "stats.failedLoad": "거래 통계를 불러오지 못했습니다. 페이지를 새로고침 해주세요.",
     "stats.fromLastWeek": "지난주 대비",
-    // Filters and Search
+    // Filters and Search (App Store compliance - no signals terminology)
     "filter.allTypes": "모든 유형",
     "filter.buyOrders": "매수 주문",
     "filter.sellOrders": "매도 주문",
-    "filter.allSignals": "모든 신호",
-    "filter.buySignal": "매수 신호",
-    "filter.sellSignal": "매도 신호",
-    "filter.holdSignal": "보유 신호",
+    "filter.allSignals": "모든 거래 유형",
+    "filter.buySignal": "매수 거래",
+    "filter.sellSignal": "매도 거래",
+    "filter.holdSignal": "보유 거래",
     "filter.buyOnly": "매수만",
     "filter.sellOnly": "매도만",
     // Placeholders
@@ -2135,7 +2137,7 @@ const translations = {
     "liveTrading.whenPriceChange": "주가 급등락 시",
     "liveTrading.whenVolumeSpike": "거래량 급증 시",
     "liveTrading.largeTrades": "대량 거래 ($10M+)",
-    "liveTrading.whenRecommendedPrice": "추천 매수가격 도달 시",
+    "liveTrading.whenTargetPriceReached": "목표 가격대 도달 시",
     "liveTrading.dataQualityReport": "데이터 품질 리포트",
     "liveTrading.validTrades": "유효한 거래",
     "liveTrading.todayTrades": "오늘 거래",
@@ -2264,13 +2266,13 @@ const translations = {
     "tradeDetail.aiAnalysisResults": "AI 분석결과",
     "tradeDetail.tradingPatternAnalysis": "거래 패턴 분석",
     "tradeDetail.investmentStrategy": "투자 전략",
-    "tradeDetail.additionalInsights": "추가 인사이트",
-    "tradeDetail.overallOpinion": "종합의견",
-    "tradeDetail.buyRecommendation": "💹 매수 추천",
-    "tradeDetail.sellRecommendation": "📉 매도 추천",
-    "tradeDetail.holdRecommendation": "⏸️ 보류/관망",
-    "tradeDetail.insiderBuyingActivity": "내부자 매수 활동이 긍정적입니다. 투자 검토를 권장합니다.",
-    "tradeDetail.insiderSellingActivity": "내부자 매도 활동이 감지되었습니다. 신중한 접근이 필요합니다.",
+    "tradeDetail.additionalInsights": "추가 관찰사항",
+    "tradeDetail.overallOpinion": "종합 데이터 요약",
+    "tradeDetail.buyActivity": "💹 매수 활동",
+    "tradeDetail.sellActivity": "📉 매도 활동",
+    "tradeDetail.neutralActivity": "⏸️ 혼합 활동",
+    "tradeDetail.insiderBuyingActivity": "내부자 매수 활동이 SEC에 보고되었습니다.",
+    "tradeDetail.insiderSellingActivity": "내부자 매도 활동이 SEC에 보고되었습니다.",
     "tradeDetail.mixedInsiderActivity": "내부자 거래 패턴이 혼재되어 있습니다. 추가 정보 확인이 필요합니다.",
     "tradeDetail.confidenceLevel": "신뢰도",
     "tradeDetail.clickToExpand": "▼ 클릭하여 자세히 보기",
@@ -2289,18 +2291,18 @@ const translations = {
     "priceChart.tradePriceLabel": "거래 가격:",
     "priceChart.currentLabel": "현재:",
     // Ranking page
-    "ranking.title": "추천매수 순위",
-    "ranking.subtitle": "내부자 거래 패턴을 기반으로 한 AI 주식 추천",
-    "ranking.topStocks": "추천 주식 TOP 10",
-    "ranking.recommendation": "추천",
-    "ranking.buyPotential": "매수 잠재력",
+    "ranking.title": "내부자 활동 TOP",
+    "ranking.subtitle": "SEC 내부자 거래 데이터 분석 및 분류",
+    "ranking.topStocks": "내부자 활동 TOP 10",
+    "ranking.recommendation": "매수 강도",
+    "ranking.buyPotential": "매수 거래량",
     "ranking.marketCap": "시가총액",
     "ranking.volume": "거래량",
     "ranking.priceChange": "가격 변동",
     "ranking.lastPrice": "현재 가격",
-    "ranking.strongBuy": "적극매수",
-    "ranking.buy": "매수",
-    "ranking.hold": "보유",
+    "ranking.strongBuy": "강한 매수",
+    "ranking.buy": "중간 매수",
+    "ranking.hold": "약한 매수",
     "ranking.analysis": "분석",
     "ranking.insiderActivity": "내부자 활동",
     "ranking.tradesLast30Days": "최근 30일 거래",
@@ -2315,10 +2317,10 @@ const translations = {
     "ranking.noData": "순위 데이터가 없습니다",
     "ranking.refreshData": "데이터 새로고침",
     "ranking.lockedTitle": "프리미엄 기능",
-    "ranking.lockedDescription": "Insider Pro로 업그레이드하여 내부자 거래 패턴 기반 최고의 주식 추천을 확인하세요",
+    "ranking.lockedDescription": "Insider Pro로 업그레이드하여 포괄적인 내부자 거래 활동 데이터 및 분석을 확인하세요",
     "ranking.unlockButton": "상위 순위 잠금 해제",
-    "ranking.recommendationReason": "추천 이유:",
-    "ranking.recommendationReasonNetBuying": "추천 이유: 순매수",
+    "ranking.recommendationReason": "활동 요약:",
+    "ranking.recommendationReasonNetBuying": "활동 요약: 순매수",
     "ranking.recommendationSimple": "{count}명 내부자 매수",
     "ranking.recommendationSimpleSingle": "대량 매수 {amount}",
     "ranking.buySell": "매수 / 매도",
@@ -2330,10 +2332,10 @@ const translations = {
     "ranking.lastUpdated": "마지막 업데이트",
     "ranking.alert.noTradeData": "{company}에 대한 최근 거래 정보가 없습니다.",
     "ranking.alert.loadFailed": "거래 데이터를 불러오는데 실패했습니다.",
-    // Ranking AI Analysis
-    "ranking.aiAnalysis.executiveSummary": "{name} ({title})이(가) {company}의 주식 {shares}주를 ${price}에 매수했습니다. 이는 긍정적인 신호로 해석됩니다.",
-    "ranking.aiAnalysis.riskMitigation": "내부자 매수는 일반적으로 긍정적 신호이나, 분산 투자를 권장합니다.",
-    "ranking.aiAnalysis.recommendation": "{title}의 매수는 회사 내부 정보에 기반한 결정일 가능성이 높습니다. ${price} 근처에서 진입을 고려하세요.",
+    // Ranking AI Analysis (App Store compliance - factual only)
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})이(가) {company}의 주식 {shares}주를 ${price}에 매수했습니다. SEC 공시에 보고됨.",
+    "ranking.aiAnalysis.riskMitigation": "SEC 공시 기반 사실 데이터입니다. 모든 투자 결정은 귀하의 책임입니다.",
+    "ranking.aiAnalysis.recommendation": "SEC Form 4 공시에 {title} 직책의 주당 ${price} 매수 거래가 기록되었습니다.",
     "ranking.aiAnalysis.insiderBuyByTitle": "{title} 직책의 내부자 매수",
     "ranking.aiAnalysis.totalTradeValue": "총 거래액: ${value}K",
     "ranking.aiAnalysis.simultaneousBuyersCount": "동시 매수자 {count}명",
@@ -2486,7 +2488,7 @@ const translations = {
     "tradeDetail.optimistic": "낙관적",
     "tradeDetail.riskAssessment": "리스크 평가",
     "tradeDetail.riskLevel": "위험도",
-    "tradeDetail.investmentRecommendation": "투자 권고사항",
+    "tradeDetail.dataSummary": "데이터 요약",
     "tradeDetail.aiConfidence": "AI 신뢰도",
     "tradeDetail.analysisTimeHorizon": "분석 기간",
     "tradeDetail.marketSentiment": "시장 심리",
@@ -2556,7 +2558,7 @@ const translations = {
     "landing.browse": "둘러보기",
     "landing.tagline": "AI 기반 SEC 공시 분석",
     "landing.title": "InsiderPulse: 실시간 내부자 거래 추적",
-    "landing.description": "SEC Form 4 공시를 AI로 분석하여 즉각적인 알림과 인사이트를 받으세요. 기업 내부자의 거래를 기반으로 정보에 입각한 투자 결정을 내리세요.",
+    "landing.description": "SEC Form 4 공시를 실시간으로 추적하고 분석하세요. 기업 내부자의 거래 패턴을 모니터링하고 데이터를 확인하세요.",
     "landing.features.title": "내부자 활동 추적을 위한 모든 기능",
     "landing.features.subtitle": "진지한 투자자를 위한 강력한 기능",
     "landing.features.aiAnalysis": "AI 기반 분석",
@@ -2580,7 +2582,7 @@ const translations = {
     "landing.howItWorks.step3": "즉각적인 알림",
     "landing.howItWorks.step3Desc": "프리미엄 사용자는 관심 목록 기업에서 중요한 내부자 거래가 발생하면 실시간 알림을 받습니다.",
     "landing.howItWorks.step4": "정보에 입각한 결정",
-    "landing.howItWorks.step4Desc": "기업 내부자가 자신의 돈으로 무엇을 하는지를 기반으로 투자 전략을 안내하는 인사이트와 분석을 활용하세요.",
+    "landing.howItWorks.step4Desc": "기업 내부자 거래 패턴을 파악할 수 있는 데이터 분석과 차트를 활용하세요.",
     "landing.pricing.title": "간단하고 투명한 가격",
     "landing.pricing.subtitle": "당신에게 맞는 플랜을 선택하세요",
     "landing.pricing.free": "무료",
@@ -2640,7 +2642,7 @@ const translations = {
     "landing.footer.github": "깃허브",
     "landing.footer.copyright": "© 2025 All rights reserved",
     "landing.cta.title": "오늘부터 내부자 거래 추적 시작",
-    "landing.cta.subtitle": "InsiderPulse를 사용하여 내부자 활동을 기반으로 정보에 입각한 거래 결정을 내리는 수천 명의 투자자와 함께하세요.",
+    "landing.cta.subtitle": "InsiderPulse를 사용하여 내부자 거래 데이터를 추적하고 분석하는 수천 명의 사용자와 함께하세요.",
     // Trade List Date Filters
     "tradeList.filters": "필터",
     "tradeList.dateRange": "기간",
@@ -2698,7 +2700,7 @@ const translations = {
     "transactionFilter.coreOnlyDescription": '내부자가 자기 자금으로 실제로 매수하거나, 의도적으로 매도한 거래만 보여줍니다. 이런 거래가 "진짜 신호"로 가장 많이 활용됩니다.',
     "transactionFilter.allTradesDescription": "옵션 행사, 자동 매도(10b5-1), 보상성 주식(RSU), 채권 전환 등 다양한 파생·보상 거래까지 모두 보여줍니다. 전문가용이며 복잡한 정보가 포함됩니다.",
     // Common
-    "common.recommended": "추천",
+    "common.coreOnly": "핵심만",
     "common.advanced": "고급"
   },
   ja: {
@@ -2708,7 +2710,7 @@ const translations = {
     "nav.analytics": "分析",
     "nav.alerts": "アラート",
     "nav.search": "検索",
-    "nav.ranking": "トップ株",
+    "nav.ranking": "インサイダー活動TOP",
     "nav.settings": "設定",
     // Dashboard
     "dashboard.title": "インサイダートラック プロ",
@@ -2999,7 +3001,7 @@ const translations = {
     "liveTrading.whenPriceChange": "株価急変時",
     "liveTrading.whenVolumeSpike": "取引量急増時",
     "liveTrading.largeTrades": "大量取引 ($10M+)",
-    "liveTrading.whenRecommendedPrice": "推奨買い価格到達時",
+    "liveTrading.whenTargetPriceReached": "目標価格レベル到達時",
     "liveTrading.dataQualityReport": "データ品質レポート",
     "liveTrading.validTrades": "有効な取引",
     "liveTrading.lastUpdated": "最終更新",
@@ -3114,11 +3116,11 @@ const translations = {
     "tradeDetail.investmentStrategy": "投資戦略",
     "tradeDetail.additionalInsights": "追加インサイト",
     "tradeDetail.overallOpinion": "総合意見",
-    "tradeDetail.buyRecommendation": "💹 買い推奨",
-    "tradeDetail.sellRecommendation": "📉 売り推奨",
-    "tradeDetail.holdRecommendation": "⏸️ 保留/様子見",
-    "tradeDetail.insiderBuyingActivity": "インサイダーの買い活動が前向きです。投資検討をお勧めします。",
-    "tradeDetail.insiderSellingActivity": "インサイダーの売り活動が検出されました。慎重なアプローチが必要です。",
+    "tradeDetail.buyActivity": "💹 買い活動",
+    "tradeDetail.sellActivity": "📉 売り活動",
+    "tradeDetail.neutralActivity": "⏸️ 混合活動",
+    "tradeDetail.insiderBuyingActivity": "インサイダーの買い活動がSEC提出書類で検出されました。",
+    "tradeDetail.insiderSellingActivity": "インサイダーの売り活動が検出されました。",
     "tradeDetail.mixedInsiderActivity": "インサイダー取引パターンが混在しています。追加情報の確認が必要です。",
     "tradeDetail.confidenceLevel": "信頼度",
     "tradeDetail.clickToExpand": "▼ クリックして展開",
@@ -3142,7 +3144,7 @@ const translations = {
     "tradeDetail.optimistic": "楽観的",
     "tradeDetail.riskAssessment": "リスク評価",
     "tradeDetail.riskLevel": "リスクレベル",
-    "tradeDetail.investmentRecommendation": "投資推奨",
+    "tradeDetail.dataSummary": "データ要約",
     "tradeDetail.aiConfidence": "AI信頼度",
     "tradeDetail.analysisTimeHorizon": "分析期間",
     "tradeDetail.marketSentiment": "市場センチメント",
@@ -3187,18 +3189,18 @@ const translations = {
     "priceChart.tradePriceLabel": "取引価格:",
     "priceChart.currentLabel": "現在:",
     // Ranking page
-    "ranking.title": "トップ買い推奨",
-    "ranking.subtitle": "インサイダー取引パターンに基づくAI株式推奨",
-    "ranking.topStocks": "推奨株式トップ10",
-    "ranking.recommendation": "推奨",
-    "ranking.buyPotential": "買いポテンシャル",
+    "ranking.title": "トップインサイダー活動",
+    "ranking.subtitle": "SECインサイダー取引データ分析と分類",
+    "ranking.topStocks": "インサイダー活動トップ10",
+    "ranking.recommendation": "購入強度",
+    "ranking.buyPotential": "買い取引量",
     "ranking.marketCap": "時価総額",
     "ranking.volume": "取引量",
     "ranking.priceChange": "価格変動",
     "ranking.lastPrice": "現在価格",
     "ranking.strongBuy": "強い買い",
-    "ranking.buy": "買い",
-    "ranking.hold": "ホールド",
+    "ranking.buy": "中程度の買い",
+    "ranking.hold": "弱い買い",
     "ranking.analysis": "分析",
     "ranking.insiderActivity": "インサイダー活動",
     "ranking.tradesLast30Days": "過去30日の取引",
@@ -3213,10 +3215,10 @@ const translations = {
     "ranking.noData": "ランキングデータがありません",
     "ranking.refreshData": "データを更新",
     "ranking.lockedTitle": "プレミアム機能",
-    "ranking.lockedDescription": "Insider Proにアップグレードして、インサイダー取引パターンに基づくトップの株式推奨をご覧ください",
+    "ranking.lockedDescription": "Insider Proにアップグレードして、包括的なインサイダー取引活動データと分析をご覧ください",
     "ranking.unlockButton": "トップランキングのロック解除",
-    "ranking.recommendationReason": "推奨理由:",
-    "ranking.recommendationReasonNetBuying": "推奨理由: 純買い",
+    "ranking.recommendationReason": "活動概要:",
+    "ranking.recommendationReasonNetBuying": "活動概要: 純買い",
     "ranking.recommendationSimple": "{count}人のインサイダーが購入",
     "ranking.recommendationSimpleSingle": "大量購入 {amount}",
     "ranking.buySell": "買い / 売り",
@@ -3228,10 +3230,10 @@ const translations = {
     "ranking.lastUpdated": "最終更新",
     "ranking.alert.noTradeData": "{company}の最新の取引情報がありません。",
     "ranking.alert.loadFailed": "取引データの読み込みに失敗しました。",
-    // Ranking AI Analysis
-    "ranking.aiAnalysis.executiveSummary": "{name} ({title})が{company}の株式{shares}株を${price}で購入しました。これは肯定的な信号と解釈されます。",
-    "ranking.aiAnalysis.riskMitigation": "インサイダー購入は一般的に肯定的な信号ですが、分散投資をお勧めします。",
-    "ranking.aiAnalysis.recommendation": "{title}の購入は社内情報に基づいた決定である可能性が高いです。${price}付近でのエントリーを検討してください。",
+    // Ranking AI Analysis (App Store compliance - factual only)
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})が{company}の株式{shares}株を${price}で購入しました。SEC届出に報告されています。",
+    "ranking.aiAnalysis.riskMitigation": "これはSEC届出に基づく事実データです。すべての投資判断はあなたの責任です。",
+    "ranking.aiAnalysis.recommendation": "SEC Form 4届出に{title}役職の1株${price}での購入取引が記録されています。",
     "ranking.aiAnalysis.insiderBuyByTitle": "{title}役職のインサイダー購入",
     "ranking.aiAnalysis.totalTradeValue": "総取引額: ${value}K",
     "ranking.aiAnalysis.simultaneousBuyersCount": "同時購入者 {count}人",
@@ -3457,7 +3459,7 @@ const translations = {
     "transactionFilter.coreOnlyDescription": "インサイダーが自己資金で実際に購入したり、意図的に売却した取引のみを表示します。これらは「本当のシグナル」として最も活用されます。",
     "transactionFilter.allTradesDescription": "オプション行使、自動売却(10b5-1)、RSU付与、債券転換など、様々なデリバティブ・報酬取引まで全て表示します。上級者向けで複雑な情報が含まれます。",
     // Common
-    "common.recommended": "推奨",
+    "common.coreOnly": "コアのみ",
     "common.advanced": "上級"
   },
   zh: {
@@ -3467,7 +3469,7 @@ const translations = {
     "nav.analytics": "分析",
     "nav.alerts": "提醒",
     "nav.search": "搜索",
-    "nav.ranking": "热门股票",
+    "nav.ranking": "内幕交易TOP",
     "nav.settings": "设置",
     // Dashboard
     "dashboard.title": "内幕交易追踪专业版",
@@ -3758,7 +3760,7 @@ const translations = {
     "liveTrading.whenPriceChange": "股价大幅波动时",
     "liveTrading.whenVolumeSpike": "交易量激增时",
     "liveTrading.largeTrades": "大额交易 ($10M+)",
-    "liveTrading.whenRecommendedPrice": "达到推荐买入价格时",
+    "liveTrading.whenTargetPriceReached": "达到目标价格时",
     "liveTrading.dataQualityReport": "数据质量报告",
     "liveTrading.validTrades": "有效交易",
     "liveTrading.lastUpdated": "最后更新",
@@ -3873,11 +3875,11 @@ const translations = {
     "tradeDetail.investmentStrategy": "投资策略",
     "tradeDetail.additionalInsights": "额外洞察",
     "tradeDetail.overallOpinion": "综合意见",
-    "tradeDetail.buyRecommendation": "💹 买入推荐",
-    "tradeDetail.sellRecommendation": "📉 卖出推荐",
-    "tradeDetail.holdRecommendation": "⏸️ 持有/观望",
-    "tradeDetail.insiderBuyingActivity": "内部人买入活动积极。建议考虑投资。",
-    "tradeDetail.insiderSellingActivity": "检测到内部人卖出活动。建议谨慎行事。",
+    "tradeDetail.buyActivity": "💹 买入活动",
+    "tradeDetail.sellActivity": "📉 卖出活动",
+    "tradeDetail.neutralActivity": "⏸️ 混合活动",
+    "tradeDetail.insiderBuyingActivity": "在SEC文件中检测到内部人买入活动。",
+    "tradeDetail.insiderSellingActivity": "检测到内部人卖出活动。",
     "tradeDetail.mixedInsiderActivity": "内部人交易模式混合。需要进一步了解信息。",
     "tradeDetail.confidenceLevel": "置信度",
     "tradeDetail.clickToExpand": "▼ 点击展开",
@@ -3901,7 +3903,7 @@ const translations = {
     "tradeDetail.optimistic": "乐观",
     "tradeDetail.riskAssessment": "风险评估",
     "tradeDetail.riskLevel": "风险等级",
-    "tradeDetail.investmentRecommendation": "投资建议",
+    "tradeDetail.dataSummary": "数据摘要",
     "tradeDetail.aiConfidence": "AI置信度",
     "tradeDetail.analysisTimeHorizon": "分析时间范围",
     "tradeDetail.marketSentiment": "市场情绪",
@@ -3945,19 +3947,19 @@ const translations = {
     "priceChart.decreased": "价格下跌",
     "priceChart.tradePriceLabel": "交易价格：",
     "priceChart.currentLabel": "当前：",
-    // Ranking page
-    "ranking.title": "热门买入推荐",
-    "ranking.subtitle": "基于内幕交易模式的AI股票推荐",
-    "ranking.topStocks": "推荐股票前10名",
-    "ranking.recommendation": "推荐",
-    "ranking.buyPotential": "买入潜力",
+    // Ranking page (App Store compliance - no investment recommendations)
+    "ranking.title": "顶级内部人活动",
+    "ranking.subtitle": "SEC内部人交易数据分析和分类",
+    "ranking.topStocks": "内部人活动前10名",
+    "ranking.recommendation": "买入强度",
+    "ranking.buyPotential": "买入交易量",
     "ranking.marketCap": "市值",
     "ranking.volume": "交易量",
     "ranking.priceChange": "价格变动",
     "ranking.lastPrice": "当前价格",
-    "ranking.strongBuy": "强烈买入",
-    "ranking.buy": "买入",
-    "ranking.hold": "持有",
+    "ranking.strongBuy": "强劲买入",
+    "ranking.buy": "适度买入",
+    "ranking.hold": "弱势买入",
     "ranking.analysis": "分析",
     "ranking.insiderActivity": "内幕人士活动",
     "ranking.tradesLast30Days": "过去30天交易",
@@ -3972,10 +3974,10 @@ const translations = {
     "ranking.noData": "没有排名数据",
     "ranking.refreshData": "刷新数据",
     "ranking.lockedTitle": "高级功能",
-    "ranking.lockedDescription": "升级到Insider Pro，查看基于内幕交易模式的顶级股票推荐",
+    "ranking.lockedDescription": "升级到Insider Pro，查看全面的内部人交易活动数据和分析",
     "ranking.unlockButton": "解锁顶级排名",
-    "ranking.recommendationReason": "推荐理由:",
-    "ranking.recommendationReasonNetBuying": "推荐理由: 净买入",
+    "ranking.recommendationReason": "活动摘要:",
+    "ranking.recommendationReasonNetBuying": "活动摘要: 净买入",
     "ranking.recommendationSimple": "{count}位内部人士购买",
     "ranking.recommendationSimpleSingle": "大量购买 {amount}",
     "ranking.buySell": "买入 / 卖出",
@@ -3987,10 +3989,10 @@ const translations = {
     "ranking.lastUpdated": "最后更新",
     "ranking.alert.noTradeData": "没有{company}的最新交易信息。",
     "ranking.alert.loadFailed": "加载交易数据失败。",
-    // Ranking AI Analysis
-    "ranking.aiAnalysis.executiveSummary": "{name} ({title})以${price}的价格购买了{company}的{shares}股股票。这被解释为积极信号。",
-    "ranking.aiAnalysis.riskMitigation": "内部人买入通常是积极信号，但建议分散投资。",
-    "ranking.aiAnalysis.recommendation": "{title}的购买很可能是基于公司内部信息的决定。考虑在${price}附近进入。",
+    // Ranking AI Analysis (App Store compliance - factual only)
+    "ranking.aiAnalysis.executiveSummary": "{name} ({title})以${price}的价格购买了{company}的{shares}股股票。已向SEC报告。",
+    "ranking.aiAnalysis.riskMitigation": "这是基于SEC文件的事实数据。所有投资决策由您负责。",
+    "ranking.aiAnalysis.recommendation": "SEC Form 4文件中记录了{title}职位每股${price}的购买交易。",
     "ranking.aiAnalysis.insiderBuyByTitle": "{title}职位的内部人买入",
     "ranking.aiAnalysis.totalTradeValue": "总交易额: ${value}K",
     "ranking.aiAnalysis.simultaneousBuyersCount": "{count}位同时买家",
@@ -4216,7 +4218,7 @@ const translations = {
     "transactionFilter.coreOnlyDescription": '仅显示内部人员用自己的资金实际购买或有意出售的交易。这些被视为"真实信号"，最常被使用。',
     "transactionFilter.allTradesDescription": "显示所有交易类型，包括期权行使、自动出售(10b5-1)、RSU归属、债券转换等各种衍生品/补偿性交易。仅供高级用户使用，包含复杂信息。",
     // Common
-    "common.recommended": "推荐",
+    "common.coreOnly": "仅核心",
     "common.advanced": "高级"
   }
 };
@@ -4635,7 +4637,7 @@ class ApiClient {
         params.append("sortBy", sortBy);
       }
       if (transactionTypes && transactionTypes.length > 0) {
-        transactionTypes.forEach((type) => params.append("transactionTypes", type));
+        params.append("transactionTypes", transactionTypes.join(","));
       }
       const url = `/trades?${params.toString()}`;
       console.log(`🌐 [API] Requesting: ${url}`);
@@ -4863,6 +4865,8 @@ function AuthProvider({ children }) {
     localStorage.setItem("authToken", newToken);
     localStorage.setItem("authUser", JSON.stringify(newUser));
     apiClient.setToken(newToken);
+    queryClient.invalidateQueries({ queryKey: ["trades"] });
+    console.log("🔄 [AUTH CONTEXT] Invalidated trades cache to refetch with new access level");
     console.log("✅ [AUTH CONTEXT] User logged in and state updated");
     console.log("   💾 Token saved to localStorage");
     console.log("   🔑 Token set in API client:", newToken.substring(0, 20) + "...");
@@ -4873,6 +4877,8 @@ function AuthProvider({ children }) {
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
     apiClient.setToken(null);
+    queryClient.invalidateQueries({ queryKey: ["trades"] });
+    console.log("🔄 [AUTH CONTEXT] Logged out - invalidated trades cache");
   };
   const refreshUser = async () => {
     const savedToken = localStorage.getItem("authToken");
@@ -5441,44 +5447,77 @@ const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => /* @_
   }
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
-const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-);
-const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  LabelPrimitive.Root,
-  {
-    ref,
-    className: cn(labelVariants(), className),
-    ...props
-  }
-));
-Label.displayName = LabelPrimitive.Root.displayName;
-const RadioGroup = React.forwardRef(({ className, ...props }, ref) => {
-  return /* @__PURE__ */ jsx(
-    RadioGroupPrimitive.Root,
-    {
-      className: cn("grid gap-2", className),
-      ...props,
-      ref
-    }
-  );
-});
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
-const RadioGroupItem = React.forwardRef(({ className, ...props }, ref) => {
-  return /* @__PURE__ */ jsx(
-    RadioGroupPrimitive.Item,
-    {
-      ref,
-      className: cn(
-        "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      ),
-      ...props,
-      children: /* @__PURE__ */ jsx(RadioGroupPrimitive.Indicator, { className: "flex items-center justify-center", children: /* @__PURE__ */ jsx(Circle, { className: "h-2.5 w-2.5 fill-current text-current" }) })
-    }
-  );
-});
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
+function TransactionTypeFilter({ value, onChange }) {
+  const [showHelp, setShowHelp] = useState(false);
+  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 w-full", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex gap-2 flex-1 bg-neutral-900/60 p-1 rounded-lg border border-neutral-700/50", children: [
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => onChange("core"),
+            className: `flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${value === "core" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500 hover:text-neutral-300"}`,
+            children: "핵심 거래만"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => onChange("all"),
+            className: `flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${value === "all" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500 hover:text-neutral-300"}`,
+            children: "전체 거래"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => setShowHelp(true),
+          className: "p-2 text-neutral-500 hover:text-neutral-300 transition-colors",
+          "aria-label": "필터 설명 보기",
+          children: /* @__PURE__ */ jsx(HelpCircle, { className: "w-5 h-5" })
+        }
+      )
+    ] }),
+    showHelp && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70", children: /* @__PURE__ */ jsxs("div", { className: "bg-neutral-900 border border-neutral-700 rounded-lg max-w-md w-full p-6", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between mb-4", children: [
+        /* @__PURE__ */ jsx("h3", { className: "text-lg font-bold text-white", children: "거래 필터 설명" }),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => setShowHelp(false),
+            className: "text-neutral-400 hover:text-white transition-colors",
+            children: /* @__PURE__ */ jsx(X, { className: "w-5 h-5" })
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
+        /* @__PURE__ */ jsxs("div", { className: "border-l-2 border-neutral-400 pl-4", children: [
+          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-white mb-1", children: "핵심 거래만 보기 (추천)" }),
+          /* @__PURE__ */ jsxs("p", { className: "text-sm text-neutral-400 leading-relaxed", children: [
+            "내부자가 실제로 ",
+            /* @__PURE__ */ jsx("span", { className: "text-white", children: "자기 돈을 써서 산 매수" }),
+            " 또는 ",
+            /* @__PURE__ */ jsx("span", { className: "text-white", children: "스스로 판단해 판 매도" }),
+            "만 보여줍니다. 이런 거래는 실제 자금 이동을 나타내는 거래입니다."
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "border-l-2 border-neutral-600 pl-4", children: [
+          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-neutral-300 mb-1", children: "전체 거래 보기 (고급)" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 leading-relaxed", children: "옵션 행사, 보상성 주식 지급(RSU), 자동 매도(10b5-1), 채권 전환 등 내부자의 의지와 관련 없는 거래까지 모두 표시합니다. 전문가용이며 초보에게는 다소 복잡할 수 있습니다." })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => setShowHelp(false),
+          className: "mt-6 w-full bg-neutral-700 hover:bg-neutral-600 text-white font-medium py-2 rounded transition-colors",
+          children: "확인"
+        }
+      )
+    ] }) })
+  ] });
+}
 const Dialog = DialogPrimitive.Root;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
@@ -5515,6 +5554,34 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
   )
 ] }));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
+const DialogHeader = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    ),
+    ...props
+  }
+);
+DialogHeader.displayName = "DialogHeader";
+const DialogFooter = ({
+  className,
+  ...props
+}) => /* @__PURE__ */ jsx(
+  "div",
+  {
+    className: cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    ),
+    ...props
+  }
+);
+DialogFooter.displayName = "DialogFooter";
 const DialogTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
   DialogPrimitive.Title,
   {
@@ -5550,7 +5617,8 @@ const EN = {
   sidebar: {
     modules: "Modules",
     live: "Live Trading",
-    analysis: "Recommended Stocks",
+    analysis: "Top Insider Activity",
+    // Changed from 'Recommended Stocks'
     config: "Configuration",
     watched: "Watched Assets",
     noData: "NO_DATA_STREAM"
@@ -5573,18 +5641,28 @@ const EN = {
     noRecords: "NO_RECORDS_FOUND"
   },
   top: {
-    header: "Top Alpha Signals",
-    subHeader: "High-Conviction Institutional Signals",
+    header: "Top Insider Activity",
+    // Changed from 'Top Alpha Signals'
+    subHeader: "High-Volume Insider Transactions",
+    // Changed from 'High-Conviction Institutional Signals'
     interval: "Calculation Interval",
     restricted: "Premium Access Required",
     securityLevel: "INSTITUTIONAL GRADE DATA (Ranks 1-3)",
-    desc: "Real-time alpha signals are reserved for INSIDER tier members.",
+    desc: "Real-time data is reserved for INSIDER tier members.",
+    // Changed from 'alpha signals'
     clearance: "Institutional Access Required",
-    cta: "Upgrade to Reveal Signals",
+    cta: "Upgrade to Reveal Data",
+    // Changed from 'Signals'
     aes: "AES-256 ENCRYPTED",
     blind: "BLIND_TRUST_MODE",
-    signal: "Signal Strength",
-    strongBuy: "Strong Buy",
+    signal: "Buy Volume",
+    // Changed from 'Buy Intensity' - volume indicator
+    strongBuy: "High Volume",
+    // Volume indicator without market cap reference
+    mediumBuy: "Medium Volume",
+    // Volume indicator
+    lowBuy: "Low Volume",
+    // Volume indicator
     insiders: "Insiders",
     institutional: "Insider Purchases",
     avgPrice: "Insider Avg Price",
@@ -5614,16 +5692,30 @@ const EN = {
     tradePrice: "Trade Price",
     currentPrice: "Current Price",
     relatedNews: "Related News & Sentiment",
-    aiAnalysis: "AI Analysis",
-    signal: "Signal",
-    confidence: "Confidence",
-    keyInsight: "Key Insight",
-    priceTargets: "Price Targets",
-    conservative: "Conservative",
-    realistic: "Realistic",
-    optimistic: "Optimistic",
-    riskLevel: "Risk Level",
-    timeHorizon: "Time Horizon",
+    aiAnalysis: "Data Summary",
+    // Changed from 'AI Analysis'
+    signal: "Activity Type",
+    // Changed from 'Signal'
+    confidence: "Data Quality",
+    // Changed from 'Confidence'
+    keyInsight: "Key Observation",
+    // Changed from 'Key Insight'
+    priceTargets: "Reference Price Range",
+    // App Store compliance: historical insider prices only
+    priceRangeSubtitle: "Historical Insider Prices",
+    // App Store compliance
+    priceRangeDisclaimer: "For reference only. Not a forecast or investment recommendation.",
+    // App Store compliance
+    conservative: "Min Price",
+    // App Store compliance: actual trade price range
+    realistic: "Avg Price",
+    // App Store compliance: actual trade price
+    optimistic: "Max Price",
+    // App Store compliance: actual trade price range
+    riskLevel: "Volatility Level",
+    // Changed from 'Risk Level'
+    timeHorizon: "Observation Period",
+    // Changed from 'Time Horizon'
     sentimentAnalysis: "Sentiment Analysis",
     positive: "Positive",
     neutral: "Neutral",
@@ -5634,19 +5726,19 @@ const EN = {
     showDetails: "Show Details",
     hideDetails: "Hide Details",
     expandNews: "Expand News",
-    // AI Insights
-    insightCeoBuy: "CEO-level purchase signals strong confidence in company direction.",
-    insightCeoSell: "Executive sale may indicate portfolio rebalancing or personal financial planning.",
-    insightCfoBuy: "CFO purchase suggests positive outlook on company financials and valuation.",
-    insightCfoSell: "CFO transaction likely routine diversification given insider position.",
-    insightDirectorBuy: "Board director accumulation indicates institutional confidence in growth trajectory.",
-    insightDirectorSell: "Director sale appears to be scheduled disposition under 10b5-1 plan.",
-    insightLargeBuy: "Large-scale insider purchase exceeding $1M demonstrates high conviction.",
-    insightLargeSell: "Significant insider sale may reflect profit-taking at current valuations.",
-    insightMediumBuy: "Substantial insider buying activity detected in recent filings.",
-    insightMediumSell: "Moderate insider selling consistent with typical executive compensation patterns.",
-    insightSmallBuy: "Insider accumulation pattern suggests positive internal sentiment.",
-    insightSmallSell: "Routine insider transaction within normal trading parameters.",
+    // AI Observations (Factual only - NO investment advice)
+    insightCeoBuy: "CEO purchased shares as disclosed in SEC Form 4 filing.",
+    insightCeoSell: "CEO sold shares as disclosed in SEC Form 4 filing.",
+    insightCfoBuy: "CFO purchased shares as reported to SEC.",
+    insightCfoSell: "CFO sold shares as reported to SEC.",
+    insightDirectorBuy: "Board director purchased shares as disclosed to SEC.",
+    insightDirectorSell: "Board director sold shares as disclosed to SEC.",
+    insightLargeBuy: "Large-scale insider purchase exceeding $1M reported to SEC.",
+    insightLargeSell: "Significant insider sale reported to SEC.",
+    insightMediumBuy: "Insider purchase activity detected in recent SEC filings.",
+    insightMediumSell: "Insider sale activity detected in recent SEC filings.",
+    insightSmallBuy: "Insider purchase transaction reported to SEC.",
+    insightSmallSell: "Insider sale transaction reported to SEC.",
     // News items
     newsEarnings: "Company reports strong quarterly earnings",
     newsProduct: "New product line announced for Q2",
@@ -5747,10 +5839,9 @@ const EN = {
     Officer: "Officer",
     Insider: "Insider",
     Executive: "Executive",
-    // Signals (Buy and Sell already defined above)
-    "Strong Buy": "Strong Buy",
+    // Transaction types (App Store compliance - removed investment advice)
+    // 'Strong Buy' and 'Strong Sell' removed per compliance requirements
     "Hold": "Hold",
-    "Strong Sell": "Strong Sell",
     // Risk levels
     "Low": "Low",
     "Medium": "Medium",
@@ -5781,17 +5872,17 @@ const EN = {
     afterTrial7: "7 days free, then $112/year",
     features: [
       "Real-time insider trade alerts (no 48h delay)",
-      "Pure buy/sell signals only (no grants, options)",
-      "AI-powered trade analysis & predictions",
-      "Advanced pattern detection & signals",
+      "Pure buy/sell transactions only (no grants, options)",
+      "AI-powered transaction categorization & data summarization",
+      "Advanced pattern detection & data aggregation",
       "Executive trade tracking (CEO, CFO, etc.)",
       "Live data updates & push notifications",
       "Historical insider performance analytics",
-      "Exclusive market intelligence reports"
+      "Comprehensive market data reports"
     ],
     secure: "Secure Payment & Auto-Renewal",
     secData: "Real SEC Data",
-    secDesc: "All data sourced directly from SEC filings. No fake data - only real, actionable intelligence.",
+    secDesc: "All data sourced directly from SEC filings. No fake data - only real, verified information.",
     terms: "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. Cancel anytime with one click."
   },
   ranking: {
@@ -5813,7 +5904,8 @@ const KO = {
   sidebar: {
     modules: "모듈",
     live: "실시간 거래",
-    analysis: "추천 주식",
+    analysis: "내부자 활동 TOP",
+    // Changed from '추천 주식'
     config: "설정",
     watched: "관심 종목",
     noData: "데이터 스트림 없음"
@@ -5826,30 +5918,43 @@ const KO = {
     query: "티커 또는 내부자 검색...",
     filter: { all: "전체", buy: "매수", sell: "매도" },
     table: { ticker: "티커", insider: "내부자", relation: "직위", action: "유형", price: "가격", volume: "거래량", value: "가치", impact: "시총대비", time: "시간" },
-    realtimeZone: "실시간 시그널 구역",
+    realtimeZone: "실시간 데이터 구역",
+    // Changed from '시그널'
     encrypted: "OUTSIDER 암호화됨",
     encryptedForOutsiders: "OUTSIDER 암호화됨",
-    signalEncrypted: "시그널 암호화",
+    signalEncrypted: "데이터 암호화",
+    // Changed from '시그널 암호화'
     encryptedMessage: "OUTSIDER 사용자에게는 48시간 지연된 데이터만 보입니다.",
     upgradeAction: "실시간 데이터 잠금 해제",
     unlockRealtime: "실시간 데이터 잠금 해제",
     noRecords: "기록 없음"
   },
   top: {
-    header: "상위 알파 시그널",
-    subHeader: "기관급 고확신 매집 시그널",
+    header: "상위 내부자 활동",
+    // Changed from '상위 알파 시그널'
+    subHeader: "대량 내부자 거래",
+    // Changed from '기관급 고확신 매집 시그널'
     interval: "계산 간격",
     restricted: "프리미엄 액세스 필요",
     securityLevel: "기관급 데이터 (1~3위)",
-    desc: "실시간 알파 시그널은 INSIDER 등급 회원 전용입니다.",
+    desc: "실시간 데이터는 INSIDER 등급 회원 전용입니다.",
+    // Changed from '알파 시그널'
     clearance: "기관 액세스 권한 필요",
-    cta: "시그널 잠금 해제",
+    cta: "데이터 잠금 해제",
+    // Changed from '시그널 잠금 해제'
     aes: "AES-256 암호화",
     blind: "블라인드 트러스트 모드",
-    signal: "시그널 강도",
-    strongBuy: "강력 매수",
+    signal: "매수량",
+    // Changed to volume indicator
+    strongBuy: "높은 매수량",
+    // Volume indicator without market cap reference
+    mediumBuy: "중간 매수량",
+    // Volume indicator
+    lowBuy: "낮은 매수량",
+    // Volume indicator
     insiders: "내부자",
-    institutional: "내부자 매수 내역",
+    institutional: "내부자 매수 활동",
+    // Changed from '내부자 매수 내역'
     avgPrice: "내부자 평균 매수가",
     curPrice: "현재가",
     totalVol: "총 매수액",
@@ -5877,16 +5982,30 @@ const KO = {
     tradePrice: "거래 가격",
     currentPrice: "현재 가격",
     relatedNews: "관련 뉴스 & 감정",
-    aiAnalysis: "AI 분석",
-    signal: "시그널",
-    confidence: "신뢰도",
-    keyInsight: "핵심 인사이트",
-    priceTargets: "목표 주가",
-    conservative: "보수적",
-    realistic: "현실적",
-    optimistic: "낙관적",
-    riskLevel: "위험 수준",
-    timeHorizon: "투자 기간",
+    aiAnalysis: "데이터 요약",
+    // Changed from 'AI 분석'
+    signal: "활동 유형",
+    // Changed from '시그널'
+    confidence: "데이터 품질",
+    // Changed from '신뢰도'
+    keyInsight: "핵심 관찰",
+    // Changed from '핵심 인사이트'
+    priceTargets: "참고 가격대",
+    // App Store compliance: historical insider prices only
+    priceRangeSubtitle: "역사적 내부자 거래가",
+    // App Store compliance
+    priceRangeDisclaimer: "참고용입니다. 예측 또는 투자 권유가 아닙니다.",
+    // App Store compliance
+    conservative: "최저가",
+    // App Store compliance: actual trade price range
+    realistic: "평균가",
+    // App Store compliance: actual trade price
+    optimistic: "최고가",
+    // App Store compliance: actual trade price range
+    riskLevel: "변동성 수준",
+    // Changed from '위험 수준'
+    timeHorizon: "관찰 기간",
+    // Changed from '투자 기간'
     sentimentAnalysis: "감정 분석",
     positive: "긍정",
     neutral: "중립",
@@ -5897,19 +6016,19 @@ const KO = {
     showDetails: "자세히 보기",
     hideDetails: "접기",
     expandNews: "뉴스 펼쳐보기",
-    // AI Insights
-    insightCeoBuy: "CEO급 매수로 회사 방향에 대한 강한 확신을 보여줍니다.",
-    insightCeoSell: "임원 매도는 포트폴리오 재조정 또는 개인 재무 계획을 나타낼 수 있습니다.",
-    insightCfoBuy: "CFO 매수는 회사 재무 및 가치에 대한 긍정적 전망을 시사합니다.",
-    insightCfoSell: "CFO 거래는 내부자 포지션에 따른 일상적 분산투자로 보입니다.",
-    insightDirectorBuy: "이사회 이사의 매집은 성장 궤도에 대한 기관 신뢰를 나타냅니다.",
-    insightDirectorSell: "이사 매도는 10b5-1 계획에 따른 예정된 처분으로 보입니다.",
-    insightLargeBuy: "100만 달러를 초과하는 대규모 내부자 매수는 높은 확신을 보여줍니다.",
-    insightLargeSell: "대규모 내부자 매도는 현재 가치에서의 차익 실현을 반영할 수 있습니다.",
-    insightMediumBuy: "최근 제출 서류에서 상당한 내부자 매수 활동이 감지되었습니다.",
-    insightMediumSell: "적당한 내부자 매도는 일반적인 임원 보상 패턴과 일치합니다.",
-    insightSmallBuy: "내부자 매집 패턴은 긍정적인 내부 심리를 시사합니다.",
-    insightSmallSell: "정상적인 거래 범위 내의 일상적인 내부자 거래입니다.",
+    // AI Observations (Factual only - NO investment advice) - App Store compliance
+    insightCeoBuy: "SEC Form 4 공시에 CEO 주식 매수 거래가 기록되었습니다.",
+    insightCeoSell: "SEC Form 4 공시에 CEO 주식 매도 거래가 기록되었습니다.",
+    insightCfoBuy: "SEC 공시에 CFO 주식 매수 거래가 보고되었습니다.",
+    insightCfoSell: "SEC 공시에 CFO 주식 매도 거래가 보고되었습니다.",
+    insightDirectorBuy: "SEC 공시에 이사회 이사의 매수 활동이 기록되었습니다.",
+    insightDirectorSell: "SEC 공시에 이사회 이사의 매도 활동이 기록되었습니다.",
+    insightLargeBuy: "SEC 공시에 100만 달러를 초과하는 내부자 매수 거래가 보고되었습니다.",
+    insightLargeSell: "SEC 공시에 대규모 내부자 매도 거래가 보고되었습니다.",
+    insightMediumBuy: "최근 SEC 제출 서류에서 내부자 매수 활동이 감지되었습니다.",
+    insightMediumSell: "최근 SEC 제출 서류에서 내부자 매도 활동이 감지되었습니다.",
+    insightSmallBuy: "SEC에 내부자 매수 거래가 보고되었습니다.",
+    insightSmallSell: "SEC에 내부자 매도 거래가 보고되었습니다.",
     // News items
     newsEarnings: "회사가 강한 분기 실적을 발표했습니다",
     newsProduct: "Q2에 새로운 제품 라인 발표",
@@ -6010,10 +6129,9 @@ const KO = {
     Officer: "임원",
     Insider: "내부자",
     Executive: "경영진",
-    // Signals (Buy and Sell already defined above as 매수/매도)
-    "Strong Buy": "강력 매수",
+    // Transaction types (App Store compliance - removed investment advice)
+    // '강력 매수' and '강력 매도' removed per compliance requirements
     "Hold": "보유",
-    "Strong Sell": "강력 매도",
     // Risk levels
     "Low": "낮음",
     "Medium": "중간",
@@ -6044,17 +6162,17 @@ const KO = {
     afterTrial7: "7일 무료 체험 후 연 $112",
     features: [
       "실시간 내부자 거래 알림 (48시간 지연 없음)",
-      "순수 매수/매도 시그널만 제공 (스톡옵션 제외)",
-      "AI 기반 거래 분석 및 예측",
-      "고급 패턴 감지 및 시그널",
+      "순수 매수/매도 거래만 제공 (스톡옵션 제외)",
+      "AI 기반 거래 분류 및 데이터 요약",
+      "고급 패턴 감지 및 데이터 집계",
       "임원 거래 추적 (CEO, CFO 등)",
       "실시간 데이터 업데이트 및 푸시 알림",
       "과거 내부자 성과 분석",
-      "독점 시장 정보 보고서"
+      "포괄적인 시장 데이터 보고서"
     ],
     secure: "안전 결제 및 자동 갱신",
     secData: "실제 SEC 데이터",
-    secDesc: "SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 정보만 제공.",
+    secDesc: "SEC 공시에서 직접 소싱한 데이터. 가짜 데이터 없음 - 오직 실제 검증된 정보만 제공.",
     terms: "무료 체험 종료 후 요금이 자동으로 청구됩니다. 원하지 않을 경우 자동 결제 전에 구독을 취소하세요. 언제든지 클릭 한 번으로 취소할 수 있습니다."
   },
   ranking: {
@@ -6079,20 +6197,36 @@ const JA = {
   },
   top: {
     ...EN.top,
+    signal: "購入強度",
+    strongBuy: "強い買い",
     buyPrice: "購入価格",
     shareCount: "株式数",
     totalAmount: "総額",
-    buyOnly: "買いのみ"
+    buyOnly: "買いのみ",
+    marketCapRatio: "時価総額比"
   },
   modal: {
     ...EN.modal,
     share: "株",
-    volume: "出来高"
+    volume: "出来高",
+    priceTargets: "参考価格帯",
+    // App Store compliance
+    priceRangeSubtitle: "過去のインサイダー取引価格",
+    // App Store compliance
+    priceRangeDisclaimer: "参考用です。予測や投資推奨ではありません。",
+    // App Store compliance
+    conservative: "最低価格",
+    // App Store compliance
+    realistic: "平均価格",
+    // App Store compliance
+    optimistic: "最高価格"
+    // App Store compliance
   },
   sidebar: {
     ...EN.sidebar,
     live: "ライブトレーディング",
-    analysis: "おすすめ銘柄",
+    analysis: "インサイダー活動トップ",
+    // App Store compliance: changed from 'おすすめ銘柄'
     config: "設定",
     watched: "ウォッチリスト"
   },
@@ -6172,10 +6306,9 @@ const JA = {
     Officer: "役員",
     Insider: "インサイダー",
     Executive: "経営幹部",
-    // Signals
-    "Strong Buy": "強い買い",
+    // Transaction types (App Store compliance - removed investment advice)
+    // '強い買い' and '強い売り' removed per compliance requirements
     "Hold": "保有",
-    "Strong Sell": "強い売り",
     // Risk levels
     "Low": "低",
     "Medium": "中",
@@ -6209,20 +6342,36 @@ const ZH = {
   },
   top: {
     ...EN.top,
+    signal: "买入强度",
+    strongBuy: "强劲买入",
     buyPrice: "购买价格",
     shareCount: "股数",
     totalAmount: "总额",
-    buyOnly: "仅买入"
+    buyOnly: "仅买入",
+    marketCapRatio: "市值比"
   },
   modal: {
     ...EN.modal,
     share: "股",
-    volume: "成交量"
+    volume: "成交量",
+    priceTargets: "参考价格区间",
+    // App Store compliance
+    priceRangeSubtitle: "历史内幕交易价格",
+    // App Store compliance
+    priceRangeDisclaimer: "仅供参考，不是预测或投资建议。",
+    // App Store compliance
+    conservative: "最低价",
+    // App Store compliance
+    realistic: "平均价",
+    // App Store compliance
+    optimistic: "最高价"
+    // App Store compliance
   },
   sidebar: {
     ...EN.sidebar,
     live: "实时交易",
-    analysis: "推荐股票",
+    analysis: "内部人活动排行",
+    // App Store compliance: changed from '推荐股票'
     config: "配置",
     watched: "关注列表"
   },
@@ -6302,10 +6451,9 @@ const ZH = {
     Officer: "高管",
     Insider: "内部人",
     Executive: "管理层",
-    // Signals
-    "Strong Buy": "强烈买入",
+    // Transaction types (App Store compliance - removed investment advice)
+    // '强烈买入' and '强烈卖出' removed per compliance requirements
     "Hold": "持有",
-    "Strong Sell": "强烈卖出",
     // Risk levels
     "Low": "低",
     "Medium": "中",
@@ -6340,7 +6488,7 @@ function formatNumber(val) {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(val);
 }
 function TradeDetailModal({ isOpen, onClose, trade }) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d, _e, _f;
   const { language } = useLanguage();
   const { formatCurrency: formatCurrency2 } = useCurrency();
   const [newsExpanded, setNewsExpanded] = useState(true);
@@ -6367,28 +6515,20 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
   const langKey = language.toLowerCase();
   const t = TRANSLATIONS[langKey].modal;
   const aiAnalysis = useMemo(() => {
-    var _a2, _b2, _c2, _d, _e;
+    var _a2, _b2;
     if (!trade) return null;
     if (trade.aiAnalysis && typeof trade.aiAnalysis === "object" && "signal" in trade.aiAnalysis) {
       const ai = trade.aiAnalysis;
-      const conservativePct = ((_a2 = ai.priceTargets) == null ? void 0 : _a2.conservative) || 3;
-      const realisticPct = ((_b2 = ai.priceTargets) == null ? void 0 : _b2.realistic) || 7;
-      const optimisticPct = ((_c2 = ai.priceTargets) == null ? void 0 : _c2.optimistic) || 15;
       return {
         signal: ai.signal || "BUY",
         confidence: ai.significanceScore || 75,
-        insight: ((_d = ai.keyInsights) == null ? void 0 : _d[0]) || t.insightSmallBuy,
-        priceTargets: {
-          conservative: trade.pricePerShare * (1 + conservativePct / 100),
-          realistic: trade.pricePerShare * (1 + realisticPct / 100),
-          optimistic: trade.pricePerShare * (1 + optimisticPct / 100)
-        },
+        insight: ((_a2 = ai.keyInsights) == null ? void 0 : _a2[0]) || t.insightSmallBuy,
         riskLevel: ai.riskLevel === "LOW" ? t.riskLow : ai.riskLevel === "MEDIUM" ? t.riskMedium : t.riskHigh,
         timeHorizon: ai.timeHorizon || "2-4 weeks"
       };
     }
     const isBuy2 = trade.tradeType === "BUY" || trade.tradeType === "Buy";
-    const traderTitle = ((_e = trade.traderTitle) == null ? void 0 : _e.toLowerCase()) || "";
+    const traderTitle = ((_b2 = trade.traderTitle) == null ? void 0 : _b2.toLowerCase()) || "";
     const totalValue = trade.totalValue || trade.shares * trade.pricePerShare;
     let insight = "";
     if (traderTitle.includes("ceo") || traderTitle.includes("president")) {
@@ -6407,55 +6547,6 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
     const isExecutive = traderTitle.includes("ceo") || traderTitle.includes("cfo") || traderTitle.includes("president") || traderTitle.includes("director");
     const isLargeTrade = totalValue > 1e6;
     const isMediumTrade = totalValue > 1e5;
-    let priceTargets;
-    let timeHorizon;
-    if (isBuy2) {
-      if (isExecutive && isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.05,
-          realistic: trade.pricePerShare * 1.12,
-          optimistic: trade.pricePerShare * 1.25
-        };
-        timeHorizon = "1-2 weeks";
-      } else if (isExecutive || isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.03,
-          realistic: trade.pricePerShare * 1.08,
-          optimistic: trade.pricePerShare * 1.18
-        };
-        timeHorizon = "2-3 weeks";
-      } else if (isMediumTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.02,
-          realistic: trade.pricePerShare * 1.05,
-          optimistic: trade.pricePerShare * 1.12
-        };
-        timeHorizon = "2-4 weeks";
-      } else {
-        priceTargets = {
-          conservative: trade.pricePerShare * 1.01,
-          realistic: trade.pricePerShare * 1.03,
-          optimistic: trade.pricePerShare * 1.08
-        };
-        timeHorizon = "3-4 weeks";
-      }
-    } else {
-      if (isLargeTrade) {
-        priceTargets = {
-          conservative: trade.pricePerShare * 0.97,
-          realistic: trade.pricePerShare * 0.92,
-          optimistic: trade.pricePerShare * 0.85
-        };
-        timeHorizon = "1-2 weeks";
-      } else {
-        priceTargets = {
-          conservative: trade.pricePerShare * 0.99,
-          realistic: trade.pricePerShare * 0.97,
-          optimistic: trade.pricePerShare * 0.93
-        };
-        timeHorizon = "2-3 weeks";
-      }
-    }
     let confidence = 50;
     if (isExecutive) confidence += 20;
     if (isLargeTrade) confidence += 15;
@@ -6464,9 +6555,8 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
       signal: isBuy2 ? "BUY" : "SELL",
       confidence: Math.min(95, confidence),
       insight,
-      priceTargets,
       riskLevel: isLargeTrade && !isBuy2 ? t.riskHigh : isExecutive && isBuy2 ? t.riskLow : t.riskMedium,
-      timeHorizon
+      timeHorizon: "2-4 weeks"
     };
   }, [trade, t]);
   const priceHistory = useMemo(() => {
@@ -6558,22 +6648,26 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-4 py-2.5", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-[0.15em] font-mono mb-1", children: t.totalValue.toUpperCase() }),
-          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency2(trade.totalValue, false) }),
-          (stockPrice == null ? void 0 : stockPrice.marketCap) && stockPrice.marketCap > 0 && /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-500 font-mono mt-1", children: (() => {
-            const ratio = trade.totalValue / stockPrice.marketCap * 100;
-            let percentStr;
-            if (ratio >= 10) percentStr = Math.round(ratio) + "%";
-            else if (ratio >= 1) percentStr = ratio.toFixed(1) + "%";
-            else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + "%";
-            else if (ratio >= 1e-3) percentStr = ratio.toFixed(3) + "%";
-            else if (ratio >= 1e-4) percentStr = ratio.toFixed(4) + "%";
-            else if (ratio >= 1e-5) percentStr = ratio.toFixed(5) + "%";
-            else if (ratio >= 1e-6) percentStr = ratio.toFixed(6) + "%";
-            else if (ratio > 0) percentStr = ratio.toExponential(2) + "%";
-            else percentStr = "0%";
-            const prefix = language === "ko" ? "시총대비 " : language === "ja" ? "時価総額比 " : language === "zh" ? "市值比 " : "Market cap ratio: ";
-            return prefix + percentStr;
-          })() })
+          /* @__PURE__ */ jsx("div", { className: "text-lg font-light text-neutral-200", children: formatCurrency2(trade.totalValue) }),
+          (() => {
+            const marketCap = trade.marketCap || (stockPrice == null ? void 0 : stockPrice.marketCap);
+            if (marketCap && marketCap > 0) {
+              const ratio = trade.totalValue / marketCap * 100;
+              let percentStr;
+              if (ratio >= 10) percentStr = Math.round(ratio) + "%";
+              else if (ratio >= 1) percentStr = ratio.toFixed(1) + "%";
+              else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + "%";
+              else if (ratio >= 1e-3) percentStr = ratio.toFixed(3) + "%";
+              else if (ratio >= 1e-4) percentStr = ratio.toFixed(4) + "%";
+              else if (ratio >= 1e-5) percentStr = ratio.toFixed(5) + "%";
+              else if (ratio >= 1e-6) percentStr = ratio.toFixed(6) + "%";
+              else if (ratio > 0) percentStr = ratio.toExponential(2) + "%";
+              else percentStr = "0%";
+              const prefix = language === "ko" ? "시총대비 " : language === "ja" ? "時価総額比 " : language === "zh" ? "市值比 " : "Market cap ratio: ";
+              return /* @__PURE__ */ jsx("div", { className: "text-[10px] text-amber-400 font-mono mt-1 font-bold", children: prefix + percentStr });
+            }
+            return null;
+          })()
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto", children: [
@@ -6787,25 +6881,32 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
             ] })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30", children: [
-            /* @__PURE__ */ jsxs("div", { className: "px-3 py-2 border-b border-neutral-800 flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx(Target, { size: 11, className: "text-neutral-500" }),
-              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500 uppercase tracking-widest font-mono", children: t.priceTargets.toUpperCase() })
+            /* @__PURE__ */ jsxs("div", { className: "px-3 py-2 border-b border-neutral-800", children: [
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsx(Target, { size: 11, className: "text-neutral-500" }),
+                /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500 uppercase tracking-widest font-mono", children: ((_d = t.priceTargets) == null ? void 0 : _d.toUpperCase()) || "REFERENCE PRICE RANGE" })
+              ] }),
+              /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 mt-0.5 font-mono", children: t.priceRangeSubtitle || "Historical Insider Prices" })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "p-3 space-y-2.5", children: [
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.conservative.toUpperCase() }),
-                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-neutral-600 rounded-sm", style: { width: "60%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.conservative) || trade.pricePerShare * 1.05) })
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono", children: ((_e = t.tradePrice) == null ? void 0 : _e.toUpperCase()) || "INSIDER TRADE PRICE" }),
+                /* @__PURE__ */ jsx("span", { className: "text-lg text-emerald-500 font-mono font-bold", children: formatCurrency2(trade.pricePerShare) })
               ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.realistic.toUpperCase() }),
-                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-emerald-500 rounded-sm", style: { width: "80%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.realistic) || trade.pricePerShare * 1.19) })
+                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono", children: ((_f = t.currentPrice) == null ? void 0 : _f.toUpperCase()) || "CURRENT PRICE" }),
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+                  /* @__PURE__ */ jsx("span", { className: `text-sm font-mono ${priceChange >= 0 ? "text-emerald-400" : "text-rose-400"}`, children: formatCurrency2(currentPrice) }),
+                  /* @__PURE__ */ jsxs("span", { className: `text-[9px] font-mono ${priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
+                    priceChange >= 0 ? "+" : "",
+                    priceChange.toFixed(1),
+                    "%"
+                  ] })
+                ] })
               ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-3", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono w-24", children: t.optimistic.toUpperCase() }),
-                /* @__PURE__ */ jsx("div", { className: "flex-1 h-2 bg-neutral-800 rounded-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-amber-500 rounded-sm", style: { width: "100%" } }) }),
-                /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-300 font-mono w-14 text-right", children: formatCurrency2((aiAnalysis == null ? void 0 : aiAnalysis.priceTargets.optimistic) || trade.pricePerShare * 1.43) })
+              /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-1.5 pt-2 border-t border-neutral-800/50", children: [
+                /* @__PURE__ */ jsx(Info, { size: 9, className: "text-neutral-600 mt-0.5 shrink-0" }),
+                /* @__PURE__ */ jsx("span", { className: "text-[7px] text-neutral-600 leading-relaxed", children: t.priceRangeDisclaimer || "For reference only. Not a forecast or investment recommendation." })
               ] })
             ] })
           ] }),
@@ -6818,8 +6919,12 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-3", children: [
-              /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: t.timeHorizon.toUpperCase() }),
-              /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-300 font-mono", children: (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || t.timeHorizon36 })
+              /* @__PURE__ */ jsx("div", { className: "text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5", children: language === "ko" ? "총 거래량" : language === "ja" ? "総取引量" : language === "zh" ? "总交易量" : "TOTAL VOLUME" }),
+              /* @__PURE__ */ jsxs("div", { className: "text-xs text-neutral-300 font-mono", children: [
+                formatNumber(trade.shares),
+                " ",
+                /* @__PURE__ */ jsx("span", { className: "text-neutral-500", children: language === "ko" ? "주" : "sh" })
+              ] })
             ] })
           ] })
         ] })
@@ -6977,6 +7082,18 @@ function getWebSocketUrl() {
   }
   return `${protocol}//${host}/api/ws`;
 }
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+);
+const Label = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  LabelPrimitive.Root,
+  {
+    ref,
+    className: cn(labelVariants(), className),
+    ...props
+  }
+));
+Label.displayName = LabelPrimitive.Root.displayName;
 const Separator = React.forwardRef(
   ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
     SeparatorPrimitive.Root,
@@ -7393,6 +7510,15 @@ memo(function StockHistoryChart2({
     ] })
   ] });
 });
+function mapTradeTypeToUI(tradeType) {
+  const upperType = tradeType.toUpperCase();
+  if (upperType === "BUY" || upperType === "PURCHASE") {
+    return "Buy";
+  } else if (upperType === "SELL" || upperType === "SALE") {
+    return "Sell";
+  }
+  return "Other";
+}
 function mapInsiderTradeToTerminal(trade) {
   return {
     id: trade.id,
@@ -7400,7 +7526,9 @@ function mapInsiderTradeToTerminal(trade) {
     companyName: trade.companyName,
     insider: trade.traderName,
     relation: trade.traderTitle || "Unknown",
-    type: trade.tradeType === "BUY" ? "Buy" : "Sell",
+    type: mapTradeTypeToUI(trade.tradeType),
+    rawType: trade.tradeType,
+    // Keep original type for display
     shares: trade.shares,
     price: trade.pricePerShare,
     value: trade.totalValue,
@@ -7421,30 +7549,88 @@ function LiveTradingTerminal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadedCount, setLoadedCount] = useState(100);
+  useState(200);
+  const [allLoadedTrades, setAllLoadedTrades] = useState([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState("core");
   const langKey = language.toLowerCase();
   const t = TRANSLATIONS[langKey].live;
   const tData = TRANSLATIONS[langKey].data;
-  TRANSLATIONS[langKey].common;
+  const tCommon = TRANSLATIONS[langKey].common;
   const isPro = (accessLevel == null ? void 0 : accessLevel.hasRealtimeAccess) || false;
+  const INITIAL_LOAD_LIMIT = 2700;
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
-      limit: loadedCount,
+      limit: INITIAL_LOAD_LIMIT,
       offset: 0,
-      sortBy: "createdAt"
+      sortBy: "filedDate",
+      transactionTypes: ["ALL"]
     }),
     queryFn: async () => {
-      const response = await apiClient.getInsiderTradesWithAccess(loadedCount, 0, void 0, void 0, "createdAt");
+      console.log("🌐 [API] Fetching ALL trades for frontend filtering");
+      const response = await apiClient.getInsiderTradesWithAccess(
+        INITIAL_LOAD_LIMIT,
+        0,
+        void 0,
+        void 0,
+        "filedDate",
+        ["ALL"]
+      );
       if (response.accessLevel) {
         setAccessLevel(response.accessLevel);
       }
+      console.log(`📊 [API] Received ${response.trades.length} trades`);
       return response;
     },
     staleTime: 5 * 60 * 1e3,
     refetchInterval: 5 * 60 * 1e3,
     refetchOnWindowFocus: true
   });
-  const allTrades = useMemo(() => (tradesResponse == null ? void 0 : tradesResponse.trades) || [], [tradesResponse == null ? void 0 : tradesResponse.trades]);
+  useEffect(() => {
+    if ((tradesResponse == null ? void 0 : tradesResponse.trades) && tradesResponse.trades.length > 0) {
+      setAllLoadedTrades(tradesResponse.trades);
+      setHasMoreData(tradesResponse.trades.length >= INITIAL_LOAD_LIMIT);
+    }
+  }, [tradesResponse == null ? void 0 : tradesResponse.trades]);
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreData) return;
+    setIsLoadingMore(true);
+    try {
+      const offset = allLoadedTrades.length;
+      const batchSize = 100;
+      console.log(`📊 Loading more trades from offset ${offset}`);
+      const response = await apiClient.getInsiderTradesWithAccess(
+        batchSize,
+        offset,
+        void 0,
+        void 0,
+        "filedDate",
+        ["ALL"]
+      );
+      if (response.trades.length === 0) {
+        setHasMoreData(false);
+      } else {
+        setAllLoadedTrades((prev) => [...prev, ...response.trades]);
+        setHasMoreData(response.trades.length >= batchSize);
+        console.log(`📊 Loaded ${response.trades.length} more trades, total: ${allLoadedTrades.length + response.trades.length}`);
+      }
+    } catch (error2) {
+      console.error("Failed to load more trades:", error2);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+  const allTrades = useMemo(() => {
+    const rawTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse == null ? void 0 : tradesResponse.trades) || [];
+    if (transactionTypeFilter === "core") {
+      const filtered = rawTrades.filter((trade) => trade.isDerivative === false);
+      console.log(`🔍 [Filter] Core trades (isDerivative=false): ${filtered.length}/${rawTrades.length}`);
+      return filtered;
+    }
+    console.log(`🔍 [Filter] All trades (including derivatives): ${rawTrades.length}`);
+    return rawTrades;
+  }, [allLoadedTrades, tradesResponse == null ? void 0 : tradesResponse.trades, transactionTypeFilter]);
   const wsUrl = getWebSocketUrl();
   const { isConnected } = useWebSocket(wsUrl);
   const terminalTrades = useMemo(() => {
@@ -7543,7 +7729,7 @@ function LiveTradingTerminal() {
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col md:flex-row gap-4 items-start md:items-center", children: [
-        /* @__PURE__ */ jsxs("div", { className: "relative flex-1 w-full md:max-w-md group", children: [
+        /* @__PURE__ */ jsxs("div", { className: "relative w-full md:w-[500px] group", children: [
           /* @__PURE__ */ jsx(Search, { className: "absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors", size: 14 }),
           /* @__PURE__ */ jsx(
             "input",
@@ -7552,25 +7738,34 @@ function LiveTradingTerminal() {
               placeholder: t.query,
               value: searchQuery,
               onChange: (e) => setSearchQuery(e.target.value),
-              className: "w-full bg-[#0a0a0a] text-xs text-neutral-300 border border-neutral-800 pl-10 pr-4 py-2.5 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-800 transition-colors",
+              className: "w-full bg-[#0a0a0a] text-sm text-neutral-300 border border-neutral-800 pl-10 pr-4 py-3 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-600 transition-colors",
               "data-testid": "input-search"
             }
           )
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "flex bg-[#0a0a0a] border border-neutral-800 p-1 gap-1 w-full md:w-auto overflow-x-auto", children: [
-          { key: "All", label: t.filter.all },
-          { key: "Buy", label: t.filter.buy },
-          { key: "Sell", label: t.filter.sell }
-        ].map((f) => /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => setFilter(f.key),
-            className: `px-4 py-1.5 text-[10px] uppercase tracking-wider font-medium transition-all whitespace-nowrap flex-1 md:flex-none ${filter === f.key && f.key === "All" ? "bg-neutral-800 text-white" : filter === f.key && f.key === "Buy" ? "bg-emerald-900/20 text-emerald-500 border border-emerald-900/30" : filter === f.key && f.key === "Sell" ? "bg-rose-900/20 text-rose-500 border border-rose-900/30" : "text-neutral-600 hover:text-neutral-400"}`,
-            "data-testid": `button-filter-${f.key.toLowerCase()}`,
-            children: f.label
-          },
-          f.key
-        )) })
+        /* @__PURE__ */ jsx("div", { className: "w-full flex justify-center", children: /* @__PURE__ */ jsxs("div", { className: "max-w-3xl w-full flex flex-col md:flex-row gap-3 bg-neutral-900/50 border border-neutral-800 p-3 rounded-lg", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex bg-[#0a0a0a] border border-neutral-800 p-1 gap-1 flex-1", children: [
+            { key: "All", label: t.filter.all },
+            { key: "Buy", label: t.filter.buy },
+            { key: "Sell", label: t.filter.sell }
+          ].map((f) => /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setFilter(f.key),
+              className: `flex-1 px-3 py-2 text-[10px] uppercase tracking-wider font-medium transition-all rounded ${filter === f.key && f.key === "All" ? "bg-neutral-800 text-white" : filter === f.key && f.key === "Buy" ? "bg-emerald-900/20 text-emerald-500 border border-emerald-900/30" : filter === f.key && f.key === "Sell" ? "bg-rose-900/20 text-rose-500 border border-rose-900/30" : "text-neutral-600 hover:text-neutral-400"}`,
+              "data-testid": `button-filter-${f.key.toLowerCase()}`,
+              children: f.label
+            },
+            f.key
+          )) }),
+          /* @__PURE__ */ jsx("div", { className: "flex-1", children: /* @__PURE__ */ jsx(
+            TransactionTypeFilter,
+            {
+              value: transactionTypeFilter,
+              onChange: setTransactionTypeFilter
+            }
+          ) })
+        ] }) })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto relative custom-scrollbar", children: [
@@ -7679,7 +7874,20 @@ function LiveTradingTerminal() {
             tData
           },
           trade.id
-        ))
+        )),
+        /* @__PURE__ */ jsx("div", { className: "flex justify-center py-6 border-t border-neutral-900", children: hasMoreData ? /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: handleLoadMore,
+            disabled: isLoadingMore,
+            className: "px-6 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-[11px] font-mono uppercase tracking-widest border border-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+            "data-testid": "button-load-more",
+            children: isLoadingMore ? /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-2", children: [
+              /* @__PURE__ */ jsx("span", { className: "w-3 h-3 border border-neutral-500 border-t-transparent rounded-full animate-spin" }),
+              tCommon.loading || "Loading..."
+            ] }) : /* @__PURE__ */ jsx("span", { children: tCommon.loadMore || "Load More Historical Data" })
+          }
+        ) : /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono text-neutral-600 uppercase tracking-widest", children: tCommon.noMoreData || "All historical data loaded" }) })
       ] }),
       !isLoading && !error && filteredData.length === 0 && /* @__PURE__ */ jsx("div", { className: "p-8 text-center text-neutral-600 text-sm font-mono", children: t.noRecords })
     ] }),
@@ -7697,15 +7905,39 @@ function TradeRow({ trade, onClick, tData }) {
   const { language } = useLanguage();
   const { formatCurrency: formatCurrency2 } = useCurrency();
   const isBuy = trade.type === "Buy";
-  const typeClass = isBuy ? "text-emerald-500" : "text-rose-500";
+  const isSell = trade.type === "Sell";
+  const isOther = trade.type === "Other";
+  const typeClass = isBuy ? "text-emerald-500" : isSell ? "text-rose-500" : "text-amber-500";
   const typeBg = "bg-transparent";
-  const typeBorder = isBuy ? "border-emerald-500" : "border-rose-500";
+  const typeBorder = isBuy ? "border-emerald-500" : isSell ? "border-rose-500" : "border-amber-500";
   const dateLocale = language === "ko" ? ko : language === "ja" ? ja : language === "zh" ? zhCN : enUS;
   const timeAgo = formatDistanceToNow(new Date(trade.date), {
     addSuffix: true,
     locale: dateLocale
   });
-  const ActionIcon = isBuy ? ArrowUpRight : ArrowDownLeft;
+  const ActionIcon = isBuy ? ArrowUpRight : isSell ? ArrowDownLeft : ArrowRightLeft;
+  const getTypeLabel = () => {
+    if (isOther) {
+      const rawUpper = trade.rawType.toUpperCase();
+      if (rawUpper === "GRANT") {
+        return language === "ko" ? "부여" : language === "ja" ? "付与" : language === "zh" ? "授予" : "GRANT";
+      }
+      if (rawUpper === "OPTION_EXERCISE") {
+        return language === "ko" ? "옵션행사" : language === "ja" ? "オプション" : language === "zh" ? "期权行使" : "OPTION";
+      }
+      if (rawUpper === "DISPOSITION") {
+        return language === "ko" ? "처분" : language === "ja" ? "処分" : language === "zh" ? "处置" : "DISP";
+      }
+      if (rawUpper === "AWARD") {
+        return language === "ko" ? "수여" : language === "ja" ? "授与" : language === "zh" ? "奖励" : "AWARD";
+      }
+      if (rawUpper === "CONVERSION") {
+        return language === "ko" ? "전환" : language === "ja" ? "転換" : language === "zh" ? "转换" : "CONV";
+      }
+      return trade.rawType.substring(0, 4).toUpperCase();
+    }
+    return tData[trade.type] || trade.type;
+  };
   return /* @__PURE__ */ jsxs(
     "div",
     {
@@ -7721,12 +7953,21 @@ function TradeRow({ trade, onClick, tData }) {
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono text-[12px] font-medium uppercase tracking-wider truncate", children: trade.relation }) }),
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsxs("span", { className: `px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${typeBorder} ${typeClass} ${typeBg} rounded-sm inline-flex items-center gap-1`, children: [
           /* @__PURE__ */ jsx(ActionIcon, { size: 10, className: typeClass }),
-          /* @__PURE__ */ jsx("span", { className: "hidden md:inline", children: tData[trade.type] || trade.type })
+          /* @__PURE__ */ jsx("span", { className: "hidden md:inline", children: getTypeLabel() })
         ] }) }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency2(trade.price) }) }),
         /* @__PURE__ */ jsx("div", { className: "hidden md:flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatNumber(trade.shares) }) }),
         /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono", children: formatCurrency2(trade.value) }) }),
-        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: trade.marketCap && trade.marketCap > 0 ? /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono text-[11px]", children: (() => {
+        /* @__PURE__ */ jsx("div", { className: "flex items-center justify-end", children: (() => {
+          if (!trade.marketCap || trade.marketCap === 0) {
+            console.log(`⚠️ Missing marketCap for ${trade.ticker}:`, {
+              ticker: trade.ticker,
+              marketCap: trade.marketCap,
+              value: trade.value
+            });
+          }
+          return trade.marketCap && trade.marketCap > 0;
+        })() ? /* @__PURE__ */ jsx("span", { className: "text-neutral-300 font-mono text-[11px]", children: (() => {
           const ratio = trade.value / trade.marketCap * 100;
           if (ratio >= 10) return Math.round(ratio) + "%";
           else if (ratio >= 1) return ratio.toFixed(1) + "%";
@@ -9872,6 +10113,148 @@ function NotFound() {
     /* @__PURE__ */ jsx("p", { className: "mt-4 text-sm text-gray-600", children: t("notFound.message") })
   ] }) }) });
 }
+const Checkbox = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  CheckboxPrimitive.Root,
+  {
+    ref,
+    className: cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    ),
+    ...props,
+    children: /* @__PURE__ */ jsx(
+      CheckboxPrimitive.Indicator,
+      {
+        className: cn("flex items-center justify-center text-current"),
+        children: /* @__PURE__ */ jsx(Check, { className: "h-4 w-4" })
+      }
+    )
+  }
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+const DISCLAIMER_KEY$1 = "disclaimer-accepted";
+function LandingDisclaimerModal({ open, onAccept, onClose }) {
+  const { language } = useLanguage();
+  const [agreed, setAgreed] = useState(false);
+  const handleAccept = () => {
+    if (agreed) {
+      localStorage.setItem(DISCLAIMER_KEY$1, "true");
+      onAccept();
+    }
+  };
+  const getDisclaimerText = () => {
+    switch (language) {
+      case "ko":
+        return {
+          title: "법적 고지 및 면책조항",
+          subtitle: "본 앱 사용 전 반드시 읽어주세요",
+          mainText: "본 앱은 미국 증권거래위원회(SEC) 공시 데이터를 수집, 정리, 시각화하는 데이터 리서치 도구입니다. 본 앱은 투자 조언, 금융 자문, 또는 증권 추천 서비스를 제공하지 않습니다.",
+          bullets: [
+            "표시되는 모든 정보는 SEC 공시에서 직접 가져온 사실 데이터입니다",
+            "본 앱은 특정 증권의 매수, 매도, 보유를 권장하지 않습니다",
+            "과거 내부자 거래 패턴이 미래 성과를 보장하지 않습니다",
+            "모든 투자 결정과 그에 따른 위험은 전적으로 사용자에게 귀속됩니다",
+            "투자 결정 전 자격을 갖춘 금융 전문가와 상담하시기 바랍니다"
+          ],
+          checkboxLabel: "위 내용을 읽고 이해했으며, 본 앱이 투자 조언을 제공하지 않음을 인정합니다",
+          acceptButton: "동의하고 계속하기"
+        };
+      case "ja":
+        return {
+          title: "法的通知および免責事項",
+          subtitle: "アプリを使用する前に必ずお読みください",
+          mainText: "本アプリは、米国証券取引委員会(SEC)の公開データを収集、整理、視覚化するデータリサーチツールです。本アプリは、投資アドバイス、金融アドバイス、または証券推奨サービスを提供しません。",
+          bullets: [
+            "表示されるすべての情報は、SEC提出書類から直接取得した事実データです",
+            "本アプリは特定の証券の購入、売却、保有を推奨しません",
+            "過去のインサイダー取引パターンは将来のパフォーマンスを保証しません",
+            "すべての投資決定とそれに伴うリスクは完全にユーザーに帰属します",
+            "投資決定を行う前に、資格のある金融専門家にご相談ください"
+          ],
+          checkboxLabel: "上記の内容を読んで理解し、本アプリが投資アドバイスを提供しないことを認めます",
+          acceptButton: "同意して続行"
+        };
+      case "zh":
+        return {
+          title: "法律声明和免责条款",
+          subtitle: "使用本应用前请务必阅读",
+          mainText: "本应用是一款数据研究工具，用于收集、整理和可视化美国证券交易委员会(SEC)的公开数据。本应用不提供投资建议、金融咨询或证券推荐服务。",
+          bullets: [
+            "显示的所有信息都是直接从SEC文件获取的事实数据",
+            "本应用不推荐购买、出售或持有任何特定证券",
+            "过去的内幕交易模式不保证未来表现",
+            "所有投资决策及相关风险完全由用户承担",
+            "在做出投资决策前，请咨询合格的金融专业人士"
+          ],
+          checkboxLabel: "我已阅读并理解上述内容，并确认本应用不提供投资建议",
+          acceptButton: "同意并继续"
+        };
+      default:
+        return {
+          title: "Legal Notice & Disclaimer",
+          subtitle: "Please read before using this app",
+          mainText: "This app is a data research tool that collects, organizes, and visualizes publicly available SEC (Securities and Exchange Commission) filing data. This app does NOT provide investment advice, financial guidance, or securities recommendations.",
+          bullets: [
+            "All information displayed is factual data sourced directly from SEC filings",
+            "This app does not recommend buying, selling, or holding any securities",
+            "Past insider trading patterns do not guarantee future performance",
+            "All investment decisions and associated risks are solely your responsibility",
+            "Consult a qualified financial professional before making investment decisions"
+          ],
+          checkboxLabel: "I have read and understood the above, and acknowledge that this app does not provide investment advice",
+          acceptButton: "I Agree & Continue"
+        };
+    }
+  };
+  const content = getDisclaimerText();
+  return /* @__PURE__ */ jsx(Dialog, { open, onOpenChange: onClose, children: /* @__PURE__ */ jsxs(
+    DialogContent,
+    {
+      className: "max-w-lg bg-[#0a0a0a] border-neutral-800 [&>button]:hidden",
+      onPointerDownOutside: (e) => e.preventDefault(),
+      onEscapeKeyDown: (e) => e.preventDefault(),
+      children: [
+        /* @__PURE__ */ jsxs(DialogHeader, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-amber-500/10 border border-amber-500/30", children: /* @__PURE__ */ jsx(Shield, { className: "h-8 w-8 text-amber-500" }) }) }),
+          /* @__PURE__ */ jsx(DialogTitle, { className: "text-xl font-bold text-center text-neutral-100", children: content.title }),
+          /* @__PURE__ */ jsx(DialogDescription, { className: "text-sm text-neutral-400 text-center", children: content.subtitle })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "space-y-4 py-4", children: [
+          /* @__PURE__ */ jsx("div", { className: "p-4 rounded-lg bg-neutral-900/50 border border-neutral-800", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 mb-3", children: [
+            /* @__PURE__ */ jsx(AlertTriangle, { className: "h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-300 leading-relaxed", children: content.mainText })
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "space-y-2.5 pl-2", children: content.bullets.map((bullet, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2.5", children: [
+            /* @__PURE__ */ jsx(FileText, { className: "h-4 w-4 text-neutral-500 flex-shrink-0 mt-0.5" }),
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-400 leading-relaxed", children: bullet })
+          ] }, index)) }),
+          /* @__PURE__ */ jsx("div", { className: "pt-4 border-t border-neutral-800", children: /* @__PURE__ */ jsxs("label", { className: "flex items-start gap-3 cursor-pointer group", children: [
+            /* @__PURE__ */ jsx(
+              Checkbox,
+              {
+                checked: agreed,
+                onCheckedChange: (checked) => setAgreed(checked === true),
+                className: "mt-0.5 border-neutral-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600",
+                "data-testid": "checkbox-landing-disclaimer-agree"
+              }
+            ),
+            /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-400 group-hover:text-neutral-300 transition-colors leading-relaxed", children: content.checkboxLabel })
+          ] }) })
+        ] }),
+        /* @__PURE__ */ jsx(DialogFooter, { children: /* @__PURE__ */ jsx(
+          Button,
+          {
+            onClick: handleAccept,
+            disabled: !agreed,
+            className: "w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-800 disabled:text-neutral-500",
+            "data-testid": "button-landing-disclaimer-accept",
+            children: content.acceptButton
+          }
+        ) })
+      ]
+    }
+  ) });
+}
 const TradeLogBackground = () => {
   const trades = [
     { id: 1, ticker: "NVDA", insider: "Jensen Huang", relation: "CEO", type: "Buy", shares: 125e3, value: 154e5 },
@@ -10133,6 +10516,7 @@ function LandingPage() {
   const [, navigate2] = useLocation();
   const { isAuthenticated } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   useEffect(() => {
     if (isAuthenticated) {
       navigate2("/trades");
@@ -10151,6 +10535,15 @@ function LandingPage() {
     return () => clearInterval(interval);
   }, [components.length]);
   const handleEnter = () => {
+    const hasAccepted = localStorage.getItem("disclaimer-accepted");
+    if (hasAccepted) {
+      navigate2("/trades");
+    } else {
+      setShowDisclaimer(true);
+    }
+  };
+  const handleDisclaimerAccept = () => {
+    setShowDisclaimer(false);
     navigate2("/trades");
   };
   return /* @__PURE__ */ jsxs("div", { className: "relative h-screen w-screen overflow-hidden bg-[#050505] flex items-center justify-center", children: [
@@ -10205,13 +10598,22 @@ function LandingPage() {
         {
           onClick: handleEnter,
           className: "mt-12 group flex items-center gap-3 text-neutral-500 hover:text-emerald-500 transition-all duration-300",
+          "data-testid": "button-initialize-system",
           children: [
             /* @__PURE__ */ jsx("span", { className: "text-xs font-mono tracking-[0.2em] uppercase border-b border-transparent group-hover:border-emerald-500/50 pb-1", children: "Initialize_System" }),
             /* @__PURE__ */ jsx(ArrowRight, { size: 14, className: "group-hover:translate-x-1 transition-transform duration-300" })
           ]
         }
       )
-    ] })
+    ] }),
+    /* @__PURE__ */ jsx(
+      LandingDisclaimerModal,
+      {
+        open: showDisclaimer,
+        onAccept: handleDisclaimerAccept,
+        onClose: () => setShowDisclaimer(false)
+      }
+    )
   ] });
 }
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
@@ -10289,7 +10691,7 @@ var View = /* @__PURE__ */ ((View2) => {
   View2["SETTINGS"] = "SETTINGS";
   return View2;
 })(View || {});
-const Sidebar = ({ activeView, onChangeView, lang, isPro, isAuthenticated, onLoginClick, onLogout, onCloseMobile }) => {
+const Sidebar = ({ activeView, onChangeView, lang, isPro, isAuthenticated, userEmail, onLoginClick, onLogout, onCloseMobile }) => {
   const t = TRANSLATIONS[lang].sidebar;
   const common = TRANSLATIONS[lang].common;
   return /* @__PURE__ */ jsxs("div", { className: "w-64 h-full bg-[#050505] border-r border-neutral-900 flex flex-col", children: [
@@ -10339,7 +10741,7 @@ const Sidebar = ({ activeView, onChangeView, lang, isPro, isAuthenticated, onLog
       /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 px-3 py-2 mb-2 border border-neutral-900 bg-[#050505]", children: [
         /* @__PURE__ */ jsx("div", { className: `w-2 h-2 rounded-full ${isPro ? "bg-emerald-900" : "bg-amber-900"}` }),
         /* @__PURE__ */ jsxs("div", { className: "overflow-hidden", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-400 truncate mono", children: "USER_ID: 7777" }),
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] font-medium text-neutral-400 truncate mono", children: userEmail || "Unknown User" }),
           /* @__PURE__ */ jsx("div", { className: `text-[9px] uppercase font-bold ${isPro ? "text-emerald-700" : "text-amber-700"}`, children: isPro ? common.tierPro : common.tierFree })
         ] })
       ] }),
@@ -10745,12 +11147,14 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
   };
   const StockCard = ({ stock }) => /* @__PURE__ */ jsx("div", { className: "bg-[#0a0a0a] border border-neutral-900 p-6 relative overflow-hidden group hover:border-neutral-700 transition-colors", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col lg:flex-row gap-8", children: [
     /* @__PURE__ */ jsxs("div", { className: "w-full lg:w-1/4 border-r-0 lg:border-r border-neutral-900 pr-0 lg:pr-6 pb-6 lg:pb-0 border-b lg:border-b-0", children: [
-      /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-3 mb-2", children: [
-        /* @__PURE__ */ jsxs("span", { className: `text-4xl font-black select-none ${stock.rank <= 3 ? "text-amber-500" : "text-neutral-800"}`, children: [
-          "0",
-          stock.rank
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-2", children: [
+        /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-3", children: [
+          /* @__PURE__ */ jsxs("span", { className: `text-4xl font-black select-none ${stock.rank <= 3 ? "text-amber-500" : "text-neutral-800"}`, children: [
+            "0",
+            stock.rank
+          ] }),
+          /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 tracking-wide", children: stock.ticker })
         ] }),
-        /* @__PURE__ */ jsx("h3", { className: "text-xl font-bold text-neutral-200 tracking-wide", children: stock.ticker }),
         onViewDetails && /* @__PURE__ */ jsxs(
           "button",
           {
@@ -10758,7 +11162,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
               e.stopPropagation();
               onViewDetails(stock);
             },
-            className: "ml-3 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105",
+            className: "px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-900/50 hover:shadow-emerald-800/70 hover:scale-105",
             children: [
               /* @__PURE__ */ jsx(Eye, { size: 12 }),
               lang === "ko" ? "자세히 보기" : "View Details"
@@ -10848,7 +11252,21 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "md:col-span-3 bg-neutral-900/50 p-2 rounded border border-neutral-800/50 h-full", children: [
               /* @__PURE__ */ jsx("div", { className: "text-[9px] text-neutral-500 uppercase mb-0.5", children: t.totalAmount }),
-              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-500 font-bold font-mono", children: formatCurrency2(buyer.amount) })
+              /* @__PURE__ */ jsx("div", { className: "text-sm text-emerald-500 font-bold font-mono", children: formatCurrency2(buyer.amount) }),
+              stock.marketCap && stock.marketCap > 0 && /* @__PURE__ */ jsx("div", { className: "text-[9px] text-amber-400 font-mono font-bold mt-1", children: (() => {
+                const ratio = buyer.amount / stock.marketCap * 100;
+                let ratioStr;
+                if (ratio >= 10) ratioStr = Math.round(ratio) + "%";
+                else if (ratio >= 1) ratioStr = ratio.toFixed(1) + "%";
+                else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + "%";
+                else if (ratio >= 1e-3) ratioStr = ratio.toFixed(3) + "%";
+                else if (ratio >= 1e-4) ratioStr = ratio.toFixed(4) + "%";
+                else if (ratio >= 1e-5) ratioStr = ratio.toFixed(5) + "%";
+                else if (ratio >= 1e-6) ratioStr = ratio.toFixed(6) + "%";
+                else if (ratio > 0) ratioStr = ratio.toExponential(2) + "%";
+                else ratioStr = "0%";
+                return `${t.marketCapRatio}: ${ratioStr}`;
+              })() })
             ] })
           ]
         },
@@ -10875,38 +11293,38 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-6 relative custom-scrollbar", children: [
       /* @__PURE__ */ jsxs("div", { className: "relative mb-8", children: [
-        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 bg-black/5 backdrop-blur-md flex items-center justify-center rounded-sm border border-neutral-800/50", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md w-full bg-[#0a0a0a] border border-neutral-800 p-3 md:p-6 relative text-center shadow-2xl", children: [
-          /* @__PURE__ */ jsx("div", { className: "absolute top-0 left-0 right-0 h-1 bg-neutral-800", children: /* @__PURE__ */ jsx("div", { className: "h-full w-1/3 bg-amber-600 mx-auto" }) }),
-          /* @__PURE__ */ jsxs("div", { className: "mb-3 md:mb-4 mt-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-sm bg-neutral-900 border border-neutral-800 mb-2 md:mb-3", children: [
-              /* @__PURE__ */ jsx(ShieldCheck, { size: 20, className: "text-neutral-600 md:hidden" }),
-              /* @__PURE__ */ jsx(ShieldCheck, { size: 28, className: "text-neutral-600 hidden md:block" })
+        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[16rem] sm:max-w-sm md:max-w-md", children: /* @__PURE__ */ jsxs("div", { className: "w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2.5 sm:p-3 md:p-5 relative text-center shadow-2xl rounded-sm", children: [
+          /* @__PURE__ */ jsx("div", { className: "absolute top-0 left-0 right-0 h-1 bg-neutral-800 rounded-t-sm overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full w-1/3 bg-amber-600 mx-auto" }) }),
+          /* @__PURE__ */ jsxs("div", { className: "mb-2 md:mb-3 mt-2", children: [
+            /* @__PURE__ */ jsxs("div", { className: "inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-sm bg-neutral-900 border border-neutral-800 mb-2", children: [
+              /* @__PURE__ */ jsx(ShieldCheck, { size: 18, className: "text-neutral-600 md:hidden" }),
+              /* @__PURE__ */ jsx(ShieldCheck, { size: 22, className: "text-neutral-600 hidden md:block" })
             ] }),
-            /* @__PURE__ */ jsx("h2", { className: "text-base md:text-lg font-bold text-neutral-200 uppercase tracking-wider mb-1.5", children: t.restricted }),
-            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-xs md:text-sm font-bold px-2 py-0.5 md:px-3 md:py-1 uppercase tracking-widest", children: t.securityLevel })
+            /* @__PURE__ */ jsx("h2", { className: "text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider mb-1", children: t.restricted }),
+            /* @__PURE__ */ jsx("div", { className: "inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[10px] md:text-xs font-bold px-2 py-0.5 uppercase tracking-widest", children: t.securityLevel })
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "space-y-2 md:space-y-3 mb-3 md:mb-5 border-t border-b border-neutral-900 py-2.5 md:py-4", children: /* @__PURE__ */ jsx("p", { className: "text-[10px] md:text-xs text-neutral-400 font-mono leading-relaxed", children: t.desc }) }),
+          /* @__PURE__ */ jsx("div", { className: "space-y-1.5 mb-2 md:mb-3 border-t border-b border-neutral-900 py-2 md:py-3", children: /* @__PURE__ */ jsx("p", { className: "text-[9px] md:text-[10px] text-neutral-400 font-mono leading-relaxed", children: t.desc }) }),
           /* @__PURE__ */ jsxs(
             "button",
             {
               onClick: onUpgrade,
-              className: "w-full py-2 md:py-2.5 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 mb-2.5 md:mb-3",
+              className: "w-full py-1.5 md:py-2 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[9px] md:text-[10px] transition-all flex items-center justify-center gap-1.5 mb-2",
               children: [
-                /* @__PURE__ */ jsx(ScanLine, { size: 12, className: "md:hidden" }),
-                /* @__PURE__ */ jsx(ScanLine, { size: 14, className: "hidden md:block" }),
+                /* @__PURE__ */ jsx(ScanLine, { size: 11, className: "md:hidden" }),
+                /* @__PURE__ */ jsx(ScanLine, { size: 12, className: "hidden md:block" }),
                 t.cta
               ]
             }
           ),
-          /* @__PURE__ */ jsxs("div", { className: "flex justify-center gap-3 md:gap-4 text-[8px] md:text-[9px] text-neutral-600 font-mono uppercase", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex justify-center gap-2 md:gap-3 text-[7px] md:text-[8px] text-neutral-600 font-mono uppercase", children: [
             /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
-              /* @__PURE__ */ jsx(Lock, { size: 9 }),
+              /* @__PURE__ */ jsx(Lock, { size: 8 }),
               " ",
               t.aes
             ] }),
             /* @__PURE__ */ jsx("span", { children: "•" }),
             /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1", children: [
-              /* @__PURE__ */ jsx(EyeOff, { size: 9 }),
+              /* @__PURE__ */ jsx(EyeOff, { size: 8 }),
               " ",
               t.blind
             ] })
@@ -10925,16 +11343,15 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] })
   ] });
 };
-const analysisCache = /* @__PURE__ */ new Map();
-const CACHE_DURATION = 6 * 60 * 60 * 1e3;
 function StockSummaryModal({ isOpen, onClose, stock }) {
-  var _a;
+  var _a, _b, _c;
   const { language } = useLanguage();
   const gradientId = useId();
   const [stockPrice, setStockPrice] = useState(null);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
   useEffect(() => {
     if (!isOpen || !(stock == null ? void 0 : stock.ticker)) {
       setStockPrice(null);
@@ -10953,34 +11370,81 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
       }
     };
     const fetchAnalysis = async () => {
-      const cacheKey = `${stock.ticker}_${language}`;
-      const cached = analysisCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        console.log(`✅ Using cached analysis for ${stock.ticker} (${language})`);
-        setComprehensiveAnalysis(cached.data);
-        return;
-      }
+      var _a2;
       setIsLoadingAnalysis(true);
+      setAnalysisError(null);
       try {
         const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
-        if (tradesResponse.ok) {
-          const tradesData = await tradesResponse.json();
-          if (tradesData.trades && tradesData.trades.length > 0) {
-            const tradeId = tradesData.trades[0].id;
-            const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`);
-            if (analysisResponse.ok) {
-              const analysisData = await analysisResponse.json();
-              setComprehensiveAnalysis(analysisData);
-              analysisCache.set(cacheKey, {
-                data: analysisData,
-                timestamp: Date.now()
+        if (!tradesResponse.ok) {
+          throw new Error(`Trades API returned ${tradesResponse.status}`);
+        }
+        const tradesData = await tradesResponse.json();
+        if (!((_a2 = tradesData.trades) == null ? void 0 : _a2.length)) {
+          setAnalysisError({
+            type: "not_available",
+            message: language === "ko" ? "거래 데이터를 찾을 수 없습니다." : language === "ja" ? "取引データが見つかりません。" : language === "zh" ? "未找到交易数据。" : "No trade data found.",
+            retryable: false
+          });
+          setIsLoadingAnalysis(false);
+          return;
+        }
+        const tradeId = tradesData.trades[0].id;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3e4);
+        try {
+          const analysisResponse = await fetch(
+            `/api/trades/${tradeId}/comprehensive-analysis?language=${language}`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+          if (!analysisResponse.ok) {
+            if (analysisResponse.status === 503) {
+              setAnalysisError({
+                type: "temporary_error",
+                message: language === "ko" ? "일시적인 서버 오류입니다." : language === "ja" ? "一時的なサーバーエラーです。" : language === "zh" ? "临时服务器错误。" : "Temporary server error.",
+                retryable: true
               });
-              console.log(`📦 Cached analysis for ${stock.ticker} (${language})`);
+              setIsLoadingAnalysis(false);
+              return;
             }
+            throw new Error(`Analysis API returned ${analysisResponse.status}`);
+          }
+          const analysisData = await analysisResponse.json();
+          if (analysisData.notRanked) {
+            setComprehensiveAnalysis(analysisData);
+            setIsLoadingAnalysis(false);
+            return;
+          }
+          if (analysisData.error) {
+            setAnalysisError({
+              type: analysisData.errorType === "temporary" ? "temporary_error" : "not_available",
+              message: analysisData.message,
+              retryable: analysisData.retryable || false
+            });
+            setIsLoadingAnalysis(false);
+            return;
+          }
+          setComprehensiveAnalysis(analysisData);
+          setAnalysisError(null);
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === "AbortError") {
+            setAnalysisError({
+              type: "temporary_error",
+              message: language === "ko" ? "요청 시간이 초과되었습니다." : language === "ja" ? "リクエストがタイムアウトしました。" : language === "zh" ? "请求超时。" : "Request timed out.",
+              retryable: true
+            });
+          } else {
+            throw fetchError;
           }
         }
       } catch (error) {
         console.error("Failed to fetch analysis:", error);
+        setAnalysisError({
+          type: "network_error",
+          message: language === "ko" ? "네트워크 오류가 발생했습니다." : language === "ja" ? "ネットワークエラーが発生しました。" : language === "zh" ? "发生网络错误。" : "Network error occurred.",
+          retryable: true
+        });
       } finally {
         setIsLoadingAnalysis(false);
       }
@@ -11028,81 +11492,25 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
     let insight = "";
     if (langKey === "ko") {
       if (isManyBuyers && isLargeAmount) {
-        insight = `${stats.buyerCount}명의 내부자가 동시에 대규모 매수. 강력한 확신 신호.`;
+        insight = `${stats.buyerCount}명의 내부자가 동시에 대규모 매수 거래 발생.`;
       } else if (isManyBuyers) {
-        insight = `${stats.buyerCount}명의 내부자가 동시 매수. 긍정적 전망 공유.`;
+        insight = `${stats.buyerCount}명의 내부자가 동시 매수 활동 감지됨.`;
       } else {
-        insight = "다수 내부자 동시 매수는 회사에 대한 확신을 나타냄.";
+        insight = "다수 내부자 동시 매수 활동이 기록되었습니다.";
       }
     } else {
       if (isManyBuyers && isLargeAmount) {
-        insight = `${stats.buyerCount} insiders made large simultaneous buys. Strong conviction.`;
+        insight = `${stats.buyerCount} insiders made large simultaneous purchases.`;
       } else if (isManyBuyers) {
-        insight = `${stats.buyerCount} insiders bought simultaneously. Positive outlook.`;
+        insight = `${stats.buyerCount} insiders bought simultaneously.`;
       } else {
-        insight = "Multiple insider buys indicate confidence.";
+        insight = "Multiple insider purchases detected.";
       }
     }
-    let baseMedian, baseP75, baseAvg;
-    if (stats.buyerCount >= 3) {
-      baseMedian = 0.1;
-      baseP75 = 0.22;
-      baseAvg = 0.36;
-    } else if (stats.buyerCount >= 2) {
-      baseMedian = 0.03;
-      baseP75 = 0.07;
-      baseAvg = 0.3;
-    } else {
-      baseMedian = 0.01;
-      baseP75 = 0.05;
-      baseAvg = 0.1;
-    }
-    const investmentBonus = stats.totalAmount >= 5e6 ? 0.03 : stats.totalAmount >= 1e6 ? 0.02 : stats.totalAmount >= 5e5 ? 0.01 : 0;
-    const buyers = stock.buyers;
-    const hasCEO = buyers.some(
-      (b) => {
-        var _a2, _b;
-        return ((_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("CEO")) || ((_b = b.relation) == null ? void 0 : _b.toUpperCase().includes("CHIEF EXECUTIVE"));
-      }
-    );
-    const hasCFO = buyers.some(
-      (b) => {
-        var _a2, _b;
-        return ((_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("CFO")) || ((_b = b.relation) == null ? void 0 : _b.toUpperCase().includes("CHIEF FINANCIAL"));
-      }
-    );
-    const hasPresident = buyers.some(
-      (b) => {
-        var _a2;
-        return (_a2 = b.relation) == null ? void 0 : _a2.toUpperCase().includes("PRESIDENT");
-      }
-    );
-    let positionBonus = 0;
-    if (hasCEO) {
-      positionBonus = 0.02;
-    } else if (hasPresident) {
-      positionBonus = 0.015;
-    } else if (hasCFO) {
-      positionBonus = 0.01;
-    }
-    const clusterWithCEOBonus = stats.buyerCount >= 3 && hasCEO ? 0.03 : 0;
-    const totalBonus = investmentBonus + positionBonus + clusterWithCEOBonus;
-    const adjustedMedian = baseMedian + totalBonus;
-    const adjustedP75 = baseP75 + totalBonus * 1.5;
-    const adjustedAvg = baseAvg + totalBonus * 2;
-    const priceTargets = {
-      conservative: stats.avgPrice * (1 + adjustedMedian),
-      // Based on median return
-      realistic: stats.avgPrice * (1 + adjustedP75),
-      // Based on 75th percentile
-      optimistic: stats.avgPrice * (1 + adjustedAvg)
-      // Based on average (includes outliers)
-    };
     return {
       signal: "BUY",
       confidence,
       insight,
-      priceTargets,
       riskLevel: isLargeAmount ? t.riskLow : t.riskMedium,
       timeHorizon: isManyBuyers ? langKey === "ko" ? "2-4주" : "2-4 weeks" : langKey === "ko" ? "3-6주" : "3-6 weeks"
     };
@@ -11198,10 +11606,29 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-r border-t md:border-t-0 border-neutral-800 col-span-1", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5", children: langKey === "ko" ? "총액" : "TOTAL" }),
-          /* @__PURE__ */ jsx("div", { className: "text-base md:text-lg font-light text-emerald-500", children: formatCurrency(stats.totalAmount, false) })
+          /* @__PURE__ */ jsx("div", { className: "text-base md:text-lg font-light text-emerald-500", children: formatCurrency(stats.totalAmount, false) }),
+          (() => {
+            const marketCap = stock == null ? void 0 : stock.marketCap;
+            if (marketCap && marketCap > 0 && stats) {
+              const ratio = stats.totalAmount / marketCap * 100;
+              let percentStr;
+              if (ratio >= 10) percentStr = Math.round(ratio) + "%";
+              else if (ratio >= 1) percentStr = ratio.toFixed(1) + "%";
+              else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + "%";
+              else if (ratio >= 1e-3) percentStr = ratio.toFixed(3) + "%";
+              else if (ratio >= 1e-4) percentStr = ratio.toFixed(4) + "%";
+              else if (ratio >= 1e-5) percentStr = ratio.toFixed(5) + "%";
+              else if (ratio >= 1e-6) percentStr = ratio.toFixed(6) + "%";
+              else if (ratio > 0) percentStr = ratio.toExponential(2) + "%";
+              else percentStr = "0%";
+              const prefix = langKey === "ko" ? "시총대비 " : langKey === "ja" ? "時価総額比 " : langKey === "zh" ? "市值比 " : "vs Cap: ";
+              return /* @__PURE__ */ jsx("div", { className: "text-[8px] md:text-[9px] text-amber-400 font-mono mt-0.5 font-bold", children: prefix + percentStr });
+            }
+            return null;
+          })()
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "px-2 py-2 border-t md:border-t-0 border-neutral-800 col-span-2 md:col-span-1", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5", children: langKey === "ko" ? "수익률" : "RETURN" }),
+          /* @__PURE__ */ jsx("div", { className: "text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5", children: langKey === "ko" ? "내부자 평균 수익률" : langKey === "ja" ? "内部者平均リターン" : langKey === "zh" ? "内部人士平均收益" : "INSIDER AVG RETURN" }),
           /* @__PURE__ */ jsxs("div", { className: `text-base md:text-lg font-bold ${priceChange >= 0 ? "text-emerald-500" : "text-rose-500"}`, children: [
             priceChange >= 0 ? "+" : "",
             priceChange.toFixed(1),
@@ -11255,37 +11682,22 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 mb-1", children: [
             /* @__PURE__ */ jsx(Target, { size: 9, className: "text-neutral-500" }),
-            /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-500 uppercase font-mono", children: langKey === "ko" ? "목표가" : "Targets" })
+            /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-500 uppercase font-mono", children: langKey === "ko" ? "참고 가격대" : langKey === "ja" ? "参考価格帯" : langKey === "zh" ? "参考价格区间" : "Reference Range" })
           ] }),
-          (() => {
-            const newsAnalysis = comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.newsAnalysis;
-            let newsMultiplier = 1;
-            if (newsAnalysis && newsAnalysis.totalNews > 0) {
-              const positiveRatio = newsAnalysis.positiveCount / newsAnalysis.totalNews;
-              const negativeRatio = newsAnalysis.negativeCount / newsAnalysis.totalNews;
-              newsMultiplier = 1 + positiveRatio * 0.05 - negativeRatio * 0.03;
-            }
-            const baseTargets = (aiAnalysis == null ? void 0 : aiAnalysis.priceTargets) || { conservative: 0, realistic: 0, optimistic: 0 };
-            const adjustedTargets = {
-              conservative: baseTargets.conservative * newsMultiplier,
-              realistic: baseTargets.realistic * newsMultiplier,
-              optimistic: baseTargets.optimistic * newsMultiplier
-            };
-            return /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "보수" : "Low" }),
-                /* @__PURE__ */ jsx("span", { className: "text-neutral-400 font-mono", children: formatCurrency(adjustedTargets.conservative) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-emerald-600", children: langKey === "ko" ? "현실" : "Mid" }),
-                /* @__PURE__ */ jsx("span", { className: "text-emerald-400 font-mono font-bold", children: formatCurrency(adjustedTargets.realistic) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-                /* @__PURE__ */ jsx("span", { className: "text-amber-600", children: langKey === "ko" ? "낙관" : "High" }),
-                /* @__PURE__ */ jsx("span", { className: "text-amber-400 font-mono", children: formatCurrency(adjustedTargets.optimistic) })
-              ] })
-            ] });
-          })()
+          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "평균 매수가" : "Avg Buy" }),
+              /* @__PURE__ */ jsx("span", { className: "text-emerald-400 font-mono font-bold", children: formatCurrency(stats.avgPrice) })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "현재가" : "Current" }),
+              /* @__PURE__ */ jsx("span", { className: `font-mono ${priceChange >= 0 ? "text-emerald-400" : "text-rose-400"}`, children: formatCurrency(currentPrice) })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-0.5 pt-1 border-t border-neutral-800/50", children: [
+              /* @__PURE__ */ jsx(Info, { size: 7, className: "text-neutral-600 shrink-0" }),
+              /* @__PURE__ */ jsx("span", { className: "text-[6px] text-neutral-600", children: langKey === "ko" ? "참고용" : langKey === "ja" ? "参考用" : langKey === "zh" ? "仅供参考" : "Reference only" })
+            ] })
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
@@ -11308,20 +11720,168 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         ),
         /* @__PURE__ */ jsx("div", { className: "px-2 pb-2", children: isLoadingAnalysis ? /* @__PURE__ */ jsxs("div", { className: "pl-5 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx("div", { className: "w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" }),
-          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-purple-400 font-mono", children: langKey === "ko" ? "AI 분석 중..." : "Analyzing..." })
-        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsx("p", { className: `text-[11px] md:text-xs text-white leading-relaxed pl-5 font-medium ${!isAnalysisExpanded ? "line-clamp-1" : ""}`, children: comprehensiveAnalysis.executiveSummary }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : "Unable to load analysis data." }) })
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-purple-400 font-mono", children: langKey === "ko" ? "AI 분석 중..." : langKey === "ja" ? "AI分析中..." : langKey === "zh" ? "AI分析中..." : "Analyzing..." })
+        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.executiveSummary) ? /* @__PURE__ */ jsxs("div", { className: "pl-5 space-y-2", children: [
+          /* @__PURE__ */ jsx("p", { className: "text-[11px] md:text-xs text-white leading-relaxed font-medium", children: comprehensiveAnalysis.executiveSummary }),
+          isAnalysisExpanded && /* @__PURE__ */ jsxs("div", { className: "space-y-2.5 pt-1 border-t border-neutral-800/50", children: [
+            ((_b = comprehensiveAnalysis.riskAssessment) == null ? void 0 : _b.factors) && comprehensiveAnalysis.riskAssessment.factors.length > 0 && /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsx("h4", { className: "text-[9px] font-semibold text-purple-400 uppercase tracking-wide", children: langKey === "ko" ? "📊 주요 인사이트" : langKey === "ja" ? "📊 主要インサイト" : langKey === "zh" ? "📊 关键见解" : "📊 Key Insights" }),
+              /* @__PURE__ */ jsx("ul", { className: "space-y-1.5", children: comprehensiveAnalysis.riskAssessment.factors.map((insight, idx) => /* @__PURE__ */ jsx("li", { className: "text-[10px] text-neutral-300 leading-relaxed pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-purple-500", children: insight }, idx)) })
+            ] }),
+            comprehensiveAnalysis.newsAnalysis && comprehensiveAnalysis.newsAnalysis.totalNews > 0 && /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsx("h4", { className: "text-[9px] font-semibold text-blue-400 uppercase tracking-wide", children: langKey === "ko" ? "📰 뉴스 분석 (최근 30일)" : langKey === "ja" ? "📰 ニュース分析（過去30日）" : langKey === "zh" ? "📰 新闻分析（最近30天）" : "📰 News Analysis (30 days)" }),
+              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 text-[9px]", children: [
+                /* @__PURE__ */ jsxs("span", { className: "text-green-400", children: [
+                  "✓ ",
+                  comprehensiveAnalysis.newsAnalysis.positiveCount,
+                  " ",
+                  langKey === "ko" ? "긍정" : "Positive"
+                ] }),
+                /* @__PURE__ */ jsxs("span", { className: "text-neutral-400", children: [
+                  "○ ",
+                  comprehensiveAnalysis.newsAnalysis.totalNews - comprehensiveAnalysis.newsAnalysis.positiveCount - comprehensiveAnalysis.newsAnalysis.negativeCount,
+                  " ",
+                  langKey === "ko" ? "중립" : "Neutral"
+                ] }),
+                /* @__PURE__ */ jsxs("span", { className: "text-red-400", children: [
+                  "✗ ",
+                  comprehensiveAnalysis.newsAnalysis.negativeCount,
+                  " ",
+                  langKey === "ko" ? "부정" : "Negative"
+                ] })
+              ] }),
+              comprehensiveAnalysis.newsAnalysis.majorNews && comprehensiveAnalysis.newsAnalysis.majorNews.length > 0 && /* @__PURE__ */ jsx("div", { className: "space-y-1 mt-1.5", children: comprehensiveAnalysis.newsAnalysis.majorNews.slice(0, 3).map((news, idx) => /* @__PURE__ */ jsxs("div", { className: "text-[9px] text-neutral-400 pl-3 border-l-2 border-neutral-700", children: [
+                /* @__PURE__ */ jsx("span", { className: `font-semibold ${news.sentiment === "BULLISH" ? "text-green-400" : news.sentiment === "BEARISH" ? "text-red-400" : "text-neutral-300"}`, children: news.title }),
+                news.summary && /* @__PURE__ */ jsx("p", { className: "text-neutral-500 mt-0.5", children: news.summary })
+              ] }, idx)) })
+            ] }),
+            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2", children: [
+              comprehensiveAnalysis.riskAssessment && /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+                /* @__PURE__ */ jsx("h4", { className: "text-[9px] font-semibold text-amber-400 uppercase tracking-wide", children: langKey === "ko" ? "⚠️ 리스크" : langKey === "ja" ? "⚠️ リスク" : langKey === "zh" ? "⚠️ 风险" : "⚠️ Risk" }),
+                /* @__PURE__ */ jsx("div", { className: `inline-block px-2 py-0.5 rounded text-[9px] font-semibold ${comprehensiveAnalysis.riskAssessment.level === "HIGH" ? "bg-red-900/30 text-red-400" : comprehensiveAnalysis.riskAssessment.level === "MEDIUM" ? "bg-amber-900/30 text-amber-400" : "bg-green-900/30 text-green-400"}`, children: comprehensiveAnalysis.riskAssessment.level })
+              ] }),
+              comprehensiveAnalysis.timeHorizon && /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+                /* @__PURE__ */ jsx("h4", { className: "text-[9px] font-semibold text-cyan-400 uppercase tracking-wide", children: langKey === "ko" ? "⏱️ 시간" : langKey === "ja" ? "⏱️ 期間" : langKey === "zh" ? "⏱️ 时间" : "⏱️ Horizon" }),
+                /* @__PURE__ */ jsx("p", { className: "text-[9px] text-neutral-300 font-medium", children: comprehensiveAnalysis.timeHorizon })
+              ] })
+            ] }),
+            ((_c = comprehensiveAnalysis.marketContext) == null ? void 0 : _c.reasoning) && /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
+              /* @__PURE__ */ jsx("h4", { className: "text-[9px] font-semibold text-indigo-400 uppercase tracking-wide", children: langKey === "ko" ? "📈 시장 컨텍스트" : langKey === "ja" ? "📈 市場コンテキスト" : langKey === "zh" ? "📈 市场背景" : "📈 Market Context" }),
+              /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-300 leading-relaxed", children: comprehensiveAnalysis.marketContext.reasoning })
+            ] }),
+            comprehensiveAnalysis.confidence && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 pt-1", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-[9px] text-neutral-500", children: langKey === "ko" ? "신뢰도:" : langKey === "ja" ? "信頼度:" : langKey === "zh" ? "可信度:" : "Confidence:" }),
+              /* @__PURE__ */ jsx("div", { className: "flex-1 bg-neutral-800 rounded-full h-1.5 overflow-hidden", children: /* @__PURE__ */ jsx(
+                "div",
+                {
+                  className: `h-full ${comprehensiveAnalysis.confidence >= 70 ? "bg-green-500" : comprehensiveAnalysis.confidence >= 50 ? "bg-amber-500" : "bg-red-500"}`,
+                  style: { width: `${comprehensiveAnalysis.confidence}%` }
+                }
+              ) }),
+              /* @__PURE__ */ jsxs("span", { className: "text-[9px] font-semibold text-neutral-300", children: [
+                comprehensiveAnalysis.confidence,
+                "%"
+              ] })
+            ] })
+          ] })
+        ] }) : (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.notRanked) ? /* @__PURE__ */ jsx("div", { className: "pl-5 space-y-1.5", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2", children: [
+          /* @__PURE__ */ jsx(AlertTriangle, { size: 12, className: "text-amber-500 shrink-0 mt-0.5" }),
+          /* @__PURE__ */ jsxs("div", { className: "flex-1 space-y-1", children: [
+            /* @__PURE__ */ jsx("p", { className: "text-[10px] leading-relaxed text-amber-400", children: langKey === "ko" ? "현재 랭킹에 없는 종목입니다." : langKey === "ja" ? "ランキング外の銘柄です。" : langKey === "zh" ? "当前未排名的股票。" : "Not currently in rankings." }),
+            /* @__PURE__ */ jsx("p", { className: "text-[8px] text-neutral-500 italic", children: langKey === "ko" ? "💡 랭킹 페이지에서 AI 분석 제공 종목을 확인하세요." : langKey === "ja" ? "💡 ランキングページでAI分析対象銘柄を確認してください。" : langKey === "zh" ? "💡 在排名页面查看AI分析股票。" : "💡 Check the Rankings page for stocks with AI analysis." })
+          ] })
+        ] }) }) : analysisError ? /* @__PURE__ */ jsx("div", { className: "pl-5 space-y-1.5", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2", children: [
+          analysisError.type === "not_ranked" ? /* @__PURE__ */ jsx(AlertTriangle, { size: 12, className: "text-amber-500 shrink-0 mt-0.5" }) : /* @__PURE__ */ jsx(AlertTriangle, { size: 12, className: "text-red-500 shrink-0 mt-0.5" }),
+          /* @__PURE__ */ jsxs("div", { className: "flex-1 space-y-1", children: [
+            /* @__PURE__ */ jsx("p", { className: `text-[10px] leading-relaxed ${analysisError.type === "not_ranked" ? "text-amber-400" : "text-red-400"}`, children: analysisError.message }),
+            analysisError.retryable && /* @__PURE__ */ jsx(
+              "button",
+              {
+                onClick: (e) => {
+                  e.stopPropagation();
+                  setAnalysisError(null);
+                  setComprehensiveAnalysis(null);
+                  setIsLoadingAnalysis(true);
+                  const fetchAgain = async () => {
+                    var _a2;
+                    try {
+                      const tradesResponse = await fetch(`/api/trades?ticker=${stock == null ? void 0 : stock.ticker}&limit=1`);
+                      if (!tradesResponse.ok) throw new Error(`Trades API returned ${tradesResponse.status}`);
+                      const tradesData = await tradesResponse.json();
+                      if (!((_a2 = tradesData.trades) == null ? void 0 : _a2.length)) {
+                        setAnalysisError({
+                          type: "not_available",
+                          message: language === "ko" ? "거래 데이터를 찾을 수 없습니다." : "No trade data found.",
+                          retryable: false
+                        });
+                        setIsLoadingAnalysis(false);
+                        return;
+                      }
+                      const tradeId = tradesData.trades[0].id;
+                      const controller = new AbortController();
+                      const timeoutId = setTimeout(() => controller.abort(), 3e4);
+                      try {
+                        const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        if (!analysisResponse.ok) {
+                          if (analysisResponse.status === 503) {
+                            setAnalysisError({ type: "temporary_error", message: language === "ko" ? "일시적인 서버 오류입니다." : "Temporary server error.", retryable: true });
+                            setIsLoadingAnalysis(false);
+                            return;
+                          }
+                          throw new Error(`Analysis API returned ${analysisResponse.status}`);
+                        }
+                        const analysisData = await analysisResponse.json();
+                        if (analysisData.notRanked) {
+                          setComprehensiveAnalysis(analysisData);
+                          setIsLoadingAnalysis(false);
+                          return;
+                        }
+                        if (analysisData.error) {
+                          setAnalysisError({ type: analysisData.errorType === "temporary" ? "temporary_error" : "not_available", message: analysisData.message, retryable: analysisData.retryable || false });
+                          setIsLoadingAnalysis(false);
+                          return;
+                        }
+                        setComprehensiveAnalysis(analysisData);
+                        setAnalysisError(null);
+                      } catch (fetchError) {
+                        clearTimeout(timeoutId);
+                        if (fetchError.name === "AbortError") {
+                          setAnalysisError({ type: "temporary_error", message: language === "ko" ? "요청 시간이 초과되었습니다." : "Request timed out.", retryable: true });
+                        } else {
+                          throw fetchError;
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Failed to fetch analysis:", error);
+                      setAnalysisError({ type: "network_error", message: language === "ko" ? "네트워크 오류가 발생했습니다." : "Network error occurred.", retryable: true });
+                    } finally {
+                      setIsLoadingAnalysis(false);
+                    }
+                  };
+                  fetchAgain();
+                },
+                className: "text-[9px] px-2 py-1 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/50 text-purple-300 rounded transition-colors",
+                children: langKey === "ko" ? "다시 시도" : langKey === "ja" ? "再試行" : langKey === "zh" ? "重试" : "Retry"
+              }
+            )
+          ] })
+        ] }) }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : langKey === "ja" ? "分析データを読み込めません。" : langKey === "zh" ? "无法加载分析数据。" : "Unable to load analysis data." }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
           /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "위험도" : "RISK" }),
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-emerald-500", children: [
             /* @__PURE__ */ jsx(AlertTriangle, { size: 10 }),
-            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: tData[aiAnalysis == null ? void 0 : aiAnalysis.riskLevel] || (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
+            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: tData[(aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || ""] || (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "목표 달성" : "TARGET" }),
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: tData[comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon] || tData[aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon] || (comprehensiveAnalysis == null ? void 0 : comprehensiveAnalysis.timeHorizon) || (aiAnalysis == null ? void 0 : aiAnalysis.timeHorizon) || (langKey === "ko" ? "2-4주" : "2-4 weeks") })
+          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "총 매수 주식수" : langKey === "ja" ? "総購入株数" : langKey === "zh" ? "总购买股数" : "TOTAL SHARES" }),
+          /* @__PURE__ */ jsxs("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: [
+            formatNumber(stock.buyers.reduce((sum, b) => sum + (b.shares || 0), 0)),
+            /* @__PURE__ */ jsx("span", { className: "text-neutral-500 ml-1", children: langKey === "ko" ? "주" : "sh" })
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [
@@ -11348,13 +11908,27 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
               "%"
             ] })
           ] }),
-          /* @__PURE__ */ jsxs("div", { className: "text-right shrink-0 w-16", children: [
+          /* @__PURE__ */ jsxs("div", { className: "text-right shrink-0 w-20", children: [
             /* @__PURE__ */ jsxs("div", { className: "text-[9px] text-neutral-500", children: [
               formatNumber(buyer.shares),
               " ",
               langKey === "ko" ? "주" : "sh"
             ] }),
-            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-emerald-500 font-bold font-mono", children: formatCurrency(buyer.amount) })
+            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-emerald-500 font-bold font-mono", children: formatCurrency(buyer.amount) }),
+            stock.marketCap && stock.marketCap > 0 && /* @__PURE__ */ jsx("div", { className: "text-[8px] text-amber-400 font-mono font-bold mt-0.5", children: (() => {
+              const ratio = buyer.amount / stock.marketCap * 100;
+              let ratioStr;
+              if (ratio >= 10) ratioStr = Math.round(ratio) + "%";
+              else if (ratio >= 1) ratioStr = ratio.toFixed(1) + "%";
+              else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + "%";
+              else if (ratio >= 1e-3) ratioStr = ratio.toFixed(3) + "%";
+              else if (ratio >= 1e-4) ratioStr = ratio.toFixed(4) + "%";
+              else if (ratio >= 1e-5) ratioStr = ratio.toFixed(5) + "%";
+              else if (ratio >= 1e-6) ratioStr = ratio.toFixed(6) + "%";
+              else if (ratio > 0) ratioStr = ratio.toExponential(2) + "%";
+              else ratioStr = "0%";
+              return `${tTop.marketCapRatio}: ${ratioStr}`;
+            })() })
           ] })
         ] }, idx)) })
       ] }),
@@ -11460,6 +12034,7 @@ function TopStocksTerminal() {
       totalBuyAmount: parseNumeric(item.netBuying),
       insiderCount: item.uniqueInsiders || ((_c = item.insiders) == null ? void 0 : _c.length) || 0,
       lastTradeDate: item.lastTradeDate || (/* @__PURE__ */ new Date()).toISOString(),
+      marketCap: item.marketCap ? Number(item.marketCap) : void 0,
       buyers: (item.insiders || []).slice(0, 5).map((insider) => {
         const sharesNum = parseNumeric(insider.shares);
         const totalValueNum = parseNumeric(insider.totalValue);
@@ -12080,6 +12655,138 @@ function AuthModal() {
     ] })
   ] });
 }
+const DISCLAIMER_KEY = "disclaimer-accepted";
+function DisclaimerModal({ onAccept }) {
+  const { t, language } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem(DISCLAIMER_KEY);
+    if (!hasAccepted) {
+      setOpen(true);
+    }
+  }, []);
+  const handleAccept = () => {
+    if (agreed) {
+      localStorage.setItem(DISCLAIMER_KEY, "true");
+      setOpen(false);
+      onAccept == null ? void 0 : onAccept();
+    }
+  };
+  const getDisclaimerText = () => {
+    switch (language) {
+      case "ko":
+        return {
+          title: "법적 고지 및 면책조항",
+          subtitle: "본 앱 사용 전 반드시 읽어주세요",
+          mainText: "본 앱은 미국 증권거래위원회(SEC) 공시 데이터를 수집, 정리, 시각화하는 데이터 리서치 도구입니다. 본 앱은 투자 조언, 금융 자문, 또는 증권 추천 서비스를 제공하지 않습니다.",
+          bullets: [
+            "표시되는 모든 정보는 SEC 공시에서 직접 가져온 사실 데이터입니다",
+            "본 앱은 특정 증권의 매수, 매도, 보유를 권장하지 않습니다",
+            "과거 내부자 거래 패턴이 미래 성과를 보장하지 않습니다",
+            "모든 투자 결정과 그에 따른 위험은 전적으로 사용자에게 귀속됩니다",
+            "투자 결정 전 자격을 갖춘 금융 전문가와 상담하시기 바랍니다"
+          ],
+          checkboxLabel: "위 내용을 읽고 이해했으며, 본 앱이 투자 조언을 제공하지 않음을 인정합니다",
+          acceptButton: "동의하고 계속하기"
+        };
+      case "ja":
+        return {
+          title: "法的通知および免責事項",
+          subtitle: "アプリを使用する前に必ずお読みください",
+          mainText: "本アプリは、米国証券取引委員会(SEC)の公開データを収集、整理、視覚化するデータリサーチツールです。本アプリは、投資アドバイス、金融アドバイス、または証券推奨サービスを提供しません。",
+          bullets: [
+            "表示されるすべての情報は、SEC提出書類から直接取得した事実データです",
+            "本アプリは特定の証券の購入、売却、保有を推奨しません",
+            "過去のインサイダー取引パターンは将来のパフォーマンスを保証しません",
+            "すべての投資決定とそれに伴うリスクは完全にユーザーに帰属します",
+            "投資決定を行う前に、資格のある金融専門家にご相談ください"
+          ],
+          checkboxLabel: "上記の内容を読んで理解し、本アプリが投資アドバイスを提供しないことを認めます",
+          acceptButton: "同意して続行"
+        };
+      case "zh":
+        return {
+          title: "法律声明和免责条款",
+          subtitle: "使用本应用前请务必阅读",
+          mainText: "本应用是一款数据研究工具，用于收集、整理和可视化美国证券交易委员会(SEC)的公开数据。本应用不提供投资建议、金融咨询或证券推荐服务。",
+          bullets: [
+            "显示的所有信息都是直接从SEC文件获取的事实数据",
+            "本应用不推荐购买、出售或持有任何特定证券",
+            "过去的内幕交易模式不保证未来表现",
+            "所有投资决策及相关风险完全由用户承担",
+            "在做出投资决策前，请咨询合格的金融专业人士"
+          ],
+          checkboxLabel: "我已阅读并理解上述内容，并确认本应用不提供投资建议",
+          acceptButton: "同意并继续"
+        };
+      default:
+        return {
+          title: "Legal Notice & Disclaimer",
+          subtitle: "Please read before using this app",
+          mainText: "This app is a data research tool that collects, organizes, and visualizes publicly available SEC (Securities and Exchange Commission) filing data. This app does NOT provide investment advice, financial guidance, or securities recommendations.",
+          bullets: [
+            "All information displayed is factual data sourced directly from SEC filings",
+            "This app does not recommend buying, selling, or holding any securities",
+            "Past insider trading patterns do not guarantee future performance",
+            "All investment decisions and associated risks are solely your responsibility",
+            "Consult a qualified financial professional before making investment decisions"
+          ],
+          checkboxLabel: "I have read and understood the above, and acknowledge that this app does not provide investment advice",
+          acceptButton: "I Agree & Continue"
+        };
+    }
+  };
+  const content = getDisclaimerText();
+  return /* @__PURE__ */ jsx(Dialog, { open, onOpenChange: () => {
+  }, children: /* @__PURE__ */ jsxs(
+    DialogContent,
+    {
+      className: "max-w-lg bg-[#0a0a0a] border-neutral-800 [&>button]:hidden",
+      onPointerDownOutside: (e) => e.preventDefault(),
+      onEscapeKeyDown: (e) => e.preventDefault(),
+      children: [
+        /* @__PURE__ */ jsxs(DialogHeader, { className: "space-y-3", children: [
+          /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "p-3 rounded-full bg-amber-500/10 border border-amber-500/30", children: /* @__PURE__ */ jsx(Shield, { className: "h-8 w-8 text-amber-500" }) }) }),
+          /* @__PURE__ */ jsx(DialogTitle, { className: "text-xl font-bold text-center text-neutral-100", children: content.title }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 text-center", children: content.subtitle })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "space-y-4 py-4", children: [
+          /* @__PURE__ */ jsx("div", { className: "p-4 rounded-lg bg-neutral-900/50 border border-neutral-800", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 mb-3", children: [
+            /* @__PURE__ */ jsx(AlertTriangle, { className: "h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" }),
+            /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-300 leading-relaxed", children: content.mainText })
+          ] }) }),
+          /* @__PURE__ */ jsx("div", { className: "space-y-2.5 pl-2", children: content.bullets.map((bullet, index) => /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2.5", children: [
+            /* @__PURE__ */ jsx(FileText, { className: "h-4 w-4 text-neutral-500 flex-shrink-0 mt-0.5" }),
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-400 leading-relaxed", children: bullet })
+          ] }, index)) }),
+          /* @__PURE__ */ jsx("div", { className: "pt-4 border-t border-neutral-800", children: /* @__PURE__ */ jsxs("label", { className: "flex items-start gap-3 cursor-pointer group", children: [
+            /* @__PURE__ */ jsx(
+              Checkbox,
+              {
+                checked: agreed,
+                onCheckedChange: (checked) => setAgreed(checked === true),
+                className: "mt-0.5 border-neutral-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600",
+                "data-testid": "checkbox-disclaimer-agree"
+              }
+            ),
+            /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-400 group-hover:text-neutral-300 transition-colors leading-relaxed", children: content.checkboxLabel })
+          ] }) })
+        ] }),
+        /* @__PURE__ */ jsx(DialogFooter, { children: /* @__PURE__ */ jsx(
+          Button,
+          {
+            onClick: handleAccept,
+            disabled: !agreed,
+            className: "w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-800 disabled:text-neutral-500",
+            "data-testid": "button-disclaimer-accept",
+            children: content.acceptButton
+          }
+        ) })
+      ]
+    }
+  ) });
+}
 function PublicRouter() {
   return /* @__PURE__ */ jsxs(Switch$1, { children: [
     /* @__PURE__ */ jsx(Route, { path: "/", component: LandingPage }),
@@ -12186,6 +12893,7 @@ function AppContent() {
         lang: terminalLang,
         isPro,
         isAuthenticated,
+        userEmail: user == null ? void 0 : user.email,
         onLoginClick: () => openAuthModal("login"),
         onLogout: logout,
         onCloseMobile: () => setIsMobileMenuOpen(false)
@@ -12291,6 +12999,7 @@ function App() {
   }, []);
   return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsx(LanguageProvider, { children: /* @__PURE__ */ jsx(CurrencyProvider, { children: /* @__PURE__ */ jsx(AccessProvider, { children: /* @__PURE__ */ jsxs(TooltipProvider, { children: [
     /* @__PURE__ */ jsx(AppContent, {}),
+    /* @__PURE__ */ jsx(DisclaimerModal, {}),
     /* @__PURE__ */ jsx(AuthModal, {}),
     /* @__PURE__ */ jsx(PWAInstallPrompt, {}),
     /* @__PURE__ */ jsx(Toaster, {})

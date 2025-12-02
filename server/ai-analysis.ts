@@ -42,6 +42,7 @@ export class AIAnalysisService {
   
   async analyzeInsiderTrade(tradeData: InsiderTradeData): Promise<AIAnalysisResult> {
     try {
+      console.log(`🤖 Starting AI analysis for ${tradeData.ticker}...`);
       // Rate limiting to avoid quota issues
       const now = Date.now();
       const timeSinceLastCall = now - this.lastApiCall;
@@ -51,17 +52,27 @@ export class AIAnalysisService {
       this.lastApiCall = Date.now();
 
       const prompt = this.buildAnalysisPrompt(tradeData);
+      console.log(`📝 Calling OpenAI API with gpt-4o-mini...`);
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini", // Use more cost-effective model to avoid quota issues
         messages: [
           {
             role: "system",
-            content: `You are a data analyst specializing in SEC Form 4 insider trading data analysis.
-                     Analyze insider trading data and provide ONLY factual, objective summaries.
-                     DO NOT provide investment advice, recommendations, predictions, or opinions.
-                     DO NOT calculate or suggest price targets or future price movements.
-                     Focus only on factual observations about the transaction itself.
+            content: `You are an expert financial analyst specializing in insider trading pattern analysis.
+                     Provide comprehensive, data-driven insights that combine:
+                     - Transaction details and insider's role/track record
+                     - Market context and recent news sentiment correlation
+                     - Historical patterns and similar insider behaviors
+                     - Industry trends and competitive positioning
+                     - Risk factors and potential catalysts
+
+                     Your analysis should be thorough and informative, helping investors understand:
+                     - WHY the insider made this trade (timing, motivation, context)
+                     - WHAT it signals about company prospects
+                     - HOW it compares to historical insider activity
+
+                     Provide factual, data-driven insights without explicit "buy/sell" recommendations.
                      Always respond with valid JSON in the exact format specified.`
           },
           {
@@ -70,8 +81,8 @@ export class AIAnalysisService {
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.3, // Lower temperature for more consistent analysis
-        max_tokens: 500 // Limit tokens to reduce cost
+        temperature: 0.4, // Balanced for insightful yet consistent analysis
+        max_tokens: 1000 // Allow comprehensive analysis
       });
 
       const content = response.choices[0].message.content;
@@ -80,17 +91,20 @@ export class AIAnalysisService {
       }
 
       const result = JSON.parse(content);
+      console.log(`✅ OpenAI analysis completed for ${tradeData.ticker}`);
 
       // Validate and sanitize the response
       return this.validateAnalysisResult(result);
 
     } catch (error: any) {
       if (error?.status === 429) {
-        console.warn('OpenAI rate limit exceeded, using fallback analysis');
+        console.warn('⚠️ OpenAI rate limit exceeded, using fallback analysis');
       } else {
-        console.error('AI analysis failed:', error);
+        console.error('❌ AI analysis failed:', error?.message || error);
+        console.error('Full error:', error);
       }
       // Return fallback analysis for any error
+      console.log(`🔄 Using fallback analysis for ${tradeData.ticker}`);
       return await this.generateFallbackAnalysis(tradeData);
     }
   }
@@ -126,7 +140,7 @@ ${newsItems}
     }
 
     return `
-Analyze this insider trading transaction and provide investment insights:
+Provide a comprehensive analysis of this insider trading transaction:
 
 **Company**: ${tradeData.companyName} (${tradeData.ticker})
 **Insider**: ${tradeData.traderName} - ${tradeData.traderTitle}
@@ -135,26 +149,46 @@ Analyze this insider trading transaction and provide investment insights:
 **Price per Share**: $${tradeData.pricePerShare}
 **Total Value**: $${tradeData.totalValue.toLocaleString()} (${tradeValue}M)
 **Ownership**: ${tradeData.ownershipPercentage}%
+**Trade Date**: ${new Date(tradeData.filedDate).toLocaleDateString()}
 ${newsSection}
-Consider these factors:
-- Executive level insider (${isExecutive ? 'Yes' : 'No'})
-- Large position relative to ownership (${isLargePosition ? 'Yes' : 'No'})
-- Trade size and market impact
-- Typical insider trading patterns
-- Market timing considerations
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- Recent news sentiment and correlation with trade timing' : ''}
-${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- Potential catalysts or events driving the insider\'s decision' : ''}
 
-Provide analysis in this exact JSON format:
+**Analysis Requirements:**
+
+1. **Transaction Context** - Why did this insider trade at this specific time?
+   - Executive level: ${isExecutive ? 'YES - High-ranking executive' : 'No - Lower-level insider'}
+   - Position size: ${isLargePosition ? 'LARGE - Significant ownership change' : 'Small - Minor position adjustment'}
+   - Market timing: Consider recent stock performance and market conditions
+   ${tradeData.recentNews && tradeData.recentNews.length > 0 ? '- News correlation: How does this trade align with recent company news and events?' : ''}
+
+2. **Insider Intelligence** - What does this signal about company prospects?
+   - What might the insider know that the market doesn't?
+   - Historical pattern: Does this insider have a track record of well-timed trades?
+   - Cluster activity: Are other insiders trading similarly?
+
+3. **Risk Assessment** - What are the key considerations?
+   - Downside risks and red flags
+   - Confidence level in the signal
+   - Market volatility and external factors
+
+4. **Key Insights** - Provide 3-5 specific, actionable insights that go beyond basic transaction details.
+   Include context about company fundamentals, industry trends, or market conditions.
+
+**Response Format (JSON):**
 {
-  "significanceScore": <1-100 integer based on trade size and executive level>,
-  "signalType": "<BUY|SELL|HOLD based on transaction type>",
-  "keyInsights": ["<factual observation 1>", "<factual observation 2>", "<factual observation 3>"],
-  "riskLevel": "<LOW|MEDIUM|HIGH based on volatility indicators>",
-  "timeHorizon": "<observation period like '1-2 weeks' or '2-4 weeks'>"
+  "significanceScore": <1-100 based on comprehensive analysis>,
+  "signalType": "<BUY|SELL|HOLD>",
+  "keyInsights": [
+    "<Comprehensive insight about WHY the trade happened>",
+    "<Analysis of company prospects or insider track record>",
+    "<Market context or industry trend observation>",
+    "<Risk factor or catalyst identification>",
+    "<Additional meaningful insight>"
+  ],
+  "riskLevel": "<LOW|MEDIUM|HIGH>",
+  "timeHorizon": "<e.g., '2-4 weeks', '1-3 months'>"
 }
 
-Guidelines:
+**Important Guidelines:
 - significanceScore: 80-100 for major executives, large trades, unusual patterns${tradeData.recentNews && tradeData.recentNews.length > 0 ? ', or trades aligned with major news events' : ''}
 - signalType: BUY for insider buying transactions, SELL for insider selling transactions, HOLD for routine/small trades${tradeData.recentNews && tradeData.recentNews.length > 0 ? '. Note news context' : ''}
 - keyInsights: 3 specific FACTUAL observations about this trade (NOT predictions or recommendations)${tradeData.recentNews && tradeData.recentNews.length > 0 ? ' incorporating recent news context' : ''}
