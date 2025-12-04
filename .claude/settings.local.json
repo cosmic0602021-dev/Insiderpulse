@@ -156,7 +156,13 @@
       "Bash(npm run build:server:*)",
       "Bash(then echo \"✅ OpenAI API key is set ($#OPENAI_API_KEY chars)\")",
       "Bash(else echo \"❌ OpenAI API key is NOT set\")",
-      "Bash(time curl:*)"
+      "Bash(time curl:*)",
+      "WebFetch(domain:www.secform4.com)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:www.stocktitan.net)",
+      "WebFetch(domain:www.investing.com)",
+      "Bash(ACCESSION=\"000162828025051639\" curl -s -H \"User-Agent: InsiderPulse contact@insiderpulse.pro\" \"https://www.sec.gov/Archives/edgar/data/1834584/$ACCESSION/ownership.xml\")"
     ],
     "deny": [],
     "ask": []

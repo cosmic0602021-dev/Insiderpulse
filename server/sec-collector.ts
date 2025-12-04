@@ -4,6 +4,7 @@ import { storage } from './storage';
 import { broadcastUpdate } from './routes';
 import { SecCamoufoxClient } from './sec-camoufox-client.js';
 import type { InsertInsiderTrade } from '@shared/schema';
+import { parseSecForm4 } from './sec-parser.js';
 
 // SEC-compliant HTTP client to prevent WAF blocking
 class SecHttpClient {
@@ -271,11 +272,19 @@ class SECDataCollector {
       try {
         console.log(`🔍 Trying direct XML path: ${xmlUrl}`);
         const xmlData = await secHttpClient.get(xmlUrl, 'application/xml');
-        const parsedData = await parseStringPromise(xmlData);
-        const result = this.parseForm4XML(parsedData, accessionNumber);
-        if (result) {
+
+        // Use advanced parser that supports both Table 1 and Table 2
+        const trades = await parseSecForm4(xmlData, accessionNumber);
+
+        if (trades.length > 0) {
           console.log(`✅ Successfully found XML at: ${xmlUrl}`);
-          return result;
+          console.log(`   📊 Parsed ${trades.length} transaction(s) (Table 1 + Table 2)`);
+
+          // Return first trade with all trades attached
+          return {
+            ...this.convertParsedTradeToFiling(trades[0]),
+            allTrades: trades.map(t => this.convertParsedTradeToFiling(t))
+          };
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -297,129 +306,30 @@ class SECDataCollector {
     }
   }
 
-  private parseForm4XML(xmlData: any, accessionNumber: string) {
-    const doc = xmlData.ownershipDocument || xmlData;
-    
-    // Extract issuer information - use direct ticker from SEC data
-    const issuer = doc.issuer?.[0] || {};
-    const companyName = issuer.issuerName?.[0]?.value?.[0] || issuer.issuerName?.[0];
-    const ticker = issuer.issuerTradingSymbol?.[0]?.value?.[0] || issuer.issuerTradingSymbol?.[0] || '';
-    const cik = issuer.issuerCik?.[0]?.value?.[0] || issuer.issuerCik?.[0] || '';
-    
-    // Extract reporting owner information
-    const reportingOwner = doc.reportingOwner?.[0] || {};
-    const ownerInfo = reportingOwner.reportingOwnerId?.[0] || {};
-    const traderName = ownerInfo.rptOwnerName?.[0]?.value?.[0] || ownerInfo.rptOwnerName?.[0];
-    
-    console.log(`🔍 [DEBUG] Parsing accession ${accessionNumber}:`);
-    console.log(`   Company: ${companyName} | Trader: ${traderName} | Ticker: ${ticker} | CIK: ${cik}`);
-    
-    // Skip processing if critical data is missing
-    if (!companyName || !traderName) {
-      console.warn(`⚠️ Missing critical data for ${accessionNumber} - company: ${companyName}, trader: ${traderName}`);
-      return null;
-    }
-    
-    // Extract relationship information
-    const relationship = reportingOwner.reportingOwnerRelationship?.[0] || {};
-    const traderTitle = this.determineTraderTitle(relationship);
-    
-    // CRITICAL: Only process nonDerivativeTable for common stock transactions
-    const nonDerivativeTable = doc.nonDerivativeTable?.[0];
-    const transactions = nonDerivativeTable?.nonDerivativeTransaction || [];
-    
-    if (transactions.length === 0) {
-      console.log(`⚠️ No non-derivative transactions found for ${accessionNumber}`);
-      return null;
-    }
-    
-    // Process all transactions and find valid P/S transactions
-    let validTransaction = null;
-    for (const transaction of transactions) {
-      const transactionCoding = transaction.transactionCoding?.[0] || {};
-      const transactionCode = transactionCoding.transactionCode?.[0]?.value?.[0] || transactionCoding.transactionCode?.[0];
-      
-      console.log(`   🔍 Transaction code: ${transactionCode}`);
-      
-      // Process P, S, M, A, U transactions - expanded for more coverage
-      // P=BUY, S=SELL, M=BUY(option exercise), A=BUY(award), U=TRANSFER
-      const validCodes = ['P', 'S', 'M', 'A', 'U'];
-      if (!validCodes.includes(transactionCode)) {
-        console.log(`   ⏭️ Skipping transaction with code '${transactionCode}' (not ${validCodes.join('/')})`);
-        continue;
-      }
-      
-      const transactionAmounts = transaction.transactionAmounts?.[0] || {};
-      const postTransaction = transaction.postTransactionAmounts?.[0] || {};
-      
-      const shares = parseInt(transactionAmounts.transactionShares?.[0]?.value?.[0] || '0');
-      let pricePerShare = parseFloat(transactionAmounts.transactionPricePerShare?.[0]?.value?.[0] || '0');
-      const acquiredDisposed = transactionAmounts.transactionAcquiredDisposedCode?.[0]?.value?.[0];
-      const sharesOwned = parseInt(postTransaction.sharesOwnedFollowingTransaction?.[0]?.value?.[0] || '0');
-      
-      // Allow $0 price for transfer/conversion transactions (U code)
-      if (transactionCode === 'U') {
-        // For transfers, price can be $0 - this is legitimate for conversions/transfers
-        if (pricePerShare < 0 || pricePerShare > 10000) {
-          console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
-          continue;
-        }
-        if (pricePerShare === 0) {
-          console.log(`   🔄 Transfer transaction with $0 consideration (legitimate)`);
-        }
-      } else {
-        // For other transactions, require valid price
-        if (pricePerShare <= 0 || pricePerShare > 10000) {
-          console.warn(`   ⚠️ Invalid price per share: $${pricePerShare} - skipping transaction`);
-          continue;
-        }
-      }
-      
-      // Validate shares count
-      if (shares <= 0) {
-        console.warn(`   ⚠️ Invalid shares count: ${shares} - skipping transaction`);
-        continue;
-      }
-      
-      console.log(`   ✅ Valid transaction found: ${transactionCode} - ${shares} shares at $${pricePerShare}`);
-      
-      // Calculate ownership percentage
-      const ownershipPercentage = sharesOwned > 0 && shares > 0 ? 
-        parseFloat(((shares / sharesOwned) * 100).toFixed(2)) : 0;
-      
-      // Map transaction codes to trade types
-      const tradeType: 'BUY' | 'SELL' | 'TRANSFER' = 
-        transactionCode === 'P' || transactionCode === 'M' || transactionCode === 'A' ? 'BUY' :
-        transactionCode === 'S' ? 'SELL' : 'TRANSFER';
-      const transactionDate = transaction.transactionDate?.[0]?.value?.[0];
-      
-      validTransaction = {
-        company: companyName,
-        ticker: ticker || null,
-        cik: cik,
-        traderName: traderName,
-        traderTitle: traderTitle,
-        tradeType: tradeType,
-        shares: shares,
-        price: pricePerShare,
-        ownershipPercentage: ownershipPercentage,
-        accession: accessionNumber,
-        date: transactionDate || new Date().toISOString(),
-        transactionCode: transactionCode,
-        link: `https://www.sec.gov/edgar/browse/?accession=${accessionNumber.replace(/-/g, '')}`
-      };
-      
-      // Use the first valid P/S transaction
-      break;
-    }
-    
-    if (!validTransaction) {
-      console.log(`   ⚠️ No valid P/S transactions found for ${accessionNumber}`);
-      return null;
-    }
-    
-    return validTransaction;
+  // Convert ParsedTrade from sec-parser.ts to legacy filing format
+  private convertParsedTradeToFiling(trade: any): any {
+    const accessionNoDashes = trade.accessionNumber.replace(/-/g, '');
+    return {
+      company: trade.companyName,
+      ticker: trade.ticker || null,
+      cik: '', // Not available in ParsedTrade
+      traderName: trade.traderName,
+      traderTitle: trade.traderTitle,
+      tradeType: trade.tradeType,
+      shares: trade.shares,
+      price: trade.pricePerShare,
+      ownershipPercentage: trade.ownershipPercentage,
+      accession: trade.accessionNumber,
+      date: trade.filedDate.toISOString(),
+      transactionCode: '', // Not directly available
+      link: trade.secFilingUrl || `https://www.sec.gov/edgar/browse/?accession=${accessionNoDashes}`,
+      // NEW: Derivative fields from advanced parser
+      isDerivative: trade.isDerivative || false,
+      underlyingShares: trade.underlyingShares,
+      derivativeType: trade.derivativeType
+    };
   }
+
 
   private async parseFilingPage(filingUrl: string, accessionNumber: string) {
     try {
@@ -491,33 +401,24 @@ class SECDataCollector {
       // Fetch and parse the XML using SEC-compliant client
       const xmlResponse = await secHttpClient.get(xmlUrl, 'application/xml');
 
-      // Parse XML directly without manual entity decoding (that corrupts valid XML)
-      const xmlData = await parseStringPromise(xmlResponse, {
-        explicitArray: true,
-        strict: true
-      });
-      
-      return this.parseForm4XML(xmlData, accessionNumber);
+      // Use advanced parser that supports both Table 1 and Table 2
+      const trades = await parseSecForm4(xmlResponse, accessionNumber);
+
+      if (trades.length > 0) {
+        console.log(`   📊 Parsed ${trades.length} transaction(s) (Table 1 + Table 2)`);
+        // Return first trade with all trades attached
+        return {
+          ...this.convertParsedTradeToFiling(trades[0]),
+          allTrades: trades.map(t => this.convertParsedTradeToFiling(t))
+        };
+      }
+
+      return null;
 
     } catch (error) {
-      // Fallback to less strict parsing if needed
+      // Note: parseSecForm4 handles XML parsing internally
+      // No need for fallback parsing here
       const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('Unexpected') || errorMessage.includes('Non-whitespace')) {
-        try {
-          console.log(`📄 Retrying XML parse with relaxed settings for ${accessionNumber}...`);
-          const errorData = (error as any)?.data || '';
-          const xmlData = await parseStringPromise(errorData, {
-            explicitArray: true,
-            strict: false,
-            trim: true
-          });
-          return this.parseForm4XML(xmlData, accessionNumber);
-        } catch (retryError) {
-          const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
-          console.warn(`⚠️ Failed to parse XML for ${accessionNumber} even with relaxed settings:`, retryMessage);
-        }
-      }
-      
       console.warn(`⚠️ Failed to find/parse XML document for ${accessionNumber}:`, errorMessage);
       return null;
     }
@@ -591,34 +492,38 @@ class SECDataCollector {
   private async processFilings(filings: any[]) {
     for (const filing of filings) {
       try {
-        // Skip filings with missing critical data
-        if (!filing.company || !filing.traderName || filing.shares <= 0) {
-          console.log(`⏭️ Skipping filing with insufficient data: ${filing.company}`);
-          continue;
-        }
+        // Handle multiple trades from advanced parser (Table 1 + Table 2)
+        const tradesToProcess = filing.allTrades || [filing];
 
-        const tradeValue = filing.shares * filing.price;
+        for (const trade of tradesToProcess) {
+          // Skip filings with missing critical data
+          if (!trade.company || !trade.traderName || trade.shares <= 0) {
+            console.log(`⏭️ Skipping filing with insufficient data: ${trade.company}`);
+            continue;
+          }
+
+          const tradeValue = trade.shares * trade.price;
         
-        // CRITICAL: Validate price against market data
-        let isVerified = false;
-        let verificationStatus = 'PENDING';
-        let verificationNotes = '';
-        let marketPrice: number | null = null;
-        let priceVariance: number | null = null;
-        
-        // Get market price for validation if ticker exists
-        if (filing.ticker) {
-          try {
-            console.log(`🔍 Validating price for ${filing.ticker}: SEC price $${filing.price}`);
-            const marketData = await this.getMarketPriceForValidation(filing.ticker, filing.date);
+          // CRITICAL: Validate price against market data
+          let isVerified = false;
+          let verificationStatus = 'PENDING';
+          let verificationNotes = '';
+          let marketPrice: number | null = null;
+          let priceVariance: number | null = null;
+
+          // Get market price for validation if ticker exists
+          if (trade.ticker) {
+            try {
+              console.log(`🔍 Validating price for ${trade.ticker}: SEC price $${trade.price}`);
+              const marketData = await this.getMarketPriceForValidation(trade.ticker, trade.date);
             
             if (marketData) {
               marketPrice = marketData.price;
-              const variance = Math.abs((filing.price - marketPrice) / marketPrice) * 100;
+              const variance = Math.abs((trade.price - marketPrice) / marketPrice) * 100;
               priceVariance = parseFloat(variance.toFixed(2));
-              
-              console.log(`   📊 Market price: $${marketPrice}, SEC price: $${filing.price}, Variance: ${priceVariance}%`);
-              
+
+              console.log(`   📊 Market price: $${marketPrice}, SEC price: $${trade.price}, Variance: ${priceVariance}%`);
+
               // Mark as verified if price is within reasonable range (±10%)
               if (priceVariance <= 10) {
                 isVerified = true;
@@ -641,55 +546,65 @@ class SECDataCollector {
             verificationNotes = `Market validation error: ${errorMessage}`;
             console.warn(`   ⚠️ Market validation failed: ${errorMessage}`);
           }
-        } else {
-          verificationNotes = 'No ticker symbol available for market validation';
-        }
-        
-        // Simple trade processing without AI analysis
-        console.log(`📊 Processing trade data for ${filing.traderName} at ${filing.company}...`);
+          } else {
+            verificationNotes = 'No ticker symbol available for market validation';
+          }
 
-        // Create insider trade record with verification data only
-        const tradeData: InsertInsiderTrade = {
-          accessionNumber: filing.accession,
-          companyName: filing.company,
-          ticker: filing.ticker || null,
-          traderName: filing.traderName,
-          traderTitle: filing.traderTitle,
-          tradeType: filing.tradeType,
-          shares: filing.shares,
-          pricePerShare: filing.price,
-          totalValue: tradeValue,
-          ownershipPercentage: filing.ownershipPercentage,
-          filedDate: new Date(filing.date),
-          aiAnalysis: null, // Deprecated field
-          significanceScore: undefined, // No AI analysis
-          signalType: undefined, // No AI analysis
-          // Add verification data
-          isVerified: isVerified,
-          verificationStatus: verificationStatus,
-          verificationNotes: verificationNotes,
-          marketPrice: marketPrice || undefined,
-          priceVariance: priceVariance || undefined,
-          secFilingUrl: filing.link
-        };
+          // Determine trade type label for logging
+          const tradeTypeLabel = trade.isDerivative
+            ? `📊 DERIVATIVE (${trade.derivativeType || 'Unknown'})`
+            : `📈 DIRECT`;
 
-        // Use upsert to handle duplicates gracefully
-        const trade = await storage.upsertInsiderTrade(tradeData);
-        
-        const statusIcon = isVerified ? '✅' : '⚠️';
-        console.log(`${statusIcon} Trade processed: ${filing.tradeType} - ${filing.traderName} (${filing.traderTitle}) at ${filing.company}`);
-        console.log(`   📊 Value: ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
-        console.log(`   🔍 Verification: ${verificationStatus}${priceVariance ? ` (${priceVariance}% variance)` : ''}`);
-        
-        // Broadcast all trades to WebSocket clients (verified and unverified)
-        broadcastUpdate('NEW_TRADE', {
-          trade: trade
-        });
-        console.log(`   📡 Trade broadcasted to WebSocket clients`);
-        
-        // Delay to avoid overwhelming OpenAI API and SEC servers
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+          // Simple trade processing without AI analysis
+          console.log(`${tradeTypeLabel} Processing trade data for ${trade.traderName} at ${trade.company}...`);
+
+          // Create insider trade record with verification data AND derivative fields
+          const tradeData: InsertInsiderTrade = {
+            accessionNumber: trade.accession,
+            companyName: trade.company,
+            ticker: trade.ticker || null,
+            traderName: trade.traderName,
+            traderTitle: trade.traderTitle,
+            tradeType: trade.tradeType,
+            shares: trade.shares,
+            pricePerShare: trade.price,
+            totalValue: tradeValue,
+            ownershipPercentage: trade.ownershipPercentage,
+            filedDate: new Date(trade.date),
+            aiAnalysis: null, // Deprecated field
+            significanceScore: undefined, // No AI analysis
+            signalType: undefined, // No AI analysis
+            // Add verification data
+            isVerified: isVerified,
+            verificationStatus: verificationStatus,
+            verificationNotes: verificationNotes,
+            marketPrice: marketPrice || undefined,
+            priceVariance: priceVariance || undefined,
+            secFilingUrl: trade.link,
+            // NEW: Add derivative fields from advanced parser
+            isDerivative: trade.isDerivative || false,
+            underlyingShares: trade.underlyingShares,
+            derivativeType: trade.derivativeType
+          };
+
+          // Use upsert to handle duplicates gracefully
+          const insertedTrade = await storage.upsertInsiderTrade(tradeData);
+
+          const statusIcon = isVerified ? '✅' : '⚠️';
+          console.log(`${statusIcon} Trade processed: ${tradeTypeLabel} ${trade.tradeType} - ${trade.traderName} (${trade.traderTitle}) at ${trade.company}`);
+          console.log(`   📊 Value: ${tradeValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`);
+          console.log(`   🔍 Verification: ${verificationStatus}${priceVariance ? ` (${priceVariance}% variance)` : ''}`);
+
+          // Broadcast all trades to WebSocket clients (verified and unverified)
+          broadcastUpdate('NEW_TRADE', {
+            trade: insertedTrade
+          });
+          console.log(`   📡 Trade broadcasted to WebSocket clients`);
+
+          // Delay to avoid overwhelming OpenAI API and SEC servers
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } // End of tradesToProcess loop
+
       } catch (error: any) {
         console.error(`❌ Error processing filing for ${filing.company}:`, error);
         if (error.message?.includes('rate limit')) {
