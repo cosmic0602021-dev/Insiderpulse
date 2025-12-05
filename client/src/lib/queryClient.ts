@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { ENV_CONFIG } from './environment';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -37,7 +38,7 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
+      credentials: ENV_CONFIG.isAppintos ? "omit" : "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

@@ -1,6 +1,8 @@
 import type { TradingStats, InsiderTrade } from '@shared/schema';
+import { ENV_CONFIG } from './environment';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = ENV_CONFIG.apiBaseUrl;
+console.log('🌐 [API CLIENT] API Base URL:', API_BASE_URL, 'Appintos:', ENV_CONFIG.isAppintos);
 
 export interface AccessLevel {
   hasRealtimeAccess: boolean;
@@ -74,6 +76,13 @@ class ApiClient {
       console.log('🔑 [API CLIENT] Adding Authorization header to request:', endpoint);
     } else {
       console.log('⚠️ [API CLIENT] No token available for request:', endpoint);
+    }
+
+    // 앱인토스 서명 추가 (있는 경우)
+    const appintosSignature = sessionStorage.getItem('appintos_signature');
+    if (appintosSignature) {
+      headers['X-Appintos-Signature'] = appintosSignature;
+      console.log('🔗 [API CLIENT] Adding Appintos signature to request');
     }
 
     // Merge existing headers from options (won't override Authorization)

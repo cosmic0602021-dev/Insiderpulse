@@ -1,8 +1,66 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { getPlatformOS, getOperationalEnvironment, getSchemeUri } from '@apps-in-toss/web-framework';
 
 console.log('🚀 main.tsx loading...');
+
+// 앱인토스 환경인지 확인
+function isAppintosEnvironment() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.has('signature') ||
+           urlParams.has('appintos') ||
+           (typeof window !== 'undefined' && (window as any).__APPINTOS__);
+  } catch {
+    return false;
+  }
+}
+
+// 앱인토스 브리지 초기화
+function initializeAppintosBridge() {
+  if (!isAppintosEnvironment()) {
+    console.log('📱 Not in Appintos environment, skipping bridge initialization');
+    return { success: true, mode: 'browser' };
+  }
+
+  try {
+    console.log('🔗 Initializing Appintos bridge...');
+
+    // 앱인토스 환경 정보 가져오기 (브리지 활성화)
+    const platform = getPlatformOS(); // 'ios' | 'android'
+    const env = getOperationalEnvironment(); // 'production' | 'sandbox'
+    const schemeUri = getSchemeUri();
+
+    console.log('✅ Appintos bridge initialized:', { platform, env, schemeUri });
+
+    // URL에서 signature 추출 및 저장
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('signature')) {
+      const signature = urlParams.get('signature');
+      sessionStorage.setItem('appintos_signature', signature || '');
+      console.log('🔑 Appintos signature stored');
+    }
+
+    return { success: true, mode: 'appintos', platform, env };
+  } catch (error) {
+    console.error('❌ Appintos bridge initialization failed:', error);
+
+    // 서명 관련 에러인 경우 사용자에게 명확한 메시지 표시
+    if (error instanceof Error && error.message.toLowerCase().includes('signature')) {
+      displayError(
+        '⚠️ Appintos 인증 실패',
+        error.message,
+        '토스 앱의 공식 QR 코드를 통해 접속해주세요.'
+      );
+      return { success: false, error: 'signature_missing' };
+    }
+
+    // 다른 에러는 브라우저 모드로 폴백
+    console.warn('Falling back to browser mode due to error:', error);
+    return { success: true, mode: 'browser', warning: error };
+  }
+}
 
 // Helper function to safely display error messages
 function displayError(title: string, errorContent: string, additionalMessage?: string) {
@@ -78,13 +136,22 @@ window.addEventListener('unhandledrejection', (event) => {
 console.log('🔍 Attempting to mount React app...');
 
 try {
-  const root = document.getElementById("root");
-  if (!root) {
-    throw new Error("Root element not found");
+  // 앱인토스 브리지 초기화 (React 앱보다 먼저)
+  const bridgeResult = initializeAppintosBridge();
+
+  // 초기화 성공 시에만 앱 렌더링
+  if (bridgeResult.success) {
+    const root = document.getElementById("root");
+    if (!root) {
+      throw new Error("Root element not found");
+    }
+    console.log('✅ Root element found, rendering app...');
+    createRoot(root).render(<App />);
+    console.log('✅ App rendered successfully');
+  } else {
+    console.error('Cannot proceed without valid Appintos initialization');
+    // displayError는 initializeAppintosBridge에서 이미 호출됨
   }
-  console.log('✅ Root element found, rendering app...');
-  createRoot(root).render(<App />);
-  console.log('✅ App rendered successfully');
 } catch (error) {
   console.error('❌ App initialization error:', error);
   displayError(

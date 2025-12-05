@@ -37,13 +37,20 @@ app.use((req, res, next) => {
     'http://127.0.0.1:5000'
   ].filter(Boolean);
 
-  // SECURITY FIX: Use exact match instead of includes() to prevent subdomain attacks
-  // (e.g., "insiderpulse.pro.evil.com" should NOT pass)
-  if (origin && allowedOrigins.includes(origin)) {
+  // Check exact match
+  let isAllowed = origin && allowedOrigins.includes(origin);
+
+  // Also allow Appintos domains (they have dynamic subdomains)
+  if (!isAllowed && origin) {
+    const appintosDomains = ['.apps-in-toss.com', '.toss.im', '.appintos.com'];
+    isAllowed = appintosDomains.some(domain => origin.endsWith(domain));
+  }
+
+  if (isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature');
   }
 
   // Handle preflight requests

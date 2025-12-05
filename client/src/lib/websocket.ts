@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ENV_CONFIG } from './environment';
 
 type WebSocketMessage = {
   type: string;
@@ -129,26 +130,6 @@ export function useWebSocket(url: string): WebSocketHook {
 }
 
 export function getWebSocketUrl(): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  
-  // Prefer using window.location.host directly when available and valid
-  if (window.location.host && !window.location.host.includes('undefined')) {
-    return `${protocol}//${window.location.host}/api/ws`;
-  }
-  
-  // Fallback to hostname with proper port handling
-  let host = window.location.hostname || 'localhost';
-  
-  // Get port from current location, environment variable, or default to 5000
-  let port = window.location.port;
-  if (!port || port === 'undefined') {
-    port = import.meta.env.VITE_PORT || '5000';
-  }
-  
-  // Only add port if it's not default for the protocol
-  if (port && port !== '80' && port !== '443') {
-    host = `${host}:${port}`;
-  }
-  
-  return `${protocol}//${host}/api/ws`;
+  console.log('🔌 [WS] WebSocket URL:', ENV_CONFIG.wsBaseUrl);
+  return ENV_CONFIG.wsBaseUrl;
 }
