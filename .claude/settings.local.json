@@ -165,7 +165,8 @@
       "Bash(ACCESSION=\"000162828025051639\" curl -s -H \"User-Agent: InsiderPulse contact@insiderpulse.pro\" \"https://www.sec.gov/Archives/edgar/data/1834584/$ACCESSION/ownership.xml\")",
       "Bash(npx ait build)",
       "Bash(npx ait:*)",
-      "Bash(npx granite:*)"
+      "Bash(npx granite:*)",
+      "Bash(npx @apps-in-toss/cli:*)"
     ],
     "deny": [],
     "ask": []
