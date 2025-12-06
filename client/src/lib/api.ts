@@ -327,6 +327,19 @@ class ApiClient {
       body: JSON.stringify({ token, newPassword }),
     });
   }
+
+  // Rankings API
+  getRankings = async (language: string = 'en', limit: number = 10): Promise<any> => {
+    const params = new URLSearchParams({
+      language,
+      limit: limit.toString()
+    });
+
+    const url = `/rankings?${params.toString()}`;
+    console.log(`🌐 [API] Requesting rankings: ${url}`);
+
+    return this.request(url);
+  }
 }
 
 export const apiClient = new ApiClient();
@@ -345,6 +358,11 @@ export const queryKeys = {
     list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[] }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
+  },
+  rankings: {
+    all: ['rankings'] as const,
+    list: (params: { language?: string; limit?: number }) =>
+      ['rankings', 'list', params] as const,
   },
   trial: {
     status: ['trial', 'status'] as const,

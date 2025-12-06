@@ -29,6 +29,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
+import { ENV_CONFIG } from '@/lib/environment';
+import { DebugPanel } from '@/components/debug-panel';
 
 interface DataQualityStatus {
   isValid: boolean;
@@ -685,6 +687,9 @@ export default function LiveTrading() {
         isInWatchlist={selectedTrade?.ticker ? watchlist.includes(selectedTrade.ticker) : false}
         data-testid="trade-detail-modal"
       />
+
+      {/* Debug Panel - 앱인토스 환경에서만 표시 */}
+      {ENV_CONFIG.isAppintos && <DebugPanel />}
       </div>
     </div>
   );

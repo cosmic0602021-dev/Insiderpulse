@@ -20,13 +20,36 @@ export function isAppintosEnvironment(): boolean {
   }
 
   try {
+    // React Native WebView 환경 감지 (가장 확실한 방법)
+    if ((window as any).ReactNativeWebView) {
+      console.log('🔍 [ENV] Detected ReactNativeWebView');
+      return true;
+    }
+
+    // Appintos 특정 객체 감지
+    if ((window as any).__APPINTOS__) {
+      console.log('🔍 [ENV] Detected __APPINTOS__');
+      return true;
+    }
+
+    // URL 파라미터 확인
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('signature') || urlParams.has('appintos')) return true;
-    if ((window as any).__APPINTOS__) return true;
+    if (urlParams.has('signature') || urlParams.has('appintos')) {
+      console.log('🔍 [ENV] Detected signature/appintos param');
+      return true;
+    }
+
+    // 호스트네임 확인
     const hostname = window.location.hostname;
-    if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im')) return true;
+    if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im')) {
+      console.log('🔍 [ENV] Detected Appintos hostname');
+      return true;
+    }
+
+    console.log('🔍 [ENV] No Appintos indicators found');
     return false;
-  } catch {
+  } catch (error) {
+    console.error('🔍 [ENV] Error detecting environment:', error);
     return false;
   }
 }
@@ -72,5 +95,15 @@ function getRelativeWebSocketUrl(): string {
   return `${protocol}//${host}/api/ws`;
 }
 
-// Export singleton instance
-export const ENV_CONFIG = getEnvironmentConfig();
+// Lazy initialization - 매번 새로 평가하여 앱인토스 환경을 정확히 감지
+let _cachedConfig: EnvironmentConfig | null = null;
+
+export const ENV_CONFIG = new Proxy({} as EnvironmentConfig, {
+  get(target, prop) {
+    // 캐시가 없으면 생성
+    if (!_cachedConfig) {
+      _cachedConfig = getEnvironmentConfig();
+    }
+    return _cachedConfig[prop as keyof EnvironmentConfig];
+  }
+});

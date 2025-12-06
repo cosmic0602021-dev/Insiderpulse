@@ -8,11 +8,13 @@ import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
-import { apiClient } from '@/lib/api';
+import { apiClient, queryKeys } from '@/lib/api';
 import html2canvas from 'html2canvas';
 import { useLocation } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
+import { ENV_CONFIG } from '@/lib/environment';
+import { DebugPanel } from '@/components/debug-panel';
 
 // Global cache for AI analysis - shared across all users/sessions
 const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
@@ -110,8 +112,16 @@ export default function Ranking() {
   });
 
   const { data, isLoading, error, refetch } = useQuery<RankingsResponse>({
-    queryKey: ['/api/rankings', language],
-    queryFn: () => fetch(`/api/rankings?language=${language}`).then(res => res.json()),
+    queryKey: queryKeys.rankings.list({ language, limit: 100 }),
+    queryFn: async () => {
+      console.log('[RANKING] Fetching rankings via apiClient');
+      const result = await apiClient.getRankings(language, 100);
+      console.log('[RANKING] Rankings data received:', {
+        count: result.rankings?.length || 0,
+        generatedAt: result.generatedAt
+      });
+      return result;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -139,7 +149,9 @@ export default function Ranking() {
 
       // Try 1: Enhanced API with ticker filter
       try {
-        const response = await fetch(`/api/enhanced/trades?ticker=${ticker}&limit=50`);
+        const enhancedUrl = `${ENV_CONFIG.apiBaseUrl.replace('/api', '')}/api/enhanced/trades?ticker=${ticker}&limit=50`;
+        console.log(`[RANKING] Enhanced API URL:`, enhancedUrl);
+        const response = await fetch(enhancedUrl);
         console.log(`[RANKING] Enhanced API response status: ${response.status}`);
 
         if (response.ok) {
@@ -392,13 +404,36 @@ export default function Ranking() {
   if (error) {
     return (
       <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-destructive mb-4">{t('ranking.noData')}</p>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t('ranking.refreshData')}
-            </Button>
+        <Card className="border-red-500/50 bg-red-900/20">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <p className="text-red-400 font-semibold text-lg">
+                {t('ranking.noData')}
+              </p>
+              <p className="text-red-300 text-sm">
+                {error instanceof Error ? error.message : String(error)}
+              </p>
+
+              {/* 환경 정보 표시 */}
+              <div className="mt-4 p-4 bg-black/50 rounded text-left text-xs font-mono space-y-1">
+                <div><span className="text-yellow-500">Mode:</span> {ENV_CONFIG.isAppintos ? 'Appintos' : 'Browser'}</div>
+                <div><span className="text-yellow-500">API URL:</span> {ENV_CONFIG.apiBaseUrl}</div>
+                <div><span className="text-yellow-500">Hostname:</span> {window.location.hostname}</div>
+              </div>
+
+              <div className="flex gap-3 justify-center">
+                <Button onClick={handleRefresh} variant="outline" className="border-red-500 text-red-400">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {t('ranking.refreshData')}
+                </Button>
+                <Button
+                  onClick={() => setLocation('/trades')}
+                  variant="default"
+                >
+                  Live Trading 페이지로 이동
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -978,6 +1013,9 @@ export default function Ranking() {
           </div>
         </div>
       )}
+
+      {/* Debug Panel - 앱인토스 환경에서만 표시 */}
+      {ENV_CONFIG.isAppintos && <DebugPanel />}
       </div>
     </div>
   );

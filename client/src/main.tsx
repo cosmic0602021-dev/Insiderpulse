@@ -2,20 +2,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { getPlatformOS, getOperationalEnvironment, getSchemeUri } from '@apps-in-toss/web-framework';
+import { isAppintosEnvironment } from './lib/environment';
 
 console.log('🚀 main.tsx loading...');
-
-// 앱인토스 환경인지 확인
-function isAppintosEnvironment() {
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.has('signature') ||
-           urlParams.has('appintos') ||
-           (typeof window !== 'undefined' && (window as any).__APPINTOS__);
-  } catch {
-    return false;
-  }
-}
 
 // 앱인토스 브리지 초기화
 function initializeAppintosBridge() {
