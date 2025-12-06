@@ -688,8 +688,8 @@ export default function LiveTrading() {
         data-testid="trade-detail-modal"
       />
 
-      {/* Debug Panel - 앱인토스 환경에서만 표시 */}
-      {ENV_CONFIG.isAppintos && <DebugPanel />}
+      {/* Debug Panel - 임시로 항상 표시 (진단용) */}
+      <DebugPanel />
       </div>
     </div>
   );

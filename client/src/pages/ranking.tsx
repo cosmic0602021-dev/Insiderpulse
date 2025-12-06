@@ -414,11 +414,17 @@ export default function Ranking() {
                 {error instanceof Error ? error.message : String(error)}
               </p>
 
-              {/* 환경 정보 표시 */}
+              {/* 환경 정보 표시 (더 상세하게) */}
               <div className="mt-4 p-4 bg-black/50 rounded text-left text-xs font-mono space-y-1">
                 <div><span className="text-yellow-500">Mode:</span> {ENV_CONFIG.isAppintos ? 'Appintos' : 'Browser'}</div>
                 <div><span className="text-yellow-500">API URL:</span> {ENV_CONFIG.apiBaseUrl}</div>
                 <div><span className="text-yellow-500">Hostname:</span> {window.location.hostname}</div>
+                <div><span className="text-yellow-500">Protocol:</span> {window.location.protocol}</div>
+                <div><span className="text-yellow-500">Has __APPINTOS__:</span> {!!(window as any).__APPINTOS__ ? 'Yes' : 'No'}</div>
+                <div><span className="text-yellow-500">Has Signature:</span> {
+                  !!(localStorage.getItem('appintos_signature') || sessionStorage.getItem('appintos_signature')) ? 'Yes' : 'No'
+                }</div>
+                <div><span className="text-yellow-500">User-Agent:</span> {navigator.userAgent.substring(0, 60)}...</div>
               </div>
 
               <div className="flex gap-3 justify-center">
@@ -1014,8 +1020,8 @@ export default function Ranking() {
         </div>
       )}
 
-      {/* Debug Panel - 앱인토스 환경에서만 표시 */}
-      {ENV_CONFIG.isAppintos && <DebugPanel />}
+      {/* Debug Panel - 임시로 항상 표시 (진단용) */}
+      <DebugPanel />
       </div>
     </div>
   );

@@ -8,32 +8,39 @@ console.log('🚀 main.tsx loading...');
 
 // 앱인토스 브리지 초기화
 function initializeAppintosBridge() {
-  if (!isAppintosEnvironment()) {
-    console.log('📱 Not in Appintos environment, skipping bridge initialization');
-    return { success: true, mode: 'browser' };
-  }
-
   try {
-    console.log('🔗 Initializing Appintos bridge...');
+    // ✅ 조건 체크 제거 - 앱인토스 함수를 먼저 시도
+    console.log('🔗 Attempting Appintos bridge initialization...');
 
     // 앱인토스 환경 정보 가져오기 (브리지 활성화)
-    const platform = getPlatformOS(); // 'ios' | 'android'
-    const env = getOperationalEnvironment(); // 'production' | 'sandbox'
+    const platform = getPlatformOS(); // 'ios' | 'android' | throws error
+    const env = getOperationalEnvironment(); // 'production' | 'sandbox' | throws error
     const schemeUri = getSchemeUri();
 
     console.log('✅ Appintos bridge initialized:', { platform, env, schemeUri });
 
+    // ✅ 성공했으면 앱인토스 환경
     // URL에서 signature 추출 및 저장
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('signature')) {
-      const signature = urlParams.get('signature');
-      sessionStorage.setItem('appintos_signature', signature || '');
+    const signature = urlParams.get('signature');
+    if (signature) {
+      // localStorage에도 저장 (sessionStorage 대체재로)
+      try {
+        localStorage.setItem('appintos_signature', signature);
+      } catch (e) {
+        console.warn('localStorage unavailable, using sessionStorage only');
+      }
+      sessionStorage.setItem('appintos_signature', signature);
       console.log('🔑 Appintos signature stored');
     }
 
+    // ✅ 전역 플래그 설정 (environment.ts가 사용)
+    (window as any).__APPINTOS__ = { platform, env, schemeUri };
+
     return { success: true, mode: 'appintos', platform, env };
   } catch (error) {
-    console.error('❌ Appintos bridge initialization failed:', error);
+    // ✅ 에러 발생 → 브라우저 환경
+    console.log('📱 Not in Appintos environment (functions failed):', error);
 
     // 서명 관련 에러인 경우 사용자에게 명확한 메시지 표시
     if (error instanceof Error && error.message.toLowerCase().includes('signature')) {
@@ -46,7 +53,6 @@ function initializeAppintosBridge() {
     }
 
     // 다른 에러는 브라우저 모드로 폴백
-    console.warn('Falling back to browser mode due to error:', error);
     return { success: true, mode: 'browser', warning: error };
   }
 }

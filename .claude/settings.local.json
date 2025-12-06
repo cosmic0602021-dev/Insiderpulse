@@ -166,7 +166,8 @@
       "Bash(npx ait build)",
       "Bash(npx ait:*)",
       "Bash(npx granite:*)",
-      "Bash(npx @apps-in-toss/cli:*)"
+      "Bash(npx @apps-in-toss/cli:*)",
+      "WebFetch(domain:developers-apps-in-toss.toss.im)"
     ],
     "deny": [],
     "ask": []

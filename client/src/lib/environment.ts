@@ -95,15 +95,18 @@ function getRelativeWebSocketUrl(): string {
   return `${protocol}//${host}/api/ws`;
 }
 
-// Lazy initialization - 매번 새로 평가하여 앱인토스 환경을 정확히 감지
-let _cachedConfig: EnvironmentConfig | null = null;
-
-export const ENV_CONFIG = new Proxy({} as EnvironmentConfig, {
-  get(target, prop) {
-    // 캐시가 없으면 생성
-    if (!_cachedConfig) {
-      _cachedConfig = getEnvironmentConfig();
-    }
-    return _cachedConfig[prop as keyof EnvironmentConfig];
+// ✅ Proxy 제거, 직접 getter 사용하여 매번 재평가
+export const ENV_CONFIG = {
+  get isAppintos() {
+    return isAppintosEnvironment();
+  },
+  get apiBaseUrl() {
+    return getEnvironmentConfig().apiBaseUrl;
+  },
+  get wsBaseUrl() {
+    return getEnvironmentConfig().wsBaseUrl;
+  },
+  get environment() {
+    return getEnvironmentConfig().environment;
   }
-});
+};
