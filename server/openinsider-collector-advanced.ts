@@ -863,6 +863,7 @@ class AdvancedOpenInsiderCollector {
           totalValue: trade.value,
           ownershipPercentage: this.parseOwnershipPercentage(trade.deltaOwn),
           filedDate: new Date(trade.filingDate),
+          transactionDate: new Date(trade.tradeDate), // When the actual transaction occurred
           significanceScore: this.calculateSignificanceScore(trade),
           signalType: this.determineSignalType(trade.tradeType),
           // PROPER VERIFICATION STATUS - OpenInsider data is unverified

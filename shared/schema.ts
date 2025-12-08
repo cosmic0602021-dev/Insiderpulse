@@ -63,6 +63,7 @@ export const insiderTrades = pgTable("insider_trades", {
   totalValue: real("total_value").notNull(),
   ownershipPercentage: real("ownership_percentage").default(0), // Percentage of total shares
   filedDate: timestamp("filed_date").notNull(),
+  transactionDate: timestamp("transaction_date").notNull(), // When the actual transaction occurred
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   comprehensiveAnalysis: json("comprehensive_analysis"), // AI analysis with caching (new)
   analysisGeneratedAt: timestamp("analysis_generated_at"), // When AI analysis was generated
@@ -99,6 +100,7 @@ export const insertInsiderTradeSchema = createInsertSchema(insiderTrades).omit({
   traderTitle: z.string().optional(),
   tradeType: z.enum(['BUY', 'SELL', 'TRANSFER', 'OPTION_EXERCISE', 'GRANT', 'GIFT', 'AWARD', 'TAX', 'CONVERSION', 'INHERIT', 'DISPOSITION', 'OTHER']).optional(),
   transactionCode: z.string().optional(), // Original SEC transaction code
+  transactionDate: z.date().optional(), // Transaction date
   ownershipPercentage: z.number().optional(),
   significanceScore: z.number().optional(), // Allow override of default
   signalType: z.enum(['BUY', 'SELL']).optional(), // Allow override of default

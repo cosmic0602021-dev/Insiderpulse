@@ -5,6 +5,9 @@
 
 PORT=5000
 
+# JWT Secret for authentication
+export JWT_SECRET="P9unQrRLhC/4PD+1JpkNicCQk0jBnit81RDNSTKTDnx4EuTpz4iooEaWhfBhyM2n"
+
 echo "🚀 Starting InsiderPulse development server..."
 
 # Check if port 5000 is in use
