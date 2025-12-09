@@ -63,7 +63,7 @@ export const insiderTrades = pgTable("insider_trades", {
   totalValue: real("total_value").notNull(),
   ownershipPercentage: real("ownership_percentage").default(0), // Percentage of total shares
   filedDate: timestamp("filed_date").notNull(),
-  transactionDate: timestamp("transaction_date"), // Nullable to support existing production data
+  transactionDate: timestamp("transaction_date").notNull(), // NOT NULL - migration handles existing NULLs
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   comprehensiveAnalysis: json("comprehensive_analysis"), // AI analysis with caching (new)
   analysisGeneratedAt: timestamp("analysis_generated_at"), // When AI analysis was generated
