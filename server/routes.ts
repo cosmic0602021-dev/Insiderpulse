@@ -128,16 +128,16 @@ async function fetchRankingTickers(): Promise<string[]> {
   console.log('🔄 Fetching fresh ranking tickers...');
 
   try {
-    // Make internal API call to /api/rankings/tickers
-    // We'll implement this endpoint later in step 2
-    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/rankings/tickers`);
+    // 🎯 CRITICAL FIX: Fetch from /api/rankings to ensure same ranking logic
+    // This guarantees AI analysis is only generated for actual top-ranked stocks
+    const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/rankings?limit=6`);
 
     if (!response.ok) {
       throw new Error(`Rankings API returned ${response.status}`);
     }
 
     const data = await response.json();
-    const tickers = data.tickers || [];
+    const tickers = (data.rankings || []).map((r: any) => r.ticker).filter(Boolean);
 
     // Update cache
     rankingTickersCache = {
@@ -145,7 +145,7 @@ async function fetchRankingTickers(): Promise<string[]> {
       timestamp: Date.now()
     };
 
-    console.log(`📦 Cached ${tickers.length} ranking tickers`);
+    console.log(`📦 Cached ${tickers.length} ranking tickers for AI analysis`);
     return tickers;
   } catch (error) {
     console.error('❌ Failed to fetch ranking tickers:', error);
