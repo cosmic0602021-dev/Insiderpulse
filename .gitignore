@@ -11,4 +11,4 @@ vite.config.ts.*
 .env.*.local
 
 # Claude settings (may contain credentials)
-.claude/
+.claude/migrations/
