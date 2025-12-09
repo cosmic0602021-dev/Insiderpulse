@@ -172,7 +172,8 @@
       "Bash(PROD_DB_URL=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
       "Bash(__NEW_LINE__ echo \"=== 프로덕션 DB 확인 중 ===\")",
       "Bash(PROD_DB_URL=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
-      "Bash(__NEW_LINE__ echo \"=== NULL 값을 filed_date로 업데이트 중 ===\")"
+      "Bash(__NEW_LINE__ echo \"=== NULL 값을 filed_date로 업데이트 중 ===\")",
+      "Bash(PROD_DB=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.us-east-2.aws.neon.tech/neondb?sslmode=require\")"
     ],
     "deny": [],
     "ask": []
