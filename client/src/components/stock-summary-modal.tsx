@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
-import { useState, useEffect, useMemo, useId, useCallback } from 'react';
+import { useState, useEffect, useMemo, useId, useCallback, useRef } from 'react';
 import { StockRecommendation } from './terminal-ui/types';
 
 interface StockPriceData {
@@ -37,11 +37,32 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
 
+  // ✅ Map-based cache: Store analysis for multiple tickers in same session
+  const analysisCache = useRef<Map<string, any>>(new Map());
+  const cachedTickerRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!isOpen || !stock?.ticker) {
       setStockPrice(null);
-      setComprehensiveAnalysis(null);
+      // ✅ DON'T clear comprehensiveAnalysis or cache when modal closes
       return;
+    }
+
+    // ✅ If ticker changed, save current analysis to cache
+    if (cachedTickerRef.current && cachedTickerRef.current !== stock.ticker) {
+      // Save current analysis to cache before switching
+      if (comprehensiveAnalysis && !analysisError) {
+        analysisCache.current.set(cachedTickerRef.current, comprehensiveAnalysis);
+        console.log(`💾 Cached analysis for ${cachedTickerRef.current} (cache size: ${analysisCache.current.size})`);
+      }
+
+      // Clear state for new ticker - fetchAnalysis will handle loading
+      setComprehensiveAnalysis(null);
+      setAnalysisError(null);
+      cachedTickerRef.current = stock.ticker;
+    } else if (!cachedTickerRef.current) {
+      // First time opening - just set the ref
+      cachedTickerRef.current = stock.ticker;
     }
 
     const fetchStockPrice = async () => {
@@ -56,8 +77,56 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       }
     };
 
-    // Fetch comprehensive AI analysis with timeout and error detection
+    // ==================================================================================
+    // 🔒 CRITICAL: AI Analysis Caching Logic - DO NOT MODIFY WITHOUT UNDERSTANDING
+    // ==================================================================================
+    // This caching hierarchy prevents unnecessary API calls and ensures all users
+    // share the same AI analysis (cost optimization + instant UX).
+    //
+    // ⚠️ PRIORITY ORDER IS CRITICAL - DO NOT CHANGE:
+    //    1. State check (already loaded)
+    //    2. Prop check (stock.comprehensiveAnalysis from ranking data) ← MOST IMPORTANT
+    //    3. Session cache check (analysisCache Map)
+    //    4. API call (only when all caches miss)
+    //
+    // 🚫 DO NOT:
+    //    - Change the priority order
+    //    - Add comprehensiveAnalysis to useEffect dependency array (causes race condition)
+    //    - Remove stock.comprehensiveAnalysis check (breaks cross-user caching)
+    //    - Skip cache.set() calls (breaks session persistence)
+    //
+    // ✅ This ensures: New refresh/Different account/Page navigation → Instant display (NO API call)
+    // ==================================================================================
     const fetchAnalysis = async () => {
+      if (!stock?.ticker) return;
+
+      // PRIORITY 1: Already loaded in state - skip everything
+      if (comprehensiveAnalysis && !analysisError) {
+        console.log(`✅ Analysis already loaded in state for ${stock.ticker} - no action needed`);
+        return;
+      }
+
+      // PRIORITY 2: Check prop - analysis from ranking data (shared across all users) - NO API CALL
+      // 🔒 CRITICAL: This is the main cache that enables cross-user sharing
+      if (stock.comprehensiveAnalysis) {
+        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} - NO API CALL NEEDED!`);
+        setComprehensiveAnalysis(stock.comprehensiveAnalysis);
+        setAnalysisError(null);
+        analysisCache.current.set(stock.ticker, stock.comprehensiveAnalysis);
+        return;
+      }
+
+      // PRIORITY 3: Check session cache (Map) - NO API CALL
+      const cachedAnalysis = analysisCache.current.get(stock.ticker);
+      if (cachedAnalysis) {
+        console.log(`✅ Using session cache for ${stock.ticker} - NO API CALL NEEDED`);
+        setComprehensiveAnalysis(cachedAnalysis);
+        setAnalysisError(null);
+        return;
+      }
+
+      // PRIORITY 4: No cached data - fetch from API
+      console.log(`🔄 No cached analysis found for ${stock.ticker} - fetching from API...`);
       setIsLoadingAnalysis(true);
       setAnalysisError(null);
 
@@ -130,9 +199,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             return;
           }
 
-          // Success!
+          // Success! Save to cache for future use
+          console.log(`✅ Successfully fetched analysis for ${stock.ticker} from API`);
           setComprehensiveAnalysis(analysisData);
           setAnalysisError(null);
+          analysisCache.current.set(stock.ticker, analysisData);
 
         } catch (fetchError: any) {
           clearTimeout(timeoutId);
@@ -167,6 +238,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     fetchStockPrice();
     fetchAnalysis();
   }, [isOpen, stock?.ticker, language]);
+  // 🔒 CRITICAL: DO NOT add 'comprehensiveAnalysis' to dependency array!
+  // Adding it causes race condition: setState is async, fetchAnalysis runs before state updates,
+  // causing unnecessary API calls even when stock.comprehensiveAnalysis exists.
+  // Current deps are correct: only re-run when modal opens/closes, ticker changes, or language changes.
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].modal;

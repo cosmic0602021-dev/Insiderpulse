@@ -71,6 +71,12 @@ export interface StockRecommendation {
     secFilingUrl?: string;
     accessionNumber?: string;
   }>;
+  // 🔒 CRITICAL: These fields enable cross-user AI analysis caching - DO NOT REMOVE
+  // comprehensiveAnalysis: Pre-loaded from DB via ranking API, shared across all users
+  // hasComprehensiveAnalysis: Indicates if cached analysis exists in DB
+  // Removing these breaks the entire caching system and causes unnecessary API calls
+  comprehensiveAnalysis?: any;
+  hasComprehensiveAnalysis?: boolean;
 }
 
 export enum View {

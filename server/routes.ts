@@ -5,7 +5,7 @@ import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { insertInsiderTradeSchema, users, insiderTrades } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
-import { eq } from "drizzle-orm";
+import { eq, sql, and, desc, inArray, isNotNull } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { stockPriceService } from "./stock-price-service";
 import { z } from "zod";
@@ -2868,12 +2868,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tradeId = req.params.id;
       const language = (req.query.language as string) || 'en';
 
-      // Fetch trade from database
-      const trade = await db.query.insiderTrades.findFirst({
-        where: eq(insiderTrades.id, tradeId),
-      });
+      // Fetch trade from database with explicit field selection
+      // ⚠️ CRITICAL: Must explicitly select comprehensiveAnalysis to ensure it's loaded
+      const tradeResults = await db.select({
+        id: insiderTrades.id,
+        ticker: insiderTrades.ticker,
+        companyName: insiderTrades.companyName,
+        traderName: insiderTrades.traderName,
+        traderTitle: insiderTrades.traderTitle,
+        tradeType: insiderTrades.tradeType,
+        shares: insiderTrades.shares,
+        pricePerShare: insiderTrades.pricePerShare,
+        totalValue: insiderTrades.totalValue,
+        filedDate: insiderTrades.filedDate,
+        transactionDate: insiderTrades.transactionDate,
+        comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
+        analysisGeneratedAt: insiderTrades.analysisGeneratedAt,
+      }).from(insiderTrades)
+        .where(eq(insiderTrades.id, tradeId))
+        .limit(1);
 
-      if (!trade) {
+      if (!tradeResults || tradeResults.length === 0) {
         return res.status(404).json({
           error: 'TRADE_NOT_FOUND',
           errorType: 'permanent',
@@ -2881,6 +2896,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           retryable: false
         });
       }
+
+      const trade = tradeResults[0];
+
+      // 🔍 DEBUG: 캐시 상태 확인
+      console.log('🔍 [CACHE DEBUG] Trade data loaded:', {
+        id: trade.id,
+        ticker: trade.ticker,
+        hasComprehensiveAnalysis: !!trade.comprehensiveAnalysis,
+        comprehensiveAnalysisType: typeof trade.comprehensiveAnalysis,
+        comprehensiveAnalysisSize: trade.comprehensiveAnalysis ?
+          JSON.stringify(trade.comprehensiveAnalysis).length : 0,
+        hasAnalysisGeneratedAt: !!trade.analysisGeneratedAt,
+        analysisGeneratedAt: trade.analysisGeneratedAt?.toISOString(),
+        cacheAge: trade.analysisGeneratedAt ?
+          Math.floor((Date.now() - new Date(trade.analysisGeneratedAt).getTime()) / 1000 / 60) + ' min' :
+          'N/A'
+      });
 
       // 💰 PERMANENT CACHE: Once generated, analysis never expires
       // This maximizes cost savings and user experience
@@ -3212,21 +3244,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newsAnalysis: newsAnalysis
       };
 
-      // 💾 SAVE TO DATABASE IN ENGLISH: Cache analysis for future requests (99% cost reduction)
+      // 💾 SAVE TO DATABASE IN ENGLISH WITH RETRY: Cache analysis for future requests (99% cost reduction)
       // Always save in English so all languages can translate from the same cache
       (comprehensiveAnalysis as any)._language = 'en';
 
-      try {
-        await db.update(insiderTrades)
-          .set({
-            comprehensiveAnalysis: comprehensiveAnalysis,
-            analysisGeneratedAt: new Date()
-          })
-          .where(eq(insiderTrades.id, tradeId));
-        console.log(`💾 Cached analysis saved to database in English for trade ${tradeId}`);
-      } catch (cacheError) {
-        console.error('⚠️ Failed to cache analysis (continuing):', cacheError);
-        // Continue anyway - caching failure shouldn't block the response
+      const MAX_RETRIES = 3;
+      let saveSuccess = false;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES && !saveSuccess; attempt++) {
+        try {
+          await db.update(insiderTrades)
+            .set({
+              comprehensiveAnalysis: comprehensiveAnalysis,
+              analysisGeneratedAt: new Date()
+            })
+            .where(eq(insiderTrades.id, tradeId));
+
+          // ✅ Verify save by reading back
+          const verification = await db.select({
+            hasAnalysis: sql<boolean>`comprehensive_analysis IS NOT NULL`,
+            analysisSize: sql<number>`length(comprehensive_analysis::text)`
+          }).from(insiderTrades)
+            .where(eq(insiderTrades.id, tradeId))
+            .limit(1);
+
+          if (verification[0]?.hasAnalysis) {
+            console.log(`💾 Cache saved successfully (${verification[0].analysisSize} bytes) on attempt ${attempt}`);
+            saveSuccess = true;
+          } else {
+            throw new Error('Verification failed: analysis not found after save');
+          }
+        } catch (cacheError) {
+          console.error(`⚠️ Cache save attempt ${attempt}/${MAX_RETRIES} failed:`, cacheError);
+          if (attempt === MAX_RETRIES) {
+            console.error('❌ CRITICAL: Failed to cache analysis after all retries');
+          } else {
+            // Exponential backoff: wait 1s, 2s, 3s between retries
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
       }
 
       // 🌍 Translate for response if not English
@@ -4578,9 +4634,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(0, limit);
 
       console.log(`📊 Rankings summary: ${topRankings.length} stocks (recency: ${recencyDays} days, total analyzed: ${rankings.length})`);
-      
+
+      // ==================================================================================
+      // 🔒 CRITICAL: Pre-load AI Analysis for Cross-User Caching - DO NOT REMOVE
+      // ==================================================================================
+      // This section fetches cached AI analyses from DB and includes them in ranking response.
+      // Enables ALL users to see the same analysis instantly without API calls.
+      //
+      // ⚠️ IMPORTANT:
+      //    - Must return 'rankingsWithAnalysis' (NOT 'topRankings')
+      //    - comprehensiveAnalysis field must be included in response
+      //    - hasComprehensiveAnalysis flag helps client identify cached data
+      //
+      // 🚫 DO NOT:
+      //    - Return 'topRankings' instead of 'rankingsWithAnalysis' (line 4680)
+      //    - Remove comprehensiveAnalysis from select query
+      //    - Skip the Map creation or ranking enrichment
+      //
+      // ✅ This enables: User A generates analysis → User B sees it instantly (no cost, no wait)
+      // ==================================================================================
+      const rankingTickers = topRankings.map(r => r.ticker);
+      const cachedAnalyses = new Map<string, any>();
+
+      if (rankingTickers.length > 0) {
+        try {
+          const analysisResults = await db
+            .select({
+              ticker: insiderTrades.ticker,
+              comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
+              analysisGeneratedAt: insiderTrades.analysisGeneratedAt
+            })
+            .from(insiderTrades)
+            .where(
+              and(
+                inArray(insiderTrades.ticker, rankingTickers),
+                isNotNull(insiderTrades.comprehensiveAnalysis)
+              )
+            )
+            .orderBy(desc(insiderTrades.analysisGeneratedAt));
+
+          // ticker별 최신 분석만 저장
+          for (const result of analysisResults) {
+            if (result.ticker && !cachedAnalyses.has(result.ticker)) {
+              cachedAnalyses.set(result.ticker, result.comprehensiveAnalysis);
+            }
+          }
+
+          console.log(`📦 Loaded ${cachedAnalyses.size}/${rankingTickers.length} cached analyses for instant display`);
+        } catch (error) {
+          console.warn('Failed to load cached analyses (continuing without):', error);
+        }
+      }
+
+      // 🔒 CRITICAL: Add comprehensiveAnalysis to each ranking
+      const rankingsWithAnalysis = topRankings.map(ranking => ({
+        ...ranking,
+        comprehensiveAnalysis: cachedAnalyses.get(ranking.ticker) || null,
+        hasComprehensiveAnalysis: cachedAnalyses.has(ranking.ticker),
+      }));
+
       res.json({
-        rankings: topRankings,
+        rankings: rankingsWithAnalysis, // 🔒 CRITICAL: Must return rankingsWithAnalysis (NOT topRankings)
         generatedAt: new Date().toISOString(),
         period: '30 days',
         totalStocksAnalyzed: rankings.length,

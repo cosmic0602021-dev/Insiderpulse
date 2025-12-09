@@ -50,6 +50,9 @@ interface RankingItem {
   };
   detectedPatterns: any[];
   patternSignals?: string | null;
+  // 🔒 CRITICAL: Must include these fields from ranking API response
+  comprehensiveAnalysis?: any;
+  hasComprehensiveAnalysis?: boolean;
 }
 
 interface RankingResponse {
@@ -125,7 +128,7 @@ export default function TopStocksTerminal() {
     queryKey: ['/api/rankings', language],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', `/api/rankings?limit=20&language=${language}`);
+        const response = await apiRequest('GET', `/api/rankings?limit=6&language=${language}`);
         return response.json();
       } catch (err) {
         console.error('Failed to fetch rankings:', err);
@@ -174,6 +177,10 @@ export default function TopStocksTerminal() {
       insiderCount: item.uniqueInsiders || item.insiders?.length || 0,
       lastTradeDate: item.lastTradeDate || new Date().toISOString(),
       marketCap: item.marketCap ? Number(item.marketCap) : undefined,
+      // 🔒 CRITICAL: Must pass comprehensiveAnalysis from ranking data to enable cross-user caching
+      // DO NOT remove these fields - they enable instant AI analysis display without API calls
+      comprehensiveAnalysis: (item as any).comprehensiveAnalysis || null,
+      hasComprehensiveAnalysis: (item as any).hasComprehensiveAnalysis || false,
       buyers: (item.insiders || []).slice(0, 5).map((insider: RankingInsider) => {
         // Parse shares and totalValue to numbers (handle formatted strings with commas)
         const sharesNum = parseNumeric(insider.shares);
