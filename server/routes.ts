@@ -4816,10 +4816,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Extract only ticker symbols
-      const tickers = filteredStocks.map(s => s.ticker);
+      // 🎯 CRITICAL FIX: Sort by buyValue (net buying strength) and limit to top 6
+      // This ensures AI analysis is only generated for the top 6 ranked stocks
+      const topStocks = filteredStocks
+        .sort((a, b) => (b.buyValue - b.sellValue) - (a.buyValue - a.sellValue)) // Sort by net buying
+        .slice(0, 6); // Top 6 only
 
-      console.log(`✅ Returning ${tickers.length} ranking tickers (recency: ${recencyDays} days)`);
+      // Extract only ticker symbols
+      const tickers = topStocks.map(s => s.ticker);
+
+      console.log(`✅ Returning top ${tickers.length} ranking tickers (recency: ${recencyDays} days)`);
 
       res.json({
         tickers,
