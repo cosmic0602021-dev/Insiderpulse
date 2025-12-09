@@ -63,10 +63,7 @@ export const insiderTrades = pgTable("insider_trades", {
   totalValue: real("total_value").notNull(),
   ownershipPercentage: real("ownership_percentage").default(0), // Percentage of total shares
   filedDate: timestamp("filed_date").notNull(),
-  // 🔒 MIGRATION FIX: Made nullable to preserve 4,687 existing records
-  // New inserts always provide this value from collector (openinsider-collector-advanced.ts:866)
-  // Existing records: transactionDate will be NULL, but filedDate is always available as fallback
-  transactionDate: timestamp("transaction_date"),
+  transactionDate: timestamp("transaction_date").notNull(), // When the actual transaction occurred
   aiAnalysis: json("ai_analysis"), // deprecated - no longer used
   comprehensiveAnalysis: json("comprehensive_analysis"), // AI analysis with caching (new)
   analysisGeneratedAt: timestamp("analysis_generated_at"), // When AI analysis was generated
