@@ -8,6 +8,9 @@ PORT=5000
 # JWT Secret for authentication
 export JWT_SECRET="P9unQrRLhC/4PD+1JpkNicCQk0jBnit81RDNSTKTDnx4EuTpz4iooEaWhfBhyM2n"
 
+# Production Database URL
+export DATABASE_URL="postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
 echo "🚀 Starting InsiderPulse development server..."
 
 # Check if port 5000 is in use

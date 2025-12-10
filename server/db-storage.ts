@@ -1,3 +1,6 @@
+// 🔧 CRITICAL: Force production DATABASE_URL before any DB operations
+process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
+
 import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type StockPriceHistory, type InsertStockPriceHistory, type Alert, type InsertAlert } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { users, insiderTrades, stockPrices, stockPriceHistory, alerts, exchangeRates } from "@shared/schema";

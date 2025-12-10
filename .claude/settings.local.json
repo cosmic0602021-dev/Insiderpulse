@@ -175,7 +175,18 @@
       "Bash(__NEW_LINE__ echo \"=== NULL 값을 filed_date로 업데이트 중 ===\")",
       "Bash(PROD_DB=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
       "Bash(OLD_DB=\"postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
-      "Bash(__NEW_LINE__ echo \"=== Checking .env Database (Production?) ===\")"
+      "Bash(__NEW_LINE__ echo \"=== Checking .env Database (Production?) ===\")",
+      "Bash(then echo '✅ Server is ready! (took $i seconds)' curl -s http://localhost:5000/api/health)",
+      "Bash(PROD_DB=\"postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(__NEW_LINE__ echo \"=== Production DB Check ===\")",
+      "Bash(__NEW_LINE__ echo \"=== Development DB (121 trades) ===\")",
+      "Bash(then echo '✅ 서버 준비 완료 ($i초)' echo echo '=== 현재 DB 거래 수 ===' psql $DATABASE_URL -c \"SELECT COUNT(*) as total_trades FROM insider_trades;\" echo echo '=== 현재 Top 6 랭킹 ===' curl -s http://localhost:5000/api/rankings?limit=6)",
+      "Bash(DEV_DB=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.us-east-2.aws.neon.tech/neondb?sslmode=require\" echo \"=== 개발 DB 거래 수 ===\" psql \"$DEV_DB\" -c \"SELECT COUNT(*) FROM insider_trades;\")",
+      "Bash(DEV_DB=\"postgresql://neondb_owner:npg_1yCqRLHT8MBs@ep-late-fire-aeiccejx.us-east-2.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(unset DATABASE_URL)",
+      "Bash(export DATABASE_URL:*)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require\" npm run dev:*)",
+      "Bash(then echo '✅ 서버 시작 완료 ($i초 경과)' curl -s http://localhost:5000/api/health)"
     ],
     "deny": [],
     "ask": []

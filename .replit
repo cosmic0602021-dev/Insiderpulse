@@ -13,6 +13,7 @@ run = ["npm", "run", "start"]
 
 [env]
 PORT = "5000"
+DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
 [workflows]
 runButton = "Project"

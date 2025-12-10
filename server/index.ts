@@ -2,6 +2,10 @@ import path from "path";
 import fs from "fs";
 import { createServer } from "http";
 import "dotenv/config";
+
+// 🔧 CRITICAL: Force production DATABASE_URL (override Replit auto-injection)
+process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
