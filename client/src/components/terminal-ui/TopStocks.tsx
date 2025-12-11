@@ -234,7 +234,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       </div>
       
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 relative custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
           <div className="relative mb-8">
