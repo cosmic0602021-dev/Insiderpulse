@@ -683,24 +683,25 @@ export default function Ranking() {
                     <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
                     {/* Market cap ratio display */}
-                    {item.marketCap && item.marketCap > 0 && (
-                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
-                        {(() => {
-                          const ratio = (item.netBuying / item.marketCap!) * 100;
-                          let ratioStr;
-                          if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
-                          else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
-                          else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
-                          else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
-                          else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
-                          else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
-                          else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
-                          else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
-                          else ratioStr = '0%';
-                          return `${tModal.marketCapRatio}: ${ratioStr}`;
-                        })()}
-                      </p>
-                    )}
+                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                      {(() => {
+                        if (!item.marketCap || item.marketCap <= 0) {
+                          return `${tModal.marketCapRatio}: -`;
+                        }
+                        const ratio = (item.netBuying / item.marketCap) * 100;
+                        let ratioStr;
+                        if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                        else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                        else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                        else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                        else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                        else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                        else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                        else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                        else ratioStr = '0%';
+                        return `${tModal.marketCapRatio}: ${ratioStr}`;
+                      })()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -887,24 +888,25 @@ export default function Ranking() {
                               ${(insider.totalValue / 1000).toFixed(0)}K
                             </p>
                             {/* Market cap ratio for individual insider */}
-                            {item.marketCap && item.marketCap > 0 && (
-                              <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
-                                {(() => {
-                                  const ratio = (insider.totalValue / item.marketCap) * 100;
-                                  let ratioStr;
-                                  if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
-                                  else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
-                                  else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
-                                  else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
-                                  else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
-                                  else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
-                                  else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
-                                  else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
-                                  else ratioStr = '0%';
-                                  return `${tModal.marketCapRatio}: ${ratioStr}`;
-                                })()}
-                              </p>
-                            )}
+                            <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
+                              {(() => {
+                                if (!item.marketCap || item.marketCap <= 0) {
+                                  return `${tModal.marketCapRatio}: -`;
+                                }
+                                const ratio = (insider.totalValue / item.marketCap) * 100;
+                                let ratioStr;
+                                if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
+                                else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
+                                else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
+                                else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
+                                else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
+                                else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
+                                else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
+                                else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
+                                else ratioStr = '0%';
+                                return `${tModal.marketCapRatio}: ${ratioStr}`;
+                              })()}
+                            </p>
                           </div>
                         </div>
 
