@@ -508,15 +508,15 @@ export default function Ranking() {
               className="hover-elevate cursor-pointer"
               onClick={() => setLocation('/premium-checkout')}
             >
-              <CardContent className="p-4">
-                <div className="text-center p-3 space-y-1.5 bg-black/85 backdrop-blur-md rounded-lg border border-amber-500/30 shadow-xl">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500/20 mb-0.5">
-                    <Lock className="w-7 h-7 text-amber-500" />
+              <CardContent className="p-2 sm:p-4">
+                <div className="text-center p-2 sm:p-3 space-y-1 sm:space-y-1.5 bg-black/85 backdrop-blur-md rounded-lg border border-amber-500/30 shadow-xl">
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-amber-500/20 mb-0.5">
+                    <Lock className="w-5 h-5 sm:w-7 sm:h-7 text-amber-500" />
                   </div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-sm sm:text-lg font-bold text-white">
                     {t('ranking.lockedTitle') || `Premium Feature: #${index + 1} Ranking`}
                   </h3>
-                  <p className="text-xs text-gray-300 max-w-xs">
+                  <p className="text-[10px] sm:text-xs text-gray-300 max-w-xs mx-auto">
                     {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see top stocks ranked by insider trading activity'}
                   </p>
                   <Button
@@ -524,9 +524,10 @@ export default function Ranking() {
                       e.stopPropagation();
                       setLocation('/premium-checkout');
                     }}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-4 py-1.5 text-sm"
+                    size="sm"
+                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm"
                   >
-                    <Crown className="w-4 h-4 mr-2" />
+                    <Crown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     {t('ranking.unlockButton') || 'Unlock Top Rankings'}
                   </Button>
                 </div>
