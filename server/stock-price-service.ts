@@ -3,6 +3,7 @@ import { storage } from './storage';
 import type { InsertStockPrice, InsertStockPriceHistory } from '@shared/schema';
 import { shouldUpdateStockPrices } from './utils/market-hours';
 import { fetchMarketCapFromFinnhub, fetchMarketCapFromAlphaVantage } from './api-clients/market-cap-apis';
+import { scrapeGoogleFinanceMarketCap, scrapeYahooFinanceMarketCap } from './web-scraper-marketcap';
 
 export class StockPriceService {
   private cache = new Map<string, { data: any; timestamp: number }>();
@@ -154,9 +155,39 @@ export class StockPriceService {
         }
       }
 
-      // Final warning if all 4 APIs failed
+      // 5th fallback: Web scraping (no API key required)
       if (!marketCap || marketCap === 0) {
-        console.warn(`❌ All 4 APIs failed for ${upperTicker}, market cap will be 0`);
+        console.log(`📡 Trying web scraper for ${upperTicker} (API fallback #5)...`);
+
+        // Try Google Finance scraping
+        try {
+          const scrapedMarketCap = await scrapeGoogleFinanceMarketCap(upperTicker);
+          if (scrapedMarketCap && scrapedMarketCap > 0) {
+            marketCap = scrapedMarketCap;
+            console.log(`✅ Got market cap from Google Finance scraper for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+          }
+        } catch (error) {
+          console.warn(`Web scraper (Google) failed for ${upperTicker}:`, (error as Error).message);
+        }
+
+        // If Google failed, try Yahoo scraping
+        if (!marketCap || marketCap === 0) {
+          try {
+            const scrapedMarketCap = await scrapeYahooFinanceMarketCap(upperTicker);
+            if (scrapedMarketCap && scrapedMarketCap > 0) {
+              marketCap = scrapedMarketCap;
+              console.log(`✅ Got market cap from Yahoo Finance scraper for ${upperTicker}: $${(marketCap / 1e9).toFixed(2)}B`);
+            }
+          } catch (error) {
+            console.warn(`Web scraper (Yahoo) failed for ${upperTicker}:`, (error as Error).message);
+          }
+        }
+      }
+
+      // Final warning if all fallbacks failed - return null instead of 0
+      if (!marketCap || marketCap === 0) {
+        console.warn(`❌ All 5 fallbacks failed for ${upperTicker}, returning marketCap as null`);
+        marketCap = null;  // Explicitly set to null to indicate failure
       }
 
       const priceData = {
@@ -166,7 +197,7 @@ export class StockPriceService {
         change: change || 0,
         changePercent: changePercent || 0,
         volume: meta.regularMarketVolume || 0,
-        marketCap: marketCap,
+        marketCap: marketCap,  // Will be null if all APIs failed
       };
 
       this.cache.set(upperTicker, { data: priceData, timestamp: Date.now() });

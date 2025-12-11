@@ -9,6 +9,7 @@ import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Boo
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
 import { apiClient, queryKeys } from '@/lib/api';
+import { TRANSLATIONS } from '@/lib/translations';
 import html2canvas from 'html2canvas';
 import { useLocation } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
@@ -84,6 +85,8 @@ export default function Ranking() {
   console.log('🔴🔴🔴 RANKING PAGE LOADED - NEW CODE! 🔴🔴🔴', new Date().toISOString());
   const { t, language } = useLanguage();
   const { accessLevel } = useAccess();
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+  const tModal = TRANSLATIONS[langKey].modal;
   const [, setLocation] = useLocation();
   const [refreshing, setRefreshing] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
@@ -694,10 +697,7 @@ export default function Ranking() {
                           else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
                           else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
                           else ratioStr = '0%';
-                          return language === 'ko' ? `시총대비: ${ratioStr}` :
-                                 language === 'ja' ? `時価総額比: ${ratioStr}` :
-                                 language === 'zh' ? `市值比: ${ratioStr}` :
-                                 `vs Market Cap: ${ratioStr}`;
+                          return `${tModal.marketCapRatio}: ${ratioStr}`;
                         })()}
                       </p>
                     )}
@@ -901,10 +901,7 @@ export default function Ranking() {
                                   else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
                                   else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
                                   else ratioStr = '0%';
-                                  return language === 'ko' ? `시총대비: ${ratioStr}` :
-                                         language === 'ja' ? `時価総額比: ${ratioStr}` :
-                                         language === 'zh' ? `市值比: ${ratioStr}` :
-                                         `vs Cap: ${ratioStr}`;
+                                  return `${tModal.marketCapRatio}: ${ratioStr}`;
                                 })()}
                               </p>
                             )}

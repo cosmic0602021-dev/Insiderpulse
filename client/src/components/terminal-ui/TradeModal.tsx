@@ -5,6 +5,7 @@ import { Trade, Language } from './types';
 import { X, Star, CheckCircle2, ChevronDown, Brain, Target, AlertTriangle, FileText, TrendingUp, ShieldCheck, Info } from 'lucide-react';
 import { formatCurrency, formatNumber, formatPercent, TRANSLATIONS } from '@/lib/translations';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { useLanguage } from '@/contexts/language-context';
 
 interface TradeModalProps {
   trade: Trade;
@@ -13,6 +14,10 @@ interface TradeModalProps {
 }
 
 const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
+  // Use useLanguage hook to directly detect language changes
+  const { language } = useLanguage();
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+
   const chartData = Array.from({ length: 10 }).map((_, i) => {
     const base = trade.price * 0.9;
     return {
@@ -20,9 +25,9 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
         price: base + (i * (trade.price * 0.2 / 9))
     }
   });
-  
-  const t = TRANSLATIONS[lang].modal;
-  const tData = TRANSLATIONS[lang].data;
+
+  const t = TRANSLATIONS[langKey].modal;
+  const tData = TRANSLATIONS[langKey].data;
   const sentimentColor = trade.newsAnalysis.positive >= trade.newsAnalysis.negative ? 'text-emerald-500' : 'text-rose-500';
   
   return (
@@ -193,7 +198,7 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                             </div>
                             {trade.marketCap && trade.marketCap > 0 && (
                               <div className="bg-neutral-900/30 border border-neutral-800 p-3 col-span-2">
-                                <div className="text-[10px] text-neutral-600 uppercase mb-1">{lang === 'ko' ? '시총대비' : 'vs Market Cap'}</div>
+                                <div className="text-[10px] text-neutral-600 uppercase mb-1">{t.marketCapRatio}</div>
                                 <div className="text-sm md:text-lg font-mono text-amber-400 font-bold">
                                   {(() => {
                                     const ratio = (trade.value / trade.marketCap) * 100;
@@ -222,9 +227,9 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                         </h3>
                         
                         <div className="flex flex-wrap gap-3 md:gap-4 mb-4 text-[10px] font-mono uppercase">
-                            <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2 h-2 bg-emerald-900 rounded-full"></span> {trade.newsAnalysis.positive} {lang === 'ko' ? '긍정' : 'Positive'}</span>
-                            <span className="flex items-center gap-1.5 text-rose-600"><span className="w-2 h-2 bg-rose-900 rounded-full"></span> {trade.newsAnalysis.negative} {lang === 'ko' ? '부정' : 'Negative'}</span>
-                            <span className="flex items-center gap-1.5 text-neutral-500"><span className="w-2 h-2 bg-neutral-800 rounded-full"></span> {trade.newsAnalysis.neutral} {lang === 'ko' ? '중립' : 'Neutral'}</span>
+                            <span className="flex items-center gap-1.5 text-emerald-600"><span className="w-2 h-2 bg-emerald-900 rounded-full"></span> {trade.newsAnalysis.positive} {t.positive}</span>
+                            <span className="flex items-center gap-1.5 text-rose-600"><span className="w-2 h-2 bg-rose-900 rounded-full"></span> {trade.newsAnalysis.negative} {t.negative}</span>
+                            <span className="flex items-center gap-1.5 text-neutral-500"><span className="w-2 h-2 bg-neutral-800 rounded-full"></span> {trade.newsAnalysis.neutral} {t.neutral}</span>
                         </div>
 
                         <div className="space-y-2">
@@ -273,22 +278,22 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                              <div className="flex items-center gap-2 mb-1">
                                  <Target size={14} className="text-neutral-500" />
                                  <span className="text-xs font-bold text-neutral-300 uppercase tracking-wide">
-                                   {lang === 'ko' ? '참고 가격대' : lang === 'ja' ? '参考価格帯' : lang === 'zh' ? '参考价格区间' : 'Reference Price Range'}
+                                   {t.priceTargets}
                                  </span>
                              </div>
                              <div className="text-[8px] text-neutral-600 mb-3">
-                               {lang === 'ko' ? '역사적 내부자 거래가' : 'Historical Insider Prices'}
+                               {t.priceRangeSubtitle}
                              </div>
                              <div className="space-y-3">
                                  <div className="flex justify-between items-center py-2 border-b border-neutral-800">
                                      <span className="text-[9px] text-neutral-500 uppercase">
-                                       {lang === 'ko' ? '내부자 거래가' : 'Insider Trade Price'}
+                                       {t.tradePrice}
                                      </span>
                                      <span className="font-mono text-lg text-emerald-400 font-bold">${trade.price.toFixed(2)}</span>
                                  </div>
                                  <div className="flex justify-between items-center py-2 border-b border-neutral-800">
                                      <span className="text-[9px] text-neutral-500 uppercase">
-                                       {lang === 'ko' ? '현재가' : 'Current Price'}
+                                       {t.currentPrice}
                                      </span>
                                      <div className="flex items-center gap-2">
                                        <span className={`font-mono text-sm ${trade.priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -302,7 +307,7 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                                  <div className="flex items-center gap-1 pt-2">
                                      <Info size={9} className="text-neutral-600" />
                                      <span className="text-[7px] text-neutral-600">
-                                       {lang === 'ko' ? '참고용입니다. 예측 또는 투자 권유가 아닙니다.' : 'For reference only. Not a forecast or investment recommendation.'}
+                                       {t.priceRangeDisclaimer}
                                      </span>
                                  </div>
                              </div>

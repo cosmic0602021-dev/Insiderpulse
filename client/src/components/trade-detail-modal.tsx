@@ -115,7 +115,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
       riskLevel: isLargeTrade && !isBuy ? t.riskHigh : isExecutive && isBuy ? t.riskLow : t.riskMedium,
       timeHorizon: '2-4 weeks'
     };
-  }, [trade, t]);
+  }, [trade, language]);
 
   // Generate simplified 14-day price history aligned with filing date
   const priceHistory = useMemo(() => {
@@ -162,7 +162,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     { title: t.newsProduct, sentiment: 'POSITIVE' as const },
     { title: t.newsVolatility, sentiment: 'NEUTRAL' as const },
     { title: t.newsAnalyst, sentiment: 'POSITIVE' as const }
-  ], [t]);
+  ], [language, t]);
 
   if (!trade) return null;
 
@@ -293,10 +293,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
                   else percentStr = '0%';
 
-                  const prefix = language === 'ko' ? '시총대비 ' :
-                                language === 'ja' ? '時価総額比 ' :
-                                language === 'zh' ? '市值比 ' :
-                                'Market cap ratio: ';
+                  const prefix = t.marketCapRatio + ': ';
                   return (
                     <div className="text-[10px] text-amber-400 font-mono mt-1 font-bold">
                       {prefix + percentStr}
@@ -611,14 +608,11 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
                 <div className="border border-neutral-800 bg-neutral-950/30 p-3">
                   <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {language === 'ko' ? '총 거래량' : 
-                     language === 'ja' ? '総取引量' :
-                     language === 'zh' ? '总交易量' :
-                     'TOTAL VOLUME'}
+                    {t.totalVolume?.toUpperCase() || 'TOTAL VOLUME'}
                   </div>
                   <div className="text-xs text-neutral-300 font-mono">
                     {formatNumber(trade.shares)}{' '}
-                    <span className="text-neutral-500">{language === 'ko' ? '주' : 'sh'}</span>
+                    <span className="text-neutral-500">{t.share}</span>
                   </div>
                 </div>
               </div>

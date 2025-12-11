@@ -186,7 +186,19 @@
       "Bash(unset DATABASE_URL)",
       "Bash(export DATABASE_URL:*)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require\" npm run dev:*)",
-      "Bash(then echo '✅ 서버 시작 완료 ($i초 경과)' curl -s http://localhost:5000/api/health)"
+      "Bash(then echo '✅ 서버 시작 완료 ($i초 경과)' curl -s http://localhost:5000/api/health)",
+      "Bash(if [ -f .env ])",
+      "Bash(then cat .env)",
+      "Bash(else echo \".env file not found\")",
+      "Bash(if [ -n \"$POLYGON_API_KEY\" ])",
+      "Bash(then echo \"POLYGON_API_KEY is set\")",
+      "Bash(else echo \"POLYGON_API_KEY is NOT set\")",
+      "Bash(then echo \"FINNHUB_API_KEY is set\")",
+      "Bash(if [ -n \"$ALPHA_VANTAGE_API_KEY\" ])",
+      "Bash(then echo \"ALPHA_VANTAGE_API_KEY is set\")",
+      "Bash(else echo \"ALPHA_VANTAGE_API_KEY is NOT set\")",
+      "Bash(stat:*)",
+      "Bash(NODE_ENV=development node:*)"
     ],
     "deny": [],
     "ask": []

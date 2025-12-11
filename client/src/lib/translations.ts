@@ -124,7 +124,8 @@ const EN = {
     riskLow: 'LOW',
     riskMedium: 'MEDIUM',
     riskHigh: 'HIGH',
-    timeHorizon36: '3-6 MONTHS'
+    timeHorizon36: '3-6 MONTHS',
+    totalVolume: 'Total Volume'
   },
   profile: {
     header: 'User Profile',
@@ -391,7 +392,8 @@ const KO = {
     riskLow: '낮음',
     riskMedium: '보통',
     riskHigh: '높음',
-    timeHorizon36: '3-6개월'
+    timeHorizon36: '3-6개월',
+    totalVolume: '총 거래량'
   },
   profile: {
     header: '사용자 프로필',
@@ -569,6 +571,7 @@ const JA = {
     conservative: '最低価格', // App Store compliance
     realistic: '平均価格', // App Store compliance
     optimistic: '最高価格', // App Store compliance
+    totalVolume: '総取引量'
   },
   sidebar: {
     ...EN.sidebar,
@@ -708,6 +711,7 @@ const ZH = {
     conservative: '最低价', // App Store compliance
     realistic: '平均价', // App Store compliance
     optimistic: '最高价', // App Store compliance
+    totalVolume: '总交易量'
   },
   sidebar: {
     ...EN.sidebar,

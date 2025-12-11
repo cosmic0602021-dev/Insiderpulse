@@ -6,6 +6,7 @@ import { ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import { useCurrency } from "@/contexts/currency-context";
 import type { InsiderTrade } from "@shared/schema";
+import { TRANSLATIONS } from "@/lib/translations";
 
 interface TradeCardProps {
   trade: InsiderTrade;
@@ -65,8 +66,10 @@ function CompanyLogo({ ticker, companyName, size = 'lg' }: {
 }
 
 export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
+  const tModal = TRANSLATIONS[langKey].modal;
 
   const formatMarketCap = (marketCap: number | null | undefined) => {
     if (!marketCap || marketCap === 0) return null;
@@ -185,7 +188,7 @@ export default function TradeCard({ trade, onViewDetails }: TradeCardProps) {
             </div>
             {trade.marketCap && trade.marketCap > 0 && (
               <div className="text-xs font-normal text-muted-foreground mt-1">
-                시총대비: {(() => {
+                {tModal.marketCapRatio}: {(() => {
                   const ratio = (trade.totalValue / trade.marketCap!) * 100;
                   if (ratio >= 10) return Math.round(ratio) + '%';
                   else if (ratio >= 1) return ratio.toFixed(1) + '%';

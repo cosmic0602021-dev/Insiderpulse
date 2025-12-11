@@ -2303,6 +2303,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           });
+
+          // 🔥 CRITICAL FIX: Fetch missing or stale marketCap data on-demand
+          const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+          const tickersWithoutMarketCap = uniqueTickers.filter(ticker => {
+            const priceData = stockPriceMap.get(ticker);
+
+            // No data or no marketCap
+            if (!priceData || !priceData.marketCap || priceData.marketCap === 0) {
+              return true;
+            }
+
+            // Check if data is stale (older than 24 hours)
+            if (priceData.lastUpdated) {
+              const age = Date.now() - new Date(priceData.lastUpdated).getTime();
+              if (age > CACHE_TTL_MS) {
+                console.log(`🕒 Stale marketCap for ${ticker} (${Math.floor(age / 1000 / 60 / 60)}h old), will refetch`);
+                return true;
+              }
+            }
+
+            return false;
+          });
+
+          if (tickersWithoutMarketCap.length > 0) {
+            console.log(`🔄 Fetching missing marketCap for ${tickersWithoutMarketCap.length} tickers on-demand`);
+
+            // Batch processing: fetch up to 50 tickers (5 batches of 10) to avoid excessive delays
+            const BATCH_SIZE = 10;
+            const MAX_BATCHES = 5; // Max 50 tickers per request
+            const maxTickers = Math.min(tickersWithoutMarketCap.length, BATCH_SIZE * MAX_BATCHES);
+            const tickersToFetch = tickersWithoutMarketCap.slice(0, maxTickers);
+
+            let fetchedCount = 0;
+            for (let i = 0; i < tickersToFetch.length; i += BATCH_SIZE) {
+              const batch = tickersToFetch.slice(i, i + BATCH_SIZE);
+              console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.join(', ')}`);
+
+              for (const ticker of batch) {
+                try {
+                  const priceData = await stockPriceService.getStockPrice(ticker);
+                  if (priceData && priceData.marketCap && priceData.marketCap > 0) {
+                    // Update map with fresh data
+                    const existing = stockPriceMap.get(ticker);
+                    stockPriceMap.set(ticker, {
+                      currentPrice: existing?.currentPrice || priceData.currentPrice,
+                      marketCap: priceData.marketCap,
+                      lastUpdated: new Date(),
+                    });
+
+                    // Save to database for future use
+                    await storage.upsertStockPrice({
+                      ticker: priceData.ticker,
+                      companyName: priceData.companyName,
+                      currentPrice: priceData.currentPrice.toString(),
+                      change: priceData.change.toString(),
+                      changePercent: priceData.changePercent.toString(),
+                      volume: priceData.volume,
+                      marketCap: priceData.marketCap,
+                    });
+
+                    console.log(`✅ Fetched marketCap for ${ticker}: $${(priceData.marketCap / 1e9).toFixed(2)}B`);
+                    fetchedCount++;
+                  }
+                } catch (error) {
+                  console.warn(`Failed to fetch on-demand marketCap for ${ticker}:`, (error as Error)?.message);
+                }
+              }
+
+              // Rate limiting: wait between batches (except for the last batch)
+              // Polygon.io allows 5 calls/min, so wait 12 seconds between batches to be safe
+              if (i + BATCH_SIZE < tickersToFetch.length) {
+                console.log(`⏳ Waiting 12 seconds for API rate limit...`);
+                await new Promise(resolve => setTimeout(resolve, 12000));
+              }
+            }
+
+            if (tickersWithoutMarketCap.length > maxTickers) {
+              console.log(`⚠️ ${tickersWithoutMarketCap.length - maxTickers} tickers remaining (limit: ${maxTickers}). Fetched ${fetchedCount} successfully.`);
+            } else {
+              console.log(`✅ Completed fetching marketCap for ${fetchedCount}/${tickersToFetch.length} tickers`);
+            }
+          }
         } catch (error) {
           console.warn('Failed to fetch stock prices for percentage calculation:', error);
         }
@@ -4324,6 +4406,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         });
+
+        // 🔥 CRITICAL FIX: Fetch missing marketCap data on-demand for rankings
+        const tickersWithoutMarketCap = uniqueTickers.filter(ticker => {
+          const priceData = stockPriceMap.get(ticker);
+          return !priceData || !priceData.marketCap || priceData.marketCap === 0;
+        });
+
+        if (tickersWithoutMarketCap.length > 0) {
+          console.log(`🔄 [Rankings] Fetching missing marketCap for ${tickersWithoutMarketCap.length} tickers`);
+
+          // Fetch all ranking tickers (they're the most important)
+          for (const ticker of tickersWithoutMarketCap) {
+            try {
+              const priceData = await stockPriceService.getStockPrice(ticker);
+              if (priceData && priceData.marketCap && priceData.marketCap > 0) {
+                // Update map with fresh data
+                const existing = stockPriceMap.get(ticker);
+                stockPriceMap.set(ticker, {
+                  price: existing?.price || priceData.currentPrice,
+                  lastUpdated: new Date(),
+                  marketCap: priceData.marketCap,
+                });
+
+                // Save to database for future use
+                await storage.upsertStockPrice({
+                  ticker: priceData.ticker,
+                  companyName: priceData.companyName,
+                  currentPrice: priceData.currentPrice.toString(),
+                  change: priceData.change.toString(),
+                  changePercent: priceData.changePercent.toString(),
+                  volume: priceData.volume,
+                  marketCap: priceData.marketCap,
+                });
+
+                console.log(`✅ [Rankings] Fetched marketCap for ${ticker}: $${(priceData.marketCap / 1e9).toFixed(2)}B`);
+              }
+            } catch (error) {
+              console.warn(`Failed to fetch on-demand marketCap for ${ticker}:`, (error as Error)?.message);
+            }
+          }
+        }
       }
 
       // Calculate scores and rankings
