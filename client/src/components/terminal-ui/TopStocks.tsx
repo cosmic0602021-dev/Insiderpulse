@@ -238,49 +238,21 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
           <div className="relative mb-8">
-             {/* Restricted Overlay for Top 3 - Compact size matching inner box */}
+             {/* Compact Restricted Overlay */}
              {!isPro && (
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[16rem] sm:max-w-sm md:max-w-md">
-                    <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2.5 sm:p-3 md:p-5 relative text-center shadow-2xl rounded-sm">
-
-                        {/* Status Bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-neutral-800 rounded-t-sm overflow-hidden">
-                            <div className="h-full w-1/3 bg-amber-600 mx-auto"></div>
+                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[10rem] sm:max-w-[12rem]">
+                    <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm">
+                        <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                            <Lock size={12} className="text-amber-600" />
+                            <span className="text-[10px] font-bold text-neutral-200 uppercase">{t.restricted}</span>
                         </div>
-
-                        <div className="mb-2 md:mb-3 mt-2">
-                            <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-sm bg-neutral-900 border border-neutral-800 mb-2">
-                                <ShieldCheck size={18} className="text-neutral-600 md:hidden" />
-                                <ShieldCheck size={22} className="text-neutral-600 hidden md:block" />
-                            </div>
-                            <h2 className="text-sm md:text-base font-bold text-neutral-200 uppercase tracking-wider mb-1">
-                                {t.restricted}
-                            </h2>
-                            <div className="inline-block bg-amber-900/10 text-amber-600 border border-amber-900/20 text-[10px] md:text-xs font-bold px-2 py-0.5 uppercase tracking-widest">
-                                {t.securityLevel}
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5 mb-2 md:mb-3 border-t border-b border-neutral-900 py-2 md:py-3">
-                            <p className="text-[9px] md:text-[10px] text-neutral-400 font-mono leading-relaxed">
-                                {t.desc}
-                            </p>
-                        </div>
-
                         <button
                             onClick={onUpgrade}
-                            className="w-full py-1.5 md:py-2 bg-white hover:bg-neutral-200 text-black font-bold uppercase tracking-widest text-[9px] md:text-[10px] transition-all flex items-center justify-center gap-1.5 mb-2"
+                            className="w-full py-1 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[9px] transition-all flex items-center justify-center gap-1"
                         >
-                            <ScanLine size={11} className="md:hidden" />
-                            <ScanLine size={12} className="hidden md:block" />
+                            <ScanLine size={10} />
                             {t.cta}
                         </button>
-                        
-                        <div className="flex justify-center gap-2 md:gap-3 text-[7px] md:text-[8px] text-neutral-600 font-mono uppercase">
-                            <span className="flex items-center gap-1"><Lock size={8} /> {t.aes}</span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1"><EyeOff size={8} /> {t.blind}</span>
-                        </div>
                     </div>
                 </div>
              )}
