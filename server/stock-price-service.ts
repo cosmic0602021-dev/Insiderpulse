@@ -251,28 +251,45 @@ export class StockPriceService {
 
   // REMOVED: generateMockStockData - Only use real market data, no fake data allowed
 
-  async updateStockPricesForTrades(): Promise<void> {
+  async updateStockPricesForTrades(priorityTickers?: string[]): Promise<void> {
     try {
       // Get ALL recent trades to ensure comprehensive price coverage
       const trades = await storage.getInsiderTrades(2000, 0);
       console.log(`📊 Retrieved ${trades.length} trades for stock price updates`);
 
-      // Extract unique tickers (more reliable than company names)
-      const uniqueTickers = new Set<string>();
-
+      // Count trades per ticker to prioritize by activity level
+      const tickerTradeCount = new Map<string, number>();
       for (const trade of trades) {
         if (trade.ticker) {
-          uniqueTickers.add(trade.ticker.toUpperCase());
+          const ticker = trade.ticker.toUpperCase();
+          tickerTradeCount.set(ticker, (tickerTradeCount.get(ticker) || 0) + 1);
         }
       }
 
-      console.log(`🔄 Updating stock prices for ${uniqueTickers.size} unique tickers...`);
+      // Sort tickers by trade count (most active first)
+      let orderedTickers = Array.from(tickerTradeCount.keys())
+        .sort((a, b) => (tickerTradeCount.get(b) || 0) - (tickerTradeCount.get(a) || 0));
+
+      // If explicit priority tickers provided, put them first
+      if (priorityTickers && priorityTickers.length > 0) {
+        const prioritySet = new Set(priorityTickers.map(t => t.toUpperCase()));
+        const priorityList = orderedTickers.filter(t => prioritySet.has(t));
+        const otherList = orderedTickers.filter(t => !prioritySet.has(t));
+        orderedTickers = [...priorityList, ...otherList];
+        console.log(`⭐ Prioritizing ${priorityList.length} explicit priority tickers first`);
+      }
+
+      // Top 20 tickers by trade activity are always processed first
+      const top20 = orderedTickers.slice(0, 20);
+      console.log(`🔝 Top 20 tickers by activity: ${top20.join(', ')}`);
+
+      console.log(`🔄 Updating stock prices for ${orderedTickers.length} unique tickers...`);
 
       let successCount = 0;
       let failedCount = 0;
       const failedTickers: string[] = [];
 
-      for (const ticker of Array.from(uniqueTickers)) {
+      for (const ticker of orderedTickers) {
         try {
           // Use ticker directly instead of company name lookup
           const priceData = await this.getStockPrice(ticker);
@@ -290,16 +307,16 @@ export class StockPriceService {
 
             await storage.upsertStockPrice(stockPrice);
             successCount++;
-            console.log(`✅ [${successCount}/${uniqueTickers.size}] Updated ${ticker}: $${priceData.currentPrice}`);
+            console.log(`✅ [${successCount}/${orderedTickers.length}] Updated ${ticker}: $${priceData.currentPrice}`);
           } else {
             failedCount++;
             failedTickers.push(ticker);
-            console.log(`⚠️ [${successCount + failedCount}/${uniqueTickers.size}] No price data for ${ticker} - may be delisted or invalid`);
+            console.log(`⚠️ [${successCount + failedCount}/${orderedTickers.length}] No price data for ${ticker} - may be delisted or invalid`);
           }
         } catch (error) {
           failedCount++;
           failedTickers.push(ticker);
-          console.error(`❌ [${successCount + failedCount}/${uniqueTickers.size}] Failed to update ${ticker}:`, (error as Error)?.message || error);
+          console.error(`❌ [${successCount + failedCount}/${orderedTickers.length}] Failed to update ${ticker}:`, (error as Error)?.message || error);
           // Continue with next ticker instead of crashing
           continue;
         }
@@ -311,7 +328,7 @@ export class StockPriceService {
       console.log('\n📈 Stock Price Update Summary:');
       console.log(`   ✅ Successfully updated: ${successCount} tickers`);
       console.log(`   ❌ Failed to update: ${failedCount} tickers`);
-      console.log(`   📊 Coverage: ${((successCount / uniqueTickers.size) * 100).toFixed(1)}%`);
+      console.log(`   📊 Coverage: ${((successCount / orderedTickers.length) * 100).toFixed(1)}%`);
 
       if (failedTickers.length > 0 && failedTickers.length <= 10) {
         console.log(`   Failed tickers: ${failedTickers.join(', ')}`);
@@ -477,18 +494,53 @@ export class StockPriceService {
     }
   }
 
+  // Fetch ranking tickers by calculating net buying for each ticker
+  private async getRankingTickers(): Promise<string[]> {
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+
+      const trades = await storage.getInsiderTrades(500, 0, false, fromDate);
+      
+      // Calculate net buying per ticker
+      const tickerNetBuying = new Map<string, number>();
+      for (const trade of trades) {
+        if (!trade.ticker) continue;
+        const ticker = trade.ticker.toUpperCase();
+        const value = trade.totalValue || 0;
+        const netValue = (trade.tradeType === 'BUY' || trade.tradeType === 'PURCHASE') ? value : -value;
+        tickerNetBuying.set(ticker, (tickerNetBuying.get(ticker) || 0) + netValue);
+      }
+
+      // Sort by net buying (highest first) and take top 15
+      const sortedTickers = Array.from(tickerNetBuying.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([ticker]) => ticker);
+
+      console.log(`📊 Ranking tickers for priority: ${sortedTickers.join(', ')}`);
+      return sortedTickers;
+    } catch (error) {
+      console.error('Failed to fetch ranking tickers:', error);
+      return [];
+    }
+  }
+
   async startPeriodicUpdates(): Promise<void> {
     console.log('🚀 Starting periodic stock price updates (every 6 hours - COST OPTIMIZED)...');
 
     // Initial update (if not weekend)
     if (shouldUpdateStockPrices()) {
-      await this.updateStockPricesForTrades();
+      const priorityTickers = await this.getRankingTickers();
+      await this.updateStockPricesForTrades(priorityTickers);
     }
 
     // Schedule periodic updates (skip on weekends/holidays)
     setInterval(async () => {
       if (shouldUpdateStockPrices()) {
-        await this.updateStockPricesForTrades();
+        const priorityTickers = await this.getRankingTickers();
+        await this.updateStockPricesForTrades(priorityTickers);
       }
     }, 6 * 60 * 60 * 1000); // 6 hours - Cost optimization
   }
