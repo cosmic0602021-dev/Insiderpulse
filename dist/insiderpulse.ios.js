@@ -14,11 +14,11 @@ var global = typeof globalThis !== 'undefined' ? globalThis : typeof global !== 
     host: ''
   };
   global.__appsInToss = {
-    deploymentId: "019af2da-300b-75c6-ba99-a3ed722d6008",
+    deploymentId: "019b177b-1abb-7c8c-aa30-f278543403f9",
     brandBridgeColorMode: "basic",
     brandDisplayName: "InsiderPulse",
     brandPrimaryColor: "#3182F6",
-    brandIcon: "",
+    brandIcon: "./client/public/favicon.ico",
     webViewType: "partner",
     navigationBar: "{\"withBackButton\":true,\"withHomeButton\":false}"
   };
@@ -138,11 +138,11 @@ if (global.__MICRO_FRONTEND__ == null) {
     host: ''
   };
   global.__appsInToss = {
-    deploymentId: "019af2da-300b-75c6-ba99-a3ed722d6008",
+    deploymentId: "019b177b-1abb-7c8c-aa30-f278543403f9",
     brandBridgeColorMode: "basic",
     brandDisplayName: "InsiderPulse",
     brandPrimaryColor: "#3182F6",
-    brandIcon: "",
+    brandIcon: "./client/public/favicon.ico",
     webViewType: "partner",
     navigationBar: "{\"withBackButton\":true,\"withHomeButton\":false}"
   };

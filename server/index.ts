@@ -50,8 +50,18 @@ app.use((req, res, next) => {
     isAllowed = appintosDomains.some(domain => origin.endsWith(domain));
   }
 
-  if (isAllowed) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  // 토스 앱 WebView에서는 origin이 null일 수 있음 - 허용
+  // User-Agent로 추가 검증
+  const userAgent = req.headers['user-agent'] || '';
+  const isAppWebView = !origin && (
+    userAgent.includes('wv') || // WebView indicator
+    userAgent.includes('Toss') ||
+    userAgent.includes('KAKAOTALK') ||
+    req.headers['x-appintos-signature'] // Appintos signature header
+  );
+
+  if (isAllowed || isAppWebView) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature');
