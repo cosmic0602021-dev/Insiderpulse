@@ -39,10 +39,10 @@ export function isAppintosEnvironment(): boolean {
       return true;
     }
 
-    // 호스트네임 확인
+    // 호스트네임 확인 (tossmini.com: 앱인토스 실제 서비스/QR테스트 도메인)
     const hostname = window.location.hostname;
-    if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im')) {
-      console.log('🔍 [ENV] Detected Appintos hostname');
+    if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im') || hostname.includes('tossmini.com')) {
+      console.log('🔍 [ENV] Detected Appintos hostname:', hostname);
       return true;
     }
 
