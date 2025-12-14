@@ -45,8 +45,9 @@ app.use((req, res, next) => {
   let isAllowed = origin && allowedOrigins.includes(origin);
 
   // Also allow Appintos domains (they have dynamic subdomains)
+  // tossmini.com: 앱인토스 실제 서비스 및 QR 테스트 도메인
   if (!isAllowed && origin) {
-    const appintosDomains = ['.apps-in-toss.com', '.toss.im', '.appintos.com'];
+    const appintosDomains = ['.apps-in-toss.com', '.toss.im', '.appintos.com', '.tossmini.com'];
     isAllowed = appintosDomains.some(domain => origin.endsWith(domain));
   }
 

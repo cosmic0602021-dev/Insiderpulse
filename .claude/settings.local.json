@@ -198,7 +198,9 @@
       "Bash(then echo \"ALPHA_VANTAGE_API_KEY is set\")",
       "Bash(else echo \"ALPHA_VANTAGE_API_KEY is NOT set\")",
       "Bash(stat:*)",
-      "Bash(NODE_ENV=development node:*)"
+      "Bash(NODE_ENV=development node:*)",
+      "WebFetch(domain:techchat-apps-in-toss.toss.im)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

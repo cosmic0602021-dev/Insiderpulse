@@ -1,8 +1,15 @@
 import type { TradingStats, InsiderTrade } from '@shared/schema';
 import { ENV_CONFIG } from './environment';
 
-const API_BASE_URL = ENV_CONFIG.apiBaseUrl;
-console.log('🌐 [API CLIENT] API Base URL:', API_BASE_URL, 'Appintos:', ENV_CONFIG.isAppintos);
+// 빌드 버전: 2024-12-14-v2 (앱인토스 API 호출 수정)
+const BUILD_VERSION = '2024-12-14-v2';
+
+// 런타임에 매번 환경 감지 (빌드 시점 고정 방지)
+function getApiBaseUrl(): string {
+  const url = ENV_CONFIG.apiBaseUrl;
+  console.log(`🌐 [API CLIENT v${BUILD_VERSION}] API Base URL:`, url, 'Appintos:', ENV_CONFIG.isAppintos);
+  return url;
+}
 
 export interface AccessLevel {
   hasRealtimeAccess: boolean;
@@ -64,7 +71,7 @@ class ApiClient {
     }
   }
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${getApiBaseUrl()}${endpoint}`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -221,7 +228,7 @@ class ApiClient {
         headers['Authorization'] = `Bearer ${this.token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/trial/activate`, {
+      const response = await fetch(`${getApiBaseUrl()}/trial/activate`, {
         method: 'POST',
         headers,
       });
