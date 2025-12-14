@@ -28,45 +28,18 @@ app.use((req, res, next) => {
 
 app.use(express.urlencoded({ extended: false }));
 
-// CORS middleware for custom domain support
+// CORS middleware - 앱인토스 테스트를 위해 모든 origin 허용
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    process.env.APP_URL,
-    process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null,
-    'https://insiderpulse.pro',
-    'https://www.insiderpulse.pro',
-    'http://localhost:5000',
-    'http://127.0.0.1:5000'
-  ].filter(Boolean);
 
-  // Check exact match
-  let isAllowed = origin && allowedOrigins.includes(origin);
+  // 디버깅: origin 로그
+  console.log(`🌐 [CORS] Request from origin: ${origin || 'null'}, User-Agent: ${req.headers['user-agent']?.substring(0, 50)}`);
 
-  // Also allow Appintos domains (they have dynamic subdomains)
-  // tossmini.com: 앱인토스 실제 서비스 및 QR 테스트 도메인
-  if (!isAllowed && origin) {
-    const appintosDomains = ['.apps-in-toss.com', '.toss.im', '.appintos.com', '.tossmini.com'];
-    isAllowed = appintosDomains.some(domain => origin.endsWith(domain));
-  }
-
-  // 토스 앱 WebView에서는 origin이 null일 수 있음 - 허용
-  // User-Agent로 추가 검증
-  const userAgent = req.headers['user-agent'] || '';
-  const isAppWebView = !origin && (
-    userAgent.includes('wv') || // WebView indicator
-    userAgent.includes('Toss') ||
-    userAgent.includes('KAKAOTALK') ||
-    req.headers['x-appintos-signature'] // Appintos signature header
-  );
-
-  if (isAllowed || isAppWebView) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature');
-  }
+  // 모든 origin 허용 (앱인토스 테스트용)
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
