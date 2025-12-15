@@ -12,6 +12,7 @@ import logoLight from '@assets/Gemini_Generated_Image_wdqi0fwdqi0fwdqi-Photoroom
 import logoDark from '@assets/inverted_with_green_1757888880166.png';
 import type { InsiderTrade } from '@shared/schema';
 import { useLanguage } from '@/contexts/language-context';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
@@ -155,7 +156,7 @@ export function TradeDetailModal({
 
     try {
       setIsLoadingAnalysis(true);
-      const response = await fetch(`/api/trades/${trade.id}/comprehensive-analysis?language=${language}`);
+      const response = await fetch(resolveApiUrl(`/api/trades/${trade.id}/comprehensive-analysis?language=${language}`));
 
       if (response.ok) {
         const data = await response.json();
@@ -225,7 +226,7 @@ export function TradeDetailModal({
 
       console.log(`📊 Loading price history for ${ticker}: ${fromDate} to ${toDate}`);
 
-      const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
+      const response = await fetch(resolveApiUrl(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`));
 
       if (response.ok) {
         const data = await response.json();
@@ -293,7 +294,7 @@ export function TradeDetailModal({
       });
 
       // 백엔드에 구독 정보 저장
-      await fetch('/api/notifications/subscribe', {
+      await fetch(resolveApiUrl('/api/notifications/subscribe'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

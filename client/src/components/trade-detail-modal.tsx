@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
 import { CurrencySelector } from '@/components/currency-selector';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { useState, useEffect, useMemo, useId } from 'react';
 
 interface StockPriceData {
@@ -41,7 +42,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
 
     const fetchStockPrice = async () => {
       try {
-        const response = await fetch(`/api/stocks/${trade.ticker}`);
+        const response = await fetch(resolveApiUrl(`/api/stocks/${trade.ticker}`));
         if (response.ok) {
           const data = await response.json();
           setStockPrice(data);

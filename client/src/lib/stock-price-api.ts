@@ -1,3 +1,5 @@
+import { resolveApiUrl } from './queryClient';
+
 // 실시간 주가 API 서비스
 export interface StockPrice {
   symbol: string;
@@ -10,7 +12,7 @@ export interface StockPrice {
 // Backend API를 통한 주가 조회 (CORS 문제 해결)
 async function fetchBackendStockPrice(symbol: string): Promise<StockPrice | null> {
   try {
-    const response = await fetch(`/api/stocks/${symbol}`);
+    const response = await fetch(resolveApiUrl(`/api/stocks/${symbol}`));
 
     if (!response.ok) {
       throw new Error(`Backend API error: ${response.status}`);
@@ -38,7 +40,7 @@ async function fetchBackendStockPrice(symbol: string): Promise<StockPrice | null
 // Multiple stocks API를 통한 주가 조회 (백업용)
 async function fetchMultipleStocksPrice(symbol: string): Promise<StockPrice | null> {
   try {
-    const response = await fetch(`/api/stocks?tickers=${symbol}`);
+    const response = await fetch(resolveApiUrl(`/api/stocks?tickers=${symbol}`));
 
     if (!response.ok) {
       throw new Error(`Multiple stocks API error: ${response.status}`);
@@ -136,7 +138,7 @@ export async function getMultipleStockPrices(symbols: string[]): Promise<Map<str
   try {
     // 모든 심볼을 한 번에 백엔드로 요청
     const tickersParam = symbols.join(',');
-    const response = await fetch(`/api/stocks?tickers=${tickersParam}`);
+    const response = await fetch(resolveApiUrl(`/api/stocks?tickers=${tickersParam}`));
     
     if (!response.ok) {
       throw new Error(`Backend API error: ${response.status}`);

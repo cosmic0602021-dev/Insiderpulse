@@ -15,6 +15,7 @@ import { useLocation } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import { ENV_CONFIG } from '@/lib/environment';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { DebugPanel } from '@/components/debug-panel';
 
 // Global cache for AI analysis - shared across all users/sessions
@@ -218,7 +219,7 @@ export default function Ranking() {
         } else {
           try {
             console.log(`Fetching comprehensive analysis for trade ${recentTrade.id}...`);
-            const response = await fetch(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`);
+            const response = await fetch(resolveApiUrl(`/api/trades/${recentTrade.id}/comprehensive-analysis?language=${language}`));
 
             if (response.ok) {
               comprehensiveAnalysis = await response.json();

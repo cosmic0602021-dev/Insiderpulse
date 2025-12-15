@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, resolveApiUrl } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,10 +43,12 @@ import { View } from "@/components/terminal-ui/types";
 import { TRANSLATIONS } from "@/lib/translations";
 import { AuthModal } from "@/components/auth-modal";
 import { DisclaimerModal } from "@/components/disclaimer-modal";
+import DebugNetwork from "@/pages/debug-network";
 
 function PublicRouter() {
   return (
     <Switch>
+      <Route path="/debug" component={DebugNetwork} />
       <Route path="/" component={LandingPage} />
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
@@ -302,7 +304,7 @@ export default function App() {
   useEffect(() => {
     const keepAlive = async () => {
       try {
-        await fetch('/api/health');
+        await fetch(resolveApiUrl('/api/health'));
       } catch (error) {
         // Silently fail - health check is best effort
       }

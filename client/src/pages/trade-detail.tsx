@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import PriceComparisonChart from "@/components/price-comparison-chart";
 import StockHistoryChart from "@/components/stock-history-chart";
+import { resolveApiUrl } from "@/lib/queryClient";
 import type { InsiderTrade, StockPrice } from "@shared/schema";
 
 export default function TradeDetail() {
@@ -21,7 +22,7 @@ export default function TradeDetail() {
   const { data: trades = [], isLoading } = useQuery<InsiderTrade[]>({
     queryKey: ['trades', 'list', { limit: 100, offset: 0 }],
     queryFn: async () => {
-      const response = await fetch('/api/trades?limit=100&offset=0');
+      const response = await fetch(resolveApiUrl('/api/trades?limit=100&offset=0'));
       if (!response.ok) {
         throw new Error('Failed to fetch trades');
       }
@@ -46,11 +47,11 @@ export default function TradeDetail() {
       return null; // 🚨 임시 비활성화
       
       if (trade?.ticker) {
-        const response = await fetch(`/api/stocks/${trade.ticker}`);
+        const response = await fetch(resolveApiUrl(`/api/stocks/${trade.ticker}`));
         if (!response.ok) throw new Error('Failed to fetch stock price');
         return response.json();
       } else if (trade?.companyName) {
-        const response = await fetch(`/api/stocks/search/${encodeURIComponent(trade.companyName)}`);
+        const response = await fetch(resolveApiUrl(`/api/stocks/search/${encodeURIComponent(trade.companyName)}`));
         if (!response.ok) throw new Error('Failed to fetch stock price');
         return response.json();
       }

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Calendar, BarChart3 } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { resolveApiUrl } from "@/lib/queryClient";
 import type { StockPriceHistory } from "@shared/schema";
 
 interface StockHistoryChartProps {
@@ -37,7 +38,7 @@ const StockHistoryChart = memo(function StockHistoryChart({
     refetchOnMount: false,
     refetchOnReconnect: false,
     queryFn: async () => {
-      const response = await fetch(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`);
+      const response = await fetch(resolveApiUrl(`/api/stocks/${ticker}/history?from=${fromDate}&to=${toDate}`));
       if (!response.ok) throw new Error('Failed to fetch stock price history');
       return response.json();
     }

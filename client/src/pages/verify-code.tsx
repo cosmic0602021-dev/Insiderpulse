@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle, Mail, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { resolveApiUrl } from '@/lib/queryClient';
 
 export default function VerifyCode() {
   const [, navigate] = useLocation();
@@ -97,7 +98,7 @@ export default function VerifyCode() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/verify-code', {
+      const response = await fetch(resolveApiUrl('/api/auth/verify-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: codeString }),
@@ -130,7 +131,7 @@ export default function VerifyCode() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/resend-code', {
+      const response = await fetch(resolveApiUrl('/api/auth/resend-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

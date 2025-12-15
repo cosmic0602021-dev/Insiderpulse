@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
 import {
@@ -84,7 +85,7 @@ export default function ProfilePage() {
 
     setIsLoadingPortal(true);
     try {
-      const response = await fetch('/api/create-portal-session', {
+      const response = await fetch(resolveApiUrl('/api/create-portal-session'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export default function ProfilePage() {
 
     setIsCancelling(true);
     try {
-      const response = await fetch('/api/cancel-subscription', {
+      const response = await fetch(resolveApiUrl('/api/cancel-subscription'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +177,7 @@ export default function ProfilePage() {
     setIsRedeemingCoupon(true);
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/coupon/redeem', {
+      const response = await fetch(resolveApiUrl('/api/coupon/redeem'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -28,16 +28,33 @@ app.use((req, res, next) => {
 
 app.use(express.urlencoded({ extended: false }));
 
-// CORS middleware - 앱인토스 테스트를 위해 모든 origin 허용
+// CORS middleware - 앱인토스 및 허용된 origin 지원
+const ALLOWED_ORIGINS = [
+  'https://insiderpulse.apps.tossmini.com',       // 토스 앱인토스 실제 서비스
+  'https://insiderpulse.private-apps.tossmini.com', // 토스 앱인토스 테스트
+  'https://insiderpulse.pro',                      // 프로덕션
+  'http://localhost:5000',                         // 로컬 개발
+  'http://localhost:3000',                         // 로컬 개발 (Vite)
+];
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
   // 디버깅: origin 로그
   console.log(`🌐 [CORS] Request from origin: ${origin || 'null'}, User-Agent: ${req.headers['user-agent']?.substring(0, 50)}`);
 
-  // 모든 origin 허용 (앱인토스 테스트용)
-  res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // origin이 허용 목록에 있거나, 개발 환경에서는 모든 origin 허용
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV !== 'production')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else if (origin) {
+    // 허용되지 않은 origin이지만, credentials 없이 허용
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    // origin이 없는 경우 (서버간 통신 등)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature');
 

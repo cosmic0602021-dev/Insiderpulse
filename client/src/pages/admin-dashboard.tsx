@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/language-context';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface AdminMetrics {
@@ -124,7 +125,7 @@ export default function AdminDashboard() {
       const headers = { 'x-admin-key': key };
 
       // Fetch metrics
-      const metricsRes = await fetch('/api/admin/metrics/overview', { headers });
+      const metricsRes = await fetch(resolveApiUrl('/api/admin/metrics/overview'), { headers });
       if (!metricsRes.ok) {
         throw new Error(`Failed to fetch metrics: ${metricsRes.statusText}`);
       }
@@ -132,7 +133,7 @@ export default function AdminDashboard() {
       setMetrics(metricsData.metrics);
 
       // Fetch users
-      const usersRes = await fetch('/api/admin/metrics/users?limit=50', { headers });
+      const usersRes = await fetch(resolveApiUrl('/api/admin/metrics/users?limit=50'), { headers });
       if (!usersRes.ok) {
         throw new Error(`Failed to fetch users: ${usersRes.statusText}`);
       }
@@ -140,7 +141,7 @@ export default function AdminDashboard() {
       setUsers(usersData.users);
 
       // Fetch growth data
-      const growthRes = await fetch('/api/admin/metrics/growth', { headers });
+      const growthRes = await fetch(resolveApiUrl('/api/admin/metrics/growth'), { headers });
       if (!growthRes.ok) {
         throw new Error(`Failed to fetch growth: ${growthRes.statusText}`);
       }
@@ -148,7 +149,7 @@ export default function AdminDashboard() {
       setGrowthData(growthDataRes.growth || []);
 
       // Fetch conversion data
-      const conversionRes = await fetch('/api/admin/metrics/conversion', { headers });
+      const conversionRes = await fetch(resolveApiUrl('/api/admin/metrics/conversion'), { headers });
       if (!conversionRes.ok) {
         throw new Error(`Failed to fetch conversion: ${conversionRes.statusText}`);
       }
@@ -159,7 +160,7 @@ export default function AdminDashboard() {
       });
 
       // Fetch revenue data
-      const revenueRes = await fetch('/api/admin/metrics/revenue', { headers });
+      const revenueRes = await fetch(resolveApiUrl('/api/admin/metrics/revenue'), { headers });
       if (!revenueRes.ok) {
         throw new Error(`Failed to fetch revenue: ${revenueRes.statusText}`);
       }
@@ -175,7 +176,7 @@ export default function AdminDashboard() {
       });
 
       // Fetch geography data
-      const geographyRes = await fetch('/api/admin/metrics/geography', { headers });
+      const geographyRes = await fetch(resolveApiUrl('/api/admin/metrics/geography'), { headers });
       if (!geographyRes.ok) {
         throw new Error(`Failed to fetch geography: ${geographyRes.statusText}`);
       }

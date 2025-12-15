@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resolveApiUrl } from '@/lib/queryClient';
 
 export interface PushNotificationState {
   isSupported: boolean;
@@ -95,7 +96,7 @@ export function usePushNotifications() {
       });
 
       // Send subscription to server
-      await fetch('/api/push/subscribe', {
+      await fetch(resolveApiUrl('/api/push/subscribe'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +131,7 @@ export function usePushNotifications() {
 
       if (subscription) {
         // Unsubscribe from server
-        await fetch('/api/push/unsubscribe', {
+        await fetch(resolveApiUrl('/api/push/unsubscribe'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

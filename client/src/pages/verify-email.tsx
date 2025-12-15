@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
+import { resolveApiUrl } from '@/lib/queryClient';
 
 export default function VerifyEmail() {
   const [, navigate] = useLocation();
@@ -24,7 +25,7 @@ export default function VerifyEmail() {
 
     const verifyEmail = async () => {
       try {
-        const response = await fetch(`/api/auth/verify-email/${token}`);
+        const response = await fetch(resolveApiUrl(`/api/auth/verify-email/${token}`));
         const data = await response.json();
 
         if (data.success) {

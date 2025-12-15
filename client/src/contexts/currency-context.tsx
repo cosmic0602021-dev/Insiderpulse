@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { resolveApiUrl } from '@/lib/queryClient';
 
 export type Currency = 'USD' | 'KRW' | 'CNY' | 'JPY';
 
@@ -64,7 +65,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const response = await fetch('/api/exchange-rates');
+        const response = await fetch(resolveApiUrl('/api/exchange-rates'));
         if (!response.ok) {
           throw new Error('Failed to fetch exchange rates');
         }

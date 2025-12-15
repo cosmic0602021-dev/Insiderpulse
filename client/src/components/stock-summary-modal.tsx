@@ -5,6 +5,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { useState, useEffect, useMemo, useId, useCallback, useRef } from 'react';
 import { StockRecommendation } from './terminal-ui/types';
 
@@ -67,7 +68,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
     const fetchStockPrice = async () => {
       try {
-        const response = await fetch(`/api/stocks/${stock.ticker}`);
+        const response = await fetch(resolveApiUrl(`/api/stocks/${stock.ticker}`));
         if (response.ok) {
           const data = await response.json();
           setStockPrice(data);
@@ -132,7 +133,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
       try {
         // Get trade ID
-        const tradesResponse = await fetch(`/api/trades?ticker=${stock.ticker}&limit=1`);
+        const tradesResponse = await fetch(resolveApiUrl(`/api/trades?ticker=${stock.ticker}&limit=1`));
         if (!tradesResponse.ok) {
           throw new Error(`Trades API returned ${tradesResponse.status}`);
         }
@@ -778,7 +779,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                             // Trigger re-fetch
                             const fetchAgain = async () => {
                               try {
-                                const tradesResponse = await fetch(`/api/trades?ticker=${stock?.ticker}&limit=1`);
+                                const tradesResponse = await fetch(resolveApiUrl(`/api/trades?ticker=${stock?.ticker}&limit=1`));
                                 if (!tradesResponse.ok) throw new Error(`Trades API returned ${tradesResponse.status}`);
                                 const tradesData = await tradesResponse.json();
                                 if (!tradesData.trades?.length) {
@@ -794,7 +795,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                                 const controller = new AbortController();
                                 const timeoutId = setTimeout(() => controller.abort(), 30000);
                                 try {
-                                  const analysisResponse = await fetch(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`, { signal: controller.signal });
+                                  const analysisResponse = await fetch(resolveApiUrl(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`), { signal: controller.signal });
                                   clearTimeout(timeoutId);
                                   if (!analysisResponse.ok) {
                                     if (analysisResponse.status === 503) {

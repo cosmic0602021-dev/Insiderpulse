@@ -200,7 +200,8 @@
       "Bash(stat:*)",
       "Bash(NODE_ENV=development node:*)",
       "WebFetch(domain:techchat-apps-in-toss.toss.im)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [],
     "ask": []

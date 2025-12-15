@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, X, Mail, CheckCircle, ArrowLeft, Lock, Globe, ShieldCheck, ArrowRight, Fingerprint, Database, Scan, Target, Crosshair, Activity } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/auth-context';
 import { useLanguage } from '@/contexts/language-context';
 import { TRANSLATIONS } from '@/lib/translations';
@@ -270,7 +271,7 @@ export function AuthModal() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/verify-code', {
+      const response = await fetch(resolveApiUrl('/api/auth/verify-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: codeString }),
@@ -308,7 +309,7 @@ export function AuthModal() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/resend-code', {
+      const response = await fetch(resolveApiUrl('/api/auth/resend-code'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
