@@ -201,7 +201,10 @@
       "Bash(NODE_ENV=development node:*)",
       "WebFetch(domain:techchat-apps-in-toss.toss.im)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(__NEW_LINE__ echo \"=== 현재 사용자 상태 확인 ===\")",
+      "Bash(__NEW_LINE__ echo \"=== 3개월 유료 플랜 추가 ===\")",
+      "Bash(__NEW_LINE__ echo \"=== 기존 캐시 삭제 ===\")"
     ],
     "deny": [],
     "ask": []

@@ -2922,72 +2922,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'N/A'
       });
 
-      // 💰 PERMANENT CACHE: Once generated, analysis never expires
-      // This maximizes cost savings and user experience
+      // 💰 LANGUAGE-SPECIFIC CACHE: Each language cached separately
+      // New structure: { en: {...}, ko: {...}, ja: {...} }
       if (trade.comprehensiveAnalysis) {
-        console.log(`✅ Using cached analysis - saved GPT API call`);
-
         const cachedData = trade.comprehensiveAnalysis as any;
-        const cachedLanguage = cachedData._language || 'en'; // Default to English if not specified
 
-        // 🌍 Translate cached data if language doesn't match
-        if (cachedLanguage !== language) {
-          console.log(`🌍 Translating cached analysis from ${cachedLanguage} to ${language}...`);
-
-          try {
-            // Translate catalysts array
-            if (cachedData.catalysts && Array.isArray(cachedData.catalysts) && cachedData.catalysts.length > 0) {
-              cachedData.catalysts = await Promise.all(
-                cachedData.catalysts.map((catalyst: string) => translateText(catalyst, language))
-              );
-            }
-
-            // Translate executive summary
-            if (cachedData.executiveSummary) {
-              cachedData.executiveSummary = await translateText(cachedData.executiveSummary, language);
-            }
-
-            // Translate market context reasoning
-            if (cachedData.marketContext?.reasoning) {
-              cachedData.marketContext.reasoning = await translateText(
-                cachedData.marketContext.reasoning,
-                language
-              );
-            }
-
-            // Translate risk assessment mitigation
-            if (cachedData.riskAssessment?.mitigation) {
-              cachedData.riskAssessment.mitigation = await translateText(
-                cachedData.riskAssessment.mitigation,
-                language
-              );
-            }
-
-            // Translate news analysis (majorNews titles and summaries)
-            if (cachedData.newsAnalysis?.majorNews && Array.isArray(cachedData.newsAnalysis.majorNews)) {
-              cachedData.newsAnalysis.majorNews = await Promise.all(
-                cachedData.newsAnalysis.majorNews.map(async (news: any) => ({
-                  ...news,
-                  title: await translateText(news.title, language),
-                  summary: await translateText(news.summary, language)
-                }))
-              );
-            }
-
-            // Update language marker
-            cachedData._language = language;
-
-            console.log(`✅ Cached analysis translated from ${cachedLanguage} to ${language}`);
-            return res.json(cachedData);
-          } catch (translateError) {
-            console.error('⚠️ Translation failed, returning cached data as-is:', translateError);
-            return res.json(trade.comprehensiveAnalysis);
-          }
+        // Check if this language version exists in cache
+        if (cachedData[language]) {
+          console.log(`✅ Using cached ${language} analysis - saved GPT API call`);
+          return res.json(cachedData[language]);
         }
 
-        // Return cached data as-is (language matches)
-        console.log(`✅ Returning cached analysis in ${language}`);
-        return res.json(trade.comprehensiveAnalysis);
+        // Check for old format (has aiSummary at root level) - return as-is
+        if (cachedData.aiSummary) {
+          console.log(`✅ Using legacy cached analysis`);
+          return res.json(cachedData);
+        }
+
+        console.log(`📝 Language ${language} not cached, will generate...`);
       }
 
       // Cost optimization: Only generate analysis for trades in current rankings (age-agnostic)
@@ -3068,7 +3020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Could not fetch news (continuing without news):', error);
       }
 
-      // Generate AI analysis with news context
+      // Generate AI analysis (simplified: just 2-line summary)
       const aiService = new AIAnalysisService();
       const analysis = await aiService.analyzeInsiderTrade({
         companyName: trade.companyName,
@@ -3080,65 +3032,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePerShare: trade.pricePerShare,
         totalValue: trade.totalValue,
         ownershipPercentage: trade.ownershipPercentage || 0,
-        filedDate: trade.filedDate, // Pass filedDate for historical analysis
+        filedDate: trade.filedDate,
         recentNews: recentNews.length > 0 ? recentNews : undefined
       });
 
-      // Translation helpers
-      const t = (key: string) => {
-        const translations: Record<string, Record<string, string>> = {
-          signal: { en: 'signal', ko: '신호', ja: 'シグナル', zh: '信号' },
-          timeHorizon: { en: '3-6 months', ko: '3-6개월', ja: '3-6ヶ月', zh: '3-6个月' },
-          mitigation: {
-            en: 'Diversified investment and stop-loss recommended',
-            ko: '분산 투자 및 손절매 설정 권장',
-            ja: '分散投資とストップロスの設定を推奨',
-            zh: '建议分散投资并设置止损'
-          },
-          analyzingMarket: {
-            en: 'Analyzing market conditions',
-            ko: '시장 상황 분석 중',
-            ja: '市場状況を分析中',
-            zh: '分析市场状况中'
-          },
-          latestNews: { en: 'Latest News', ko: '최신 소식', ja: '最新ニュース', zh: '最新消息' },
-          insiderActivity: {
-            en: 'Insider trading activity detected',
-            ko: '내부자 거래 활동 감지됨',
-            ja: 'インサイダー取引活動を検出',
-            zh: '检测到内部交易活动'
-          }
-        };
-        return translations[key]?.[language] || translations[key]?.['en'] || key;
-      };
-
-      // Pre-compute news analysis in English for caching
-      let newsAnalysis;
+      // Build simple news analysis
+      let newsAnalysis = null;
       if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
-        // Use real news data - sort by date (newest first)
         const newsItems = newsCorrelationResult.relatedNews
-          .slice(0, 10) // Top 10 most relevant news
-          .sort((a: any, b: any) => {
-            // Sort by date, newest first
-            const dateA = new Date(a.publishedDate).getTime();
-            const dateB = new Date(b.publishedDate).getTime();
-            return dateB - dateA;
-          });
+          .slice(0, 5)
+          .sort((a: any, b: any) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime());
 
-        // Keep news in English for caching - translation happens on response
-        const englishNewsItems = newsItems.map((article: any) => ({
-          title: article.title,
-          summary: article.summary,
-          sentiment: article.sentiment,
-          published: new Date(article.publishedDate),
-          relevanceScore: article.relevanceScore / 100, // Convert to 0-1 scale
-          source: article.source
-        }));
-
-        const positiveCount = englishNewsItems.filter((n: any) =>
+        const positiveCount = newsItems.filter((n: any) =>
           n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
         ).length;
-        const negativeCount = englishNewsItems.filter((n: any) =>
+        const negativeCount = newsItems.filter((n: any) =>
           n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
         ).length;
 
@@ -3146,213 +3054,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalNews: newsCorrelationResult.relatedNews.length,
           positiveCount,
           negativeCount,
-          majorNews: englishNewsItems,
-          // Additional insights from news correlation
-          correlationScore: newsCorrelationResult.correlationScore,
-          aiInsights: newsCorrelationResult.aiInsights
-        };
-      } else {
-        // Fallback to basic analysis if no news available - keep in English
-        console.log('No news available, using fallback analysis');
-        const isBuy = trade.tradeType.toUpperCase() === 'BUY' || trade.tradeType.toUpperCase() === 'PURCHASE';
-        const fallbackTitle = `${trade.traderTitle || 'Insider'} ${isBuy ? 'purchased' : 'sold'} ${trade.shares.toLocaleString()} shares at $${trade.pricePerShare.toFixed(2)}`;
-        const fallbackSummary = isBuy ?
-          `Total value $${(trade.totalValue / 1000).toFixed(0)}K - Bullish signal detected` :
-          `$${(trade.totalValue / 1000).toFixed(0)}K position reduced - Monitoring recommended`;
-
-        const englishFallbackNews = [{
-          title: fallbackTitle,
-          summary: fallbackSummary,
-          sentiment: isBuy ? 'BULLISH' : 'BEARISH',
-          published: new Date(trade.filedDate),
-          relevanceScore: 0.95,
-          source: 'SEC Form 4'
-        }];
-
-        newsAnalysis = {
-          totalNews: 1,
-          positiveCount: isBuy ? 1 : 0,
-          negativeCount: isBuy ? 0 : 1,
-          majorNews: englishFallbackNews
+          majorNews: newsItems.map((article: any) => ({
+            title: article.title,
+            summary: article.summary,
+            sentiment: article.sentiment,
+            published: new Date(article.publishedDate),
+            source: article.source
+          }))
         };
       }
 
-      // Generate comprehensive analysis with language support
-      const comprehensiveAnalysis = {
-        executiveSummary: (() => {
-          let summary = analysis.recommendation || analysis.keyInsights[0] || 'Insider trading activity detected';
-
-          // Integrate news analysis into executive summary
-          if (newsCorrelationResult && newsCorrelationResult.relatedNews && newsCorrelationResult.relatedNews.length > 0) {
-            const totalNews = newsCorrelationResult.relatedNews.length;
-            const positiveNews = newsCorrelationResult.relatedNews.filter((n: any) =>
-              n.sentiment === 'POSITIVE' || n.sentiment === 'BULLISH'
-            ).length;
-            const negativeNews = newsCorrelationResult.relatedNews.filter((n: any) =>
-              n.sentiment === 'NEGATIVE' || n.sentiment === 'BEARISH'
-            ).length;
-            const neutralNews = totalNews - positiveNews - negativeNews;
-
-            // Get most recent news headline
-            const latestNews = newsCorrelationResult.relatedNews
-              .sort((a: any, b: any) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())[0];
-
-            // Always create news context in English for caching
-            let newsContext = '';
-            newsContext = `Analysis of ${totalNews} news articles from the past 30 days shows `;
-            newsContext += `${positiveNews} positive, ${negativeNews} negative, and ${neutralNews} neutral reports. `;
-
-            if (positiveNews > negativeNews) {
-              newsContext += 'Overall market sentiment is positive. ';
-            } else if (negativeNews > positiveNews) {
-              newsContext += 'Market concerns have been detected. ';
-            } else {
-              newsContext += 'Market sentiment remains neutral. ';
-            }
-
-            if (latestNews) {
-              newsContext += `Notably, "${latestNews.title}" has gained significant attention. `;
-            }
-
-            // Relate to insider trade
-            const isBuy = trade.tradeType.toUpperCase().includes('BUY') || trade.tradeType.toUpperCase().includes('PURCHASE');
-            if (isBuy && positiveNews > negativeNews) {
-              newsContext += 'The convergence of positive news flow and insider buying creates a strong buy signal. ';
-            } else if (!isBuy && negativeNews > positiveNews) {
-              newsContext += 'The combination of negative news and insider selling warrants caution. ';
-            } else if (isBuy && negativeNews > positiveNews) {
-              newsContext += 'Insider buying despite negative news may present a contrarian opportunity. ';
-            }
-
-            summary = newsContext + summary;
-          }
-
-          return summary;
-        })(),
-        actionableRecommendation: `${analysis.signalType} signal - ${analysis.recommendation || 'Insider activity detected'}`,
-        priceTargets: analysis.priceTargets ? {
-          // Use AI-generated percentage targets to calculate actual price targets
-          conservative: trade.pricePerShare * (1 + analysis.priceTargets.conservative / 100),
-          realistic: trade.pricePerShare * (1 + analysis.priceTargets.realistic / 100),
-          optimistic: trade.pricePerShare * (1 + analysis.priceTargets.optimistic / 100),
-          timeHorizon: analysis.timeHorizon // Use AI-generated time horizon instead of hardcoded value
-        } : null,
-        riskAssessment: {
-          level: analysis.riskLevel,
-          factors: analysis.keyInsights,
-          mitigation: 'Diversified investment and stop-loss recommended'
-        },
-        marketContext: {
-          sentiment: analysis.signalType === 'BUY' ? 'BULLISH' : analysis.signalType === 'SELL' ? 'BEARISH' : 'NEUTRAL',
-          reasoning: analysis.keyInsights[0] || 'Analyzing market conditions'
-        },
-        catalysts: analysis.keyInsights,
-        timeHorizon: analysis.timeHorizon,
-        confidence: analysis.significanceScore,
-        newsAnalysis: newsAnalysis
+      // Create simplified analysis object (English first)
+      const englishAnalysis = {
+        signalType: analysis.signalType,
+        aiSummary: analysis.aiSummary,
+        newsAnalysis
       };
 
-      // 💾 SAVE TO DATABASE IN ENGLISH WITH RETRY: Cache analysis for future requests (99% cost reduction)
-      // Always save in English so all languages can translate from the same cache
-      (comprehensiveAnalysis as any)._language = 'en';
-
-      const MAX_RETRIES = 3;
-      let saveSuccess = false;
-
-      for (let attempt = 1; attempt <= MAX_RETRIES && !saveSuccess; attempt++) {
-        try {
-          await db.update(insiderTrades)
-            .set({
-              comprehensiveAnalysis: comprehensiveAnalysis,
-              analysisGeneratedAt: new Date()
-            })
-            .where(eq(insiderTrades.id, tradeId));
-
-          // ✅ Verify save by reading back
-          const verification = await db.select({
-            hasAnalysis: sql<boolean>`comprehensive_analysis IS NOT NULL`,
-            analysisSize: sql<number>`length(comprehensive_analysis::text)`
-          }).from(insiderTrades)
-            .where(eq(insiderTrades.id, tradeId))
-            .limit(1);
-
-          if (verification[0]?.hasAnalysis) {
-            console.log(`💾 Cache saved successfully (${verification[0].analysisSize} bytes) on attempt ${attempt}`);
-            saveSuccess = true;
-          } else {
-            throw new Error('Verification failed: analysis not found after save');
-          }
-        } catch (cacheError) {
-          console.error(`⚠️ Cache save attempt ${attempt}/${MAX_RETRIES} failed:`, cacheError);
-          if (attempt === MAX_RETRIES) {
-            console.error('❌ CRITICAL: Failed to cache analysis after all retries');
-          } else {
-            // Exponential backoff: wait 1s, 2s, 3s between retries
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
-        }
-      }
-
-      // 🌍 Translate for response if not English
+      // Translate if needed
+      let localizedAnalysis = englishAnalysis;
       if (language !== 'en') {
-        console.log(`🌍 Translating new analysis to ${language} before returning...`);
+        console.log(`🌍 Translating analysis to ${language}...`);
+        try {
+          const translatedSummary = await translateText(analysis.aiSummary, language);
+          let translatedNews = newsAnalysis;
 
-        // Translate catalysts (keyInsights)
-        if (comprehensiveAnalysis.catalysts && comprehensiveAnalysis.catalysts.length > 0) {
-          comprehensiveAnalysis.catalysts = await Promise.all(
-            comprehensiveAnalysis.catalysts.map((catalyst: string) => translateText(catalyst, language))
-          );
+          if (newsAnalysis && newsAnalysis.majorNews) {
+            translatedNews = {
+              ...newsAnalysis,
+              majorNews: await Promise.all(
+                newsAnalysis.majorNews.map(async (news: any) => ({
+                  ...news,
+                  title: await translateText(news.title, language),
+                  summary: await translateText(news.summary, language)
+                }))
+              )
+            };
+          }
+
+          localizedAnalysis = {
+            signalType: analysis.signalType,
+            aiSummary: translatedSummary,
+            newsAnalysis: translatedNews
+          };
+          console.log(`✅ Analysis translated to ${language}`);
+        } catch (translateError) {
+          console.error('⚠️ Translation failed, using English:', translateError);
         }
-
-        // Translate marketContext reasoning
-        if (comprehensiveAnalysis.marketContext.reasoning) {
-          comprehensiveAnalysis.marketContext.reasoning = await translateText(
-            comprehensiveAnalysis.marketContext.reasoning,
-            language
-          );
-        }
-
-        // Translate executiveSummary
-        if (comprehensiveAnalysis.executiveSummary) {
-          comprehensiveAnalysis.executiveSummary = await translateText(
-            comprehensiveAnalysis.executiveSummary,
-            language
-          );
-        }
-
-        // Translate actionableRecommendation
-        if (comprehensiveAnalysis.actionableRecommendation) {
-          comprehensiveAnalysis.actionableRecommendation = await translateText(
-            comprehensiveAnalysis.actionableRecommendation,
-            language
-          );
-        }
-
-        // Translate riskAssessment mitigation
-        if (comprehensiveAnalysis.riskAssessment?.mitigation) {
-          comprehensiveAnalysis.riskAssessment.mitigation = await translateText(
-            comprehensiveAnalysis.riskAssessment.mitigation,
-            language
-          );
-        }
-
-        // Translate news items
-        if (comprehensiveAnalysis.newsAnalysis?.majorNews && Array.isArray(comprehensiveAnalysis.newsAnalysis.majorNews)) {
-          comprehensiveAnalysis.newsAnalysis.majorNews = await Promise.all(
-            comprehensiveAnalysis.newsAnalysis.majorNews.map(async (news: any) => ({
-              ...news,
-              title: await translateText(news.title, language),
-              summary: await translateText(news.summary, language)
-            }))
-          );
-        }
-
-        // Update language marker for response
-        (comprehensiveAnalysis as any)._language = language;
-        console.log(`✅ Analysis translated to ${language} for response`);
       }
 
-      res.json(comprehensiveAnalysis);
+      // 💾 Save language-specific cache: { en: {...}, ko: {...} }
+      const existingCache = (trade.comprehensiveAnalysis as any) || {};
+      const updatedCache = {
+        ...existingCache,
+        en: englishAnalysis,
+        [language]: localizedAnalysis
+      };
+
+      try {
+        await db.update(insiderTrades)
+          .set({
+            comprehensiveAnalysis: updatedCache,
+            analysisGeneratedAt: new Date()
+          })
+          .where(eq(insiderTrades.id, tradeId));
+        console.log(`💾 Cached analysis for languages: ${Object.keys(updatedCache).join(', ')}`);
+      } catch (cacheError) {
+        console.error('⚠️ Cache save failed:', cacheError);
+      }
+
+      res.json(localizedAnalysis);
     } catch (error) {
       console.error('Error generating comprehensive analysis:', error);
       res.status(500).json({ 

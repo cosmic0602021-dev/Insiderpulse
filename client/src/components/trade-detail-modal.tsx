@@ -518,31 +518,23 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                   </span>
                 </div>
                 <div className="p-3 space-y-3">
-                  {/* Signal & Confidence */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        {t.signal.toUpperCase()}
-                      </div>
-                      <div className={`text-xl font-light ${
-                        aiAnalysis?.signal === 'BUY' ? 'text-emerald-500' : 
-                        aiAnalysis?.signal === 'SELL' ? 'text-rose-500' : 
-                        'text-neutral-400'
-                      }`}>
-                        {aiAnalysis?.signal || (isBuy ? 'BUY' : 'SELL')}
-                      </div>
+                  {/* Signal */}
+                  <div>
+                    <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
+                      {t.signal.toUpperCase()}
                     </div>
-                    <div>
-                      <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                        {t.confidence.toUpperCase()}
-                      </div>
-                      <div className="text-xl font-light text-neutral-200">{aiAnalysis?.confidence || 97}%</div>
+                    <div className={`text-xl font-light ${
+                      aiAnalysis?.signal === 'BUY' ? 'text-emerald-500' :
+                      aiAnalysis?.signal === 'SELL' ? 'text-rose-500' :
+                      'text-neutral-400'
+                    }`}>
+                      {aiAnalysis?.signal || (isBuy ? 'BUY' : 'SELL')}
                     </div>
                   </div>
 
-                  {/* AI Insight */}
+                  {/* AI Summary - 2 line max */}
                   <p className="text-[11px] text-neutral-300 leading-relaxed italic border-l-2 border-neutral-700 pl-2">
-                    {aiAnalysis?.insight || 'Merger discussions rumored in industry reports.'}
+                    {(trade as any).comprehensiveAnalysis?.aiSummary || aiAnalysis?.insight || t.insightSmallBuy}
                   </p>
                 </div>
               </div>
@@ -596,25 +588,14 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
                 </div>
               </div>
 
-              {/* Risk & Time Horizon */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="border border-neutral-800 bg-neutral-950/30 p-3">
-                  <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {t.riskLevel.toUpperCase()}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-amber-500">
-                    <AlertTriangle size={12} />
-                    <span className="text-xs font-bold">{aiAnalysis?.riskLevel || t.riskLow}</span>
-                  </div>
+              {/* Total Volume */}
+              <div className="border border-neutral-800 bg-neutral-950/30 p-3">
+                <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
+                  {t.totalVolume?.toUpperCase() || 'TOTAL VOLUME'}
                 </div>
-                <div className="border border-neutral-800 bg-neutral-950/30 p-3">
-                  <div className="text-[8px] text-neutral-600 uppercase tracking-widest font-mono mb-1.5">
-                    {t.totalVolume?.toUpperCase() || 'TOTAL VOLUME'}
-                  </div>
-                  <div className="text-xs text-neutral-300 font-mono">
-                    {formatNumber(trade.shares)}{' '}
-                    <span className="text-neutral-500">{t.share}</span>
-                  </div>
+                <div className="text-xs text-neutral-300 font-mono">
+                  {formatNumber(trade.shares)}{' '}
+                  <span className="text-neutral-500">{t.share}</span>
                 </div>
               </div>
             </div>

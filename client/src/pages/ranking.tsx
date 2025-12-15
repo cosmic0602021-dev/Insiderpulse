@@ -252,28 +252,16 @@ export default function Ranking() {
           companyName: companyName,
           ticker: ticker,
           currentPrice,
-          marketCap: item.marketCap, // Add marketCap from ranking item
-          totalValue: item.netBuying, // Use combined net buying for all insiders (for market cap ratio)
-          dataQuality: comprehensiveAnalysis ? comprehensiveAnalysis.confidence : Math.floor(Math.random() * 20 + 75),
+          marketCap: item.marketCap,
+          totalValue: item.netBuying,
+          dataQuality: 75,
           aiInsight: comprehensiveAnalysis
-            ? comprehensiveAnalysis.executiveSummary
+            ? (comprehensiveAnalysis.aiSummary || comprehensiveAnalysis.executiveSummary)
             : `${companyName}의 최근 내부자 거래 활동이 SEC Form 4에 기록되었습니다.`,
           comprehensiveAnalysis: comprehensiveAnalysis || {
-            executiveSummary: `${companyName}에 대한 데이터를 수집 중입니다.`,
-            // App Store Compliance: priceTargets now shows actual insider trade prices, not predictions
-            priceTargets: {
-              conservative: recentTrade.pricePerShare,   // Actual trade price (min)
-              realistic: recentTrade.pricePerShare,       // Actual trade price (avg)
-              optimistic: recentTrade.pricePerShare,      // Actual trade price (max)
-              timeHorizon: '참고용'  // Reference only
-            },
-            riskAssessment: {
-              level: 'MEDIUM',
-              factors: ['데이터 수집 중'],
-              mitigation: '추가 정보 확인 필요'
-            },
-            confidence: 50,
-            timeHorizon: '3-6개월'
+            aiSummary: `${companyName}에 대한 데이터를 수집 중입니다.`,
+            signalType: recentTrade.tradeType === 'BUY' ? 'BUY' : 'SELL',
+            newsAnalysis: null
           }
         };
 
@@ -784,40 +772,23 @@ export default function Ranking() {
                             filedDate: insider.date,
                             secFilingUrl: insider.secFilingUrl,
                             currentPrice,
-                            marketCap: item.marketCap, // Add marketCap from ranking item
-                            predictionAccuracy: Math.floor(Math.random() * 20 + 75),
-                            impactPrediction: `+${(Math.random() * 5 + 2).toFixed(1)}%`,
-                            aiInsight: `${insider.name}의 ${item.companyName} 거래 분석 결과입니다.`,
+                            marketCap: item.marketCap,
+                            dataQuality: 75,
+                            aiInsight: t('ranking.aiAnalysis.executiveSummary')
+                              .replace('{name}', insider.name)
+                              .replace('{title}', insider.title)
+                              .replace('{company}', item.companyName)
+                              .replace('{shares}', insider.shares.toLocaleString())
+                              .replace('{price}', insider.pricePerShare.toFixed(2)),
                             comprehensiveAnalysis: {
-                              executiveSummary: t('ranking.aiAnalysis.executiveSummary')
+                              signalType: insider.tradeType === 'BUY' ? 'BUY' : 'SELL',
+                              aiSummary: t('ranking.aiAnalysis.executiveSummary')
                                 .replace('{name}', insider.name)
                                 .replace('{title}', insider.title)
                                 .replace('{company}', item.companyName)
                                 .replace('{shares}', insider.shares.toLocaleString())
                                 .replace('{price}', insider.pricePerShare.toFixed(2)),
-                              priceTargets,
-                              riskAssessment: {
-                                level: 'LOW',
-                                mitigation: t('ranking.aiAnalysis.riskMitigation')
-                              },
-                              actionableRecommendation: t('ranking.aiAnalysis.recommendation')
-                                .replace('{title}', insider.title)
-                                .replace('{price}', insider.pricePerShare.toFixed(2)),
-                              confidence: 85,
-                              timeHorizon: '3-6개월',
-                              marketContext: {
-                                sentiment: 'BULLISH',
-                                keyFactors: [
-                                  t('ranking.aiAnalysis.insiderBuyByTitle').replace('{title}', insider.title),
-                                  t('ranking.aiAnalysis.totalTradeValue').replace('{value}', (insider.totalValue / 1000).toFixed(0)),
-                                  t('ranking.aiAnalysis.simultaneousBuyersCount').replace('{count}', item.insiders.length.toString())
-                                ]
-                              },
-                              catalysts: [
-                                t('ranking.aiAnalysis.executiveBuyActivity'),
-                                t('ranking.aiAnalysis.insiderConfidence'),
-                                t('ranking.aiAnalysis.simultaneousEntry').replace('{count}', item.insiders.length.toString())
-                              ]
+                              newsAnalysis: null
                             }
                           };
                           setSelectedTradeData(insiderTradeData);

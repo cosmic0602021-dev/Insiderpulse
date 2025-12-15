@@ -258,15 +258,9 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                             <Brain size={16} className="text-emerald-500" /> {t.aiAnalysis}
                         </h3>
 
-                        <div className="mb-6 flex items-center justify-between bg-neutral-900/30 p-4 rounded border border-neutral-800">
-                            <div>
-                                <div className="text-[10px] text-neutral-500 uppercase tracking-widest">{t.signal}</div>
-                                <div className="text-xl font-black text-emerald-500 uppercase tracking-tight">{tData[trade.type] || trade.type}</div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-[10px] text-neutral-500 uppercase tracking-widest">{t.confidence}</div>
-                                <div className="text-xl font-mono text-white">{trade.aiConfidence}%</div>
-                            </div>
+                        <div className="mb-6 bg-neutral-900/30 p-4 rounded border border-neutral-800">
+                            <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1">{t.signal}</div>
+                            <div className="text-xl font-black text-emerald-500 uppercase tracking-tight">{tData[trade.type] || trade.type}</div>
                         </div>
 
                         <p className="text-xs text-neutral-400 leading-relaxed font-mono text-justify border-l-2 border-emerald-900 pl-3 mb-6">
@@ -313,18 +307,6 @@ const TradeModal: React.FC<TradeModalProps> = ({ trade, onClose, lang }) => {
                              </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center py-2 border-b border-neutral-800">
-                                <span className="text-xs text-neutral-500 uppercase">{t.riskLevel}</span>
-                                <span className="text-xs font-bold text-amber-500 uppercase flex items-center gap-1">
-                                    <AlertTriangle size={10} /> {tData[trade.riskLevel] || trade.riskLevel}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center py-2 border-b border-neutral-800">
-                                <span className="text-xs text-neutral-500 uppercase">{t.timeHorizon}</span>
-                                <span className="text-xs font-bold text-neutral-300 uppercase font-mono">{tData[trade.timeHorizon] || trade.timeHorizon}</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
