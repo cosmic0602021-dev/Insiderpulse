@@ -102,11 +102,20 @@ class ApiClient {
       });
     }
 
+    // 15초 타임아웃 설정 (앱인토스 WebView 무한 대기 방지)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
+      console.log(`🌐 [API CLIENT] Fetching: ${url}`);
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
+        mode: 'cors',  // 명시적 CORS 모드
       });
+
+      clearTimeout(timeoutId);
 
       // Get response text first to handle empty responses
       const text = await response.text();
@@ -145,6 +154,20 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      clearTimeout(timeoutId);
+
+      // 타임아웃 에러 처리
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.error(`⏱️ [API CLIENT] Request timeout after 15s: ${endpoint}`);
+        throw new Error('Request timeout - server took too long to respond');
+      }
+
+      // 네트워크 에러 처리
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error(`🔌 [API CLIENT] Network error: ${endpoint}`, error);
+        throw new Error('Network error - unable to reach server');
+      }
+
       console.error(`API request to ${endpoint} failed:`, error);
       throw error;
     }

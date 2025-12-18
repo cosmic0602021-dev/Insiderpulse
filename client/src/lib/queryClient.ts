@@ -39,6 +39,7 @@ export async function apiRequest(
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: ENV_CONFIG.isAppintos ? "omit" : "include",
+    mode: 'cors',  // 명시적 CORS 모드
   });
 
   await throwIfResNotOk(res);
@@ -56,6 +57,7 @@ export const getQueryFn: <T>(options: {
 
     const res = await fetch(url, {
       credentials: ENV_CONFIG.isAppintos ? "omit" : "include",
+      mode: 'cors',  // 명시적 CORS 모드
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
