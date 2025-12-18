@@ -15,6 +15,7 @@ interface StockPriceData {
   change: number;
   changePercent: number;
   lastUpdated: string;
+  sector?: string | null;
 }
 
 interface StockSummaryModalProps {
@@ -38,9 +39,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
 
-  // ✅ Map-based cache: Store analysis for multiple tickers in same session
+  // ✅ Map-based cache: Store analysis for multiple tickers AND languages in same session
+  // Key format: `${ticker}_${language}` to support language-specific caching
   const analysisCache = useRef<Map<string, any>>(new Map());
   const cachedTickerRef = useRef<string | null>(null);
+  const cachedLanguageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !stock?.ticker) {
@@ -49,22 +52,26 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       return;
     }
 
-    // ✅ If ticker changed, save current analysis to cache
-    if (cachedTickerRef.current && cachedTickerRef.current !== stock.ticker) {
-      // Save current analysis to cache before switching
-      if (comprehensiveAnalysis && !analysisError) {
-        analysisCache.current.set(cachedTickerRef.current, comprehensiveAnalysis);
-        console.log(`💾 Cached analysis for ${cachedTickerRef.current} (cache size: ${analysisCache.current.size})`);
+    // ✅ Check if ticker OR language changed - both require cache update
+    const tickerChanged = cachedTickerRef.current && cachedTickerRef.current !== stock.ticker;
+    const languageChanged = cachedLanguageRef.current && cachedLanguageRef.current !== language;
+
+    if (tickerChanged || languageChanged) {
+      // Save current analysis to cache with previous ticker_language key
+      if (comprehensiveAnalysis && !analysisError && cachedTickerRef.current) {
+        const prevCacheKey = `${cachedTickerRef.current}_${cachedLanguageRef.current || 'en'}`;
+        analysisCache.current.set(prevCacheKey, comprehensiveAnalysis);
+        console.log(`💾 Cached analysis for ${prevCacheKey} (cache size: ${analysisCache.current.size})`);
       }
 
-      // Clear state for new ticker - fetchAnalysis will handle loading
+      // Clear state - fetchAnalysis will load correct language version from cache or prop
       setComprehensiveAnalysis(null);
       setAnalysisError(null);
-      cachedTickerRef.current = stock.ticker;
-    } else if (!cachedTickerRef.current) {
-      // First time opening - just set the ref
-      cachedTickerRef.current = stock.ticker;
     }
+
+    // Update refs to current values
+    cachedTickerRef.current = stock.ticker;
+    cachedLanguageRef.current = language;
 
     const fetchStockPrice = async () => {
       try {
@@ -109,18 +116,21 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
       // PRIORITY 2: Check prop - analysis from ranking data (shared across all users) - NO API CALL
       // 🔒 CRITICAL: This is the main cache that enables cross-user sharing
+      // The ranking API returns language-specific analysis, so this is already the correct language
       if (stock.comprehensiveAnalysis) {
-        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} - NO API CALL NEEDED!`);
+        const cacheKey = `${stock.ticker}_${language}`;
+        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} (${language}) - NO API CALL NEEDED!`);
         setComprehensiveAnalysis(stock.comprehensiveAnalysis);
         setAnalysisError(null);
-        analysisCache.current.set(stock.ticker, stock.comprehensiveAnalysis);
+        analysisCache.current.set(cacheKey, stock.comprehensiveAnalysis);
         return;
       }
 
-      // PRIORITY 3: Check session cache (Map) - NO API CALL
-      const cachedAnalysis = analysisCache.current.get(stock.ticker);
+      // PRIORITY 3: Check session cache (Map) with language-specific key - NO API CALL
+      const cacheKey = `${stock.ticker}_${language}`;
+      const cachedAnalysis = analysisCache.current.get(cacheKey);
       if (cachedAnalysis) {
-        console.log(`✅ Using session cache for ${stock.ticker} - NO API CALL NEEDED`);
+        console.log(`✅ Using session cache for ${stock.ticker} (${language}) - NO API CALL NEEDED`);
         setComprehensiveAnalysis(cachedAnalysis);
         setAnalysisError(null);
         return;
@@ -132,27 +142,56 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
       setAnalysisError(null);
 
       try {
-        // Get trade ID
-        const tradesResponse = await fetch(resolveApiUrl(`/api/trades?ticker=${stock.ticker}&limit=1`));
-        if (!tradesResponse.ok) {
-          throw new Error(`Trades API returned ${tradesResponse.status}`);
+        // Use new ranking-specific endpoint (bypasses 48h delay for ranked stocks)
+        const tradeResponse = await fetch(
+          resolveApiUrl(`/api/rankings/stock/${stock.ticker}/analysis-trade?language=${language}`)
+        );
+
+        if (!tradeResponse.ok) {
+          if (tradeResponse.status === 403) {
+            // Stock is not currently ranked
+            setAnalysisError({
+              type: 'not_ranked',
+              message: language === 'ko' ? '이 종목은 현재 상위 랭킹에 포함되어 있지 않습니다.' :
+                       language === 'ja' ? 'この銘柄は現在上位ランキングに含まれていません。' :
+                       language === 'zh' ? '该股票目前未列入排名。' :
+                       'This stock is not currently in top rankings.',
+              retryable: false
+            });
+            setIsLoadingAnalysis(false);
+            return;
+          }
+
+          if (tradeResponse.status === 404) {
+            // No trade data for this ticker
+            setAnalysisError({
+              type: 'not_available',
+              message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' :
+                       language === 'ja' ? '取引データが見つかりません。' :
+                       language === 'zh' ? '未找到交易数据。' :
+                       'No trade data found.',
+              retryable: false
+            });
+            setIsLoadingAnalysis(false);
+            return;
+          }
+
+          throw new Error(`Trade fetch failed: ${tradeResponse.status}`);
         }
 
-        const tradesData = await tradesResponse.json();
-        if (!tradesData.trades?.length) {
-          setAnalysisError({
-            type: 'not_available',
-            message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' :
-                     language === 'ja' ? '取引データが見つかりません。' :
-                     language === 'zh' ? '未找到交易数据。' :
-                     'No trade data found.',
-            retryable: false
-          });
+        const tradeData = await tradeResponse.json();
+
+        // If we got cached analysis in the response, use it immediately
+        if (tradeData.comprehensiveAnalysis) {
+          console.log(`✅ Using pre-cached analysis from trade fetch - NO API CALL NEEDED`);
+          setComprehensiveAnalysis(tradeData.comprehensiveAnalysis);
+          setAnalysisError(null);
+          analysisCache.current.set(cacheKey, tradeData.comprehensiveAnalysis);
           setIsLoadingAnalysis(false);
           return;
         }
 
-        const tradeId = tradesData.trades[0].id;
+        const tradeId = tradeData.tradeId;
 
         // Fetch with 30-second timeout (AI analysis takes longer)
         const controller = new AbortController();
@@ -200,11 +239,12 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
             return;
           }
 
-          // Success! Save to cache for future use
-          console.log(`✅ Successfully fetched analysis for ${stock.ticker} from API`);
+          // Success! Save to cache for future use with language-specific key
+          const successCacheKey = `${stock.ticker}_${language}`;
+          console.log(`✅ Successfully fetched analysis for ${stock.ticker} (${language}) from API`);
           setComprehensiveAnalysis(analysisData);
           setAnalysisError(null);
-          analysisCache.current.set(stock.ticker, analysisData);
+          analysisCache.current.set(successCacheKey, analysisData);
 
         } catch (fetchError: any) {
           clearTimeout(timeoutId);
@@ -270,7 +310,8 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     const lastDate = validDates.length > 0 ? validDates[validDates.length - 1] : new Date();
 
     return {
-      buyerCount: buyers.length,
+      // 서버에서 계산한 고유 내부자 수 사용 (한 명이 여러 번 매수해도 1명)
+      buyerCount: stock.insiderCount || buyers.length,
       totalShares,
       totalAmount,
       avgPrice,
@@ -546,31 +587,16 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
               </div>
             </div>
 
-            {/* Reference Price Range (Historical Insider Prices) - App Store Compliance */}
-            <div className="border border-neutral-800 bg-neutral-950/30 p-2">
+            {/* Sector/Industry Info */}
+            <div className="border border-neutral-800 bg-neutral-950/30 p-2 flex flex-col justify-center">
               <div className="flex items-center gap-1 mb-1">
-                <Target size={9} className="text-neutral-500" />
-                <span className="text-[8px] text-neutral-500 uppercase font-mono">
-                  {langKey === 'ko' ? '참고 가격대' : langKey === 'ja' ? '参考価格帯' : langKey === 'zh' ? '参考价格区间' : 'Reference Range'}
+                <Target size={9} className="text-blue-500" />
+                <span className="text-[8px] text-blue-500/70 uppercase font-mono">
+                  {langKey === 'ko' ? '업종' : langKey === 'ja' ? '業種' : langKey === 'zh' ? '行业' : 'Sector'}
                 </span>
               </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px]">
-                  <span className="text-neutral-600">{langKey === 'ko' ? '평균 매수가' : 'Avg Buy'}</span>
-                  <span className="text-emerald-400 font-mono font-bold">{formatCurrency(stats.avgPrice)}</span>
-                </div>
-                <div className="flex justify-between text-[9px]">
-                  <span className="text-neutral-600">{langKey === 'ko' ? '현재가' : 'Current'}</span>
-                  <span className={`font-mono ${priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {formatCurrency(currentPrice)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-0.5 pt-1 border-t border-neutral-800/50">
-                  <Info size={7} className="text-neutral-600 shrink-0" />
-                  <span className="text-[6px] text-neutral-600">
-                    {langKey === 'ko' ? '참고용' : langKey === 'ja' ? '参考用' : langKey === 'zh' ? '仅供参考' : 'Reference only'}
-                  </span>
-                </div>
+              <div className="text-sm font-bold text-blue-400">
+                {stock.sector || stockPrice?.sector || '-'}
               </div>
             </div>
           </div>
@@ -847,38 +873,24 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   </div>
                 </div>
               ) : (
-                <p className="text-[10px] text-neutral-500 pl-5 italic">
-                  {langKey === 'ko' ? '분석 데이터를 불러올 수 없습니다.' :
-                   langKey === 'ja' ? '分析データを読み込めません。' :
-                   langKey === 'zh' ? '无法加载分析数据。' :
-                   'Unable to load analysis data.'}
-                </p>
+                <div className="pl-5 space-y-1">
+                  <p className="text-[11px] text-neutral-300 leading-relaxed">
+                    {langKey === 'ko'
+                      ? `${stock.insiderCount}명의 내부자가 ${stock.companyName} 주식을 매수했습니다. 평균 매수가는 ${formatCurrency(stock.avgBuyPrice)}입니다.`
+                      : langKey === 'ja'
+                      ? `${stock.insiderCount}名のインサイダーが${stock.companyName}株を購入しました。平均購入価格は${formatCurrency(stock.avgBuyPrice)}です。`
+                      : langKey === 'zh'
+                      ? `${stock.insiderCount}位内部人士购买了${stock.companyName}股票。平均购买价格为${formatCurrency(stock.avgBuyPrice)}。`
+                      : `${stock.insiderCount} insider(s) purchased ${stock.companyName} stock at an average price of ${formatCurrency(stock.avgBuyPrice)}.`}
+                  </p>
+                  <p className="text-[9px] text-neutral-500 italic">
+                    {langKey === 'ko' ? 'AI 상세 분석은 준비 중입니다.' :
+                     langKey === 'ja' ? 'AI詳細分析は準備中です。' :
+                     langKey === 'zh' ? 'AI详细分析正在准备中。' :
+                     'AI detailed analysis is being prepared.'}
+                  </p>
+                </div>
               )}
-            </div>
-          </div>
-
-          {/* Risk & Time Horizon */}
-          <div className="grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0">
-            <div className="border border-neutral-800 bg-neutral-950/30 p-2">
-              <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
-                {langKey === 'ko' ? '위험도' : 'RISK'}
-              </div>
-              <div className="flex items-center gap-1 text-emerald-500">
-                <AlertTriangle size={10} />
-                <span className="text-[10px] font-bold">{(tData as any)[aiAnalysis?.riskLevel || ''] || aiAnalysis?.riskLevel || t.riskLow}</span>
-              </div>
-            </div>
-            <div className="border border-neutral-800 bg-neutral-950/30 p-2">
-              <div className="text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1">
-                {langKey === 'ko' ? '총 매수 주식수' : 
-                 langKey === 'ja' ? '総購入株数' :
-                 langKey === 'zh' ? '总购买股数' :
-                 'TOTAL SHARES'}
-              </div>
-              <div className="text-[10px] text-neutral-200 font-mono font-bold">
-                {formatNumber(stock.buyers.reduce((sum, b) => sum + (b.shares || 0), 0))}
-                <span className="text-neutral-500 ml-1">{langKey === 'ko' ? '주' : 'sh'}</span>
-              </div>
             </div>
           </div>
 
@@ -898,6 +910,16 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[9px] text-neutral-600 font-mono w-4">{idx + 1}</span>
+                      {/* 기관/개인 구분 아이콘 */}
+                      {buyer.isInstitution ? (
+                        <span className="text-[8px] px-1 py-0.5 bg-blue-900/50 text-blue-400 rounded font-bold" title={langKey === 'ko' ? '기관투자자' : 'Institution'}>
+                          {langKey === 'ko' ? '기관' : 'INST'}
+                        </span>
+                      ) : (
+                        <span className="text-[8px] px-1 py-0.5 bg-amber-900/50 text-amber-400 rounded font-bold" title={langKey === 'ko' ? '개인 내부자' : 'Individual'}>
+                          {langKey === 'ko' ? '개인' : 'INDV'}
+                        </span>
+                      )}
                       <span className="text-[11px] font-bold text-neutral-300 truncate">{buyer.name}</span>
                     </div>
                     <div className="flex items-center gap-2 ml-5">

@@ -1,10 +1,10 @@
-modules = ["nodejs-20", "web", "python-3.11", "postgresql-16"]
+modules = ["nodejs-20", "web", "postgresql-16"]
 run = "./start-dev.sh"
-hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist", ".pythonlibs"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["gtk3", "xvfb-run", "firefox", "alsa-lib", "pulseaudio", "unzip"]
+packages = ["unzip"]
 
 [deployment]
 deploymentTarget = "autoscale"

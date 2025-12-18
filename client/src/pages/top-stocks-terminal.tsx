@@ -28,6 +28,7 @@ interface RankingInsider {
 interface RankingItem {
   ticker: string;
   companyName: string;
+  sector?: string;  // 업종 정보 (Finnhub에서 캐싱)
   score: number;
   recommendation: string;
   totalTrades: number;
@@ -170,6 +171,7 @@ export default function TopStocksTerminal() {
       rank: index + 1,
       ticker: item.ticker,
       companyName: item.companyName || item.ticker,
+      sector: item.sector || undefined,  // 업종 정보 포함
       currentPrice: currentPrice,
       priceChange: priceChange,
       avgBuyPrice: avgBuyPrice,
@@ -181,7 +183,7 @@ export default function TopStocksTerminal() {
       // DO NOT remove these fields - they enable instant AI analysis display without API calls
       comprehensiveAnalysis: (item as any).comprehensiveAnalysis || null,
       hasComprehensiveAnalysis: (item as any).hasComprehensiveAnalysis || false,
-      buyers: (item.insiders || []).slice(0, 5).map((insider: RankingInsider) => {
+      buyers: (item.insiders || []).map((insider: RankingInsider) => {
         // Parse shares and totalValue to numbers (handle formatted strings with commas)
         const sharesNum = parseNumeric(insider.shares);
         const totalValueNum = parseNumeric(insider.totalValue);
@@ -206,6 +208,7 @@ export default function TopStocksTerminal() {
           date: insider.date ? new Date(insider.date).toLocaleDateString() : 'N/A',
           secFilingUrl: insider.secFilingUrl,
           accessionNumber: insider.accessionNumber,
+          isInstitution: (insider as any).isInstitution || false,
         };
       }),
     };

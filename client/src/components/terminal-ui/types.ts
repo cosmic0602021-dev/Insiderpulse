@@ -53,6 +53,7 @@ export interface StockRecommendation {
   rank: number;
   ticker: string;
   companyName: string;
+  sector?: string;  // 업종 정보 (Finnhub에서 캐싱)
   insiderCount: number;
   avgBuyPrice: number;
   currentPrice: number;
@@ -70,6 +71,7 @@ export interface StockRecommendation {
     priceChange: number;
     secFilingUrl?: string;
     accessionNumber?: string;
+    isInstitution?: boolean;  // 기관투자자 여부 (LLC, LP, Fund 등)
   }>;
   // 🔒 CRITICAL: These fields enable cross-user AI analysis caching - DO NOT REMOVE
   // comprehensiveAnalysis: Pre-loaded from DB via ranking API, shared across all users

@@ -48,6 +48,198 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // Initialize OpenAI for translation
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Sector 캐시 (Finnhub API 호출 최소화) - 다국어 지원
+// ticker → language → { sector, timestamp }
+const sectorCache = new Map<string, Map<string, {
+  sector: string | null;
+  timestamp: number
+}>>();
+const SECTOR_CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+
+// Finnhub API Rate Limiter (동시 요청 제한)
+let finnhubRequestQueue: Array<() => Promise<void>> = [];
+let finnhubActiveRequests = 0;
+const FINNHUB_MAX_CONCURRENT = 1; // 동시에 1개 요청만 (60/분 제한 준수)
+const FINNHUB_REQUEST_DELAY = 1100; // 요청 간 1.1초 딜레이
+
+async function finnhubRateLimitedFetch(url: string): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const executeRequest = async () => {
+      finnhubActiveRequests++;
+      try {
+        await new Promise(r => setTimeout(r, FINNHUB_REQUEST_DELAY));
+        const response = await fetch(url);
+        resolve(response);
+      } catch (error) {
+        reject(error);
+      } finally {
+        finnhubActiveRequests--;
+        processNextFinnhubRequest();
+      }
+    };
+
+    if (finnhubActiveRequests < FINNHUB_MAX_CONCURRENT) {
+      executeRequest();
+    } else {
+      finnhubRequestQueue.push(executeRequest);
+    }
+  });
+}
+
+function processNextFinnhubRequest() {
+  if (finnhubRequestQueue.length > 0 && finnhubActiveRequests < FINNHUB_MAX_CONCURRENT) {
+    const next = finnhubRequestQueue.shift();
+    if (next) next();
+  }
+}
+
+async function getSectorFromFinnhub(ticker: string, language: string = 'en'): Promise<string | null> {
+  // 1. 해당 언어의 캐시 확인
+  const tickerCache = sectorCache.get(ticker);
+  if (tickerCache) {
+    const langCache = tickerCache.get(language);
+    // 캐시된 값이 있고, 유효 기간 내이고, null이 아닌 경우에만 사용
+    if (langCache && Date.now() - langCache.timestamp < SECTOR_CACHE_TTL && langCache.sector) {
+      console.log(`✅ Using cached ${language} sector for ${ticker}: ${langCache.sector}`);
+      return langCache.sector;
+    }
+  }
+
+  // 2. 영문 캐시 확인 (Finnhub API 호출 최소화)
+  let englishSector: string | null = null;
+  const enCache = tickerCache?.get('en');
+
+  // 캐시된 값이 있고, 유효 기간 내이고, null이 아닌 경우에만 사용
+  if (enCache && Date.now() - enCache.timestamp < SECTOR_CACHE_TTL && enCache.sector) {
+    englishSector = enCache.sector;
+    console.log(`✅ Using cached EN sector for ${ticker}: ${englishSector}`);
+  } else {
+    // 3. Finnhub API에서 영문 업종 가져오기
+    try {
+      const finnhubKey = process.env.FINNHUB_API_KEY;
+      if (!finnhubKey) {
+        console.log(`⚠️ FINNHUB_API_KEY not set, skipping sector fetch for ${ticker}`);
+        return null;
+      }
+
+      const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${finnhubKey}`;
+
+      // Rate-limited fetch로 429 에러 방지 + 재시도 로직
+      let retries = 0;
+      const maxRetries = 2;
+      while (retries <= maxRetries) {
+        const response = await finnhubRateLimitedFetch(profileUrl);
+        if (response.ok) {
+          const profile = await response.json();
+          englishSector = profile.finnhubIndustry || null;
+          break;
+        } else if (response.status === 429 && retries < maxRetries) {
+          const delay = Math.pow(2, retries) * 1000; // 1초, 2초
+          console.log(`⏳ Finnhub rate limit for ${ticker}, waiting ${delay}ms (retry ${retries + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retries++;
+        } else {
+          console.log(`⚠️ Finnhub API error for ${ticker}: ${response.status}`);
+          break; // Don't return null yet, try Polygon fallback
+        }
+      }
+
+      // Finnhub가 null이면 fallback APIs 시도
+      if (!englishSector) {
+        console.log(`⚠️ Finnhub returned null for ${ticker}, trying fallback APIs...`);
+
+        // Try Polygon API first (if key available)
+        const polygonKey = process.env.POLYGON_API_KEY;
+        if (polygonKey && !englishSector) {
+          try {
+            const polygonUrl = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${polygonKey}`;
+            const polygonResponse = await fetch(polygonUrl);
+            if (polygonResponse.ok) {
+              const polygonData = await polygonResponse.json();
+              englishSector = polygonData.results?.sic_description || null;
+              if (englishSector) {
+                console.log(`✅ Got sector from Polygon for ${ticker}: ${englishSector}`);
+              }
+            }
+          } catch (polygonError) {
+            console.log(`⚠️ Polygon API failed for ${ticker}:`, polygonError);
+          }
+        }
+
+        // Try Yahoo Finance as final fallback (no API key needed)
+        if (!englishSector) {
+          try {
+            const yahooUrl = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=assetProfile`;
+            const yahooResponse = await fetch(yahooUrl, {
+              headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+            if (yahooResponse.ok) {
+              const yahooData = await yahooResponse.json();
+              const industry = yahooData.quoteSummary?.result?.[0]?.assetProfile?.industry;
+              const sector = yahooData.quoteSummary?.result?.[0]?.assetProfile?.sector;
+              englishSector = industry || sector || null;
+              if (englishSector) {
+                console.log(`✅ Got sector from Yahoo Finance for ${ticker}: ${englishSector}`);
+              }
+            }
+          } catch (yahooError) {
+            console.log(`⚠️ Yahoo Finance failed for ${ticker}:`, yahooError);
+          }
+        }
+      }
+
+      // 영문 캐시 저장 (null이 아닌 경우에만!)
+      if (englishSector) {
+        if (!sectorCache.has(ticker)) {
+          sectorCache.set(ticker, new Map());
+        }
+        sectorCache.get(ticker)!.set('en', {
+          sector: englishSector,
+          timestamp: Date.now()
+        });
+        console.log(`✅ Fetched and cached EN sector for ${ticker}: ${englishSector}`);
+      } else {
+        console.log(`⚠️ Finnhub returned null for ${ticker}, NOT caching (will retry next request)`);
+      }
+    } catch (error) {
+      console.log(`❌ Sector fetch failed for ${ticker}:`, error);
+      return null;
+    }
+  }
+
+  if (!englishSector) {
+    console.log(`⚠️ No sector data available for ${ticker} from any source`);
+    return null;
+  }
+
+  // 4. 영어 요청이면 영문 그대로 반환
+  if (language === 'en') {
+    return englishSector;
+  }
+
+  // 5. 번역 수행
+  const translatedSector = await translateText(englishSector, language);
+
+  // 6. 번역본 캐시 저장 (번역 성공 시에만)
+  // 번역이 실패하면 원본 영문이 반환되므로, 영문과 동일한지 확인
+  const translationSucceeded = translatedSector !== englishSector;
+
+  if (translationSucceeded) {
+    if (!sectorCache.has(ticker)) {
+      sectorCache.set(ticker, new Map());
+    }
+    sectorCache.get(ticker)!.set(language, {
+      sector: translatedSector,
+      timestamp: Date.now()
+    });
+    console.log(`✅ Translated and cached ${language} sector for ${ticker}: ${translatedSector}`);
+  } else {
+    console.warn(`⚠️ Translation failed for ${ticker} (${language}), using English: ${englishSector}`);
+  }
+
+  return translatedSector;
+}
+
 // Helper function to translate text
 async function translateText(text: string, targetLanguage: string): Promise<string> {
   if (!text) {
@@ -63,22 +255,12 @@ async function translateText(text: string, targetLanguage: string): Promise<stri
 
   const targetLangName = languageNames[targetLanguage] || 'English';
 
-  // Skip translation if text appears to already be in target language
-  // Check if text contains mostly target language characters
+  // 영어 타겟이면 바로 반환 (번역 불필요)
   if (targetLanguage === 'en') {
-    // If text is mostly ASCII (English), skip translation
-    const asciiRatio = (text.match(/[\x00-\x7F]/g) || []).length / text.length;
-    if (asciiRatio > 0.8) {
-      return text;
-    }
-  } else if (targetLanguage === 'ko') {
-    // If text contains Korean characters, might already be translated
-    const koreanRatio = (text.match(/[\uAC00-\uD7AF]/g) || []).length / text.length;
-    if (koreanRatio > 0.3) {
-      return text;
-    }
+    return text;
   }
 
+  // 나머지 언어는 항상 번역 수행 (캐싱으로 중복 호출 방지됨)
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -90,6 +272,7 @@ IMPORTANT RULES:
 - DO NOT translate company names (e.g., "Marriott Vacations Worldwide" stays as is)
 - DO NOT translate stock ticker symbols (e.g., VAC, AAPL, MSFT)
 - DO NOT translate person names
+- Translate ALL industry/sector terms completely (e.g., "Software - Internet" → "소프트웨어 - 인터넷")
 - Keep numbers, percentages, and currencies in their original format
 - Only translate the descriptive/analytical parts of the text
 Only return the translated text, nothing else.`
@@ -105,7 +288,9 @@ Only return the translated text, nothing else.`
 
     return response.choices[0].message.content || text;
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error(`❌ Translation FAILED for "${text}" to ${targetLanguage}:`, error);
+    console.error(`   Error details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(`   Returning original text (NOT CACHING)`);
     return text; // Return original text if translation fails
   }
 }
@@ -2823,12 +3008,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stock price by ticker
+  // Get stock price by ticker (with sector info from Finnhub)
   app.get('/api/stocks/:ticker', async (req, res) => {
     try {
       const ticker = req.params.ticker.toUpperCase();
       const priceData = await stockPriceService.getStockPrice(ticker);
-      res.json(priceData);
+
+      // Finnhub에서 섹터 정보 가져오기 (무료 API)
+      let sector = null;
+      try {
+        const finnhubKey = process.env.FINNHUB_API_KEY;
+        if (finnhubKey) {
+          const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${finnhubKey}`;
+          const profileRes = await fetch(profileUrl);
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            sector = profile.finnhubIndustry || null;
+          }
+        }
+      } catch (sectorError) {
+        console.log(`Sector fetch failed for ${ticker}:`, sectorError);
+      }
+
+      res.json({ ...priceData, sector });
     } catch (error) {
       console.error('Error fetching stock price:', error);
       res.status(500).json({ error: 'Failed to fetch stock price' });
@@ -2866,6 +3068,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: 'Failed to perform AI analysis',
         details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get the most recent trade for a ranked stock (bypasses 48h delay for AI analysis)
+  app.get('/api/rankings/stock/:ticker/analysis-trade', async (req, res) => {
+    try {
+      const ticker = req.params.ticker?.toUpperCase();
+      const language = (req.query.language as string) || 'en';
+
+      if (!ticker) {
+        return res.status(400).json({ error: 'Ticker parameter required' });
+      }
+
+      // 1. 랭킹 자격 확인 (Top 6에 있는지 확인)
+      const rankingTickers = await fetchRankingTickers();
+      if (!rankingTickers.includes(ticker)) {
+        return res.status(403).json({
+          error: 'NOT_RANKED',
+          message: 'This stock is not currently in top rankings',
+          ticker
+        });
+      }
+
+      // 2. 최근 30일 거래 조회 (딜레이 필터 없음)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
+
+      const trades = await storage.getInsiderTrades(
+        1,           // limit: 1 (only need most recent)
+        0,           // offset: 0
+        false,       // verifiedOnly: false
+        fromDate,    // fromDate: 30일 전
+        undefined,   // toDate: 제한 없음 (no upper limit)
+        'filedDate', // sortBy: 최신순 (most recent filing)
+        undefined,   // transactionTypes: 기본값 (P/S)
+        'filedDate', // filterBy: filedDate
+        ticker,      // ticker 필터
+        false        // includeDerivatives: false (핵심 거래만)
+      );
+
+      if (!trades || trades.length === 0) {
+        return res.status(404).json({
+          error: 'NO_TRADE_DATA',
+          message: 'No trade data found for this ticker in the last 30 days',
+          ticker
+        });
+      }
+
+      const trade = trades[0];
+
+      // 3. 캐시된 분석 확인
+      const cachedAnalysis = trade.comprehensiveAnalysis as any;
+      const hasCachedAnalysis = cachedAnalysis?.[language] || cachedAnalysis?.en;
+
+      res.json({
+        tradeId: trade.id,
+        ticker: trade.ticker,
+        filedDate: trade.filedDate,
+        hasCachedAnalysis: !!hasCachedAnalysis,
+        comprehensiveAnalysis: hasCachedAnalysis || null
+      });
+
+    } catch (error) {
+      console.error('Error fetching analysis trade:', error);
+      res.status(500).json({
+        error: 'INTERNAL_ERROR',
+        message: 'Failed to fetch trade for analysis'
       });
     }
   });
@@ -4051,8 +4322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const metrics = tickerMetrics.get(ticker);
         metrics.trades.push(trade);
-        metrics.uniqueInsiders.add(trade.traderName);
-        
+
         const tradeValue = Math.abs(trade.totalValue || 0);
         const pricePerShare = Math.abs(trade.pricePerShare || 0);
         const tradeDate = new Date(trade.filedDate || trade.createdAt || '');
@@ -4070,6 +4340,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isBuy) {
           metrics.totalBuyValue += tradeValue;
           metrics.buyCount++;
+          // 매수자만 uniqueInsiders에 추가 (일관성 유지)
+          metrics.uniqueInsiders.add(trade.traderName);
         } else {
           metrics.totalSellValue += tradeValue;
           metrics.sellCount++;
@@ -4257,29 +4529,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Insider 상세 정보 (매수자만, 이상한 이름 제외)
         // Only pure Purchase (P) transactions
-        const insiderDetails = metrics.trades
-          .filter(t => {
-            const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' ||
-                         t.transactionCode === 'P';
+        // 같은 내부자가 여러 번 매수한 경우 최신 거래만 선택 (중복 제거)
+        const suspiciousPatterns = [
+          /instruments?/i,
+          /apparatus/i,
+          /closed-end/i,
+          /funds?/i,
+          /pharmaceutical/i,
+          /preparations?/i,
+          /commercial\s+banks?/i,
+          /national\s+/i,
+          /^[A-Z\s&-]+$/,  // 모두 대문자 + 공백/&/- 로만 구성
+        ];
 
-            // 이상한 이름 패턴 필터링
-            const suspiciousPatterns = [
-              /instruments?/i,
-              /apparatus/i,
-              /closed-end/i,
-              /funds?/i,
-              /pharmaceutical/i,
-              /preparations?/i,
-              /commercial\s+banks?/i,
-              /national\s+/i,
-              /^[A-Z\s&-]+$/,  // 모두 대문자 + 공백/&/- 로만 구성
-            ];
+        // 1. 유효한 매수 거래만 필터링
+        const validBuyTrades = metrics.trades.filter(t => {
+          const isBuy = t.tradeType === 'BUY' || t.tradeType === 'PURCHASE' ||
+                       t.transactionCode === 'P';
+          const name = t.traderName || '';
+          const hasValidName = !suspiciousPatterns.some(pattern => pattern.test(name)) && name.length > 0;
+          return isBuy && hasValidName;
+        });
 
-            const name = t.traderName || '';
-            const hasValidName = !suspiciousPatterns.some(pattern => pattern.test(name)) && name.length > 0;
+        // 2. 같은 이름의 내부자는 최신 거래만 선택 (중복 제거)
+        const insidersByName = new Map<string, typeof validBuyTrades[0]>();
+        validBuyTrades.forEach(t => {
+          const existing = insidersByName.get(t.traderName);
+          if (!existing || new Date(t.filedDate) > new Date(existing.filedDate)) {
+            insidersByName.set(t.traderName, t);
+          }
+        });
 
-            return isBuy && hasValidName;
-          })
+        // 3. Map에서 배열로 변환 후 최신순 정렬
+        // 기관투자자 판별 함수 (LLC, LP, Inc., Fund, Capital, Advisor 등)
+        const isInstitutionalInvestor = (name: string, title: string): boolean => {
+          const institutionalPatterns = [
+            /\b(LLC|LP|L\.L\.C\.|L\.P\.|Inc\.|Corp\.|Ltd\.|Foundation|Trust)\b/i,
+            /\b(Advisors?|Capital|Partners?|Fund|Holdings?|Management|Investments?)\b/i,
+            /\b(Associates?|Group|Company|Co\.|Corporation)\b/i,
+          ];
+          const titlePatterns = [/^10%$/, /^5%$/, /^\d+%$/]; // Just percentage = usually institution
+
+          const nameMatches = institutionalPatterns.some(p => p.test(name));
+          const titleIsPercentOnly = titlePatterns.some(p => p.test(title.trim()));
+
+          return nameMatches || titleIsPercentOnly;
+        };
+
+        const insiderDetails = Array.from(insidersByName.values())
           .map(t => ({
             name: t.traderName,
             title: t.traderTitle || 'Insider',
@@ -4289,9 +4586,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             date: t.filedDate,
             tradeType: t.tradeType,
             secFilingUrl: t.secFilingUrl,
-            accessionNumber: t.accessionNumber
+            accessionNumber: t.accessionNumber,
+            isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || '')
           }))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // 최신순
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         // Calculate percentage change from average buy price (marketCap already defined above)
         let priceChangePercent = undefined;
@@ -4299,9 +4597,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           priceChangePercent = ((currentPrice - metrics.avgTradeValue) / metrics.avgTradeValue) * 100;
         }
 
+        // 업종은 나중에 최종 결과에만 추가 (API 호출 최소화)
         return {
           ticker: metrics.ticker,
           companyName: metrics.companyName,
+          sector: null as string | null,  // 나중에 채워짐
           score: metrics.score,
           recommendation: metrics.recommendation,
           totalTrades: totalTrades,
@@ -4425,6 +4725,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📊 Rankings summary: ${topRankings.length} stocks (recency: ${recencyDays} days, total analyzed: ${rankings.length})`);
 
+      // 🔄 업종 정보 조회 (최종 결과에만, API 호출 최소화)
+      console.log(`🏢 Fetching sectors for ${topRankings.length} stocks...`);
+      for (const ranking of topRankings) {
+        try {
+          const sectorPromise = getSectorFromFinnhub(ranking.ticker, language);
+          const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+          ranking.sector = await Promise.race([sectorPromise, timeoutPromise]);
+        } catch (e) {
+          ranking.sector = null;
+        }
+      }
+      console.log(`✅ Sectors fetched for top rankings`);
+
       // ==================================================================================
       // 🔒 CRITICAL: Pre-load AI Analysis for Cross-User Caching - DO NOT REMOVE
       // ==================================================================================
@@ -4476,12 +4789,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // 🔒 CRITICAL: Add comprehensiveAnalysis to each ranking
-      const rankingsWithAnalysis = topRankings.map(ranking => ({
-        ...ranking,
-        comprehensiveAnalysis: cachedAnalyses.get(ranking.ticker) || null,
-        hasComprehensiveAnalysis: cachedAnalyses.has(ranking.ticker),
-      }));
+      // 🔒 CRITICAL: Add comprehensiveAnalysis to each ranking (언어별 선택)
+      const rankingsWithAnalysis = topRankings.map(ranking => {
+        const cached = cachedAnalyses.get(ranking.ticker);
+        // 요청 언어에 맞는 분석 선택, 없으면 영어 fallback
+        const analysis = cached?.[language] || cached?.en || null;
+
+        return {
+          ...ranking,
+          comprehensiveAnalysis: analysis,
+          hasComprehensiveAnalysis: !!analysis,
+        };
+      });
 
       res.json({
         rankings: rankingsWithAnalysis, // 🔒 CRITICAL: Must return rankingsWithAnalysis (NOT topRankings)

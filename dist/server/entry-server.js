@@ -11398,22 +11398,25 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
   const [analysisError, setAnalysisError] = useState(null);
   const analysisCache = useRef(/* @__PURE__ */ new Map());
   const cachedTickerRef = useRef(null);
+  const cachedLanguageRef = useRef(null);
   useEffect(() => {
     if (!isOpen || !(stock == null ? void 0 : stock.ticker)) {
       setStockPrice(null);
       return;
     }
-    if (cachedTickerRef.current && cachedTickerRef.current !== stock.ticker) {
-      if (comprehensiveAnalysis && !analysisError) {
-        analysisCache.current.set(cachedTickerRef.current, comprehensiveAnalysis);
-        console.log(`💾 Cached analysis for ${cachedTickerRef.current} (cache size: ${analysisCache.current.size})`);
+    const tickerChanged = cachedTickerRef.current && cachedTickerRef.current !== stock.ticker;
+    const languageChanged = cachedLanguageRef.current && cachedLanguageRef.current !== language;
+    if (tickerChanged || languageChanged) {
+      if (comprehensiveAnalysis && !analysisError && cachedTickerRef.current) {
+        const prevCacheKey = `${cachedTickerRef.current}_${cachedLanguageRef.current || "en"}`;
+        analysisCache.current.set(prevCacheKey, comprehensiveAnalysis);
+        console.log(`💾 Cached analysis for ${prevCacheKey} (cache size: ${analysisCache.current.size})`);
       }
       setComprehensiveAnalysis(null);
       setAnalysisError(null);
-      cachedTickerRef.current = stock.ticker;
-    } else if (!cachedTickerRef.current) {
-      cachedTickerRef.current = stock.ticker;
     }
+    cachedTickerRef.current = stock.ticker;
+    cachedLanguageRef.current = language;
     const fetchStockPrice = async () => {
       try {
         const response = await fetch(resolveApiUrl(`/api/stocks/${stock.ticker}`));
@@ -11433,15 +11436,17 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
         return;
       }
       if (stock.comprehensiveAnalysis) {
-        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} - NO API CALL NEEDED!`);
+        const cacheKey2 = `${stock.ticker}_${language}`;
+        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} (${language}) - NO API CALL NEEDED!`);
         setComprehensiveAnalysis(stock.comprehensiveAnalysis);
         setAnalysisError(null);
-        analysisCache.current.set(stock.ticker, stock.comprehensiveAnalysis);
+        analysisCache.current.set(cacheKey2, stock.comprehensiveAnalysis);
         return;
       }
-      const cachedAnalysis = analysisCache.current.get(stock.ticker);
+      const cacheKey = `${stock.ticker}_${language}`;
+      const cachedAnalysis = analysisCache.current.get(cacheKey);
       if (cachedAnalysis) {
-        console.log(`✅ Using session cache for ${stock.ticker} - NO API CALL NEEDED`);
+        console.log(`✅ Using session cache for ${stock.ticker} (${language}) - NO API CALL NEEDED`);
         setComprehensiveAnalysis(cachedAnalysis);
         setAnalysisError(null);
         return;
@@ -11500,10 +11505,11 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             setIsLoadingAnalysis(false);
             return;
           }
-          console.log(`✅ Successfully fetched analysis for ${stock.ticker} from API`);
+          const successCacheKey = `${stock.ticker}_${language}`;
+          console.log(`✅ Successfully fetched analysis for ${stock.ticker} (${language}) from API`);
           setComprehensiveAnalysis(analysisData);
           setAnalysisError(null);
-          analysisCache.current.set(stock.ticker, analysisData);
+          analysisCache.current.set(successCacheKey, analysisData);
         } catch (fetchError) {
           clearTimeout(timeoutId);
           if (fetchError.name === "AbortError") {
@@ -11757,25 +11763,12 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
             langKey === "ko" ? "신뢰도" : "conf"
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
+        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2 flex flex-col justify-center", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 mb-1", children: [
-            /* @__PURE__ */ jsx(Target, { size: 9, className: "text-neutral-500" }),
-            /* @__PURE__ */ jsx("span", { className: "text-[8px] text-neutral-500 uppercase font-mono", children: langKey === "ko" ? "참고 가격대" : langKey === "ja" ? "参考価格帯" : langKey === "zh" ? "参考价格区间" : "Reference Range" })
+            /* @__PURE__ */ jsx(Target, { size: 9, className: "text-blue-500" }),
+            /* @__PURE__ */ jsx("span", { className: "text-[8px] text-blue-500/70 uppercase font-mono", children: langKey === "ko" ? "업종" : langKey === "ja" ? "業種" : langKey === "zh" ? "行业" : "Sector" })
           ] }),
-          /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "평균 매수가" : "Avg Buy" }),
-              /* @__PURE__ */ jsx("span", { className: "text-emerald-400 font-mono font-bold", children: formatCurrency(stats.avgPrice) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[9px]", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-neutral-600", children: langKey === "ko" ? "현재가" : "Current" }),
-              /* @__PURE__ */ jsx("span", { className: `font-mono ${priceChange >= 0 ? "text-emerald-400" : "text-rose-400"}`, children: formatCurrency(currentPrice) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-0.5 pt-1 border-t border-neutral-800/50", children: [
-              /* @__PURE__ */ jsx(Info, { size: 7, className: "text-neutral-600 shrink-0" }),
-              /* @__PURE__ */ jsx("span", { className: "text-[6px] text-neutral-600", children: langKey === "ko" ? "참고용" : langKey === "ja" ? "参考用" : langKey === "zh" ? "仅供参考" : "Reference only" })
-            ] })
-          ] })
+          /* @__PURE__ */ jsx("div", { className: "text-sm font-bold text-blue-400", children: stock.sector || (stockPrice == null ? void 0 : stockPrice.sector) || "-" })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0", children: [
@@ -11944,23 +11937,10 @@ function StockSummaryModal({ isOpen, onClose, stock }) {
               }
             )
           ] })
-        ] }) }) : /* @__PURE__ */ jsx("p", { className: "text-[10px] text-neutral-500 pl-5 italic", children: langKey === "ko" ? "분석 데이터를 불러올 수 없습니다." : langKey === "ja" ? "分析データを読み込めません。" : langKey === "zh" ? "无法加载分析数据。" : "Unable to load analysis data." }) })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0", children: [
-        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "위험도" : "RISK" }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-emerald-500", children: [
-            /* @__PURE__ */ jsx(AlertTriangle, { size: 10 }),
-            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold", children: tData[(aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || ""] || (aiAnalysis == null ? void 0 : aiAnalysis.riskLevel) || t.riskLow })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "border border-neutral-800 bg-neutral-950/30 p-2", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-1", children: langKey === "ko" ? "총 매수 주식수" : langKey === "ja" ? "総購入株数" : langKey === "zh" ? "总购买股数" : "TOTAL SHARES" }),
-          /* @__PURE__ */ jsxs("div", { className: "text-[10px] text-neutral-200 font-mono font-bold", children: [
-            formatNumber(stock.buyers.reduce((sum, b) => sum + (b.shares || 0), 0)),
-            /* @__PURE__ */ jsx("span", { className: "text-neutral-500 ml-1", children: langKey === "ko" ? "주" : "sh" })
-          ] })
-        ] })
+        ] }) }) : /* @__PURE__ */ jsxs("div", { className: "pl-5 space-y-1", children: [
+          /* @__PURE__ */ jsx("p", { className: "text-[11px] text-neutral-300 leading-relaxed", children: langKey === "ko" ? `${stock.insiderCount}명의 내부자가 ${stock.companyName} 주식을 매수했습니다. 평균 매수가는 ${formatCurrency(stock.avgBuyPrice)}입니다.` : langKey === "ja" ? `${stock.insiderCount}名のインサイダーが${stock.companyName}株を購入しました。平均購入価格は${formatCurrency(stock.avgBuyPrice)}です。` : langKey === "zh" ? `${stock.insiderCount}位内部人士购买了${stock.companyName}股票。平均购买价格为${formatCurrency(stock.avgBuyPrice)}。` : `${stock.insiderCount} insider(s) purchased ${stock.companyName} stock at an average price of ${formatCurrency(stock.avgBuyPrice)}.` }),
+          /* @__PURE__ */ jsx("p", { className: "text-[9px] text-neutral-500 italic", children: langKey === "ko" ? "AI 상세 분석은 준비 중입니다." : langKey === "ja" ? "AI詳細分析は準備中です。" : langKey === "zh" ? "AI详细分析正在准备中。" : "AI detailed analysis is being prepared." })
+        ] }) })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-2", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800", children: [
@@ -12106,6 +12086,8 @@ function TopStocksTerminal() {
       rank: index + 1,
       ticker: item.ticker,
       companyName: item.companyName || item.ticker,
+      sector: item.sector || void 0,
+      // 업종 정보 포함
       currentPrice,
       priceChange,
       avgBuyPrice,
