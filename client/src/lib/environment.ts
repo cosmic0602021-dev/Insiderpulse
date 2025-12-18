@@ -32,10 +32,25 @@ export function isAppintosEnvironment(): boolean {
       return true;
     }
 
+    // 세션/로컬 스토리지 플래그 확인 (이전에 감지된 경우)
+    try {
+      if (sessionStorage.getItem('appintos_mode') === 'true' ||
+          sessionStorage.getItem('appintos_signature')) {
+        console.log('🔍 [ENV] Detected appintos_mode/signature in storage');
+        return true;
+      }
+    } catch (e) {
+      // 스토리지 접근 실패 무시
+    }
+
     // URL 파라미터 확인
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('signature') || urlParams.has('appintos')) {
       console.log('🔍 [ENV] Detected signature/appintos param');
+      // 플래그 저장 (다음 요청에서도 감지 가능하도록)
+      try {
+        sessionStorage.setItem('appintos_mode', 'true');
+      } catch (e) {}
       return true;
     }
 
@@ -43,6 +58,22 @@ export function isAppintosEnvironment(): boolean {
     const hostname = window.location.hostname;
     if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im') || hostname.includes('tossmini.com')) {
       console.log('🔍 [ENV] Detected Appintos hostname:', hostname);
+      return true;
+    }
+
+    // User-Agent 기반 토스앱 감지 (추가)
+    const userAgent = navigator.userAgent || '';
+    if (userAgent.includes('Toss') || userAgent.includes('toss') || userAgent.includes('AppsInToss')) {
+      console.log('🔍 [ENV] Detected Toss in User-Agent:', userAgent.substring(0, 50));
+      return true;
+    }
+
+    // 모바일 WebView 감지 (iOS/Android wv 플래그)
+    const isMobileWebView = (userAgent.includes('wv') || userAgent.includes('WebView')) &&
+                            (userAgent.includes('iPhone') || userAgent.includes('Android'));
+    if (isMobileWebView) {
+      console.log('🔍 [ENV] Detected Mobile WebView:', userAgent.substring(0, 50));
+      // WebView에서도 앱인토스일 가능성이 높으므로 true
       return true;
     }
 
