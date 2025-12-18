@@ -73,9 +73,13 @@ class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${getApiBaseUrl()}${endpoint}`;
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
+
+    // Content-Type은 body가 있는 요청에만 설정 (GET에는 불필요, preflight 방지)
+    const method = options?.method?.toUpperCase() || 'GET';
+    if (method !== 'GET' && options?.body) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Add auth token if available FIRST
     if (this.token) {
