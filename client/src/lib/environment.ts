@@ -20,6 +20,14 @@ export function isAppintosEnvironment(): boolean {
   }
 
   try {
+    // 프로토콜 확인 (intoss:// 또는 intoss-private://) - 최우선 감지
+    const protocol = window.location.protocol;
+    if (protocol.includes('intoss')) {
+      console.log('🔍 [ENV] Detected intoss protocol:', protocol);
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
+      return true;
+    }
+
     // React Native WebView 환경 감지 (가장 확실한 방법)
     if ((window as any).ReactNativeWebView) {
       console.log('🔍 [ENV] Detected ReactNativeWebView');
@@ -45,6 +53,14 @@ export function isAppintosEnvironment(): boolean {
 
     // URL 파라미터 확인
     const urlParams = new URLSearchParams(window.location.search);
+
+    // _deploymentId 파라미터 확인 (앱인토스 테스트 환경)
+    if (urlParams.has('_deploymentId')) {
+      console.log('🔍 [ENV] Detected _deploymentId param');
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
+      return true;
+    }
+
     if (urlParams.has('signature') || urlParams.has('appintos')) {
       console.log('🔍 [ENV] Detected signature/appintos param');
       // 플래그 저장 (다음 요청에서도 감지 가능하도록)
