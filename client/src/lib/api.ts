@@ -1,14 +1,27 @@
 import type { TradingStats, InsiderTrade } from '@shared/schema';
 import { ENV_CONFIG } from './environment';
 
-// 빌드 버전: 2024-12-14-v2 (앱인토스 API 호출 수정)
-const BUILD_VERSION = '2024-12-14-v2';
+// 빌드 버전: 2024-12-18-v3 (앱인토스 항상 절대 URL 사용)
+const BUILD_VERSION = '2024-12-18-v3';
+const PRODUCTION_API_URL = 'https://insiderpulse.pro/api';
 
-// 런타임에 매번 환경 감지 (빌드 시점 고정 방지)
+// 항상 프로덕션 URL 사용 (환경 감지 실패 문제 해결)
 function getApiBaseUrl(): string {
-  const url = ENV_CONFIG.apiBaseUrl;
-  console.log(`🌐 [API CLIENT v${BUILD_VERSION}] API Base URL:`, url, 'Appintos:', ENV_CONFIG.isAppintos);
-  return url;
+  // 브라우저가 아닌 환경에서는 상대 URL 사용
+  if (typeof window === 'undefined') {
+    return '/api';
+  }
+
+  // localhost에서는 상대 URL 사용 (개발 환경)
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    console.log(`🌐 [API CLIENT v${BUILD_VERSION}] Dev mode - using relative URL`);
+    return '/api';
+  }
+
+  // 그 외 모든 환경(앱인토스 포함)에서는 프로덕션 URL 사용
+  console.log(`🌐 [API CLIENT v${BUILD_VERSION}] Using production URL:`, PRODUCTION_API_URL);
+  return PRODUCTION_API_URL;
 }
 
 export interface AccessLevel {

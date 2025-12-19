@@ -1,14 +1,34 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { ENV_CONFIG } from './environment';
 
-// 앱인토스 환경에서 API URL 변환 (다른 파일에서도 사용 가능)
+const PRODUCTION_API_URL = 'https://insiderpulse.pro';
+
+// localhost 여부 확인 (credentials 결정용)
+function isLocalhost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+// 항상 프로덕션 URL로 변환 (환경 감지 실패 문제 해결)
 export function resolveApiUrl(url: string): string {
-  // URL이 /api/로 시작하고 앱인토스 환경이면 절대 URL로 변환
-  if (url.startsWith('/api') && ENV_CONFIG.isAppintos) {
-    const absoluteUrl = `https://insiderpulse.pro${url}`;
-    console.log(`🔗 [QueryClient] Appintos URL resolved: ${url} -> ${absoluteUrl}`);
+  // 브라우저가 아닌 환경에서는 그대로 반환
+  if (typeof window === 'undefined') {
+    return url;
+  }
+
+  // localhost에서는 그대로 반환 (개발 환경)
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return url;
+  }
+
+  // /api로 시작하는 URL은 프로덕션 URL로 변환
+  if (url.startsWith('/api')) {
+    const absoluteUrl = `${PRODUCTION_API_URL}${url}`;
+    console.log(`🔗 [QueryClient] URL resolved: ${url} -> ${absoluteUrl}`);
     return absoluteUrl;
   }
+
   return url;
 }
 
@@ -38,8 +58,8 @@ export async function apiRequest(
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: ENV_CONFIG.isAppintos ? "omit" : "include",
-    mode: 'cors',  // 명시적 CORS 모드
+    credentials: isLocalhost() ? "include" : "omit",
+    mode: 'cors',
   });
 
   await throwIfResNotOk(res);
@@ -56,8 +76,8 @@ export const getQueryFn: <T>(options: {
     const url = resolveApiUrl(queryKey.join("/") as string);
 
     const res = await fetch(url, {
-      credentials: ENV_CONFIG.isAppintos ? "omit" : "include",
-      mode: 'cors',  // 명시적 CORS 모드
+      credentials: isLocalhost() ? "include" : "omit",
+      mode: 'cors',
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
