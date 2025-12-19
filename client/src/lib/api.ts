@@ -240,11 +240,7 @@ class ApiClient {
 
     const url = `/trades?${params.toString()}`;
     console.log(`🌐 [API] Requesting: ${url}`);
-    const result = await this.request<TradesResponse>(url, {
-      headers: {
-        'x-user-id': 'demo-user', // TODO: Get from auth context
-      },
-    });
+    const result = await this.request<TradesResponse>(url);
     console.log(`[API] Received ${result.trades.length} trades, access level:`, result.accessLevel);
     return result;
   }
