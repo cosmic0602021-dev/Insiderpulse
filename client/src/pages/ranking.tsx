@@ -741,7 +741,9 @@ export default function Ranking() {
                         if (!item.marketCap || item.marketCap <= 0) {
                           return `${tModal.marketCapRatio}: -`;
                         }
-                        const ratio = (item.netBuying / item.marketCap) * 100;
+                        // 모달과 일관성을 위해 allInsidersNetBuying 사용
+                        const displayNetBuying = (item as any).allInsidersNetBuying || item.netBuying;
+                        const ratio = (displayNetBuying / item.marketCap) * 100;
                         let ratioStr;
                         if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
                         else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';

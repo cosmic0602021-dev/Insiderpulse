@@ -1,8 +1,12 @@
-import { X, ExternalLink, TrendingUp, TrendingDown, Building2, User, Calendar, DollarSign, Percent } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ExternalLink, TrendingUp, TrendingDown, Building2, User, Calendar, DollarSign, Percent, Bell, BellOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useLanguage } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { resolveApiUrl } from '@/lib/queryClient';
 import { formatNumber } from '@/lib/translations';
 
 interface Trade {
@@ -41,6 +45,74 @@ export function TickerTradesModal({
 }: TickerTradesModalProps) {
   const { language } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
+  // 구독 상태 확인
+  useEffect(() => {
+    if (isOpen && ticker && isAuthenticated) {
+      checkSubscription();
+    }
+  }, [isOpen, ticker, isAuthenticated]);
+
+  const checkSubscription = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(resolveApiUrl('/api/notifications/subscriptions'), {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const sub = data.subscriptions?.find((s: any) => s.ticker === ticker);
+        setIsSubscribed(!!sub?.isActive);
+      }
+    } catch (error) {
+      console.error('Failed to check subscription:', error);
+    }
+  };
+
+  // 알림 토글
+  const handleNotificationToggle = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: '로그인 필요',
+        description: '알림을 받으려면 로그인하세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSubscribing(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(resolveApiUrl('/api/notifications/subscribe'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ticker,
+          companyName,
+          action: isSubscribed ? 'unsubscribe' : 'subscribe'
+        })
+      });
+
+      if (res.ok) {
+        setIsSubscribed(!isSubscribed);
+        toast({
+          title: isSubscribed ? '알림 해제' : '알림 구독',
+          description: `${ticker} 알림이 ${isSubscribed ? '해제' : '등록'}되었습니다.`
+        });
+      }
+    } catch (error) {
+      toast({ title: '오류 발생', variant: 'destructive' });
+    }
+    setIsSubscribing(false);
+  };
 
   if (!ticker || !companyName) return null;
 
@@ -88,12 +160,29 @@ export function TickerTradesModal({
                 )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
-            >
-              <X size={20} className="text-neutral-400" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* 알림 버튼 */}
+              <button
+                onClick={handleNotificationToggle}
+                disabled={isSubscribing}
+                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors disabled:opacity-50"
+                title={isSubscribed ? '알림 해제' : '알림 받기'}
+              >
+                {isSubscribing ? (
+                  <Bell size={20} className="text-neutral-500 animate-pulse" />
+                ) : isSubscribed ? (
+                  <BellOff size={20} className="text-amber-500" />
+                ) : (
+                  <Bell size={20} className="text-neutral-400" />
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-neutral-400" />
+              </button>
+            </div>
           </div>
 
           {/* Aggregate Summary */}
