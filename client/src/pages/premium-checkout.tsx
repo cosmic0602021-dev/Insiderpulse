@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from 'wouter';
 import { useLanguage } from "@/contexts/language-context";
 import { TRANSLATIONS } from '@/lib/translations';
+import { ENV_CONFIG } from '@/lib/environment';
 
 export default function PremiumCheckout() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
@@ -21,8 +22,21 @@ export default function PremiumCheckout() {
   const t = TRANSLATIONS[langKey].upgrade;
   const common = TRANSLATIONS[langKey].common;
 
+  // 앱인토스 환경: 이 페이지 접근 차단
+  useEffect(() => {
+    if (ENV_CONFIG.isAppintos) {
+      toast({
+        title: "무료 서비스",
+        description: "앱인토스에서는 광고 기반으로 모든 기능을 무료로 제공합니다.",
+      });
+      setTimeout(() => setLocation('/dashboard'), 1000);
+    }
+  }, [setLocation, toast]);
+
   // Redirect if user already has active subscription
   useEffect(() => {
+    if (ENV_CONFIG.isAppintos) return; // 앱인토스는 이미 위에서 리디렉션됨
+
     if (user && (user.subscriptionTier === 'insider_pro' || user.subscriptionTier === 'insider') &&
        (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')) {
       toast({

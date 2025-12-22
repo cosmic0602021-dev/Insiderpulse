@@ -78,66 +78,105 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification event
+// Push notification event - Enhanced for insider trade notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
+  console.log('[SW] Push notification received:', event);
 
-  let data = {
-    title: 'InsiderPulse Pro',
-    body: '새로운 알림이 있습니다.',
+  // Default notification data
+  const defaultData = {
+    title: 'InsiderPulse',
+    body: 'New insider trade notification',
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
-    tag: 'default',
-    requireInteraction: false,
+    tag: 'insider-trade',
+    requireInteraction: true, // Stay visible until user interacts
     data: {
-      url: '/'
+      url: '/trades',
+      ticker: null,
+      tradeId: null,
+      tradeType: null
     }
   };
 
+  let notificationData = defaultData;
+
+  // Parse push payload
   if (event.data) {
     try {
-      data = { ...data, ...event.data.json() };
+      const payload = event.data.json();
+      console.log('[SW] Parsed push payload:', payload);
+
+      // Create rich notification from trade data
+      notificationData = {
+        title: payload.title || `${payload.ticker} - Insider ${payload.tradeType || 'Trade'}`,
+        body: payload.body || `${payload.traderTitle || 'Insider'} ${payload.tradeType} trade`,
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png',
+        tag: `trade-${payload.tradeId || 'default'}`,
+        requireInteraction: true,
+        data: {
+          url: payload.url || `/trades?ticker=${payload.ticker}`,
+          ticker: payload.ticker,
+          tradeId: payload.tradeId,
+          tradeType: payload.tradeType
+        },
+        vibrate: [200, 100, 200],
+        actions: [
+          {
+            action: 'view',
+            title: '자세히 보기',
+            icon: '/icon-192x192.png'
+          },
+          {
+            action: 'dismiss',
+            title: '닫기'
+          }
+        ]
+      };
     } catch (e) {
-      data.body = event.data.text();
+      console.error('[SW] Failed to parse push payload:', e);
+      // Use text as body if JSON parsing fails
+      notificationData.body = event.data.text();
     }
   }
 
   const options = {
-    body: data.body,
-    icon: data.icon,
-    badge: data.badge,
-    tag: data.tag,
-    requireInteraction: data.requireInteraction,
-    data: data.data,
-    vibrate: [200, 100, 200],
-    actions: [
-      {
-        action: 'open',
-        title: '열기'
-      },
-      {
-        action: 'close',
-        title: '닫기'
-      }
-    ]
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
+    tag: notificationData.tag,
+    requireInteraction: notificationData.requireInteraction,
+    data: notificationData.data,
+    vibrate: notificationData.vibrate,
+    actions: notificationData.actions
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(notificationData.title, options)
+      .then(() => {
+        console.log('[SW] ✅ Notification displayed successfully');
+      })
+      .catch((err) => {
+        console.error('[SW] ❌ Failed to show notification:', err);
+      })
   );
 });
 
-// Notification click event
+// Notification click event - Enhanced with deep linking
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
+  console.log('[SW] Notification clicked:', event);
 
   event.notification.close();
 
-  if (event.action === 'close') {
+  // Handle dismiss action - just close notification
+  if (event.action === 'dismiss') {
+    console.log('[SW] Notification dismissed by user');
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/';
+  // Get URL from notification data
+  const urlToOpen = event.notification.data?.url || '/trades';
+  console.log('[SW] Opening URL:', urlToOpen);
 
   event.waitUntil(
     clients.matchAll({
@@ -145,17 +184,30 @@ self.addEventListener('notificationclick', (event) => {
       includeUncontrolled: true
     })
     .then((clientList) => {
-      // Check if there's already a window open
+      console.log('[SW] Found', clientList.length, 'open windows');
+
+      // Try to focus existing window with same origin
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if (client.url === urlToOpen && 'focus' in client) {
+        const clientUrl = new URL(client.url);
+        const targetUrl = new URL(urlToOpen, self.location.origin);
+
+        // If same origin, navigate and focus
+        if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
+          console.log('[SW] Focusing existing window and navigating');
+          client.navigate(targetUrl.href);
           return client.focus();
         }
       }
-      // If not, open a new window
+
+      // No matching window found, open new one
       if (clients.openWindow) {
+        console.log('[SW] Opening new window');
         return clients.openWindow(urlToOpen);
       }
+    })
+    .catch((err) => {
+      console.error('[SW] Error handling notification click:', err);
     })
   );
 });

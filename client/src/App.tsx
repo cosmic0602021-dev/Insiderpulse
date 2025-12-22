@@ -8,6 +8,8 @@ import { LanguageProvider, useLanguage, type Language } from "@/contexts/languag
 import { CurrencyProvider } from "@/contexts/currency-context";
 import { AccessProvider } from "@/contexts/access-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { AdMobProvider } from "@/contexts/admob-context";
+import { ENV_CONFIG } from "@/lib/environment";
 import { useState, useEffect } from "react";
 import { Globe, Shield, ShieldCheck, Menu, X } from 'lucide-react';
 import LanguageSelection from "@/pages/language-selection";
@@ -44,6 +46,7 @@ import { TRANSLATIONS } from "@/lib/translations";
 import { AuthModal } from "@/components/auth-modal";
 import { DisclaimerModal } from "@/components/disclaimer-modal";
 import DebugNetwork from "@/pages/debug-network";
+import Notifications from "@/pages/notifications";
 
 function PublicRouter() {
   return (
@@ -73,6 +76,7 @@ function AppRouter() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/search" component={Search} />
       <Route path="/ranking" component={Ranking} />
+      <Route path="/notifications" component={Notifications} />
       <Route path="/password-demo" component={PasswordDemo} />
       {/* Enhanced dashboard removed for App Store compliance */}
       <Route path="/payment-success" component={PaymentSuccess} />
@@ -325,13 +329,25 @@ export default function App() {
         <LanguageProvider>
           <CurrencyProvider>
             <AccessProvider>
-              <TooltipProvider>
-                <AppContent />
-                <DisclaimerModal />
-                <AuthModal />
-                <PWAInstallPrompt />
-                <Toaster />
-              </TooltipProvider>
+              {ENV_CONFIG.isAppintos ? (
+                <AdMobProvider>
+                  <TooltipProvider>
+                    <AppContent />
+                    <DisclaimerModal />
+                    <AuthModal />
+                    <PWAInstallPrompt />
+                    <Toaster />
+                  </TooltipProvider>
+                </AdMobProvider>
+              ) : (
+                <TooltipProvider>
+                  <AppContent />
+                  <DisclaimerModal />
+                  <AuthModal />
+                  <PWAInstallPrompt />
+                  <Toaster />
+                </TooltipProvider>
+              )}
             </AccessProvider>
           </CurrencyProvider>
         </LanguageProvider>

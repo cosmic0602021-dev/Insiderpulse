@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
+import { TickerTradesModal } from '@/components/ticker-trades-modal';
 import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
@@ -17,6 +18,7 @@ import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 import { ENV_CONFIG } from '@/lib/environment';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { DebugPanel } from '@/components/debug-panel';
+import { useAdOnNavigation } from '@/hooks/use-admob';
 
 // Global cache for AI analysis - shared across all users/sessions
 const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
@@ -110,6 +112,11 @@ export default function Ranking() {
   // Check if user has realtime access
   const isPremium = accessLevel?.hasRealtimeAccess || false;
 
+  // AdMob Hook (앱인토스 환경에서만 사용)
+  const { showAdBeforeNavigation } = ENV_CONFIG.isAppintos
+    ? useAdOnNavigation()
+    : { showAdBeforeNavigation: async (callback: () => void) => callback() };
+
   console.log('[RANKING] User premium status:', {
     isPremium,
     accessLevel: accessLevel ? { hasRealtimeAccess: accessLevel.hasRealtimeAccess, tier: accessLevel.tier } : 'null'
@@ -138,13 +145,61 @@ export default function Ranking() {
   const handleStockClick = async (item: RankingItem, index: number) => {
     const { ticker, companyName } = item;
 
-    // If user doesn't have premium and tries to access top 3, redirect to upgrade
+    // 앱인토스 환경: 프리미엄 제한 없음, 광고 표시
+    if (ENV_CONFIG.isAppintos) {
+      console.log('[RANKING] Appintos environment, showing ad before opening details');
+      await showAdBeforeNavigation(async () => {
+        await openTradeDetailModal(item, ticker, companyName);
+      });
+      return;
+    }
+
+    // 웹 환경: 기존 프리미엄 체크 로직 유지
     if (!isPremium && index < 3) {
       console.log('[RANKING] Free user trying to access top 3 ranking, redirecting to upgrade');
       setLocation('/premium-checkout');
       return;
     }
 
+    // 웹 프리미엄 사용자: 광고 없이 바로 모달 열기
+    await openTradeDetailModal(item, ticker, companyName);
+  };
+
+  // 거래 상세 모달을 여는 로직 (광고 표시 여부와 무관하게 재사용)
+  const openTradeDetailModal = async (item: RankingItem, ticker: string, companyName: string) => {
+    try {
+      setSelectedTicker(ticker);
+      console.log(`[RANKING] Opening modal for ticker: ${ticker}`);
+
+      // Use allInsiders from ranking API (contains ALL trades, not de-duplicated)
+      const allTrades = (item as any).allInsiders || [];
+
+      if (allTrades.length === 0) {
+        console.log(`No trades found for ${ticker}`);
+        alert(t('ranking.alert.noTradeData').replace('{company}', companyName));
+        return;
+      }
+
+      // Prepare data for multi-trade modal
+      const modalData = {
+        ticker,
+        companyName,
+        trades: allTrades, // All trades (not de-duplicated)
+        currentPrice: item.currentPrice,
+        marketCap: item.marketCap,
+        totalNetBuying: item.netBuying, // Aggregated value (matches ranking card %)
+      };
+
+      setSelectedTradeData(modalData);
+      setShowTradeModal(true);
+    } catch (error) {
+      console.error('Failed to open modal:', error);
+      alert(t('ranking.alert.loadFailed'));
+    }
+  };
+
+  // Deprecated: Old single-trade modal logic below (keeping for reference but not used)
+  const _legacyOpenTradeDetailModal = async (item: RankingItem, ticker: string, companyName: string) => {
     try {
       setSelectedTicker(ticker);
       console.log(`[RANKING] Fetching trades for ticker: ${ticker}`);
@@ -924,11 +979,16 @@ export default function Ranking() {
         </Card>
       )}
 
-      {/* Trade Detail Modal */}
-      <TradeDetailModal
+      {/* Ticker Trades Modal - Shows ALL trades for a ticker */}
+      <TickerTradesModal
         isOpen={showTradeModal}
         onClose={() => setShowTradeModal(false)}
-        trade={selectedTradeData}
+        ticker={selectedTicker || ''}
+        companyName={selectedTradeData?.companyName || ''}
+        trades={selectedTradeData?.trades || []}
+        currentPrice={selectedTradeData?.currentPrice}
+        marketCap={selectedTradeData?.marketCap || null}
+        totalNetBuying={selectedTradeData?.totalNetBuying || 0}
       />
 
       {/* 워치리스트 추가 성공 모달 */}

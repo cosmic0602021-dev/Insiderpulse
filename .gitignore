@@ -12,3 +12,9 @@ vite.config.ts.*
 
 # Claude settings (may contain credentials)
 .claude/migrations/
+
+# Toss mTLS certificates (NEVER commit these!)
+/certs/
+*.crt
+*.key
+*.pem

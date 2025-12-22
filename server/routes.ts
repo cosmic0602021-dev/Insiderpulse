@@ -12,6 +12,7 @@ import { z } from "zod";
 import { protectAdminEndpoint } from "./security-middleware";
 import { registerMegaApiEndpoints } from "./mega-api-endpoints";
 import dataCollectionRouter from "./data-collection-api";
+import notificationRouter from "./notification-routes";
 import Stripe from "stripe";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -36,6 +37,25 @@ import { exchangeRateService } from "./exchange-rate-service";
 
 // Initialize database
 const db = drizzle(process.env.DATABASE_URL!, { schema });
+
+/**
+ * 앱인토스 환경인지 확인하는 헬퍼 함수
+ * Request header의 origin 또는 x-appintos-env를 확인
+ */
+function isAppintosEnvironment(req: express.Request): boolean {
+  // x-appintos-env 헤더 확인
+  if (req.headers['x-appintos-env'] === 'true') {
+    return true;
+  }
+
+  // origin 헤더에서 tossmini.com 확인
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (origin.includes('tossmini.com') || origin.includes('apps-in-toss')) {
+    return true;
+  }
+
+  return false;
+}
 
 // Initialize Stripe with secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -2421,9 +2441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         console.log('🔒 [/api/trades] No auth token found - treating as free user');
       } else {
-        const accessLevel = await subscriptionService.getUserAccessLevel(userId);
+        const isAppintos = isAppintosEnvironment(req);
+        const accessLevel = await subscriptionService.getUserAccessLevel(userId, isAppintos);
         hasRealtimeAccess = accessLevel.canAccessRealtime;
-        console.log(`🔑 [/api/trades] User ${userId.substring(0, 20)}... - hasRealtimeAccess: ${hasRealtimeAccess}`);
+        console.log(`🔑 [/api/trades] User ${userId.substring(0, 20)}... - hasRealtimeAccess: ${hasRealtimeAccess} (Appintos: ${isAppintos})`);
         console.log(`   📊 Tier: ${accessLevel.tier}, Status: ${accessLevel.status}, Trial: ${accessLevel.isTrialing}`);
       }
 
@@ -2927,7 +2948,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`🔑 [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
 
-      const accessLevel = await subscriptionService.getUserAccessLevel(userId);
+      const isAppintos = isAppintosEnvironment(req);
+      const accessLevel = await subscriptionService.getUserAccessLevel(userId, isAppintos);
 
       // Get user for hasUsedTrial info
       const user = await db.query.users.findFirst({
@@ -4591,6 +4613,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+        // 모달용: 중복 제거 안 된 모든 거래 (PROP 버그 수정)
+        const allInsiderTrades = validBuyTrades
+          .map(t => ({
+            name: t.traderName,
+            title: t.traderTitle || 'Insider',
+            shares: t.shares,
+            pricePerShare: t.pricePerShare,
+            totalValue: t.totalValue,
+            date: t.filedDate,
+            tradeType: t.tradeType,
+            secFilingUrl: t.secFilingUrl,
+            accessionNumber: t.accessionNumber,
+            isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || '')
+          }))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
         // Calculate percentage change from average buy price (marketCap already defined above)
         let priceChangePercent = undefined;
         if (currentPrice && metrics.avgTradeValue > 0) {
@@ -4612,7 +4650,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
-          insiders: insiderDetails, // 📋 Insider 상세 정보 추가!
+          insiders: insiderDetails, // 📋 중복 제거된 Insider 상세 정보 (랭킹 카드용)
+          allInsiders: allInsiderTrades, // 📋 모든 거래 (모달용 - PROP 버그 수정)
           // 현재 주가 및 변동률 정보 추가
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
@@ -5976,6 +6015,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 🚀 Register enhanced data collection API endpoints
   app.use(dataCollectionRouter);
+
+  // 🔔 Register push notification API endpoints
+  app.use('/api/notifications', notificationRouter);
 
   // 🚀 Simple test endpoints for enhanced API
   app.get('/api/enhanced/simple-test', (req, res) => {

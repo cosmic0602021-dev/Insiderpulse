@@ -288,3 +288,90 @@ export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
 
 export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
+// Push Notification Tables
+
+// 1. Notification Subscriptions - Users subscribing to ticker notifications
+export const notificationSubscriptions = pgTable("notification_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  ticker: varchar("ticker", { length: 10 }).notNull(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+
+  // Platform identification
+  platform: varchar("platform", { length: 20 }).notNull(), // 'pwa' | 'appintos'
+
+  // PWA Web Push API fields
+  pushEndpoint: text("push_endpoint"),
+  pushP256dh: text("push_p256dh"),
+  pushAuth: text("push_auth"),
+
+  // Apps-in-Toss fields
+  tossUserKey: varchar("toss_user_key", { length: 255 }),
+
+  // Notification preferences
+  notifyOnBuy: boolean("notify_on_buy").notNull().default(true),
+  notifyOnSell: boolean("notify_on_sell").notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
+
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  lastNotifiedAt: timestamp("last_notified_at"),
+  notificationCount: integer("notification_count").notNull().default(0),
+}, (table) => ({
+  // Ensure unique subscription per user per ticker per platform
+  uniqueUserTickerPlatform: uniqueIndex("idx_notification_sub_unique").on(table.userId, table.ticker, table.platform),
+}));
+
+export const insertNotificationSubscriptionSchema = createInsertSchema(notificationSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertNotificationSubscription = z.infer<typeof insertNotificationSubscriptionSchema>;
+export type NotificationSubscription = typeof notificationSubscriptions.$inferSelect;
+
+// 2. Notification Logs - Track all notification attempts
+export const notificationLogs = pgTable("notification_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  subscriptionId: varchar("subscription_id").references(() => notificationSubscriptions.id, { onDelete: 'cascade' }),
+  tradeId: varchar("trade_id").references(() => insiderTrades.id, { onDelete: 'set null' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+
+  platform: varchar("platform", { length: 20 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull(), // 'sent' | 'failed' | 'pending'
+  errorMessage: text("error_message"),
+
+  sentAt: timestamp("sent_at").defaultNow(),
+
+  // Notification content for debugging
+  title: text("title"),
+  body: text("body"),
+  metadata: json("metadata"),
+});
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLogs).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+
+// 3. Toss User Mappings - Map Toss user keys to InsiderPulse users
+export const tossUserMappings = pgTable("toss_user_mappings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  tossUserKey: varchar("toss_user_key", { length: 255 }).notNull().unique(),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  lastLoginAt: timestamp("last_login_at"),
+});
+
+export const insertTossUserMappingSchema = createInsertSchema(tossUserMappings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTossUserMapping = z.infer<typeof insertTossUserMappingSchema>;
+export type TossUserMapping = typeof tossUserMappings.$inferSelect;

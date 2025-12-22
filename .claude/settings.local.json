@@ -215,7 +215,12 @@
       "Bash(timeout 30 curl:*)",
       "Bash(then echo \"Testing SEVN:\" curl -s \"https://api.polygon.io/v3/reference/tickers/SEVN?apiKey=$POLYGON_API_KEY\")",
       "Bash(then echo \"✅ POLYGON_API_KEY is set ($#OLYGON_API_KEY chars)\" echo \"\" echo \"=== Testing Polygon API for HYMC ===\" curl -s \"https://api.polygon.io/v3/reference/tickers/HYMC?apiKey=$POLYGON_API_KEY\")",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "Bash(npx web-push generate-vapid-keys)",
+      "Bash(if [ -f /home/runner/workspace/.env ])",
+      "Bash(then echo \"File exists\")",
+      "Bash(else echo \"File does not exist\")",
+      "Bash(/home/runner/workspace/.env <<'EOF'\n\n# Web Push Notification \\(VAPID\\) Keys\nVAPID_PUBLIC_KEY=BI6u6E6ymWpNbRfAI1OceBmd2Uiyp5hANmQUTtZAxyDPDFp2Bw8MD83yfq7Y7YBW1Kv_YAdvlT_hXMjRnLAmzjI\nVAPID_PRIVATE_KEY=qBgZLqXXDDEFwHNlgnnDBecANGrI-1JasUHhP9gmROU\nVAPID_SUBJECT=mailto:admin@insiderpulse.pro\n\n# Toss Push API Configuration \\(will be configured later when certs are received\\)\n# TOSS_PUSH_API_URL=https://push-api.toss.im/v1/push\n# TOSS_CLIENT_CERT_PATH=/secure/path/to/client.crt\n# TOSS_CLIENT_KEY_PATH=/secure/path/to/client.key\n# TOSS_CA_CERT_PATH=/secure/path/to/ca.crt\n# TOSS_MESSAGE_TEMPLATE_ID=<승인받은 템플릿 ID>\nEOF)"
     ],
     "deny": [],
     "ask": []

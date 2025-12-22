@@ -32,6 +32,12 @@ const getMenuItems = () => [
     key: 'ranking'
   },
   {
+    title: "Notifications",
+    url: "/notifications",
+    icon: Bell,
+    key: 'notifications'
+  },
+  {
     title: "Profile",
     url: "/profile",
     icon: User,

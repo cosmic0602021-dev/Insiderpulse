@@ -31,6 +31,7 @@ import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
 import { ENV_CONFIG } from '@/lib/environment';
 import { DebugPanel } from '@/components/debug-panel';
+import { useAdOnNavigation } from '@/hooks/use-admob';
 
 interface DataQualityStatus {
   isValid: boolean;
@@ -83,9 +84,23 @@ export default function LiveTrading() {
   // Trial status is now managed by AccessContext - no need to load here
   // This prevents race condition where API is called before auth token is set
 
-  const handleTradeClick = (trade: InsiderTrade) => {
-    setSelectedTrade(trade);
-    setIsModalOpen(true);
+  // AdMob Hook (앱인토스 환경에서만 사용)
+  const { showAdBeforeNavigation } = ENV_CONFIG.isAppintos
+    ? useAdOnNavigation()
+    : { showAdBeforeNavigation: async (callback: () => void) => callback() };
+
+  const handleTradeClick = async (trade: InsiderTrade) => {
+    if (ENV_CONFIG.isAppintos) {
+      // 앱인토스 환경: 광고 표시 후 모달 열기
+      await showAdBeforeNavigation(() => {
+        setSelectedTrade(trade);
+        setIsModalOpen(true);
+      });
+    } else {
+      // 웹 환경: 광고 없이 바로 모달 열기
+      setSelectedTrade(trade);
+      setIsModalOpen(true);
+    }
   };
 
   const handleAddToWatchlist = (trade: any) => {

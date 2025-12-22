@@ -112,8 +112,21 @@ async function syncSubscriptionFromStripe(user: any): Promise<boolean> {
 
 /**
  * Get user's current access level
+ * @param userId - User ID
+ * @param isAppintos - Whether the request is from Appintos environment (optional)
  */
-export async function getUserAccessLevel(userId: string): Promise<AccessLevel> {
+export async function getUserAccessLevel(userId: string, isAppintos: boolean = false): Promise<AccessLevel> {
+  // 앱인토스 환경: 모든 사용자에게 프리미엄 권한 부여 (광고 기반 무료 서비스)
+  if (isAppintos) {
+    console.log(`[Access Check] Appintos environment detected for user ${userId}, granting premium access`);
+    return {
+      canAccessRealtime: true,
+      tier: "insider_pro",
+      status: "active",
+      isTrialing: false,
+    };
+  }
+
   let user = await db.query.users.findFirst({
     where: eq(users.id, userId),
   });

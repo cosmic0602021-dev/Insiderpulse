@@ -1,5 +1,5 @@
 // Modified for App Store compliance: price target safe mode - removed all investment predictions
-import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp, Info, Bell, BellOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -10,6 +10,10 @@ import { CurrencySelector } from '@/components/currency-selector';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useState, useEffect, useMemo, useId } from 'react';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { subscribeToPushNotifications } from '@/lib/push-subscription';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface StockPriceData {
   ticker: string;
@@ -33,6 +37,12 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
   const gradientId = useId(); // Generate unique ID to avoid conflicts
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
 
+  // Notification subscription state
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+
   // Fetch real stock price from API
   useEffect(() => {
     if (!isOpen || !trade?.ticker) {
@@ -54,6 +64,124 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
 
     fetchStockPrice();
   }, [isOpen, trade?.ticker]);
+
+  // Check notification subscription status
+  useEffect(() => {
+    if (!isOpen || !isAuthenticated || !trade?.ticker) {
+      setIsSubscribed(false);
+      return;
+    }
+
+    const checkSubscription = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch(
+          resolveApiUrl(`/api/notifications/subscriptions?ticker=${trade.ticker}`),
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsSubscribed(data.isSubscribed || false);
+        }
+      } catch (error) {
+        console.error('Failed to check subscription:', error);
+      }
+    };
+
+    checkSubscription();
+  }, [isOpen, isAuthenticated, trade?.ticker]);
+
+  // Handle notification subscription toggle
+  const handleNotificationToggle = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: '로그인 필요',
+        description: '알림을 받으려면 로그인이 필요합니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!trade?.ticker || !trade?.companyName) {
+      return;
+    }
+
+    setIsSubscribing(true);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No auth token');
+      }
+
+      const action = isSubscribed ? 'unsubscribe' : 'subscribe';
+
+      // For PWA, get push subscription first
+      let pushSubscription = null;
+      if (action === 'subscribe' && !ENV_CONFIG.isAppintos) {
+        pushSubscription = await subscribeToPushNotifications();
+        if (!pushSubscription) {
+          toast({
+            title: '알림 권한 거부됨',
+            description: '브라우저 설정에서 알림을 허용해주세요.',
+            variant: 'destructive',
+          });
+          setIsSubscribing(false);
+          return;
+        }
+      }
+
+      const response = await fetch(resolveApiUrl('/api/notifications/subscribe'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ticker: trade.ticker,
+          companyName: trade.companyName,
+          action,
+          pushSubscription: pushSubscription ? {
+            endpoint: pushSubscription.endpoint,
+            keys: {
+              p256dh: pushSubscription.toJSON().keys?.p256dh,
+              auth: pushSubscription.toJSON().keys?.auth,
+            }
+          } : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '구독 처리 실패');
+      }
+
+      setIsSubscribed(!isSubscribed);
+
+      toast({
+        title: isSubscribed ? '알림 해제됨' : '알림 설정됨',
+        description: isSubscribed
+          ? `${trade.ticker} 알림이 해제되었습니다.`
+          : `${trade.ticker}의 내부자 거래 시 알림을 받습니다.`,
+      });
+    } catch (error: any) {
+      console.error('Notification toggle error:', error);
+      toast({
+        title: '오류',
+        description: error.message || '알림 설정에 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   // Get translations for current language
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
@@ -232,6 +360,24 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             </div>
             <div className="flex items-center gap-2">
               <CurrencySelector />
+              {/* Notification subscription button (only for logged-in users) */}
+              {isAuthenticated && (
+                <button
+                  onClick={handleNotificationToggle}
+                  disabled={isSubscribing}
+                  className="p-1.5 hover:bg-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isSubscribed ? '알림 해제' : '알림 받기'}
+                  data-testid="button-notification-toggle"
+                >
+                  {isSubscribing ? (
+                    <Bell size={16} className="text-neutral-500 animate-pulse" />
+                  ) : isSubscribed ? (
+                    <BellOff size={16} className="text-amber-500" />
+                  ) : (
+                    <Bell size={16} className="text-neutral-500" />
+                  )}
+                </button>
+              )}
               <button onClick={onClose} className="p-1.5 hover:bg-neutral-900 transition-colors" data-testid="button-close-modal">
                 <X size={16} className="text-neutral-500" />
               </button>
