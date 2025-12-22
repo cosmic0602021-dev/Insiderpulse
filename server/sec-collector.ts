@@ -601,6 +601,15 @@ class SECDataCollector {
           });
           console.log(`   📡 Trade broadcasted to WebSocket clients`);
 
+          // Send push notifications to subscribers of this ticker
+          try {
+            const { notificationService } = await import('./notification-service');
+            await notificationService.notifySubscribers(insertedTrade.id);
+            console.log(`   🔔 Push notification triggered for trade ${insertedTrade.id}`);
+          } catch (notifyError) {
+            console.error(`   ⚠️ Push notification failed:`, notifyError);
+          }
+
           // Delay to avoid overwhelming OpenAI API and SEC servers
           await new Promise(resolve => setTimeout(resolve, 2000));
         } // End of tradesToProcess loop

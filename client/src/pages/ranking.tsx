@@ -169,10 +169,18 @@ export default function Ranking() {
   const openTradeDetailModal = async (item: RankingItem, ticker: string, companyName: string) => {
     try {
       setSelectedTicker(ticker);
-      console.log(`[RANKING] Opening modal for ticker: ${ticker}`);
 
       // Use allInsiders from ranking API (contains ALL trades, not de-duplicated)
       const allTrades = (item as any).allInsiders || [];
+      const allInsidersNetBuying = (item as any).allInsidersNetBuying || item.netBuying;
+
+      // 디버그 로깅 (데이터 확인용)
+      console.log(`[Modal] Opening for ${ticker}:`, {
+        allInsiders: allTrades.length,
+        insiders: item.insiders?.length || 0,
+        netBuying: item.netBuying,
+        allInsidersNetBuying
+      });
 
       if (allTrades.length === 0) {
         console.log(`No trades found for ${ticker}`);
@@ -187,7 +195,7 @@ export default function Ranking() {
         trades: allTrades, // All trades (not de-duplicated)
         currentPrice: item.currentPrice,
         marketCap: item.marketCap,
-        totalNetBuying: item.netBuying, // Aggregated value (matches ranking card %)
+        totalNetBuying: allInsidersNetBuying, // 모달에 표시되는 거래들의 합계와 일치
       };
 
       setSelectedTradeData(modalData);

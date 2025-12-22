@@ -320,9 +320,17 @@ export class OpenInsiderUltraScraper {
         
         // Process new trade
         const processedTrade = await this.formatTradeForStorage(trade);
-        await storage.upsertInsiderTrade(processedTrade);
+        const insertedTrade = await storage.upsertInsiderTrade(processedTrade);
         newTrades++;
-        
+
+        // Send push notifications to subscribers of this ticker
+        try {
+          const { notificationService } = await import('./notification-service');
+          await notificationService.notifySubscribers(insertedTrade.id);
+        } catch (notifyError) {
+          console.error(`⚠️ Push notification failed for ${insertedTrade.ticker}:`, notifyError);
+        }
+
         // Categorize by value
         const value = trade.value || 0;
         if (value >= 1000000) {

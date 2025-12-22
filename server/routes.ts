@@ -4629,6 +4629,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+        // 모달에 표시될 거래들의 실제 순매수액 계산 (시총대비 일관성을 위해)
+        const allInsidersNetBuying = allInsiderTrades.reduce((sum, t) => sum + t.totalValue, 0);
+
+        // 디버그 로깅 (PROP 데이터 확인용)
+        if (metrics.ticker === 'PROP' || allInsiderTrades.length !== insiderDetails.length) {
+          console.log(`[Rankings Debug] ${metrics.ticker}: validBuyTrades=${validBuyTrades.length}, allInsiderTrades=${allInsiderTrades.length}, insiderDetails=${insiderDetails.length}`);
+        }
+
         // Calculate percentage change from average buy price (marketCap already defined above)
         let priceChangePercent = undefined;
         if (currentPrice && metrics.avgTradeValue > 0) {
@@ -4652,6 +4660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           insiderActivity: `${totalTrades} trades in last 30 days`,
           insiders: insiderDetails, // 📋 중복 제거된 Insider 상세 정보 (랭킹 카드용)
           allInsiders: allInsiderTrades, // 📋 모든 거래 (모달용 - PROP 버그 수정)
+          allInsidersNetBuying: Math.round(allInsidersNetBuying), // 모달용 순매수액 (시총대비 일관성)
           // 현재 주가 및 변동률 정보 추가
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
