@@ -1,4 +1,4 @@
-const CACHE_NAME = 'insiderpulse-v2';
+const CACHE_NAME = 'insiderpulse-v3';
 const urlsToCache = [
   '/',
   '/index.html',
