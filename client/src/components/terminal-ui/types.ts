@@ -85,7 +85,8 @@ export enum View {
   LIVE_TRADING = 'LIVE_TRADING',
   TOP_STOCKS = 'TOP_STOCKS',
   PROFILE = 'PROFILE',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  NOTIFICATIONS = 'NOTIFICATIONS'
 }
 
 export interface Filing {

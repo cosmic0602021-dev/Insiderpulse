@@ -16,6 +16,7 @@ const EN = {
     live: 'Live Trading',
     analysis: 'Top Insider Activity', // Changed from 'Recommended Stocks'
     config: 'Configuration',
+    notifications: 'Notifications',
     watched: 'Watched Assets',
     noData: 'NO_DATA_STREAM'
   },
@@ -285,6 +286,7 @@ const KO = {
     live: '실시간 거래',
     analysis: '내부자 활동 TOP', // Changed from '추천 주식'
     config: '설정',
+    notifications: '알림관리',
     watched: '관심 종목',
     noData: '데이터 스트림 없음'
   },
@@ -581,6 +583,7 @@ const JA = {
     live: 'ライブトレーディング',
     analysis: 'インサイダー活動トップ', // App Store compliance: changed from 'おすすめ銘柄'
     config: '設定',
+    notifications: '通知管理',
     watched: 'ウォッチリスト',
   },
   auth: {
@@ -722,6 +725,7 @@ const ZH = {
     live: '实时交易',
     analysis: '内部人活动排行', // App Store compliance: changed from '推荐股票'
     config: '配置',
+    notifications: '通知管理',
     watched: '关注列表',
   },
   auth: {

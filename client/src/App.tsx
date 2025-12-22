@@ -138,6 +138,9 @@ function AppContent() {
       case View.SETTINGS:
         setLocation('/settings');
         break;
+      case View.NOTIFICATIONS:
+        setLocation('/notifications');
+        break;
     }
   };
 
@@ -151,6 +154,8 @@ function AppContent() {
       setActiveView(View.PROFILE);
     } else if (location.startsWith('/settings')) {
       setActiveView(View.SETTINGS);
+    } else if (location.startsWith('/notifications')) {
+      setActiveView(View.NOTIFICATIONS);
     }
   }, [location]);
 
@@ -295,6 +300,9 @@ function AppContent() {
             )}
             {activeView === View.SETTINGS && (
               <TerminalSettingsView lang={terminalLang} setLang={(lang) => setLanguage(lang as 'en' | 'ko' | 'ja' | 'zh')} />
+            )}
+            {activeView === View.NOTIFICATIONS && (
+              <Notifications />
             )}
           </main>
         </div>

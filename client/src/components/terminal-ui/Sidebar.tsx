@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Activity, User, Settings, Power, X, LogIn } from 'lucide-react';
+import { LayoutDashboard, Activity, User, Settings, Power, X, LogIn, Bell } from 'lucide-react';
 import { View, Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
 
@@ -54,13 +54,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
             icon={<LayoutDashboard size={14} />}
             label={t.analysis}
         />
-        <NavButton 
-            active={activeView === View.PROFILE} 
+        <NavButton
+            active={activeView === View.PROFILE}
             onClick={() => onChangeView(View.PROFILE)}
             icon={<User size={14} />}
             label={t.config}
         />
-        
+        <NavButton
+            active={activeView === View.NOTIFICATIONS}
+            onClick={() => onChangeView(View.NOTIFICATIONS)}
+            icon={<Bell size={14} />}
+            label={t.notifications}
+        />
+
         <div className="mt-8 text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest">{t.watched}</div>
         <div className="px-4 py-4 border border-neutral-900/50 mx-2 bg-neutral-900/20">
             <p className="text-[10px] text-neutral-600 mono text-center">{t.noData}</p>
