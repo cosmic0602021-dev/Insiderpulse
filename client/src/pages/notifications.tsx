@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
@@ -8,11 +8,64 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, BellOff, BellRing, Trash2, TrendingUp, TrendingDown, Smartphone, Globe, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Bell, BellOff, BellRing, Trash2, TrendingUp, TrendingDown, Smartphone, Globe, CheckCircle2, XCircle, Clock, Download, Share, Plus, MoreVertical } from "lucide-react";
 import { resolveApiUrl } from "@/lib/queryClient";
 import { ENV_CONFIG } from "@/lib/environment";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+
+// PWA 설치 상태 및 모바일 감지
+function usePWAStatus() {
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    // 모바일/태블릿 감지
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(userAgent);
+    const ios = /iphone|ipad|ipod/i.test(userAgent);
+    const android = /android/i.test(userAgent);
+
+    setIsMobile(mobile);
+    setIsIOS(ios);
+    setIsAndroid(android);
+
+    // PWA 설치 여부 확인
+    const checkInstalled = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      setIsInstalled(isStandalone || isIOSStandalone);
+    };
+    checkInstalled();
+
+    // Android: beforeinstallprompt 이벤트 감지
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const installPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+      }
+      setDeferredPrompt(null);
+    }
+  };
+
+  return { isInstalled, isMobile, isIOS, isAndroid, deferredPrompt, installPWA };
+}
 
 interface NotificationSubscription {
   id: string;
@@ -47,6 +100,7 @@ export default function Notifications() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isInstalled, isMobile, isIOS, isAndroid, deferredPrompt, installPWA } = usePWAStatus();
 
   // Fetch user's subscriptions
   const { data: subscriptionsData, isLoading: isLoadingSubscriptions } = useQuery<{ subscriptions: NotificationSubscription[]; count: number }>({
@@ -245,6 +299,101 @@ export default function Notifications() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PWA 설치 안내 - 모바일/태블릿에서만 표시 (PC에서는 표시 안함) */}
+      {isMobile && !isInstalled && !ENV_CONFIG.isAppintos && (
+        <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-amber-500 rounded-full flex-shrink-0">
+                <Download className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-2 text-amber-900 dark:text-amber-100">
+                  📱 앱 설치로 푸시 알림 받기
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+                  모바일에서 푸시 알림을 받으려면 앱을 홈 화면에 추가하세요.
+                </p>
+
+                {isIOS ? (
+                  <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      🍎 iPhone/iPad 설치 방법:
+                    </p>
+                    <ol className="text-sm text-amber-800 dark:text-amber-200 space-y-1 list-decimal list-inside">
+                      <li className="flex items-center gap-2">
+                        <span>Safari 하단의</span>
+                        <Share className="h-4 w-4 inline" />
+                        <span>공유 버튼 탭</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span>아래로 스크롤 후</span>
+                        <Plus className="h-4 w-4 inline" />
+                        <span>"홈 화면에 추가" 선택</span>
+                      </li>
+                      <li>오른쪽 상단 "추가" 탭</li>
+                    </ol>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                      ⚠️ Safari 브라우저에서만 가능합니다
+                    </p>
+                  </div>
+                ) : isAndroid ? (
+                  <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 space-y-2">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      🤖 Android 설치 방법:
+                    </p>
+                    {deferredPrompt ? (
+                      <Button
+                        onClick={installPWA}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        앱 설치하기
+                      </Button>
+                    ) : (
+                      <ol className="text-sm text-amber-800 dark:text-amber-200 space-y-1 list-decimal list-inside">
+                        <li className="flex items-center gap-2">
+                          <span>Chrome 우측 상단</span>
+                          <MoreVertical className="h-4 w-4 inline" />
+                          <span>메뉴 버튼 탭</span>
+                        </li>
+                        <li>"홈 화면에 추가" 또는 "앱 설치" 선택</li>
+                        <li>"설치" 버튼 탭</li>
+                      </ol>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      브라우저 메뉴에서 "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* PWA 설치 완료 상태 - 모바일에서 설치된 경우 */}
+      {isMobile && isInstalled && !ENV_CONFIG.isAppintos && (
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-600 rounded-full">
+                <CheckCircle2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-medium text-sm text-green-800 dark:text-green-200">앱 설치 완료</p>
+                <p className="text-lg font-bold text-green-900 dark:text-green-100">
+                  푸시 알림을 받을 준비가 되었습니다! 🎉
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Subscriptions Management */}

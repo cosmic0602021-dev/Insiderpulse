@@ -55,16 +55,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
             label={t.analysis}
         />
         <NavButton
-            active={activeView === View.PROFILE}
-            onClick={() => onChangeView(View.PROFILE)}
-            icon={<User size={14} />}
-            label={t.config}
-        />
-        <NavButton
             active={activeView === View.NOTIFICATIONS}
             onClick={() => onChangeView(View.NOTIFICATIONS)}
             icon={<Bell size={14} />}
             label={t.notifications}
+        />
+        <NavButton
+            active={activeView === View.PROFILE}
+            onClick={() => onChangeView(View.PROFILE)}
+            icon={<User size={14} />}
+            label={t.config}
         />
 
         <div className="mt-8 text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest">{t.watched}</div>
