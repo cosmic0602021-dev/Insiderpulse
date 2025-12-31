@@ -3,6 +3,11 @@
  * Determines if running in Appintos WebView vs browser/dev
  */
 
+// Build version for cache busting (updated on each deploy)
+export const BUILD_VERSION = '2025.1229.2000';
+export const BUILD_ID = 'v20-performance';
+console.log('[BUILD] Version:', BUILD_VERSION, 'ID:', BUILD_ID);
+
 export interface EnvironmentConfig {
   isAppintos: boolean;
   apiBaseUrl: string;
@@ -142,6 +147,68 @@ function getRelativeWebSocketUrl(): string {
   return `${protocol}//${host}/api/ws`;
 }
 
+/**
+ * 앱인토스 환경에서 자동으로 익명 사용자 ID 생성/반환
+ * appLogin SDK 없이도 사용자 식별 가능
+ */
+export function ensureAppintosUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  // 앱인토스 환경이 아니면 null
+  if (!isAppintosEnvironment()) return null;
+
+  // 이미 ID가 있으면 반환
+  let userId = localStorage.getItem('appintos_user_id');
+  if (userId) {
+    console.log('[ENV] Existing Appintos user ID:', userId);
+    return userId;
+  }
+
+  // 새 ID 생성 및 저장
+  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  localStorage.setItem('appintos_user_id', userId);
+  console.log('[ENV] Created new Appintos user ID:', userId);
+  return userId;
+}
+
+/**
+ * 앱인토스 환경에서 세션 확인 후 사용자 ID 반환 (비동기 버전)
+ * 1. localStorage 확인
+ * 2. 서버 세션 쿠키 확인
+ * 3. 새 ID 생성 (최후의 수단)
+ */
+export async function ensureAppintosUserIdAsync(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  if (!isAppintosEnvironment()) return null;
+
+  // 1. localStorage 확인
+  let userId = localStorage.getItem('appintos_user_id');
+  if (userId) {
+    console.log('[ENV] Existing Appintos user ID:', userId);
+    return userId;
+  }
+
+  // 2. 서버 세션 확인 (쿠키 기반)
+  try {
+    console.log('[ENV] Checking server session...');
+    const { checkExistingTossSession } = await import('./toss-login');
+    const user = await checkExistingTossSession();
+    if (user?.id) {
+      console.log('[ENV] Found session user ID:', user.id);
+      localStorage.setItem('appintos_user_id', user.id);
+      return user.id;
+    }
+  } catch (e) {
+    console.log('[ENV] Session check failed:', e);
+  }
+
+  // 3. 세션 없으면 새 ID 생성 (최후의 수단)
+  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  localStorage.setItem('appintos_user_id', userId);
+  console.log('[ENV] Created new Appintos user ID:', userId);
+  return userId;
+}
+
 // ✅ Proxy 제거, 직접 getter 사용하여 매번 재평가
 export const ENV_CONFIG = {
   get isAppintos() {
@@ -157,3 +224,8 @@ export const ENV_CONFIG = {
     return getEnvironmentConfig().environment;
   }
 };
+
+// 앱인토스 환경이면 앱 시작 시 자동으로 ID 생성
+if (typeof window !== 'undefined') {
+  ensureAppintosUserId();
+}

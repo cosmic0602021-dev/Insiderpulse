@@ -18,3 +18,5 @@ vite.config.ts.*
 *.crt
 *.key
 *.pem
+*.ait
+insiderpulse.ait

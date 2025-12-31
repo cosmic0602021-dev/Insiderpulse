@@ -6,6 +6,8 @@ import "dotenv/config";
 // 🔧 CRITICAL: Force production DATABASE_URL (override Replit auto-injection)
 process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
 
+// 🔧 Stripe: STRIPE_SECRET_KEY must be set in Replit Secrets dashboard for production
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -75,7 +77,7 @@ app.use((req, res, next) => {
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Appintos-Signature, X-Appintos-User-Id, X-Appintos-Env, X-Toss-User-Key, X-Requested-With');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -83,6 +85,31 @@ app.use((req, res, next) => {
   }
 
   next();
+});
+
+// .ait file download endpoint
+app.get('/insiderpulse.ait', (req, res) => {
+  const filePath = path.resolve(process.cwd(), 'insiderpulse.ait');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="insiderpulse.ait"');
+    return res.sendFile(filePath);
+  } else {
+    return res.status(404).json({ error: 'File not found' });
+  }
+});
+
+// .ait file download endpoint - latest
+app.get('/insiderpulse_015353.ait', (req, res) => {
+  const filePath = path.resolve(process.cwd(), 'insiderpulse_015353.ait');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename="insiderpulse_015353.ait"');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return res.sendFile(filePath);
+  } else {
+    return res.status(404).json({ error: 'File not found' });
+  }
 });
 
 app.use((req, res, next) => {
