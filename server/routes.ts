@@ -3890,63 +3890,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 관심 종목 추가/제거
-  app.post('/api/notifications/watchlist', async (req, res) => {
-    try {
-      const { userId, ticker, action } = req.body;
-      if (!userId || !ticker || !action) {
-        return res.status(400).json({ error: '필수 파라미터가 누락되었습니다' });
-      }
-
-      if (action === 'add') {
-        emailNotificationService.addToWatchlist(userId, ticker);
-      } else if (action === 'remove') {
-        emailNotificationService.removeFromWatchlist(userId, ticker);
-      } else {
-        return res.status(400).json({ error: 'action은 add 또는 remove여야 합니다' });
-      }
-
-      res.json({
-        success: true,
-        message: `${ticker}가 관심 종목에서 ${action === 'add' ? '추가' : '제거'}되었습니다`
-      });
-    } catch (error) {
-      console.error('관심 종목 업데이트 실패:', error);
-      res.status(500).json({ error: '관심 종목 업데이트에 실패했습니다' });
-    }
-  });
-
-  // 📱 PWA 푸시 알림 구독
-  app.post('/api/notifications/subscribe', async (req, res) => {
-    try {
-      const { subscription, ticker, companyName } = req.body;
-
-      if (!subscription || !ticker) {
-        return res.status(400).json({ error: '필수 파라미터가 누락되었습니다' });
-      }
-
-      console.log('🔔 푸시 알림 구독:', { ticker, companyName });
-      console.log('📱 구독 정보:', subscription);
-
-      // TODO: 데이터베이스에 구독 정보 저장
-      // await storage.savePushSubscription({
-      //   endpoint: subscription.endpoint,
-      //   keys: subscription.keys,
-      //   ticker,
-      //   companyName,
-      //   subscribedAt: new Date()
-      // });
-
-      res.json({
-        success: true,
-        message: `${ticker}의 거래 알림이 활성화되었습니다`
-      });
-    } catch (error) {
-      console.error('푸시 알림 구독 실패:', error);
-      res.status(500).json({ error: '푸시 알림 구독에 실패했습니다' });
-    }
-  });
-
   // 🕒 타이밍 분석 엔드포인트들
   // 단일 거래 타이밍 분석
   app.post('/api/analysis/timing/:tradeId', async (req, res) => {

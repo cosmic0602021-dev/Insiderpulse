@@ -14509,45 +14509,6 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "\uC54C\uB9BC \uC124\uC815 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4" });
     }
   });
-  app2.post("/api/notifications/watchlist", async (req, res) => {
-    try {
-      const { userId, ticker, action } = req.body;
-      if (!userId || !ticker || !action) {
-        return res.status(400).json({ error: "\uD544\uC218 \uD30C\uB77C\uBBF8\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4" });
-      }
-      if (action === "add") {
-        emailNotificationService.addToWatchlist(userId, ticker);
-      } else if (action === "remove") {
-        emailNotificationService.removeFromWatchlist(userId, ticker);
-      } else {
-        return res.status(400).json({ error: "action\uC740 add \uB610\uB294 remove\uC5EC\uC57C \uD569\uB2C8\uB2E4" });
-      }
-      res.json({
-        success: true,
-        message: `${ticker}\uAC00 \uAD00\uC2EC \uC885\uBAA9\uC5D0\uC11C ${action === "add" ? "\uCD94\uAC00" : "\uC81C\uAC70"}\uB418\uC5C8\uC2B5\uB2C8\uB2E4`
-      });
-    } catch (error) {
-      console.error("\uAD00\uC2EC \uC885\uBAA9 \uC5C5\uB370\uC774\uD2B8 \uC2E4\uD328:", error);
-      res.status(500).json({ error: "\uAD00\uC2EC \uC885\uBAA9 \uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4" });
-    }
-  });
-  app2.post("/api/notifications/subscribe", async (req, res) => {
-    try {
-      const { subscription, ticker, companyName } = req.body;
-      if (!subscription || !ticker) {
-        return res.status(400).json({ error: "\uD544\uC218 \uD30C\uB77C\uBBF8\uD130\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4" });
-      }
-      console.log("\u{1F514} \uD478\uC2DC \uC54C\uB9BC \uAD6C\uB3C5:", { ticker, companyName });
-      console.log("\u{1F4F1} \uAD6C\uB3C5 \uC815\uBCF4:", subscription);
-      res.json({
-        success: true,
-        message: `${ticker}\uC758 \uAC70\uB798 \uC54C\uB9BC\uC774 \uD65C\uC131\uD654\uB418\uC5C8\uC2B5\uB2C8\uB2E4`
-      });
-    } catch (error) {
-      console.error("\uD478\uC2DC \uC54C\uB9BC \uAD6C\uB3C5 \uC2E4\uD328:", error);
-      res.status(500).json({ error: "\uD478\uC2DC \uC54C\uB9BC \uAD6C\uB3C5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4" });
-    }
-  });
   app2.post("/api/analysis/timing/:tradeId", async (req, res) => {
     try {
       const tradeId = req.params.tradeId;
