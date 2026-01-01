@@ -4,6 +4,7 @@
  */
 
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { drizzle } from 'drizzle-orm/neon-http';
 import {
   notificationSubscriptions,
@@ -19,13 +20,27 @@ const router = express.Router();
 
 /**
  * Middleware to verify user authentication
+ * Extracts userId from JWT token in Authorization header
  */
 function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const userId = (req as any).userId; // Set by auth middleware
-  if (!userId) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  next();
+
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('[Notification] JWT_SECRET not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    (req as any).userId = decoded.userId;
+    next();
+  } catch (error) {
+    console.error('[Notification] Token verification failed:', error);
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 }
 
 /**

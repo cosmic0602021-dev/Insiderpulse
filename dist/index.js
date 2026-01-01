@@ -5957,14 +5957,27 @@ var init_environment_utils = __esm({
 
 // server/notification-routes.ts
 import express from "express";
+import jwt from "jsonwebtoken";
 import { drizzle as drizzle4 } from "drizzle-orm/neon-http";
 import { eq as eq3, and as and3, desc as desc2 } from "drizzle-orm";
 function requireAuth(req, res, next) {
-  const userId = req.userId;
-  if (!userId) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  next();
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error("[Notification] JWT_SECRET not configured");
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    console.error("[Notification] Token verification failed:", error);
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
 }
 var db4, router2, notification_routes_default;
 var init_notification_routes = __esm({
@@ -11765,7 +11778,7 @@ import { eq as eq8, and as and6, desc as desc3, inArray as inArray2, isNotNull }
 import { z as z3 } from "zod";
 import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt2 from "jsonwebtoken";
 import OpenAI4 from "openai";
 function isAppintosEnvironment2(req) {
   if (req.headers["x-appintos-env"] === "true") {
@@ -12556,7 +12569,7 @@ async function registerRoutes(app2) {
       return null;
     }
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt2.verify(token, JWT_SECRET);
       console.log("\u2705 [AUTH] Token verified for user:", decoded.email, "(ID:", decoded.userId + ")");
       return decoded.userId;
     } catch (error) {
@@ -13093,7 +13106,7 @@ async function registerRoutes(app2) {
         });
       }
       console.log("\u2705 Password verified successfully");
-      const token = jwt.sign(
+      const token = jwt2.sign(
         { userId: user2.id, email: user2.email },
         JWT_SECRET,
         { expiresIn: "7d" }
@@ -13160,7 +13173,7 @@ async function registerRoutes(app2) {
           message: "\uBE44\uBC00\uBC88\uD638 \uC7AC\uC124\uC815 \uC774\uBA54\uC77C\uC774 \uBC1C\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4"
         });
       }
-      const resetToken = jwt.sign(
+      const resetToken = jwt2.sign(
         { email: user2.email, timestamp: Date.now() },
         JWT_SECRET,
         { expiresIn: "1h" }
@@ -13214,7 +13227,7 @@ async function registerRoutes(app2) {
       }
       let decoded;
       try {
-        decoded = jwt.verify(token, JWT_SECRET);
+        decoded = jwt2.verify(token, JWT_SECRET);
         console.log("\u2705 Reset token verified for:", decoded.email);
       } catch (error) {
         console.log("\u274C Invalid or expired token");
@@ -13277,7 +13290,7 @@ async function registerRoutes(app2) {
       }
       let decoded;
       try {
-        decoded = jwt.verify(token, JWT_SECRET);
+        decoded = jwt2.verify(token, JWT_SECRET);
         console.log("\u2705 JWT token decoded successfully:", { email: decoded.email });
       } catch (error) {
         console.log("\u274C JWT verification failed:", error);
@@ -13466,7 +13479,7 @@ async function registerRoutes(app2) {
         console.log("\u274C [/api/auth/verify] No token provided");
         return res.status(401).json({ success: false, message: "\uD1A0\uD070\uC774 \uC5C6\uC2B5\uB2C8\uB2E4" });
       }
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt2.verify(token, JWT_SECRET);
       console.log(`\u{1F510} [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
       const user2 = await db6.query.users.findFirst({
         where: eq8(users.id, decoded.userId)
