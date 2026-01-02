@@ -343,6 +343,7 @@ export const notificationLogs = pgTable("notification_logs", {
   errorMessage: text("error_message"),
 
   sentAt: timestamp("sent_at").defaultNow(),
+  isRead: boolean("is_read").default(false),
 
   // Notification content for debugging
   title: text("title"),

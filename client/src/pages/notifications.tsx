@@ -354,10 +354,10 @@ export default function Notifications() {
         {/* Subscriptions Management */}
         <div className="lg:col-span-2 space-y-6">
           {/* Active Subscriptions */}
-          <Card>
+          <Card className="bg-neutral-900/50 border-neutral-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BellRing className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-neutral-100">
+                <BellRing className="h-5 w-5 text-emerald-500" />
                 구독 중인 종목 ({subscriptions.filter(s => s.isActive).length})
               </CardTitle>
             </CardHeader>
@@ -365,17 +365,18 @@ export default function Notifications() {
               {isLoadingSubscriptions ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-32" />
+                    <Skeleton key={i} className="h-32 bg-neutral-800" />
                   ))}
                 </div>
               ) : subscriptions.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
+                <div className="text-center py-12 text-neutral-500">
                   <Bell className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium mb-2">구독 중인 종목이 없습니다</p>
+                  <p className="text-lg font-medium mb-2 text-neutral-300">구독 중인 종목이 없습니다</p>
                   <p className="text-sm mb-4">거래 상세 모달에서 알림 버튼을 눌러 구독하세요</p>
                   <Button
                     variant="outline"
                     onClick={() => window.location.href = '/live-trading'}
+                    className="border-neutral-600 text-neutral-300 hover:bg-neutral-800"
                   >
                     실시간 트레이드로 이동
                   </Button>
@@ -386,33 +387,33 @@ export default function Notifications() {
                     key={subscription.id}
                     className={`p-4 rounded-lg border transition-all ${
                       subscription.isActive
-                        ? 'bg-card border-border'
-                        : 'bg-muted/30 border-muted opacity-60'
+                        ? 'bg-neutral-800/50 border-neutral-700'
+                        : 'bg-neutral-900/30 border-neutral-800 opacity-60'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start gap-3 flex-1">
                         <div className={`p-2 rounded-full ${
-                          subscription.isActive ? 'bg-primary/10' : 'bg-muted'
+                          subscription.isActive ? 'bg-emerald-900/30' : 'bg-neutral-800'
                         }`}>
                           {subscription.isActive ? (
-                            <Bell className="h-5 w-5 text-primary" />
+                            <Bell className="h-5 w-5 text-emerald-500" />
                           ) : (
-                            <BellOff className="h-5 w-5 text-muted-foreground" />
+                            <BellOff className="h-5 w-5 text-neutral-500" />
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-lg">{subscription.ticker}</h4>
-                            <Badge variant="outline" className="text-xs">
+                            <h4 className="font-bold text-lg text-neutral-100">{subscription.ticker}</h4>
+                            <Badge variant="outline" className="text-xs border-neutral-600 text-neutral-400">
                               {getPlatformIcon(subscription.platform)}
                               <span className="ml-1">{getPlatformLabel(subscription.platform)}</span>
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="text-sm text-neutral-400 mb-2">
                             {subscription.companyName}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-4 text-xs text-neutral-500">
                             <span>
                               구독일: {new Date(subscription.createdAt).toLocaleDateString('ko-KR')}
                             </span>
@@ -432,18 +433,18 @@ export default function Notifications() {
                         size="sm"
                         onClick={() => unsubscribeMutation.mutate(subscription.ticker)}
                         disabled={unsubscribeMutation.isPending}
-                        className="text-destructive hover:text-destructive"
+                        className="text-red-500 hover:text-red-400 hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
 
                     {/* Notification Type Toggles */}
-                    <div className="pl-14 space-y-2 border-t pt-3">
+                    <div className="pl-14 space-y-2 border-t border-neutral-700 pt-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                          <label className="text-sm font-medium">매수 알림</label>
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />
+                          <label className="text-sm font-medium text-neutral-300">매수 알림</label>
                         </div>
                         <Switch
                           checked={subscription.notifyOnBuy}
@@ -459,8 +460,8 @@ export default function Notifications() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <TrendingDown className="h-4 w-4 text-red-600" />
-                          <label className="text-sm font-medium">매도 알림</label>
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                          <label className="text-sm font-medium text-neutral-300">매도 알림</label>
                         </div>
                         <Switch
                           checked={subscription.notifyOnSell}
@@ -483,10 +484,10 @@ export default function Notifications() {
         </div>
 
         {/* Notification History */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 bg-neutral-900/50 border-neutral-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-neutral-100">
+              <Clock className="h-5 w-5 text-neutral-400" />
               최근 알림 ({logs.length})
             </CardTitle>
           </CardHeader>
@@ -494,13 +495,13 @@ export default function Notifications() {
             {isLoadingLogs ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20" />
+                  <Skeleton key={i} className="h-20 bg-neutral-800" />
                 ))}
               </div>
             ) : logs.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-neutral-500">
                 <Bell className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium mb-1">알림 이력이 없습니다</p>
+                <p className="text-sm font-medium mb-1 text-neutral-400">알림 이력이 없습니다</p>
                 <p className="text-xs">
                   구독 중인 종목의 거래가 발생하면<br />
                   알림이 전송됩니다
@@ -511,40 +512,43 @@ export default function Notifications() {
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                    className="p-3 rounded-lg border bg-neutral-800/50 border-neutral-700 hover:bg-neutral-800 transition-colors"
                   >
                     <div className="flex items-start gap-2 mb-2">
                       {getStatusIcon(log.status)}
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <h5 className="font-medium text-sm line-clamp-1">
+                          <h5 className="font-medium text-sm line-clamp-1 text-neutral-200">
                             {log.title}
                           </h5>
                           {getStatusBadge(log.status)}
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                        <p className="text-xs text-neutral-500 line-clamp-2 mb-2">
                           {log.body}
                         </p>
                         {log.metadata?.ticker && (
                           <div className="flex items-center gap-2 text-xs">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-neutral-600 text-neutral-400">
                               {log.metadata.ticker}
                             </Badge>
                             {log.metadata.tradeType && (
                               <Badge
-                                variant={log.metadata.tradeType === 'BUY' ? 'default' : 'destructive'}
-                                className="text-xs"
+                                className={`text-xs ${
+                                  log.metadata.tradeType === 'BUY'
+                                    ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700'
+                                    : 'bg-red-900/50 text-red-400 border-red-700'
+                                }`}
                               >
                                 {log.metadata.tradeType}
                               </Badge>
                             )}
                           </div>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-neutral-500 mt-2">
                           {formatRelativeTime(log.sentAt)}
                         </p>
                         {log.errorMessage && (
-                          <p className="text-xs text-red-600 mt-1 line-clamp-1">
+                          <p className="text-xs text-red-400 mt-1 line-clamp-1">
                             오류: {log.errorMessage}
                           </p>
                         )}

@@ -13834,43 +13834,44 @@ function Notifications() {
       ] })
     ] }) }) }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 lg:grid-cols-3", children: [
-      /* @__PURE__ */ jsx("div", { className: "lg:col-span-2 space-y-6", children: /* @__PURE__ */ jsxs(Card, { children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx(BellRing, { className: "h-5 w-5" }),
+      /* @__PURE__ */ jsx("div", { className: "lg:col-span-2 space-y-6", children: /* @__PURE__ */ jsxs(Card, { className: "bg-neutral-900/50 border-neutral-700", children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-neutral-100", children: [
+          /* @__PURE__ */ jsx(BellRing, { className: "h-5 w-5 text-emerald-500" }),
           "구독 중인 종목 (",
           subscriptions.filter((s) => s.isActive).length,
           ")"
         ] }) }),
-        /* @__PURE__ */ jsx(CardContent, { className: "space-y-4 max-h-[600px] overflow-y-auto", children: isLoadingSubscriptions ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-32" }, i)) }) : subscriptions.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12 text-muted-foreground", children: [
+        /* @__PURE__ */ jsx(CardContent, { className: "space-y-4 max-h-[600px] overflow-y-auto", children: isLoadingSubscriptions ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-32 bg-neutral-800" }, i)) }) : subscriptions.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12 text-neutral-500", children: [
           /* @__PURE__ */ jsx(Bell, { className: "h-16 w-16 mx-auto mb-4 opacity-30" }),
-          /* @__PURE__ */ jsx("p", { className: "text-lg font-medium mb-2", children: "구독 중인 종목이 없습니다" }),
+          /* @__PURE__ */ jsx("p", { className: "text-lg font-medium mb-2 text-neutral-300", children: "구독 중인 종목이 없습니다" }),
           /* @__PURE__ */ jsx("p", { className: "text-sm mb-4", children: "거래 상세 모달에서 알림 버튼을 눌러 구독하세요" }),
           /* @__PURE__ */ jsx(
             Button,
             {
               variant: "outline",
               onClick: () => window.location.href = "/live-trading",
+              className: "border-neutral-600 text-neutral-300 hover:bg-neutral-800",
               children: "실시간 트레이드로 이동"
             }
           )
         ] }) : subscriptions.map((subscription) => /* @__PURE__ */ jsxs(
           "div",
           {
-            className: `p-4 rounded-lg border transition-all ${subscription.isActive ? "bg-card border-border" : "bg-muted/30 border-muted opacity-60"}`,
+            className: `p-4 rounded-lg border transition-all ${subscription.isActive ? "bg-neutral-800/50 border-neutral-700" : "bg-neutral-900/30 border-neutral-800 opacity-60"}`,
             children: [
               /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between mb-3", children: [
                 /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3 flex-1", children: [
-                  /* @__PURE__ */ jsx("div", { className: `p-2 rounded-full ${subscription.isActive ? "bg-primary/10" : "bg-muted"}`, children: subscription.isActive ? /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-primary" }) : /* @__PURE__ */ jsx(BellOff, { className: "h-5 w-5 text-muted-foreground" }) }),
+                  /* @__PURE__ */ jsx("div", { className: `p-2 rounded-full ${subscription.isActive ? "bg-emerald-900/30" : "bg-neutral-800"}`, children: subscription.isActive ? /* @__PURE__ */ jsx(Bell, { className: "h-5 w-5 text-emerald-500" }) : /* @__PURE__ */ jsx(BellOff, { className: "h-5 w-5 text-neutral-500" }) }),
                   /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
                     /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-1", children: [
-                      /* @__PURE__ */ jsx("h4", { className: "font-bold text-lg", children: subscription.ticker }),
-                      /* @__PURE__ */ jsxs(Badge, { variant: "outline", className: "text-xs", children: [
+                      /* @__PURE__ */ jsx("h4", { className: "font-bold text-lg text-neutral-100", children: subscription.ticker }),
+                      /* @__PURE__ */ jsxs(Badge, { variant: "outline", className: "text-xs border-neutral-600 text-neutral-400", children: [
                         getPlatformIcon(subscription.platform),
                         /* @__PURE__ */ jsx("span", { className: "ml-1", children: getPlatformLabel(subscription.platform) })
                       ] })
                     ] }),
-                    /* @__PURE__ */ jsx("p", { className: "text-sm text-muted-foreground mb-2", children: subscription.companyName }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4 text-xs text-muted-foreground", children: [
+                    /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 mb-2", children: subscription.companyName }),
+                    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-4 text-xs text-neutral-500", children: [
                       /* @__PURE__ */ jsxs("span", { children: [
                         "구독일: ",
                         new Date(subscription.createdAt).toLocaleDateString("ko-KR")
@@ -13898,16 +13899,16 @@ function Notifications() {
                     size: "sm",
                     onClick: () => unsubscribeMutation.mutate(subscription.ticker),
                     disabled: unsubscribeMutation.isPending,
-                    className: "text-destructive hover:text-destructive",
+                    className: "text-red-500 hover:text-red-400 hover:bg-red-900/20",
                     children: /* @__PURE__ */ jsx(Trash2, { className: "h-4 w-4" })
                   }
                 )
               ] }),
-              /* @__PURE__ */ jsxs("div", { className: "pl-14 space-y-2 border-t pt-3", children: [
+              /* @__PURE__ */ jsxs("div", { className: "pl-14 space-y-2 border-t border-neutral-700 pt-3", children: [
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
                   /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-green-600" }),
-                    /* @__PURE__ */ jsx("label", { className: "text-sm font-medium", children: "매수 알림" })
+                    /* @__PURE__ */ jsx(TrendingUp, { className: "h-4 w-4 text-emerald-500" }),
+                    /* @__PURE__ */ jsx("label", { className: "text-sm font-medium text-neutral-300", children: "매수 알림" })
                   ] }),
                   /* @__PURE__ */ jsx(
                     Switch,
@@ -13924,8 +13925,8 @@ function Notifications() {
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
                   /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                    /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-red-600" }),
-                    /* @__PURE__ */ jsx("label", { className: "text-sm font-medium", children: "매도 알림" })
+                    /* @__PURE__ */ jsx(TrendingDown, { className: "h-4 w-4 text-red-500" }),
+                    /* @__PURE__ */ jsx("label", { className: "text-sm font-medium text-neutral-300", children: "매도 알림" })
                   ] }),
                   /* @__PURE__ */ jsx(
                     Switch,
@@ -13946,16 +13947,16 @@ function Notifications() {
           subscription.id
         )) })
       ] }) }),
-      /* @__PURE__ */ jsxs(Card, { className: "lg:col-span-1", children: [
-        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx(Clock, { className: "h-5 w-5" }),
+      /* @__PURE__ */ jsxs(Card, { className: "lg:col-span-1 bg-neutral-900/50 border-neutral-700", children: [
+        /* @__PURE__ */ jsx(CardHeader, { children: /* @__PURE__ */ jsxs(CardTitle, { className: "flex items-center gap-2 text-neutral-100", children: [
+          /* @__PURE__ */ jsx(Clock, { className: "h-5 w-5 text-neutral-400" }),
           "최근 알림 (",
           logs.length,
           ")"
         ] }) }),
-        /* @__PURE__ */ jsx(CardContent, { children: isLoadingLogs ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-20" }, i)) }) : logs.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8 text-muted-foreground", children: [
+        /* @__PURE__ */ jsx(CardContent, { children: isLoadingLogs ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 5 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-20 bg-neutral-800" }, i)) }) : logs.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-8 text-neutral-500", children: [
           /* @__PURE__ */ jsx(Bell, { className: "h-12 w-12 mx-auto mb-3 opacity-30" }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium mb-1", children: "알림 이력이 없습니다" }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium mb-1 text-neutral-400", children: "알림 이력이 없습니다" }),
           /* @__PURE__ */ jsxs("p", { className: "text-xs", children: [
             "구독 중인 종목의 거래가 발생하면",
             /* @__PURE__ */ jsx("br", {}),
@@ -13966,28 +13967,27 @@ function Notifications() {
           return /* @__PURE__ */ jsx(
             "div",
             {
-              className: "p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow",
+              className: "p-3 rounded-lg border bg-neutral-800/50 border-neutral-700 hover:bg-neutral-800 transition-colors",
               children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2 mb-2", children: [
                 getStatusIcon(log.status),
                 /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
                   /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-1", children: [
-                    /* @__PURE__ */ jsx("h5", { className: "font-medium text-sm line-clamp-1", children: log.title }),
+                    /* @__PURE__ */ jsx("h5", { className: "font-medium text-sm line-clamp-1 text-neutral-200", children: log.title }),
                     getStatusBadge(log.status)
                   ] }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground line-clamp-2 mb-2", children: log.body }),
+                  /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-500 line-clamp-2 mb-2", children: log.body }),
                   ((_a = log.metadata) == null ? void 0 : _a.ticker) && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 text-xs", children: [
-                    /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs", children: log.metadata.ticker }),
+                    /* @__PURE__ */ jsx(Badge, { variant: "outline", className: "text-xs border-neutral-600 text-neutral-400", children: log.metadata.ticker }),
                     log.metadata.tradeType && /* @__PURE__ */ jsx(
                       Badge,
                       {
-                        variant: log.metadata.tradeType === "BUY" ? "default" : "destructive",
-                        className: "text-xs",
+                        className: `text-xs ${log.metadata.tradeType === "BUY" ? "bg-emerald-900/50 text-emerald-400 border-emerald-700" : "bg-red-900/50 text-red-400 border-red-700"}`,
                         children: log.metadata.tradeType
                       }
                     )
                   ] }),
-                  /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-2", children: formatRelativeTime(log.sentAt) }),
-                  log.errorMessage && /* @__PURE__ */ jsxs("p", { className: "text-xs text-red-600 mt-1 line-clamp-1", children: [
+                  /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-500 mt-2", children: formatRelativeTime(log.sentAt) }),
+                  log.errorMessage && /* @__PURE__ */ jsxs("p", { className: "text-xs text-red-400 mt-1 line-clamp-1", children: [
                     "오류: ",
                     log.errorMessage
                   ] })
@@ -13998,6 +13998,127 @@ function Notifications() {
           );
         }) }) })
       ] })
+    ] })
+  ] });
+}
+function NotificationDropdown({ onNavigateToNotifications }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const queryClient2 = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["/api/notifications/recent"],
+    enabled: isAuthenticated,
+    refetchInterval: 3e4
+    // Refetch every 30 seconds
+  });
+  const logs = (data == null ? void 0 : data.logs) || [];
+  const unreadCount = (data == null ? void 0 : data.unreadCount) || 0;
+  const markReadMutation = useMutation({
+    mutationFn: async (params) => {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(resolveApiUrl("/api/notifications/mark-read"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          ...ENV_CONFIG.isAppintos && { "x-appintos-env": "true" }
+        },
+        body: JSON.stringify(params)
+      });
+      if (!response.ok) throw new Error("Failed to mark as read");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient2.invalidateQueries({ queryKey: ["/api/notifications/recent"] });
+      queryClient2.invalidateQueries({ queryKey: ["/api/notifications/history"] });
+    }
+  });
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  const formatTime = (date) => {
+    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ko });
+  };
+  const handleMarkAllRead = () => {
+    markReadMutation.mutate({ markAll: true });
+  };
+  const handleNotificationClick = (log) => {
+    if (!log.isRead) {
+      markReadMutation.mutate({ notificationIds: [log.id] });
+    }
+  };
+  if (!isAuthenticated) {
+    return null;
+  }
+  return /* @__PURE__ */ jsxs("div", { className: "relative", ref: dropdownRef, children: [
+    /* @__PURE__ */ jsxs(
+      "button",
+      {
+        onClick: () => setIsOpen(!isOpen),
+        className: "relative p-2 text-neutral-400 hover:text-neutral-200 transition-colors",
+        "aria-label": "알림",
+        children: [
+          /* @__PURE__ */ jsx(Bell, { size: 18 }),
+          unreadCount > 0 && /* @__PURE__ */ jsx("span", { className: "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1", children: unreadCount > 9 ? "9+" : unreadCount })
+        ]
+      }
+    ),
+    isOpen && /* @__PURE__ */ jsxs("div", { className: "absolute right-0 top-full mt-2 w-80 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl z-50 overflow-hidden", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-4 py-3 border-b border-neutral-700", children: [
+        /* @__PURE__ */ jsx("span", { className: "font-semibold text-sm text-neutral-200", children: "알림" }),
+        unreadCount > 0 && /* @__PURE__ */ jsxs(
+          "button",
+          {
+            onClick: handleMarkAllRead,
+            className: "text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1",
+            disabled: markReadMutation.isPending,
+            children: [
+              /* @__PURE__ */ jsx(Check, { size: 12 }),
+              "모두 읽음"
+            ]
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "max-h-80 overflow-y-auto", children: logs.length === 0 ? /* @__PURE__ */ jsx("div", { className: "py-8 text-center text-neutral-500 text-sm", children: "알림이 없습니다" }) : logs.map((log) => {
+        var _a;
+        return /* @__PURE__ */ jsx(
+          "div",
+          {
+            onClick: () => handleNotificationClick(log),
+            className: `px-4 py-3 border-b border-neutral-800 cursor-pointer transition-colors ${log.isRead ? "bg-neutral-900" : "bg-neutral-800/50 hover:bg-neutral-800"}`,
+            children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-3", children: [
+              !log.isRead && /* @__PURE__ */ jsx("span", { className: "w-2 h-2 mt-1.5 rounded-full bg-red-500 flex-shrink-0" }),
+              /* @__PURE__ */ jsxs("div", { className: `flex-1 ${log.isRead ? "ml-5" : ""}`, children: [
+                /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-1", children: [
+                  ((_a = log.metadata) == null ? void 0 : _a.ticker) && /* @__PURE__ */ jsx("span", { className: `text-xs font-bold px-1.5 py-0.5 rounded ${log.metadata.tradeType === "BUY" ? "bg-emerald-900/50 text-emerald-400" : "bg-red-900/50 text-red-400"}`, children: log.metadata.ticker }),
+                  /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-500", children: formatTime(log.sentAt) })
+                ] }),
+                /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-300 font-medium line-clamp-1", children: log.title }),
+                /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-500 line-clamp-1 mt-0.5", children: log.body })
+              ] })
+            ] })
+          },
+          log.id
+        );
+      }) }),
+      /* @__PURE__ */ jsx("div", { className: "px-4 py-3 border-t border-neutral-700", children: /* @__PURE__ */ jsx(
+        "button",
+        {
+          onClick: () => {
+            setIsOpen(false);
+            onNavigateToNotifications == null ? void 0 : onNavigateToNotifications();
+          },
+          className: "w-full text-center text-sm text-emerald-500 hover:text-emerald-400 font-medium",
+          children: "알림센터로 이동"
+        }
+      ) })
     ] })
   ] });
 }
@@ -14193,6 +14314,12 @@ function AppContent() {
               )) })
             ] })
           ] }),
+          /* @__PURE__ */ jsx(
+            NotificationDropdown,
+            {
+              onNavigateToNotifications: () => setActiveView(View.NOTIFICATIONS)
+            }
+          ),
           /* @__PURE__ */ jsx(CurrencySelector, {})
         ] })
       ] }),

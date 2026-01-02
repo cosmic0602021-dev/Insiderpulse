@@ -350,4 +350,96 @@ router.put('/preferences/:subscriptionId', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/notifications/unread-count
+ * Get count of unread notifications
+ */
+router.get('/unread-count', requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+
+    const unreadLogs = await db.query.notificationLogs.findMany({
+      where: and(
+        eq(notificationLogs.userId, userId),
+        eq(notificationLogs.isRead, false),
+        eq(notificationLogs.status, 'sent')
+      )
+    });
+
+    res.json({
+      count: unreadLogs.length
+    });
+  } catch (error: any) {
+    console.error('[Notification API] Get unread count error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get unread count' });
+  }
+});
+
+/**
+ * GET /api/notifications/recent
+ * Get recent notifications for dropdown (limited to 5)
+ */
+router.get('/recent', requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+
+    const logs = await db.query.notificationLogs.findMany({
+      where: and(
+        eq(notificationLogs.userId, userId),
+        eq(notificationLogs.status, 'sent')
+      ),
+      orderBy: desc(notificationLogs.sentAt),
+      limit: 5
+    });
+
+    res.json({
+      logs,
+      unreadCount: logs.filter(l => !l.isRead).length
+    });
+  } catch (error: any) {
+    console.error('[Notification API] Get recent error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get recent notifications' });
+  }
+});
+
+/**
+ * POST /api/notifications/mark-read
+ * Mark notifications as read
+ */
+router.post('/mark-read', requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    const { notificationIds, markAll } = req.body;
+
+    if (markAll) {
+      // Mark all notifications as read
+      await db.update(notificationLogs)
+        .set({ isRead: true })
+        .where(and(
+          eq(notificationLogs.userId, userId),
+          eq(notificationLogs.isRead, false)
+        ));
+
+      console.log(`[Notification API] Marked all notifications as read for user ${userId}`);
+    } else if (notificationIds && Array.isArray(notificationIds)) {
+      // Mark specific notifications as read
+      for (const id of notificationIds) {
+        await db.update(notificationLogs)
+          .set({ isRead: true })
+          .where(and(
+            eq(notificationLogs.id, id),
+            eq(notificationLogs.userId, userId)
+          ));
+      }
+
+      console.log(`[Notification API] Marked ${notificationIds.length} notifications as read`);
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Notification API] Mark read error:', error);
+    res.status(500).json({ error: error.message || 'Failed to mark notifications as read' });
+  }
+});
+
 export default router;

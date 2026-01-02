@@ -47,6 +47,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { DisclaimerModal } from "@/components/disclaimer-modal";
 import DebugNetwork from "@/pages/debug-network";
 import Notifications from "@/pages/notifications";
+import { NotificationDropdown } from "@/components/notification-dropdown";
 
 function PublicRouter() {
   return (
@@ -281,6 +282,11 @@ function AppContent() {
                 </>
               )}
             </div>
+
+            {/* Notification Bell */}
+            <NotificationDropdown
+              onNavigateToNotifications={() => setActiveView(View.NOTIFICATIONS)}
+            />
 
             {/* Currency Selector */}
             <CurrencySelector />
