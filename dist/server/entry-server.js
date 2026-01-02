@@ -431,6 +431,135 @@ function useMutation(options, queryClient2) {
   }
   return { ...result, mutate, mutateAsync: result.mutate };
 }
+const BUILD_VERSION$1 = "2025.1229.2000";
+const BUILD_ID = "v20-performance";
+console.log("[BUILD] Version:", BUILD_VERSION$1, "ID:", BUILD_ID);
+function isAppintosEnvironment() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    const protocol = window.location.protocol;
+    if (protocol.includes("intoss")) {
+      console.log("🔍 [ENV] Detected intoss protocol:", protocol);
+      try {
+        sessionStorage.setItem("appintos_mode", "true");
+      } catch (e) {
+      }
+      return true;
+    }
+    if (window.ReactNativeWebView) {
+      console.log("🔍 [ENV] Detected ReactNativeWebView");
+      return true;
+    }
+    if (window.__APPINTOS__) {
+      console.log("🔍 [ENV] Detected __APPINTOS__");
+      return true;
+    }
+    try {
+      if (sessionStorage.getItem("appintos_mode") === "true" || sessionStorage.getItem("appintos_signature")) {
+        console.log("🔍 [ENV] Detected appintos_mode/signature in storage");
+        return true;
+      }
+    } catch (e) {
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("_deploymentId")) {
+      console.log("🔍 [ENV] Detected _deploymentId param");
+      try {
+        sessionStorage.setItem("appintos_mode", "true");
+      } catch (e) {
+      }
+      return true;
+    }
+    if (urlParams.has("signature") || urlParams.has("appintos")) {
+      console.log("🔍 [ENV] Detected signature/appintos param");
+      try {
+        sessionStorage.setItem("appintos_mode", "true");
+      } catch (e) {
+      }
+      return true;
+    }
+    const hostname = window.location.hostname;
+    if (hostname.includes("apps-in-toss") || hostname.includes(".toss.im") || hostname.includes("tossmini.com")) {
+      console.log("🔍 [ENV] Detected Appintos hostname:", hostname);
+      return true;
+    }
+    const userAgent = navigator.userAgent || "";
+    if (userAgent.includes("Toss") || userAgent.includes("toss") || userAgent.includes("AppsInToss")) {
+      console.log("🔍 [ENV] Detected Toss in User-Agent:", userAgent.substring(0, 50));
+      return true;
+    }
+    const isMobileWebView = (userAgent.includes("wv") || userAgent.includes("WebView")) && (userAgent.includes("iPhone") || userAgent.includes("Android"));
+    if (isMobileWebView) {
+      console.log("🔍 [ENV] Detected Mobile WebView:", userAgent.substring(0, 50));
+      return true;
+    }
+    console.log("🔍 [ENV] No Appintos indicators found");
+    return false;
+  } catch (error) {
+    console.error("🔍 [ENV] Error detecting environment:", error);
+    return false;
+  }
+}
+function getEnvironmentConfig() {
+  const isAppintos = isAppintosEnvironment();
+  const PRODUCTION_API_URL2 = "https://insiderpulse.pro";
+  if (isAppintos) {
+    console.log("🔗 [ENV] Running in Appintos environment");
+    return {
+      isAppintos: true,
+      apiBaseUrl: `${PRODUCTION_API_URL2}/api`,
+      wsBaseUrl: `wss://insiderpulse.pro/api/ws`,
+      environment: "production"
+    };
+  }
+  console.log("🌐 [ENV] Running in browser environment");
+  return {
+    isAppintos: false,
+    apiBaseUrl: "/api",
+    wsBaseUrl: getRelativeWebSocketUrl(),
+    environment: process.env.NODE_ENV === "production" ? "production" : "development"
+  };
+}
+function getRelativeWebSocketUrl() {
+  if (typeof window === "undefined") {
+    return "ws://localhost:5000/api/ws";
+  }
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = window.location.host || "localhost:5000";
+  return `${protocol}//${host}/api/ws`;
+}
+function ensureAppintosUserId() {
+  if (typeof window === "undefined") return null;
+  if (!isAppintosEnvironment()) return null;
+  let userId = localStorage.getItem("appintos_user_id");
+  if (userId) {
+    console.log("[ENV] Existing Appintos user ID:", userId);
+    return userId;
+  }
+  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  localStorage.setItem("appintos_user_id", userId);
+  console.log("[ENV] Created new Appintos user ID:", userId);
+  return userId;
+}
+const ENV_CONFIG = {
+  get isAppintos() {
+    return isAppintosEnvironment();
+  },
+  get apiBaseUrl() {
+    return getEnvironmentConfig().apiBaseUrl;
+  },
+  get wsBaseUrl() {
+    return getEnvironmentConfig().wsBaseUrl;
+  },
+  get environment() {
+    return getEnvironmentConfig().environment;
+  }
+};
+if (typeof window !== "undefined") {
+  ensureAppintosUserId();
+}
 const PRODUCTION_API_URL$1 = "https://insiderpulse.pro";
 function isLocalhost() {
   if (typeof window === "undefined") return false;
@@ -464,6 +593,9 @@ async function apiRequest(method, url, data) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
+  if (ENV_CONFIG.isAppintos) {
+    headers["x-appintos-env"] = "true";
+  }
   const resolvedUrl = resolveApiUrl(url);
   const res = await fetch(resolvedUrl, {
     method,
@@ -477,7 +609,16 @@ async function apiRequest(method, url, data) {
 }
 const getQueryFn = ({ on401: unauthorizedBehavior }) => async ({ queryKey }) => {
   const url = resolveApiUrl(queryKey.join("/"));
+  const headers = {};
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (ENV_CONFIG.isAppintos) {
+    headers["x-appintos-env"] = "true";
+  }
   const res = await fetch(url, {
+    headers,
     credentials: isLocalhost() ? "include" : "omit",
     mode: "cors"
   });
@@ -4660,7 +4801,7 @@ const useCurrency = () => {
   }
   return context;
 };
-const BUILD_VERSION$1 = "2024-12-18-v3";
+const BUILD_VERSION = "2024-12-18-v3";
 const PRODUCTION_API_URL = "https://insiderpulse.pro/api";
 function getApiBaseUrl() {
   if (typeof window === "undefined") {
@@ -4668,10 +4809,10 @@ function getApiBaseUrl() {
   }
   const hostname = window.location.hostname;
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    console.log(`🌐 [API CLIENT v${BUILD_VERSION$1}] Dev mode - using relative URL`);
+    console.log(`🌐 [API CLIENT v${BUILD_VERSION}] Dev mode - using relative URL`);
     return "/api";
   }
-  console.log(`🌐 [API CLIENT v${BUILD_VERSION$1}] Using production URL:`, PRODUCTION_API_URL);
+  console.log(`🌐 [API CLIENT v${BUILD_VERSION}] Using production URL:`, PRODUCTION_API_URL);
   return PRODUCTION_API_URL;
 }
 class ApiClient {
@@ -5156,135 +5297,6 @@ function useAccess() {
     throw new Error("useAccess must be used within an AccessProvider");
   }
   return context;
-}
-const BUILD_VERSION = "2025.1229.2000";
-const BUILD_ID = "v20-performance";
-console.log("[BUILD] Version:", BUILD_VERSION, "ID:", BUILD_ID);
-function isAppintosEnvironment() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  try {
-    const protocol = window.location.protocol;
-    if (protocol.includes("intoss")) {
-      console.log("🔍 [ENV] Detected intoss protocol:", protocol);
-      try {
-        sessionStorage.setItem("appintos_mode", "true");
-      } catch (e) {
-      }
-      return true;
-    }
-    if (window.ReactNativeWebView) {
-      console.log("🔍 [ENV] Detected ReactNativeWebView");
-      return true;
-    }
-    if (window.__APPINTOS__) {
-      console.log("🔍 [ENV] Detected __APPINTOS__");
-      return true;
-    }
-    try {
-      if (sessionStorage.getItem("appintos_mode") === "true" || sessionStorage.getItem("appintos_signature")) {
-        console.log("🔍 [ENV] Detected appintos_mode/signature in storage");
-        return true;
-      }
-    } catch (e) {
-    }
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("_deploymentId")) {
-      console.log("🔍 [ENV] Detected _deploymentId param");
-      try {
-        sessionStorage.setItem("appintos_mode", "true");
-      } catch (e) {
-      }
-      return true;
-    }
-    if (urlParams.has("signature") || urlParams.has("appintos")) {
-      console.log("🔍 [ENV] Detected signature/appintos param");
-      try {
-        sessionStorage.setItem("appintos_mode", "true");
-      } catch (e) {
-      }
-      return true;
-    }
-    const hostname = window.location.hostname;
-    if (hostname.includes("apps-in-toss") || hostname.includes(".toss.im") || hostname.includes("tossmini.com")) {
-      console.log("🔍 [ENV] Detected Appintos hostname:", hostname);
-      return true;
-    }
-    const userAgent = navigator.userAgent || "";
-    if (userAgent.includes("Toss") || userAgent.includes("toss") || userAgent.includes("AppsInToss")) {
-      console.log("🔍 [ENV] Detected Toss in User-Agent:", userAgent.substring(0, 50));
-      return true;
-    }
-    const isMobileWebView = (userAgent.includes("wv") || userAgent.includes("WebView")) && (userAgent.includes("iPhone") || userAgent.includes("Android"));
-    if (isMobileWebView) {
-      console.log("🔍 [ENV] Detected Mobile WebView:", userAgent.substring(0, 50));
-      return true;
-    }
-    console.log("🔍 [ENV] No Appintos indicators found");
-    return false;
-  } catch (error) {
-    console.error("🔍 [ENV] Error detecting environment:", error);
-    return false;
-  }
-}
-function getEnvironmentConfig() {
-  const isAppintos = isAppintosEnvironment();
-  const PRODUCTION_API_URL2 = "https://insiderpulse.pro";
-  if (isAppintos) {
-    console.log("🔗 [ENV] Running in Appintos environment");
-    return {
-      isAppintos: true,
-      apiBaseUrl: `${PRODUCTION_API_URL2}/api`,
-      wsBaseUrl: `wss://insiderpulse.pro/api/ws`,
-      environment: "production"
-    };
-  }
-  console.log("🌐 [ENV] Running in browser environment");
-  return {
-    isAppintos: false,
-    apiBaseUrl: "/api",
-    wsBaseUrl: getRelativeWebSocketUrl(),
-    environment: process.env.NODE_ENV === "production" ? "production" : "development"
-  };
-}
-function getRelativeWebSocketUrl() {
-  if (typeof window === "undefined") {
-    return "ws://localhost:5000/api/ws";
-  }
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const host = window.location.host || "localhost:5000";
-  return `${protocol}//${host}/api/ws`;
-}
-function ensureAppintosUserId() {
-  if (typeof window === "undefined") return null;
-  if (!isAppintosEnvironment()) return null;
-  let userId = localStorage.getItem("appintos_user_id");
-  if (userId) {
-    console.log("[ENV] Existing Appintos user ID:", userId);
-    return userId;
-  }
-  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  localStorage.setItem("appintos_user_id", userId);
-  console.log("[ENV] Created new Appintos user ID:", userId);
-  return userId;
-}
-const ENV_CONFIG = {
-  get isAppintos() {
-    return isAppintosEnvironment();
-  },
-  get apiBaseUrl() {
-    return getEnvironmentConfig().apiBaseUrl;
-  },
-  get wsBaseUrl() {
-    return getEnvironmentConfig().wsBaseUrl;
-  },
-  get environment() {
-    return getEnvironmentConfig().environment;
-  }
-};
-if (typeof window !== "undefined") {
-  ensureAppintosUserId();
 }
 let loadAdMobInterstitialAdApi;
 let showAdMobInterstitialAdApi;
@@ -7057,6 +7069,17 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
     };
     checkSubscription();
   }, [isOpen, isAuthenticated, trade == null ? void 0 : trade.ticker]);
+  const isPWAInstalled = () => {
+    if (typeof window === "undefined") return false;
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    const isIOSStandalone = window.navigator.standalone === true;
+    return isStandalone || isIOSStandalone;
+  };
+  const isMobileDevice = () => {
+    if (typeof window === "undefined") return false;
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(navigator.userAgent);
+  };
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
   const handleNotificationToggle = async () => {
     var _a2, _b2;
     if (!isAuthenticated) {
@@ -7068,6 +7091,16 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
       return;
     }
     if (!(trade == null ? void 0 : trade.ticker) || !(trade == null ? void 0 : trade.companyName)) {
+      return;
+    }
+    if (!isSubscribed && !ENV_CONFIG.isAppintos && isMobileDevice() && !isPWAInstalled()) {
+      const installGuide = isIOS() ? 'Safari 하단의 공유 버튼 → "홈 화면에 추가"를 선택하세요.' : 'Chrome 메뉴(⋮) → "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.';
+      toast2({
+        title: "앱 설치 필요",
+        description: `푸시 알림을 받으려면 홈 화면에 앱을 설치해주세요. ${installGuide}`,
+        variant: "destructive",
+        duration: 8e3
+      });
       return;
     }
     setIsSubscribing(true);
@@ -7082,7 +7115,7 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         pushSubscription = await subscribeToPushNotifications();
         if (!pushSubscription) {
           toast2({
-            title: "알림 권한 거부됨",
+            title: "알림 권한 필요",
             description: "브라우저 설정에서 알림을 허용해주세요.",
             variant: "destructive"
           });
@@ -7094,7 +7127,8 @@ function TradeDetailModal({ isOpen, onClose, trade }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          ...ENV_CONFIG.isAppintos && { "x-appintos-env": "true" }
         },
         body: JSON.stringify({
           ticker: trade.ticker,
@@ -13682,10 +13716,13 @@ function Notifications() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          ...ENV_CONFIG.isAppintos && { "x-appintos-env": "true" }
         },
         body: JSON.stringify({
           ticker,
+          companyName: "",
+          // Required by API
           action: "unsubscribe"
         })
       });
@@ -13758,13 +13795,6 @@ function Notifications() {
       ] }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "구독 중인 종목과 알림 이력을 관리하세요." })
     ] }),
-    /* @__PURE__ */ jsx(Card, { className: "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800", children: /* @__PURE__ */ jsx(CardContent, { className: "py-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-      /* @__PURE__ */ jsx("div", { className: "p-2 bg-blue-600 rounded-full", children: ENV_CONFIG.isAppintos ? /* @__PURE__ */ jsx(Smartphone, { className: "h-5 w-5 text-white" }) : /* @__PURE__ */ jsx(Globe, { className: "h-5 w-5 text-white" }) }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("p", { className: "font-medium text-sm", children: "현재 플랫폼" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg font-bold", children: ENV_CONFIG.isAppintos ? "앱인토스 (Apps-in-Toss)" : "PWA 웹앱" })
-      ] })
-    ] }) }) }),
     isMobile && !isInstalled && !ENV_CONFIG.isAppintos && /* @__PURE__ */ jsx(Card, { className: "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800", children: /* @__PURE__ */ jsx(CardContent, { className: "py-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-4", children: [
       /* @__PURE__ */ jsx("div", { className: "p-2 bg-amber-500 rounded-full flex-shrink-0", children: /* @__PURE__ */ jsx(Download, { className: "h-5 w-5 text-white" }) }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
@@ -13808,13 +13838,6 @@ function Notifications() {
             /* @__PURE__ */ jsx("li", { children: '"설치" 버튼 탭' })
           ] })
         ] }) : /* @__PURE__ */ jsx("div", { className: "bg-white/50 dark:bg-black/20 rounded-lg p-3", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-800 dark:text-amber-200", children: '브라우저 메뉴에서 "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.' }) })
-      ] })
-    ] }) }) }),
-    isMobile && isInstalled && !ENV_CONFIG.isAppintos && /* @__PURE__ */ jsx(Card, { className: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800", children: /* @__PURE__ */ jsx(CardContent, { className: "py-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-      /* @__PURE__ */ jsx("div", { className: "p-2 bg-green-600 rounded-full", children: /* @__PURE__ */ jsx(CheckCircle2, { className: "h-5 w-5 text-white" }) }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("p", { className: "font-medium text-sm text-green-800 dark:text-green-200", children: "앱 설치 완료" }),
-        /* @__PURE__ */ jsx("p", { className: "text-lg font-bold text-green-900 dark:text-green-100", children: "푸시 알림을 받을 준비가 되었습니다! 🎉" })
       ] })
     ] }) }) }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 lg:grid-cols-3", children: [

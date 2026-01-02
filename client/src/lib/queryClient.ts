@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { ENV_CONFIG } from "./environment";
 
 const PRODUCTION_API_URL = 'https://insiderpulse.pro';
 
@@ -51,6 +52,11 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Appintos 환경 헤더 추가
+  if (ENV_CONFIG.isAppintos) {
+    headers['x-appintos-env'] = 'true';
+  }
+
   // 앱인토스 환경에서 URL 변환
   const resolvedUrl = resolveApiUrl(url);
 
@@ -75,7 +81,18 @@ export const getQueryFn: <T>(options: {
     // 앱인토스 환경에서 URL 변환
     const url = resolveApiUrl(queryKey.join("/") as string);
 
+    // Build headers with auth token and appintos flag
+    const headers: Record<string, string> = {};
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (ENV_CONFIG.isAppintos) {
+      headers['x-appintos-env'] = 'true';
+    }
+
     const res = await fetch(url, {
+      headers,
       credentials: isLocalhost() ? "include" : "omit",
       mode: 'cors',
     });

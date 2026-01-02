@@ -6071,11 +6071,6 @@ var init_notification_routes = __esm({
         }
         if (platform === "appintos") {
           const tossUserKey = req.headers["x-toss-user-key"];
-          if (!tossUserKey) {
-            return res.status(400).json({
-              error: "Toss user key required for Appintos subscriptions"
-            });
-          }
           const existing = await db4.query.notificationSubscriptions.findFirst({
             where: and3(
               eq3(notificationSubscriptions.userId, userId),
@@ -6084,11 +6079,14 @@ var init_notification_routes = __esm({
             )
           });
           if (existing) {
-            const [updated] = await db4.update(notificationSubscriptions).set({
-              tossUserKey,
+            const updateData = {
               companyName,
               isActive: true
-            }).where(eq3(notificationSubscriptions.id, existing.id)).returning();
+            };
+            if (tossUserKey) {
+              updateData.tossUserKey = tossUserKey;
+            }
+            const [updated] = await db4.update(notificationSubscriptions).set(updateData).where(eq3(notificationSubscriptions.id, existing.id)).returning();
             console.log(`[Notification API] Updated Appintos subscription for ${userId} on ${ticker}`);
             return res.json({
               success: true,
@@ -6096,16 +6094,19 @@ var init_notification_routes = __esm({
               subscription: updated
             });
           }
-          const [newSub] = await db4.insert(notificationSubscriptions).values({
+          const insertData = {
             userId,
             ticker,
             companyName,
             platform,
-            tossUserKey,
             notifyOnBuy: true,
             notifyOnSell: true,
             isActive: true
-          }).returning();
+          };
+          if (tossUserKey) {
+            insertData.tossUserKey = tossUserKey;
+          }
+          const [newSub] = await db4.insert(notificationSubscriptions).values(insertData).returning();
           console.log(`[Notification API] Created Appintos subscription for ${userId} on ${ticker}`);
           return res.json({
             success: true,

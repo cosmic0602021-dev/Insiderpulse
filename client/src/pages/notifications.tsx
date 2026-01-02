@@ -165,9 +165,11 @@ export default function Notifications() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...(ENV_CONFIG.isAppintos && { 'x-appintos-env': 'true' }),
         },
         body: JSON.stringify({
           ticker,
+          companyName: '', // Required by API
           action: 'unsubscribe',
         }),
       });
@@ -279,27 +281,6 @@ export default function Notifications() {
         </p>
       </div>
 
-      {/* Platform Status Badge */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
-        <CardContent className="py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-full">
-              {ENV_CONFIG.isAppintos ? (
-                <Smartphone className="h-5 w-5 text-white" />
-              ) : (
-                <Globe className="h-5 w-5 text-white" />
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-sm">현재 플랫폼</p>
-              <p className="text-lg font-bold">
-                {ENV_CONFIG.isAppintos ? '앱인토스 (Apps-in-Toss)' : 'PWA 웹앱'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* PWA 설치 안내 - 모바일/태블릿에서만 표시 (PC에서는 표시 안함) */}
       {isMobile && !isInstalled && !ENV_CONFIG.isAppintos && (
         <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800">
@@ -370,25 +351,6 @@ export default function Notifications() {
                     </p>
                   </div>
                 )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* PWA 설치 완료 상태 - 모바일에서 설치된 경우 */}
-      {isMobile && isInstalled && !ENV_CONFIG.isAppintos && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-600 rounded-full">
-                <CheckCircle2 className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="font-medium text-sm text-green-800 dark:text-green-200">앱 설치 완료</p>
-                <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                  푸시 알림을 받을 준비가 되었습니다! 🎉
-                </p>
               </div>
             </div>
           </CardContent>

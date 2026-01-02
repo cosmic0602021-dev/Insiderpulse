@@ -158,15 +158,10 @@ router.post('/subscribe', requireAuth, async (req, res) => {
       });
     }
 
-    // Apps-in-Toss subscription
+    // Apps-in-Toss subscription (or web without PWA)
     if (platform === 'appintos') {
-      // Get Toss user key from request header (set by Toss login)
-      const tossUserKey = req.headers['x-toss-user-key'] as string;
-      if (!tossUserKey) {
-        return res.status(400).json({
-          error: 'Toss user key required for Appintos subscriptions'
-        });
-      }
+      // Get Toss user key from request header (optional - for future push notifications)
+      const tossUserKey = req.headers['x-toss-user-key'] as string | undefined;
 
       // Check if subscription already exists
       const existing = await db.query.notificationSubscriptions.findFirst({
@@ -179,12 +174,16 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 
       if (existing) {
         // Update existing subscription
+        const updateData: any = {
+          companyName,
+          isActive: true
+        };
+        if (tossUserKey) {
+          updateData.tossUserKey = tossUserKey;
+        }
+
         const [updated] = await db.update(notificationSubscriptions)
-          .set({
-            tossUserKey,
-            companyName,
-            isActive: true
-          })
+          .set(updateData)
           .where(eq(notificationSubscriptions.id, existing.id))
           .returning();
 
@@ -197,17 +196,21 @@ router.post('/subscribe', requireAuth, async (req, res) => {
       }
 
       // Create new subscription
+      const insertData: any = {
+        userId,
+        ticker,
+        companyName,
+        platform,
+        notifyOnBuy: true,
+        notifyOnSell: true,
+        isActive: true
+      };
+      if (tossUserKey) {
+        insertData.tossUserKey = tossUserKey;
+      }
+
       const [newSub] = await db.insert(notificationSubscriptions)
-        .values({
-          userId,
-          ticker,
-          companyName,
-          platform,
-          tossUserKey,
-          notifyOnBuy: true,
-          notifyOnSell: true,
-          isActive: true
-        })
+        .values(insertData)
         .returning();
 
       console.log(`[Notification API] Created Appintos subscription for ${userId} on ${ticker}`);

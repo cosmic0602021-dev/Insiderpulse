@@ -98,6 +98,22 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     checkSubscription();
   }, [isOpen, isAuthenticated, trade?.ticker]);
 
+  // Check if PWA is installed
+  const isPWAInstalled = () => {
+    if (typeof window === 'undefined') return false;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSStandalone = (window.navigator as any).standalone === true;
+    return isStandalone || isIOSStandalone;
+  };
+
+  // Check if mobile device
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
   // Handle notification subscription toggle
   const handleNotificationToggle = async () => {
     if (!isAuthenticated) {
@@ -110,6 +126,21 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
     }
 
     if (!trade?.ticker || !trade?.companyName) {
+      return;
+    }
+
+    // Check if mobile and PWA not installed (only for subscribe, not unsubscribe)
+    if (!isSubscribed && !ENV_CONFIG.isAppintos && isMobileDevice() && !isPWAInstalled()) {
+      const installGuide = isIOS()
+        ? 'Safari 하단의 공유 버튼 → "홈 화면에 추가"를 선택하세요.'
+        : 'Chrome 메뉴(⋮) → "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.';
+
+      toast({
+        title: '앱 설치 필요',
+        description: `푸시 알림을 받으려면 홈 화면에 앱을 설치해주세요. ${installGuide}`,
+        variant: 'destructive',
+        duration: 8000,
+      });
       return;
     }
 
@@ -129,7 +160,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
         pushSubscription = await subscribeToPushNotifications();
         if (!pushSubscription) {
           toast({
-            title: '알림 권한 거부됨',
+            title: '알림 권한 필요',
             description: '브라우저 설정에서 알림을 허용해주세요.',
             variant: 'destructive',
           });
@@ -143,6 +174,7 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...(ENV_CONFIG.isAppintos && { 'x-appintos-env': 'true' }),
         },
         body: JSON.stringify({
           ticker: trade.ticker,
