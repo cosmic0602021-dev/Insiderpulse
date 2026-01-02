@@ -13795,49 +13795,42 @@ function Notifications() {
       ] }),
       /* @__PURE__ */ jsx("p", { className: "text-muted-foreground", children: "구독 중인 종목과 알림 이력을 관리하세요." })
     ] }),
-    isMobile && !isInstalled && !ENV_CONFIG.isAppintos && /* @__PURE__ */ jsx(Card, { className: "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800", children: /* @__PURE__ */ jsx(CardContent, { className: "py-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-4", children: [
-      /* @__PURE__ */ jsx("div", { className: "p-2 bg-amber-500 rounded-full flex-shrink-0", children: /* @__PURE__ */ jsx(Download, { className: "h-5 w-5 text-white" }) }),
+    isMobile && !isInstalled && !ENV_CONFIG.isAppintos && /* @__PURE__ */ jsx(Card, { className: "border-neutral-700 dark:border-neutral-700 bg-neutral-900/50", children: /* @__PURE__ */ jsx(CardContent, { className: "py-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-4", children: [
+      /* @__PURE__ */ jsx("div", { className: "p-2 bg-emerald-600 rounded-full flex-shrink-0", children: /* @__PURE__ */ jsx(Download, { className: "h-5 w-5 text-white" }) }),
       /* @__PURE__ */ jsxs("div", { className: "flex-1", children: [
-        /* @__PURE__ */ jsx("h3", { className: "font-bold text-lg mb-2 text-amber-900 dark:text-amber-100", children: "📱 앱 설치로 푸시 알림 받기" }),
-        /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-800 dark:text-amber-200 mb-3", children: "모바일에서 푸시 알림을 받으려면 앱을 홈 화면에 추가하세요." }),
-        isIOS ? /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-black/20 rounded-lg p-3 space-y-2", children: [
-          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-amber-900 dark:text-amber-100", children: "🍎 iPhone/iPad 설치 방법:" }),
-          /* @__PURE__ */ jsxs("ol", { className: "text-sm text-amber-800 dark:text-amber-200 space-y-1 list-decimal list-inside", children: [
+        /* @__PURE__ */ jsx("h3", { className: "font-bold text-base mb-2 text-neutral-100", children: "앱 설치로 푸시 알림 받기" }),
+        /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 mb-3", children: "푸시 알림을 받으려면 홈 화면에 앱을 추가하세요." }),
+        isIOS ? /* @__PURE__ */ jsxs("div", { className: "bg-neutral-800/50 rounded-lg p-3 space-y-2", children: [
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-neutral-200", children: "iPhone/iPad:" }),
+          /* @__PURE__ */ jsxs("ol", { className: "text-sm text-neutral-400 space-y-1 list-decimal list-inside", children: [
             /* @__PURE__ */ jsxs("li", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx("span", { children: "Safari 하단의" }),
-              /* @__PURE__ */ jsx(Share, { className: "h-4 w-4 inline" }),
-              /* @__PURE__ */ jsx("span", { children: "공유 버튼 탭" })
+              /* @__PURE__ */ jsx("span", { children: "Safari 하단" }),
+              /* @__PURE__ */ jsx(Share, { className: "h-4 w-4 inline text-neutral-500" }),
+              /* @__PURE__ */ jsx("span", { children: "공유 버튼" })
             ] }),
-            /* @__PURE__ */ jsxs("li", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx("span", { children: "아래로 스크롤 후" }),
-              /* @__PURE__ */ jsx(Plus, { className: "h-4 w-4 inline" }),
-              /* @__PURE__ */ jsx("span", { children: '"홈 화면에 추가" 선택' })
-            ] }),
-            /* @__PURE__ */ jsx("li", { children: '오른쪽 상단 "추가" 탭' })
+            /* @__PURE__ */ jsx("li", { children: '"홈 화면에 추가" 선택' })
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "text-xs text-amber-700 dark:text-amber-300 mt-2", children: "⚠️ Safari 브라우저에서만 가능합니다" })
-        ] }) : isAndroid ? /* @__PURE__ */ jsxs("div", { className: "bg-white/50 dark:bg-black/20 rounded-lg p-3 space-y-2", children: [
-          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-amber-900 dark:text-amber-100", children: "🤖 Android 설치 방법:" }),
+          /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-500 mt-2", children: "* Safari에서만 가능" })
+        ] }) : isAndroid ? /* @__PURE__ */ jsxs("div", { className: "bg-neutral-800/50 rounded-lg p-3 space-y-2", children: [
+          /* @__PURE__ */ jsx("p", { className: "text-sm font-medium text-neutral-200", children: "Android:" }),
           deferredPrompt ? /* @__PURE__ */ jsxs(
             Button,
             {
               onClick: installPWA,
-              className: "w-full bg-amber-600 hover:bg-amber-700 text-white",
+              className: "w-full bg-emerald-600 hover:bg-emerald-700 text-white",
               children: [
                 /* @__PURE__ */ jsx(Download, { className: "h-4 w-4 mr-2" }),
                 "앱 설치하기"
               ]
             }
-          ) : /* @__PURE__ */ jsxs("ol", { className: "text-sm text-amber-800 dark:text-amber-200 space-y-1 list-decimal list-inside", children: [
+          ) : /* @__PURE__ */ jsxs("ol", { className: "text-sm text-neutral-400 space-y-1 list-decimal list-inside", children: [
             /* @__PURE__ */ jsxs("li", { className: "flex items-center gap-2", children: [
-              /* @__PURE__ */ jsx("span", { children: "Chrome 우측 상단" }),
-              /* @__PURE__ */ jsx(MoreVertical, { className: "h-4 w-4 inline" }),
-              /* @__PURE__ */ jsx("span", { children: "메뉴 버튼 탭" })
+              /* @__PURE__ */ jsx("span", { children: "Chrome 메뉴" }),
+              /* @__PURE__ */ jsx(MoreVertical, { className: "h-4 w-4 inline text-neutral-500" })
             ] }),
-            /* @__PURE__ */ jsx("li", { children: '"홈 화면에 추가" 또는 "앱 설치" 선택' }),
-            /* @__PURE__ */ jsx("li", { children: '"설치" 버튼 탭' })
+            /* @__PURE__ */ jsx("li", { children: '"앱 설치" 또는 "홈 화면에 추가"' })
           ] })
-        ] }) : /* @__PURE__ */ jsx("div", { className: "bg-white/50 dark:bg-black/20 rounded-lg p-3", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-amber-800 dark:text-amber-200", children: '브라우저 메뉴에서 "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.' }) })
+        ] }) : /* @__PURE__ */ jsx("div", { className: "bg-neutral-800/50 rounded-lg p-3", children: /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400", children: '브라우저 메뉴 → "홈 화면에 추가"' }) })
       ] })
     ] }) }) }),
     /* @__PURE__ */ jsxs("div", { className: "grid gap-6 lg:grid-cols-3", children: [
@@ -13848,7 +13841,7 @@ function Notifications() {
           subscriptions.filter((s) => s.isActive).length,
           ")"
         ] }) }),
-        /* @__PURE__ */ jsx(CardContent, { className: "space-y-4", children: isLoadingSubscriptions ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-32" }, i)) }) : subscriptions.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12 text-muted-foreground", children: [
+        /* @__PURE__ */ jsx(CardContent, { className: "space-y-4 max-h-[600px] overflow-y-auto", children: isLoadingSubscriptions ? /* @__PURE__ */ jsx("div", { className: "space-y-3", children: Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ jsx(Skeleton, { className: "h-32" }, i)) }) : subscriptions.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-12 text-muted-foreground", children: [
           /* @__PURE__ */ jsx(Bell, { className: "h-16 w-16 mx-auto mb-4 opacity-30" }),
           /* @__PURE__ */ jsx("p", { className: "text-lg font-medium mb-2", children: "구독 중인 종목이 없습니다" }),
           /* @__PURE__ */ jsx("p", { className: "text-sm mb-4", children: "거래 상세 모달에서 알림 버튼을 눌러 구독하세요" }),

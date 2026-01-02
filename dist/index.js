@@ -5999,11 +5999,14 @@ var init_notification_routes = __esm({
       try {
         const userId = req.userId;
         const { ticker, companyName, action, pushSubscription } = req.body;
-        if (!ticker || !companyName) {
-          return res.status(400).json({ error: "Missing ticker or companyName" });
+        if (!ticker) {
+          return res.status(400).json({ error: "Missing ticker" });
         }
         if (!action || !["subscribe", "unsubscribe"].includes(action)) {
           return res.status(400).json({ error: 'Invalid action. Must be "subscribe" or "unsubscribe"' });
+        }
+        if (action === "subscribe" && !companyName) {
+          return res.status(400).json({ error: "Missing companyName for subscribe" });
         }
         const isAppintos = isAppintosEnvironment(req);
         const platform = isAppintos ? "appintos" : "pwa";
