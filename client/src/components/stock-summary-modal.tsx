@@ -1,13 +1,17 @@
 // Modified for App Store compliance: price target safe mode - removed all investment predictions
-import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info, Bell, BellOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
 import { useLanguage } from '@/contexts/language-context';
+import { useAuth } from '@/contexts/auth-context';
 import { formatCurrency, formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useState, useEffect, useMemo, useId, useCallback, useRef } from 'react';
 import { StockRecommendation } from './terminal-ui/types';
+import { useToast } from '@/hooks/use-toast';
+import { subscribeToPushNotifications } from '@/lib/push-subscription';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface StockPriceData {
   ticker: string;
@@ -32,12 +36,18 @@ type AnalysisError = {
 
 export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalProps) {
   const { language } = useLanguage();
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const gradientId = useId();
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
+
+  // Notification subscription state
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   // ✅ Map-based cache: Store analysis for multiple tickers AND languages in same session
   // Key format: `${ticker}_${language}` to support language-specific caching
@@ -284,6 +294,165 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   // causing unnecessary API calls even when stock.comprehensiveAnalysis exists.
   // Current deps are correct: only re-run when modal opens/closes, ticker changes, or language changes.
 
+  // Check notification subscription status
+  useEffect(() => {
+    if (!isOpen || !isAuthenticated || !stock?.ticker) {
+      setIsSubscribed(false);
+      return;
+    }
+
+    const checkSubscription = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch(
+          resolveApiUrl(`/api/notifications/subscriptions?ticker=${stock.ticker}`),
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              ...(ENV_CONFIG.isAppintos && { 'x-appintos-env': 'true' }),
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsSubscribed(data.isSubscribed || false);
+        }
+      } catch (error) {
+        console.error('Failed to check subscription:', error);
+      }
+    };
+
+    checkSubscription();
+  }, [isOpen, isAuthenticated, stock?.ticker]);
+
+  // Check if PWA is installed
+  const isPWAInstalled = () => {
+    if (typeof window === 'undefined') return false;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSStandalone = (window.navigator as any).standalone === true;
+    return isStandalone || isIOSStandalone;
+  };
+
+  // Check if mobile device
+  const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(navigator.userAgent);
+  };
+
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  // Handle notification subscription toggle
+  const handleNotificationToggle = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: language === 'ko' ? '로그인 필요' : 'Login Required',
+        description: language === 'ko' ? '알림을 받으려면 로그인이 필요합니다.' : 'Please log in to receive notifications.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!stock?.ticker || !stock?.companyName) {
+      return;
+    }
+
+    // Check if mobile and PWA not installed (only for subscribe, not unsubscribe)
+    if (!isSubscribed && !ENV_CONFIG.isAppintos && isMobileDevice() && !isPWAInstalled()) {
+      const installGuide = isIOS()
+        ? language === 'ko'
+          ? 'Safari 하단의 공유 버튼 → "홈 화면에 추가"를 선택하세요.'
+          : 'Tap Share button at the bottom → "Add to Home Screen"'
+        : language === 'ko'
+          ? 'Chrome 메뉴(⋮) → "홈 화면에 추가" 또는 "앱 설치"를 선택하세요.'
+          : 'Chrome menu (⋮) → "Add to Home Screen" or "Install App"';
+
+      toast({
+        title: language === 'ko' ? '앱 설치 필요' : 'App Installation Required',
+        description: language === 'ko'
+          ? `푸시 알림을 받으려면 홈 화면에 앱을 설치해주세요. ${installGuide}`
+          : `Please install the app to your home screen for push notifications. ${installGuide}`,
+        variant: 'destructive',
+        duration: 8000,
+      });
+      return;
+    }
+
+    setIsSubscribing(true);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No auth token');
+      }
+
+      const action = isSubscribed ? 'unsubscribe' : 'subscribe';
+
+      // For PWA, get push subscription first
+      let pushSubscription = null;
+      if (action === 'subscribe' && !ENV_CONFIG.isAppintos) {
+        pushSubscription = await subscribeToPushNotifications();
+        if (!pushSubscription) {
+          toast({
+            title: language === 'ko' ? '알림 권한 필요' : 'Notification Permission Required',
+            description: language === 'ko' ? '브라우저 설정에서 알림을 허용해주세요.' : 'Please allow notifications in your browser settings.',
+            variant: 'destructive',
+          });
+          setIsSubscribing(false);
+          return;
+        }
+      }
+
+      const response = await fetch(resolveApiUrl('/api/notifications/subscribe'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(ENV_CONFIG.isAppintos && { 'x-appintos-env': 'true' }),
+        },
+        body: JSON.stringify({
+          ticker: stock.ticker,
+          companyName: stock.companyName,
+          action,
+          pushSubscription: pushSubscription ? {
+            endpoint: pushSubscription.endpoint,
+            keys: {
+              p256dh: pushSubscription.toJSON().keys?.p256dh,
+              auth: pushSubscription.toJSON().keys?.auth,
+            }
+          } : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Subscription failed');
+      }
+
+      setIsSubscribed(!isSubscribed);
+
+      toast({
+        title: isSubscribed
+          ? (language === 'ko' ? '알림 해제됨' : 'Notifications Disabled')
+          : (language === 'ko' ? '알림 설정됨' : 'Notifications Enabled'),
+        description: isSubscribed
+          ? (language === 'ko' ? `${stock.ticker} 알림이 해제되었습니다.` : `Notifications for ${stock.ticker} disabled.`)
+          : (language === 'ko' ? `${stock.ticker}의 내부자 거래 시 알림을 받습니다.` : `You'll receive notifications for ${stock.ticker} insider trades.`),
+      });
+    } catch (error: any) {
+      console.error('Notification toggle error:', error);
+      toast({
+        title: language === 'ko' ? '오류' : 'Error',
+        description: error.message || (language === 'ko' ? '알림 설정에 실패했습니다.' : 'Failed to update notification settings.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].modal;
   const tTop = TRANSLATIONS[langKey].top;
@@ -451,9 +620,31 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-neutral-900 transition-colors">
-              <X size={14} className="text-neutral-500" />
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Notification subscription button (only for logged-in users) */}
+              {isAuthenticated && (
+                <button
+                  onClick={handleNotificationToggle}
+                  disabled={isSubscribing}
+                  className="p-1.5 hover:bg-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isSubscribed
+                    ? (langKey === 'ko' ? '알림 해제' : 'Disable Notifications')
+                    : (langKey === 'ko' ? '알림 받기' : 'Enable Notifications')}
+                  data-testid="button-notification-toggle"
+                >
+                  {isSubscribing ? (
+                    <Bell size={14} className="text-neutral-500 animate-pulse" />
+                  ) : isSubscribed ? (
+                    <BellOff size={14} className="text-amber-500" />
+                  ) : (
+                    <Bell size={14} className="text-neutral-500" />
+                  )}
+                </button>
+              )}
+              <button onClick={onClose} className="p-1 hover:bg-neutral-900 transition-colors">
+                <X size={14} className="text-neutral-500" />
+              </button>
+            </div>
           </div>
 
           {/* Key Stats - 3 cols mobile, 5 cols desktop */}
