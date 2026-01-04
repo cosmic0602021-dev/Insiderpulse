@@ -25,6 +25,7 @@ __export(schema_exports, {
   insertInsiderTradeSchema: () => insertInsiderTradeSchema,
   insertNotificationLogSchema: () => insertNotificationLogSchema,
   insertNotificationSubscriptionSchema: () => insertNotificationSubscriptionSchema,
+  insertRankingSnapshotSchema: () => insertRankingSnapshotSchema,
   insertStockPriceHistorySchema: () => insertStockPriceHistorySchema,
   insertStockPriceSchema: () => insertStockPriceSchema,
   insertTossUserMappingSchema: () => insertTossUserMappingSchema,
@@ -34,6 +35,7 @@ __export(schema_exports, {
   insiderTrades: () => insiderTrades,
   notificationLogs: () => notificationLogs,
   notificationSubscriptions: () => notificationSubscriptions,
+  rankingSnapshots: () => rankingSnapshots,
   stockPriceHistory: () => stockPriceHistory,
   stockPriceHistoryIndex: () => stockPriceHistoryIndex,
   stockPrices: () => stockPrices,
@@ -46,7 +48,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, real, timestamp, date, json, decimal, bigint, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var users, insiderTrades, insertUserSchema, insertInsiderTradeSchema, stockPrices, insertStockPriceSchema, stockPriceHistory, stockPriceHistoryIndex, insertStockPriceHistorySchema, alerts, insertAlertSchema, collectionRuns, insertCollectionRunSchema, userEvents, insertUserEventSchema, userSessions, insertUserSessionSchema, exchangeRates, insertExchangeRateSchema, notificationSubscriptions, insertNotificationSubscriptionSchema, notificationLogs, insertNotificationLogSchema, tossUserMappings, insertTossUserMappingSchema;
+var users, insiderTrades, insertUserSchema, insertInsiderTradeSchema, stockPrices, insertStockPriceSchema, stockPriceHistory, stockPriceHistoryIndex, insertStockPriceHistorySchema, alerts, insertAlertSchema, collectionRuns, insertCollectionRunSchema, userEvents, insertUserEventSchema, userSessions, insertUserSessionSchema, exchangeRates, insertExchangeRateSchema, notificationSubscriptions, insertNotificationSubscriptionSchema, notificationLogs, insertNotificationLogSchema, tossUserMappings, insertTossUserMappingSchema, rankingSnapshots, insertRankingSnapshotSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -363,6 +365,29 @@ var init_schema = __esm({
       lastLoginAt: timestamp("last_login_at")
     });
     insertTossUserMappingSchema = createInsertSchema(tossUserMappings).omit({
+      id: true,
+      createdAt: true
+    });
+    rankingSnapshots = pgTable("ranking_snapshots", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      snapshotDate: date("snapshot_date").notNull(),
+      ticker: varchar("ticker", { length: 10 }).notNull(),
+      companyName: varchar("company_name", { length: 200 }).notNull(),
+      rank: integer("rank").notNull(),
+      // 1-10
+      score: integer("score").notNull(),
+      avgBuyPrice: decimal("avg_buy_price", { precision: 10, scale: 2 }).notNull(),
+      netBuying: decimal("net_buying", { precision: 15, scale: 2 }).notNull(),
+      marketCap: bigint("market_cap", { mode: "number" }),
+      uniqueInsiders: integer("unique_insiders").notNull(),
+      recommendation: varchar("recommendation", { length: 20 }).notNull(),
+      // STRONG_BUY, BUY, HOLD
+      createdAt: timestamp("created_at").defaultNow()
+    }, (table) => ({
+      // Composite unique index for date + ticker
+      uniqueDateTicker: uniqueIndex("idx_ranking_snapshots_date_ticker").on(table.snapshotDate, table.ticker)
+    }));
+    insertRankingSnapshotSchema = createInsertSchema(rankingSnapshots).omit({
       id: true,
       createdAt: true
     });
@@ -787,8 +812,8 @@ var init_db_storage = __esm({
         const upperTicker = ticker.toUpperCase();
         let query = db.select().from(stockPriceHistory).where(eq(stockPriceHistory.ticker, upperTicker)).orderBy(desc(stockPriceHistory.date));
         if (fromDate && toDate) {
-          const { gte: gte3 } = await import("drizzle-orm");
-          const { lte: lte2 } = await import("drizzle-orm");
+          const { gte: gte4 } = await import("drizzle-orm");
+          const { lte: lte3 } = await import("drizzle-orm");
           query = query.where(
             sql2`${stockPriceHistory.ticker} = ${upperTicker} AND ${stockPriceHistory.date} >= ${fromDate} AND ${stockPriceHistory.date} <= ${toDate}`
           );
@@ -10299,7 +10324,7 @@ async function activateTrial(userId) {
 async function checkExpiredTrials() {
   const now = /* @__PURE__ */ new Date();
   const expiredTrialUsers = await db5.query.users.findMany({
-    where: (users3, { and: and7, lt, isNotNull: isNotNull2, or, isNull: isNull2 }) => and7(
+    where: (users3, { and: and8, lt, isNotNull: isNotNull2, or, isNull: isNull2 }) => and8(
       lt(users3.trialExpiresAt, now),
       isNotNull2(users3.trialExpiresAt),
       or(
@@ -10530,6 +10555,264 @@ var init_exchange_rate_service = __esm({
       }
     };
     exchangeRateService = new ExchangeRateService();
+  }
+});
+
+// server/past-performance-service.ts
+import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
+import { eq as eq7, sql as sql4, and as and6, desc as desc3, gte as gte3, lte as lte2 } from "drizzle-orm";
+var db6, PastPerformanceService, pastPerformanceService;
+var init_past_performance_service = __esm({
+  "server/past-performance-service.ts"() {
+    "use strict";
+    init_schema();
+    init_schema();
+    db6 = drizzle6(process.env.DATABASE_URL, { schema: schema_exports });
+    PastPerformanceService = class {
+      constructor() {
+        this.cache = /* @__PURE__ */ new Map();
+        this.CACHE_TTL = 60 * 60 * 1e3;
+      }
+      // 1 hour
+      /**
+       * Get historical performance for recommendations from X months ago
+       */
+      async getHistoricalPerformance(monthsAgo) {
+        const cacheKey = `historical_performance:${monthsAgo}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+          console.log(`[PastPerformance] Cache hit for ${monthsAgo} months`);
+          return cached.data;
+        }
+        console.log(`[PastPerformance] Computing performance for ${monthsAgo} months ago...`);
+        const targetDate = /* @__PURE__ */ new Date();
+        targetDate.setMonth(targetDate.getMonth() - monthsAgo);
+        const snapshotDateStr = targetDate.toISOString().split("T")[0];
+        const startWindow = new Date(targetDate);
+        startWindow.setDate(startWindow.getDate() - 3);
+        const endWindow = new Date(targetDate);
+        endWindow.setDate(endWindow.getDate() + 3);
+        const snapshots = await db6.query.rankingSnapshots.findMany({
+          where: and6(
+            gte3(rankingSnapshots.snapshotDate, startWindow.toISOString().split("T")[0]),
+            lte2(rankingSnapshots.snapshotDate, endWindow.toISOString().split("T")[0])
+          ),
+          orderBy: [desc3(rankingSnapshots.snapshotDate), rankingSnapshots.rank],
+          limit: 10
+        });
+        if (!snapshots || snapshots.length === 0) {
+          const response2 = {
+            period: {
+              monthsAgo,
+              snapshotDate: snapshotDateStr,
+              evaluationDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+            },
+            summary: {
+              avgReturn: 0,
+              winRate: 0,
+              winnersCount: 0,
+              losersCount: 0,
+              hypotheticalGain: 1e3
+            },
+            stocks: [],
+            dataAvailable: false,
+            message: `Performance data not yet available. Data collection started recently. Please check back in ${monthsAgo} month${monthsAgo > 1 ? "s" : ""}.`
+          };
+          return response2;
+        }
+        const actualSnapshotDate = snapshots[0].snapshotDate;
+        const uniqueSnapshots = snapshots.filter((s) => s.snapshotDate === actualSnapshotDate);
+        const stockPerformances = [];
+        const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        for (const snapshot of uniqueSnapshots) {
+          const performance = await this.calculateStockPerformance(snapshot, actualSnapshotDate, today);
+          if (performance) {
+            stockPerformances.push(performance);
+          }
+        }
+        stockPerformances.sort((a, b) => a.rank - b.rank);
+        const validStocks = stockPerformances.filter((s) => s.exitPrice > 0);
+        const winners = validStocks.filter((s) => s.returnPercent > 0);
+        const losers = validStocks.filter((s) => s.returnPercent <= 0);
+        const avgReturn = validStocks.length > 0 ? validStocks.reduce((sum2, s) => sum2 + s.returnPercent, 0) / validStocks.length : 0;
+        const winRate = validStocks.length > 0 ? winners.length / validStocks.length : 0;
+        const investmentPerStock = 1e3 / Math.max(validStocks.length, 1);
+        const hypotheticalGain = validStocks.reduce((sum2, s) => {
+          return sum2 + investmentPerStock * (1 + s.returnPercent / 100);
+        }, 0);
+        const response = {
+          period: {
+            monthsAgo,
+            snapshotDate: actualSnapshotDate,
+            evaluationDate: today
+          },
+          summary: {
+            avgReturn: Math.round(avgReturn * 100) / 100,
+            winRate: Math.round(winRate * 100) / 100,
+            winnersCount: winners.length,
+            losersCount: losers.length,
+            hypotheticalGain: Math.round(hypotheticalGain * 100) / 100
+          },
+          stocks: stockPerformances,
+          dataAvailable: true
+        };
+        this.cache.set(cacheKey, { data: response, timestamp: Date.now() });
+        console.log(`[PastPerformance] Computed: avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
+        return response;
+      }
+      /**
+       * Calculate performance for a single stock
+       */
+      async calculateStockPerformance(snapshot, snapshotDate, evaluationDate) {
+        const entryPrice = parseFloat(snapshot.avgBuyPrice);
+        if (!entryPrice || entryPrice <= 0) {
+          return null;
+        }
+        const sellInfo = await this.checkInsiderSellAfterDate(snapshot.ticker, snapshotDate);
+        let exitPrice;
+        let exitDate;
+        if (sellInfo.hasSell && sellInfo.sellDate) {
+          exitDate = sellInfo.sellDate;
+          const priceAtSell = await this.getPriceAtDate(snapshot.ticker, sellInfo.sellDate);
+          exitPrice = priceAtSell || 0;
+        } else {
+          exitDate = evaluationDate;
+          const currentPrice = await this.getCurrentPrice(snapshot.ticker);
+          exitPrice = currentPrice || 0;
+        }
+        if (exitPrice <= 0) {
+          const fallbackPrice = await this.getCurrentPrice(snapshot.ticker);
+          exitPrice = fallbackPrice || entryPrice;
+        }
+        const returnPercent = (exitPrice - entryPrice) / entryPrice * 100;
+        const returnDollar = 100 * (1 + returnPercent / 100) - 100;
+        return {
+          rank: snapshot.rank,
+          ticker: snapshot.ticker,
+          companyName: snapshot.companyName,
+          entryPrice: Math.round(entryPrice * 100) / 100,
+          exitPrice: Math.round(exitPrice * 100) / 100,
+          returnPercent: Math.round(returnPercent * 100) / 100,
+          returnDollar: Math.round(returnDollar * 100) / 100,
+          hadInsiderSell: sellInfo.hasSell,
+          sellDate: sellInfo.sellDate,
+          sellIndicator: sellInfo.sellerInfo
+        };
+      }
+      /**
+       * Check if any insider sold after the given date
+       */
+      async checkInsiderSellAfterDate(ticker, afterDate) {
+        const afterDateObj = new Date(afterDate);
+        const sellTrades = await db6.query.insiderTrades.findMany({
+          where: and6(
+            eq7(insiderTrades.ticker, ticker),
+            sql4`${insiderTrades.tradeType} IN ('SELL', 'SALE', 'S')`,
+            gte3(insiderTrades.filedDate, afterDateObj)
+          ),
+          orderBy: [insiderTrades.filedDate],
+          limit: 1
+        });
+        if (sellTrades.length > 0) {
+          const sellTrade = sellTrades[0];
+          const sellDate = sellTrade.filedDate.toISOString().split("T")[0];
+          const sellerInfo = `${sellTrade.traderTitle || "Insider"} sold on ${new Date(sellDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+          return {
+            hasSell: true,
+            sellDate,
+            sellerInfo
+          };
+        }
+        return { hasSell: false };
+      }
+      /**
+       * Get stock price at a specific date from history
+       */
+      async getPriceAtDate(ticker, date2) {
+        const exactPrice = await db6.query.stockPriceHistory.findFirst({
+          where: and6(
+            eq7(stockPriceHistory.ticker, ticker),
+            eq7(stockPriceHistory.date, date2)
+          )
+        });
+        if (exactPrice) {
+          return parseFloat(exactPrice.close);
+        }
+        const targetDate = new Date(date2);
+        for (let i = 1; i <= 5; i++) {
+          const prevDate = new Date(targetDate);
+          prevDate.setDate(prevDate.getDate() - i);
+          const prevPrice = await db6.query.stockPriceHistory.findFirst({
+            where: and6(
+              eq7(stockPriceHistory.ticker, ticker),
+              eq7(stockPriceHistory.date, prevDate.toISOString().split("T")[0])
+            )
+          });
+          if (prevPrice) return parseFloat(prevPrice.close);
+          const nextDate = new Date(targetDate);
+          nextDate.setDate(nextDate.getDate() + i);
+          const nextPrice = await db6.query.stockPriceHistory.findFirst({
+            where: and6(
+              eq7(stockPriceHistory.ticker, ticker),
+              eq7(stockPriceHistory.date, nextDate.toISOString().split("T")[0])
+            )
+          });
+          if (nextPrice) return parseFloat(nextPrice.close);
+        }
+        return this.getCurrentPrice(ticker);
+      }
+      /**
+       * Get current stock price
+       */
+      async getCurrentPrice(ticker) {
+        const price = await db6.query.stockPrices.findFirst({
+          where: eq7(stockPrices.ticker, ticker)
+        });
+        return price ? parseFloat(price.currentPrice) : null;
+      }
+      /**
+       * Capture daily ranking snapshot (called by cron job)
+       */
+      async captureRankingSnapshot(rankings) {
+        const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        console.log(`[PastPerformance] Capturing snapshot for ${today} with ${rankings.length} stocks`);
+        for (let i = 0; i < Math.min(rankings.length, 10); i++) {
+          const ranking = rankings[i];
+          try {
+            await db6.insert(rankingSnapshots).values({
+              snapshotDate: today,
+              ticker: ranking.ticker,
+              companyName: ranking.companyName,
+              rank: i + 1,
+              score: Math.round(ranking.score),
+              avgBuyPrice: ranking.avgTradeValue.toFixed(2),
+              netBuying: ranking.netBuying.toFixed(2),
+              marketCap: ranking.marketCap || null,
+              uniqueInsiders: ranking.uniqueInsiders,
+              recommendation: ranking.recommendation
+            }).onConflictDoUpdate({
+              target: [rankingSnapshots.snapshotDate, rankingSnapshots.ticker],
+              set: {
+                rank: i + 1,
+                score: Math.round(ranking.score),
+                avgBuyPrice: ranking.avgTradeValue.toFixed(2)
+              }
+            });
+          } catch (error) {
+            console.error(`[PastPerformance] Error saving snapshot for ${ranking.ticker}:`, error);
+          }
+        }
+        this.cache.clear();
+        console.log(`[PastPerformance] Snapshot captured successfully`);
+      }
+      /**
+       * Clear cache (for manual invalidation)
+       */
+      clearCache() {
+        this.cache.clear();
+      }
+    };
+    pastPerformanceService = new PastPerformanceService();
   }
 });
 
@@ -11272,7 +11555,7 @@ var auto_scheduler_exports = {};
 __export(auto_scheduler_exports, {
   autoScheduler: () => autoScheduler
 });
-import { eq as eq7 } from "drizzle-orm";
+import { eq as eq8 } from "drizzle-orm";
 var AutoScheduler, autoScheduler;
 var init_auto_scheduler = __esm({
   "server/auto-scheduler.ts"() {
@@ -11387,7 +11670,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq7(collectionRuns.id, runId));
+          }).where(eq8(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] OpenInsider collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("OpenInsider", processedCount, duration);
@@ -11399,7 +11682,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq7(collectionRuns.id, runId));
+            }).where(eq8(collectionRuns.id, runId));
           }
           this.openInsiderFailures++;
           if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11430,7 +11713,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq7(collectionRuns.id, runId));
+          }).where(eq8(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] MarketBeat collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("MarketBeat", processedCount, duration);
@@ -11442,7 +11725,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq7(collectionRuns.id, runId));
+            }).where(eq8(collectionRuns.id, runId));
           }
           this.marketBeatFailures++;
           if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11505,7 +11788,7 @@ var init_auto_scheduler = __esm({
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date(),
             metadata: { totalTrades: trades.length }
-          }).where(eq7(collectionRuns.id, runId));
+          }).where(eq8(collectionRuns.id, runId));
           console.log(`
 \u2705 [AUTO] SEC RSS Collection Complete`);
           console.log(`   \u23F1\uFE0F Duration: ${duration}ms`);
@@ -11526,7 +11809,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq7(collectionRuns.id, runId));
+            }).where(eq8(collectionRuns.id, runId));
           }
           this.secRssFailures++;
           if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11841,8 +12124,8 @@ Timestamp: ${report.timestamp.toISOString()}
 import express2 from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
-import { drizzle as drizzle6 } from "drizzle-orm/neon-http";
-import { eq as eq8, and as and6, desc as desc3, inArray as inArray2, isNotNull } from "drizzle-orm";
+import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
+import { eq as eq9, and as and7, desc as desc4, inArray as inArray3, isNotNull } from "drizzle-orm";
 import { z as z3 } from "zod";
 import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
@@ -12079,6 +12362,36 @@ async function fetchRankingTickers() {
   }
 }
 async function registerRoutes(app2) {
+  app2.get("/api/detect-language", async (req, res) => {
+    try {
+      const clientIP = ipGeolocationService.getClientIP(req);
+      const location = await ipGeolocationService.getLocation(clientIP);
+      if (!location) {
+        return res.json({
+          language: "en",
+          country: "UNKNOWN",
+          countryName: "Unknown",
+          source: "fallback"
+        });
+      }
+      const language = COUNTRY_LANGUAGE_MAP[location.country] || "en";
+      console.log(`[detect-language] IP: ${clientIP}, Country: ${location.country} (${location.countryName}) -> Language: ${language}`);
+      return res.json({
+        language,
+        country: location.country,
+        countryName: location.countryName,
+        source: "ip"
+      });
+    } catch (error) {
+      console.error("[detect-language] Error:", error);
+      return res.json({
+        language: "en",
+        country: "ERROR",
+        countryName: "Error",
+        source: "fallback"
+      });
+    }
+  });
   app2.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { amount } = req.body;
@@ -12129,8 +12442,8 @@ async function registerRoutes(app2) {
           error: "User not authenticated"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -12150,23 +12463,23 @@ async function registerRoutes(app2) {
             });
           } else if (existingSub.status === "canceled" || existingSub.status === "incomplete_expired") {
             console.log(`\u2705 Subscription ${existingSub.id} status is ${existingSub.status}, syncing DB and allowing new checkout`);
-            await db6.update(users).set({
+            await db7.update(users).set({
               subscriptionStatus: existingSub.status === "canceled" ? "canceled" : "inactive",
               stripeSubscriptionId: null
-            }).where(eq8(users.id, userId));
+            }).where(eq9(users.id, userId));
           } else if (existingSub.cancel_at_period_end && (existingSub.status === "active" || existingSub.status === "trialing")) {
             console.log(`\u26A0\uFE0F Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
         } catch (error) {
           console.log(`\u26A0\uFE0F Stored subscription ${user2.stripeSubscriptionId} not found in Stripe, allowing new checkout`);
-          await db6.update(users).set({
+          await db7.update(users).set({
             subscriptionStatus: "inactive",
             stripeSubscriptionId: null
-          }).where(eq8(users.id, userId));
+          }).where(eq9(users.id, userId));
         }
       }
-      const updatedUser = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const updatedUser = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!updatedUser) {
         return res.status(404).json({
@@ -12192,13 +12505,13 @@ async function registerRoutes(app2) {
           } else {
             console.error(`\u26A0\uFE0F Unexpected Stripe error, will create new customer:`, error);
           }
-          await db6.update(users).set({ stripeCustomerId: null }).where(eq8(users.id, userId));
+          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer ID from database for user ${userId}`);
           customerId = null;
         }
       } else if (customerId) {
         console.warn(`\u26A0\uFE0F Invalid customer ID format: "${customerId}", will create new one`);
-        await db6.update(users).set({ stripeCustomerId: null }).where(eq8(users.id, userId));
+        await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
         customerId = null;
       }
       if (customerId) {
@@ -12221,7 +12534,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db6.update(users).set({ stripeCustomerId: customerId }).where(eq8(users.id, userId));
+        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
         console.log(`\u{1F4BE} Created fresh Stripe customer for user ${userId} (Link removed)`);
       }
       if (customerId) {
@@ -12243,7 +12556,7 @@ async function registerRoutes(app2) {
           }
         } catch (error) {
           console.error(`\u274C Failed to check subscriptions for customer ${customerId}:`, error.message);
-          await db6.update(users).set({ stripeCustomerId: null }).where(eq8(users.id, userId));
+          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
           return res.status(400).json({
             error: "\uACB0\uC81C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.",
             details: "Customer validation failed"
@@ -12329,7 +12642,7 @@ async function registerRoutes(app2) {
       } catch (error) {
         console.error(`\u274C Failed to create checkout session:`, error.message);
         if (error.message?.includes("customer") || error.code === "resource_missing") {
-          await db6.update(users).set({ stripeCustomerId: null }).where(eq8(users.id, userId));
+          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer from database`);
         }
         return res.status(500).json({
@@ -12383,8 +12696,8 @@ async function registerRoutes(app2) {
           message: "\uCFE0\uD3F0 \uCF54\uB4DC\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12451,13 +12764,13 @@ async function registerRoutes(app2) {
       const newTrialExpiresAt = new Date(newTrialEnd * 1e3);
       const newUsedCoupons = [...usedCoupons, normalizedCoupon];
       const newExtensionDays = (user2.couponExtensionDays || 0) + 3;
-      await db6.update(users).set({
+      await db7.update(users).set({
         trialExpiresAt: newTrialExpiresAt,
         subscriptionEndDate: newTrialExpiresAt,
         usedCoupons: newUsedCoupons,
         couponExtensionDays: newExtensionDays,
         lastCouponUsedAt: /* @__PURE__ */ new Date()
-      }).where(eq8(users.id, userId));
+      }).where(eq9(users.id, userId));
       console.log(`\u2705 Coupon "${normalizedCoupon}" redeemed by ${user2.email}, trial extended to ${newTrialExpiresAt}`);
       return res.status(200).json({
         success: true,
@@ -12487,8 +12800,8 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12531,10 +12844,10 @@ async function registerRoutes(app2) {
         console.log(`\u{1F4B3} Cancelled legacy trial for user ${userId}`);
         periodEnd = user2.trialExpiresAt || user2.subscriptionEndDate || /* @__PURE__ */ new Date();
       }
-      await db6.update(users).set({
+      await db7.update(users).set({
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
-      }).where(eq8(users.id, userId));
+      }).where(eq9(users.id, userId));
       if (feedback && feedback.trim()) {
         try {
           const nodemailer2 = await import("nodemailer");
@@ -12594,8 +12907,8 @@ async function registerRoutes(app2) {
           error: "User not authenticated"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2 || !user2.stripeCustomerId) {
         return res.status(404).json({
@@ -12671,16 +12984,16 @@ async function registerRoutes(app2) {
         const subscriptionId = session.subscription;
         if (customerId && subscriptionId) {
           try {
-            let user2 = await db6.query.users.findFirst({
-              where: eq8(users.stripeCustomerId, customerId)
+            let user2 = await db7.query.users.findFirst({
+              where: eq9(users.stripeCustomerId, customerId)
             });
             if (!user2) {
               console.log(`\u26A0\uFE0F User not found by Stripe customer ID ${customerId}, trying email fallback...`);
               const customer = await stripe2.customers.retrieve(customerId);
               if (customer && !customer.deleted && customer.email) {
                 console.log(`\u{1F50D} Searching for user by email: ${customer.email}`);
-                user2 = await db6.query.users.findFirst({
-                  where: eq8(users.email, customer.email)
+                user2 = await db7.query.users.findFirst({
+                  where: eq9(users.email, customer.email)
                 });
                 if (user2) {
                   console.log(`\u2705 Found user by email fallback: ${customer.email}`);
@@ -12703,7 +13016,7 @@ async function registerRoutes(app2) {
               } else if (priceId === yearlyPriceId || priceId === monthlyPriceId) {
                 console.log(`\u{1F3AF} Detected PRO PLAN subscription - setting tier to 'insider_pro'`);
               }
-              await db6.update(users).set({
+              await db7.update(users).set({
                 subscriptionTier: tier,
                 subscriptionStatus: subscription.status,
                 stripeCustomerId: customerId,
@@ -12711,7 +13024,7 @@ async function registerRoutes(app2) {
                 subscriptionStartDate: new Date(subscription.created * 1e3),
                 subscriptionEndDate: periodEnd,
                 hasUsedTrial: true
-              }).where(eq8(users.id, user2.id));
+              }).where(eq9(users.id, user2.id));
               console.log(`\u2705 [Webhook Success] User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
               console.log(`\u{1F4CA} [Webhook Success] Details: userId=${user2.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
@@ -12736,23 +13049,23 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u{1F504} Subscription updated:", subscription.id);
         try {
-          const user2 = await db6.query.users.findFirst({
-            where: eq8(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db7.query.users.findFirst({
+            where: eq9(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             if (subscription.cancel_at_period_end) {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
-              await db6.update(users).set({
+              await db7.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq8(users.id, user2.id));
+              }).where(eq9(users.id, user2.id));
               console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === "active") {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
-              await db6.update(users).set({
+              await db7.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq8(users.id, user2.id));
+              }).where(eq9(users.id, user2.id));
               console.log(`\u2705 Subscription reactivated for user ${user2.email}`);
             }
           }
@@ -12765,8 +13078,8 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u274C Subscription deleted:", subscription.id);
         try {
-          const user2 = await db6.query.users.findFirst({
-            where: eq8(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db7.query.users.findFirst({
+            where: eq9(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const periodEnd = new Date(subscription.current_period_end * 1e3);
@@ -12783,8 +13096,8 @@ async function registerRoutes(app2) {
         console.log("\u{1F4B0} Payment succeeded for invoice:", invoice.id);
         if (invoice.subscription) {
           try {
-            const user2 = await db6.query.users.findFirst({
-              where: eq8(users.stripeSubscriptionId, invoice.subscription)
+            const user2 = await db7.query.users.findFirst({
+              where: eq9(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               const subscription = await stripe2.subscriptions.retrieve(invoice.subscription);
@@ -12796,7 +13109,7 @@ async function registerRoutes(app2) {
                 updates.subscriptionStatus = "active";
                 console.log(`\u2705 Trial ended, subscription now active for user ${user2.email}`);
               }
-              await db6.update(users).set(updates).where(eq8(users.id, user2.id));
+              await db7.update(users).set(updates).where(eq9(users.id, user2.id));
               console.log(`\u{1F4B3} Renewed subscription for user ${user2.email} until ${periodEnd}`);
             }
           } catch (error) {
@@ -12810,8 +13123,8 @@ async function registerRoutes(app2) {
         console.log("\u274C Payment failed for invoice:", invoice.id);
         if (invoice.subscription) {
           try {
-            const user2 = await db6.query.users.findFirst({
-              where: eq8(users.stripeSubscriptionId, invoice.subscription)
+            const user2 = await db7.query.users.findFirst({
+              where: eq9(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               console.log(`\u26A0\uFE0F Payment failed for user ${user2.email} - Stripe will retry automatically`);
@@ -12827,8 +13140,8 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u23F0 Trial ending soon for subscription:", subscription.id);
         try {
-          const user2 = await db6.query.users.findFirst({
-            where: eq8(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db7.query.users.findFirst({
+            where: eq9(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const trialEnd = new Date(subscription.trial_end * 1e3);
@@ -12854,8 +13167,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F50D} Syncing subscription for email: ${email}`);
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12894,14 +13207,14 @@ async function registerRoutes(app2) {
       const trialEnd = activeSubscription.trial_end ? new Date(activeSubscription.trial_end * 1e3) : null;
       const isTrialing = activeSubscription.status === "trialing";
       const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
-      await db6.update(users).set({
+      await db7.update(users).set({
         stripeCustomerId: customer.id,
         stripeSubscriptionId: activeSubscription.id,
         subscriptionTier: "insider_pro",
         subscriptionStatus: activeSubscription.status,
         subscriptionEndDate,
         subscriptionStartDate: new Date(activeSubscription.created * 1e3)
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       console.log(`\u2705 Database updated for user ${email}`);
       return res.json({
         success: true,
@@ -12927,8 +13240,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/check-production-db", protectAdminEndpoint, async (req, res) => {
     try {
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, "user_1762200564967_t6whya")
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, "user_1762200564967_t6whya")
       });
       res.json({
         userFound: !!user2,
@@ -12974,8 +13287,8 @@ async function registerRoutes(app2) {
             results.skipped++;
             continue;
           }
-          const user2 = await db6.query.users.findFirst({
-            where: eq8(users.email, customer.email)
+          const user2 = await db7.query.users.findFirst({
+            where: eq9(users.email, customer.email)
           });
           if (!user2) {
             console.warn(`\u26A0\uFE0F No database user for email ${customer.email}`);
@@ -12986,14 +13299,14 @@ async function registerRoutes(app2) {
           const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1e3) : null;
           const isTrialing = subscription.status === "trialing";
           const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
-          await db6.update(users).set({
+          await db7.update(users).set({
             stripeCustomerId: customer.id,
             stripeSubscriptionId: subscription.id,
             subscriptionTier: "insider_pro",
             subscriptionStatus: subscription.status,
             subscriptionEndDate,
             subscriptionStartDate: new Date(subscription.created * 1e3)
-          }).where(eq8(users.id, user2.id));
+          }).where(eq9(users.id, user2.id));
           console.log(`\u2705 Synced ${customer.email}`);
           results.synced++;
         } catch (error) {
@@ -13038,8 +13351,8 @@ async function registerRoutes(app2) {
           message: "\uBE44\uBC00\uBC88\uD638\uB294 \uCD5C\uC18C 8\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4"
         });
       }
-      const existingUser = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const existingUser = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       if (existingUser) {
         if (existingUser.emailVerified) {
@@ -13054,11 +13367,11 @@ async function registerRoutes(app2) {
         const verificationCode2 = Math.floor(1e5 + Math.random() * 9e5).toString();
         const verificationCodeExpires2 = new Date(Date.now() + 10 * 60 * 1e3);
         console.log("\u{1F511} New verification code generated:", verificationCode2);
-        const updatedUser = await db6.update(users).set({
+        const updatedUser = await db7.update(users).set({
           password: hashedPassword2,
           verificationCode: verificationCode2,
           verificationCodeExpires: verificationCodeExpires2
-        }).where(eq8(users.email, email)).returning();
+        }).where(eq9(users.email, email)).returning();
         console.log("\u2705 User updated with new verification code:", {
           id: updatedUser[0].id,
           email: updatedUser[0].email
@@ -13085,7 +13398,7 @@ async function registerRoutes(app2) {
       const verificationCode = Math.floor(1e5 + Math.random() * 9e5).toString();
       const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1e3);
       console.log("\u{1F511} Verification code generated:", verificationCode);
-      const newUser = await db6.insert(users).values({
+      const newUser = await db7.insert(users).values({
         id: `user_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         email,
         password: hashedPassword,
@@ -13135,8 +13448,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uACFC \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email}, ID: ${user2.id})` : "No");
       if (user2) {
@@ -13183,7 +13496,7 @@ async function registerRoutes(app2) {
         const clientIP = ipGeolocationService.getClientIP(req);
         const locationData = await ipGeolocationService.getLocation(clientIP);
         if (locationData) {
-          await db6.insert(userSessions).values({
+          await db7.insert(userSessions).values({
             userId: user2.id,
             ipAddress: clientIP,
             country: locationData.country,
@@ -13231,8 +13544,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       if (!user2) {
         console.log("\u26A0\uFE0F User not found, but returning success for security");
@@ -13248,10 +13561,10 @@ async function registerRoutes(app2) {
       );
       const resetExpires = new Date(Date.now() + 60 * 60 * 1e3);
       console.log("\u{1F4BE} Saving reset token to database...");
-      await db6.update(users).set({
+      await db7.update(users).set({
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       console.log("\u2705 Reset token saved to database");
       try {
         console.log("\u{1F4E7} Attempting to send password reset email...");
@@ -13304,8 +13617,8 @@ async function registerRoutes(app2) {
           message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uAC70\uB098 \uB9CC\uB8CC\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, decoded.email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, decoded.email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -13326,11 +13639,11 @@ async function registerRoutes(app2) {
         });
       }
       const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-      await db6.update(users).set({
+      await db7.update(users).set({
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       console.log("\u2705 Password reset successful for:", decoded.email);
       res.json({
         success: true,
@@ -13368,16 +13681,16 @@ async function registerRoutes(app2) {
         });
       }
       console.log("\u{1F50D} Looking for user with email:", decoded.email);
-      const user2 = await db6.query.users.findFirst({
-        where: and6(
-          eq8(users.email, decoded.email),
-          eq8(users.verificationToken, token)
+      const user2 = await db7.query.users.findFirst({
+        where: and7(
+          eq9(users.email, decoded.email),
+          eq9(users.verificationToken, token)
         )
       });
       if (!user2) {
         console.log("\u274C User not found with email and token combo");
-        const userByEmail = await db6.query.users.findFirst({
-          where: eq8(users.email, decoded.email)
+        const userByEmail = await db7.query.users.findFirst({
+          where: eq9(users.email, decoded.email)
         });
         if (userByEmail) {
           console.log("\u26A0\uFE0F User exists but token mismatch");
@@ -13406,11 +13719,11 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D \uB9C1\uD06C\uAC00 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uC6B4 \uC778\uC99D \uB9C1\uD06C\uB97C \uC694\uCCAD\uD574\uC8FC\uC138\uC694"
         });
       }
-      await db6.update(users).set({
+      await db7.update(users).set({
         emailVerified: true,
         verificationToken: null,
         verificationTokenExpires: null
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       console.log("\u2705 Email verified successfully for:", user2.email);
       res.json({
         success: true,
@@ -13434,8 +13747,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uACFC \uC778\uC99D \uCF54\uB4DC\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -13466,11 +13779,11 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D \uCF54\uB4DC\uAC00 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uC6B4 \uCF54\uB4DC\uB97C \uC694\uCCAD\uD574\uC8FC\uC138\uC694"
         });
       }
-      await db6.update(users).set({
+      await db7.update(users).set({
         emailVerified: true,
         verificationCode: null,
         verificationCodeExpires: null
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       console.log("\u2705 Email verified successfully with code:", email);
       res.json({
         success: true,
@@ -13494,8 +13807,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.email, email)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -13514,10 +13827,10 @@ async function registerRoutes(app2) {
       }
       const verificationCode = Math.floor(1e5 + Math.random() * 9e5).toString();
       const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1e3);
-      await db6.update(users).set({
+      await db7.update(users).set({
         verificationCode,
         verificationCodeExpires
-      }).where(eq8(users.id, user2.id));
+      }).where(eq9(users.id, user2.id));
       try {
         await emailNotificationService.sendVerificationCode(email, verificationCode);
         console.log("\u{1F4E7} New verification code sent to:", email);
@@ -13549,8 +13862,8 @@ async function registerRoutes(app2) {
       }
       const decoded = jwt2.verify(token, JWT_SECRET);
       console.log(`\u{1F510} [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, decoded.userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, decoded.userId)
       });
       if (!user2) {
         console.log(`\u274C [/api/auth/verify] User not found for userId: ${decoded.userId}`);
@@ -13662,8 +13975,8 @@ async function registerRoutes(app2) {
       const stockPriceMap = /* @__PURE__ */ new Map();
       if (uniqueTickers.length > 0) {
         try {
-          const prices = await db6.query.stockPrices.findMany({
-            where: (stockPrices2, { inArray: inArray3 }) => inArray3(stockPrices2.ticker, uniqueTickers),
+          const prices = await db7.query.stockPrices.findMany({
+            where: (stockPrices2, { inArray: inArray4 }) => inArray4(stockPrices2.ticker, uniqueTickers),
             columns: {
               ticker: true,
               currentPrice: true,
@@ -13795,8 +14108,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F4B3} Creating SetupIntent for trial user: ${userId}`);
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -13843,7 +14156,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db6.update(users).set({ stripeCustomerId: customerId }).where(eq8(users.id, userId));
+        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
         console.log(`\u2705 Created Stripe customer for user ${userId}: ${customerId}`);
       }
       const setupIntent = await stripe2.setupIntents.create({
@@ -13891,8 +14204,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F3AF} Activating trial with card for user: ${userId}, plan: ${planType}`);
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -13947,7 +14260,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db6.update(users).set({ stripeCustomerId: customerId }).where(eq8(users.id, userId));
+        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
         console.log(`\u2705 Created Stripe customer: ${customerId}`);
       }
       await stripe2.paymentMethods.attach(paymentMethodId, {
@@ -13977,7 +14290,7 @@ async function registerRoutes(app2) {
       console.log(`\u2705 Created Stripe subscription with immediate billing: ${subscription.id}`);
       const subscriptionStart = /* @__PURE__ */ new Date();
       const subscriptionEnd = new Date(subscription.current_period_end * 1e3);
-      await db6.update(users).set({
+      await db7.update(users).set({
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         subscriptionTier: "insider_pro",
@@ -13987,7 +14300,7 @@ async function registerRoutes(app2) {
         subscriptionEndDate: subscriptionEnd,
         hasUsedTrial: false
         // No trial used - immediate billing
-      }).where(eq8(users.id, userId));
+      }).where(eq9(users.id, userId));
       console.log(`\u2705 Subscription created for user ${userId} - billing immediately`);
       const subscriptionMessage = "\uAD6C\uB3C5\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uACB0\uC81C \uC644\uB8CC \uD6C4 \uC989\uC2DC \uD504\uB9AC\uBBF8\uC5C4 \uAE30\uB2A5\uC744 \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
       res.json({
@@ -14018,8 +14331,8 @@ async function registerRoutes(app2) {
       console.log(`\u{1F511} [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
       const isAppintos = isAppintosEnvironment2(req);
       const accessLevel = await subscriptionService.getUserAccessLevel(userId, isAppintos);
-      const user2 = await db6.query.users.findFirst({
-        where: eq8(users.id, userId)
+      const user2 = await db7.query.users.findFirst({
+        where: eq9(users.id, userId)
       });
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
@@ -14201,7 +14514,7 @@ async function registerRoutes(app2) {
     try {
       const tradeId = req.params.id;
       const language = req.query.language || "en";
-      const tradeResults = await db6.select({
+      const tradeResults = await db7.select({
         id: insiderTrades.id,
         ticker: insiderTrades.ticker,
         companyName: insiderTrades.companyName,
@@ -14215,7 +14528,7 @@ async function registerRoutes(app2) {
         transactionDate: insiderTrades.transactionDate,
         comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
         analysisGeneratedAt: insiderTrades.analysisGeneratedAt
-      }).from(insiderTrades).where(eq8(insiderTrades.id, tradeId)).limit(1);
+      }).from(insiderTrades).where(eq9(insiderTrades.id, tradeId)).limit(1);
       if (!tradeResults || tradeResults.length === 0) {
         return res.status(404).json({
           error: "TRADE_NOT_FOUND",
@@ -14392,10 +14705,10 @@ async function registerRoutes(app2) {
         [language]: localizedAnalysis
       };
       try {
-        await db6.update(insiderTrades).set({
+        await db7.update(insiderTrades).set({
           comprehensiveAnalysis: updatedCache,
           analysisGeneratedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(insiderTrades.id, tradeId));
+        }).where(eq9(insiderTrades.id, tradeId));
         console.log(`\u{1F4BE} Cached analysis for languages: ${Object.keys(updatedCache).join(", ")}`);
       } catch (cacheError) {
         console.error("\u26A0\uFE0F Cache save failed:", cacheError);
@@ -14909,8 +15222,8 @@ async function registerRoutes(app2) {
       const uniqueTickers = Array.from(tickerMetrics.keys());
       const stockPriceMap = /* @__PURE__ */ new Map();
       if (uniqueTickers.length > 0) {
-        const prices = await db6.query.stockPrices.findMany({
-          where: (stockPrices2, { inArray: inArray3 }) => inArray3(stockPrices2.ticker, uniqueTickers),
+        const prices = await db7.query.stockPrices.findMany({
+          where: (stockPrices2, { inArray: inArray4 }) => inArray4(stockPrices2.ticker, uniqueTickers),
           columns: {
             ticker: true,
             currentPrice: true,
@@ -15212,16 +15525,16 @@ async function registerRoutes(app2) {
       const cachedAnalyses = /* @__PURE__ */ new Map();
       if (rankingTickers.length > 0) {
         try {
-          const analysisResults = await db6.select({
+          const analysisResults = await db7.select({
             ticker: insiderTrades.ticker,
             comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
             analysisGeneratedAt: insiderTrades.analysisGeneratedAt
           }).from(insiderTrades).where(
-            and6(
-              inArray2(insiderTrades.ticker, rankingTickers),
+            and7(
+              inArray3(insiderTrades.ticker, rankingTickers),
               isNotNull(insiderTrades.comprehensiveAnalysis)
             )
-          ).orderBy(desc3(insiderTrades.analysisGeneratedAt));
+          ).orderBy(desc4(insiderTrades.analysisGeneratedAt));
           for (const result of analysisResults) {
             if (result.ticker && !cachedAnalyses.has(result.ticker)) {
               cachedAnalyses.set(result.ticker, result.comprehensiveAnalysis);
@@ -15268,13 +15581,61 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to generate stock rankings" });
     }
   });
+  app2.get("/api/rankings/historical-performance", async (req, res) => {
+    try {
+      const monthsAgo = parseInt(req.query.monthsAgo) || 1;
+      if (monthsAgo !== 1 && monthsAgo !== 3) {
+        return res.status(400).json({
+          error: "Invalid monthsAgo parameter. Must be 1 or 3."
+        });
+      }
+      console.log(`[Rankings] Fetching historical performance for ${monthsAgo} month(s) ago...`);
+      const performance = await pastPerformanceService.getHistoricalPerformance(monthsAgo);
+      return res.json(performance);
+    } catch (error) {
+      console.error("[Rankings] Error fetching historical performance:", error);
+      return res.status(500).json({
+        error: "Failed to fetch historical performance",
+        dataAvailable: false
+      });
+    }
+  });
+  app2.post("/api/rankings/capture-snapshot", async (req, res) => {
+    try {
+      console.log("[Rankings] Manual snapshot capture requested...");
+      const rankingsResponse = await fetch(`http://localhost:${process.env.PORT || 5e3}/api/rankings?limit=10`);
+      const rankingsData = await rankingsResponse.json();
+      if (!rankingsData.rankings || !Array.isArray(rankingsData.rankings)) {
+        return res.status(500).json({ error: "Failed to get current rankings" });
+      }
+      const snapshotData = rankingsData.rankings.map((r) => ({
+        ticker: r.ticker,
+        companyName: r.companyName,
+        score: r.score,
+        avgTradeValue: r.avgTradeValue || 0,
+        netBuying: r.netBuying || 0,
+        marketCap: r.marketCap || null,
+        uniqueInsiders: r.uniqueInsiders || 0,
+        recommendation: r.recommendation || "HOLD"
+      }));
+      await pastPerformanceService.captureRankingSnapshot(snapshotData);
+      return res.json({
+        success: true,
+        message: `Snapshot captured for ${snapshotData.length} stocks`,
+        date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+      });
+    } catch (error) {
+      console.error("[Rankings] Error capturing snapshot:", error);
+      return res.status(500).json({ error: "Failed to capture snapshot" });
+    }
+  });
   app2.get("/api/rankings/tickers", async (req, res) => {
     try {
       console.log("\u{1F3AF} Fetching ranking tickers for AI analysis eligibility check...");
       const thirtyDaysAgo = /* @__PURE__ */ new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const recentTrades = await db6.query.insiderTrades.findMany({
-        where: (trades, { gte: gte3 }) => gte3(trades.filedDate, thirtyDaysAgo)
+      const recentTrades = await db7.query.insiderTrades.findMany({
+        where: (trades, { gte: gte4 }) => gte4(trades.filedDate, thirtyDaysAgo)
       });
       console.log(`\u{1F4CA} Found ${recentTrades.length} trades in last 30 days for ticker extraction`);
       const stockMap = /* @__PURE__ */ new Map();
@@ -16410,8 +16771,8 @@ async function registerRoutes(app2) {
 async function debugMarketCapStatus() {
   try {
     console.log("\n\u{1F50D} ===== MarketCap Debug Info =====");
-    const { sql: sql5 } = await import("drizzle-orm");
-    const result = await db6.execute(sql5`
+    const { sql: sql6 } = await import("drizzle-orm");
+    const result = await db7.execute(sql6`
       SELECT
         COUNT(*) as total,
         COUNT(CASE WHEN market_cap IS NOT NULL THEN 1 END) as with_marketcap,
@@ -16438,7 +16799,7 @@ function broadcastUpdate(type, data) {
     });
   }
 }
-var db6, stripe2, openai2, sectorCache, SECTOR_CACHE_TTL, finnhubRequestQueue, finnhubActiveRequests, FINNHUB_MAX_CONCURRENT, FINNHUB_REQUEST_DELAY, rankingTickersCache, RANKING_CACHE_TTL, wss;
+var db7, stripe2, openai2, sectorCache, SECTOR_CACHE_TTL, finnhubRequestQueue, finnhubActiveRequests, FINNHUB_MAX_CONCURRENT, FINNHUB_REQUEST_DELAY, rankingTickersCache, RANKING_CACHE_TTL, wss, COUNTRY_LANGUAGE_MAP;
 var init_routes = __esm({
   "server/routes.ts"() {
     "use strict";
@@ -16463,11 +16824,12 @@ var init_routes = __esm({
     init_data_integrity_service();
     init_subscription_service();
     init_exchange_rate_service();
+    init_past_performance_service();
     init_();
     init_2();
     init_3();
     init_4();
-    db6 = drizzle6(process.env.DATABASE_URL, { schema: schema_exports });
+    db7 = drizzle7(process.env.DATABASE_URL, { schema: schema_exports });
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
     }
@@ -16483,6 +16845,18 @@ var init_routes = __esm({
     FINNHUB_REQUEST_DELAY = 1100;
     rankingTickersCache = null;
     RANKING_CACHE_TTL = 5 * 60 * 1e3;
+    COUNTRY_LANGUAGE_MAP = {
+      "KR": "ko",
+      // South Korea
+      "JP": "ja",
+      // Japan
+      "CN": "zh",
+      // China
+      "TW": "zh",
+      // Taiwan
+      "HK": "zh"
+      // Hong Kong
+    };
   }
 });
 
@@ -18034,20 +18408,21 @@ var init_crash_prevention_system = __esm({
 var cron_jobs_exports = {};
 __export(cron_jobs_exports, {
   startAllCronJobs: () => startAllCronJobs,
+  startRankingSnapshotJob: () => startRankingSnapshotJob,
   startSubscriptionExpirationCheckJob: () => startSubscriptionExpirationCheckJob,
   startSubscriptionSyncJob: () => startSubscriptionSyncJob,
   startTrialExpirationCheckJob: () => startTrialExpirationCheckJob
 });
 import cron from "node-cron";
 import Stripe3 from "stripe";
-import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
-import { eq as eq9 } from "drizzle-orm";
+import { drizzle as drizzle8 } from "drizzle-orm/neon-http";
+import { eq as eq10 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
     try {
-      const insiderProUsers = await db7.query.users.findMany({
-        where: eq9(users.subscriptionTier, "insider_pro")
+      const insiderProUsers = await db8.query.users.findMany({
+        where: eq10(users.subscriptionTier, "insider_pro")
       });
       console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
       let syncedCount = 0;
@@ -18075,10 +18450,10 @@ function startSubscriptionSyncJob() {
               dbStatus = "active";
               console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
             }
-            await db7.update(users).set({
+            await db8.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq9(users.id, user2.id));
+            }).where(eq10(users.id, user2.id));
             console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
             syncedCount++;
           } else if (dbStatusMismatch || dbEndDateMismatch) {
@@ -18089,10 +18464,10 @@ function startSubscriptionSyncJob() {
               dbStatus = "active";
               console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
             }
-            await db7.update(users).set({
+            await db8.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq9(users.id, user2.id));
+            }).where(eq10(users.id, user2.id));
             syncedCount++;
           } else {
             console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
@@ -18119,9 +18494,9 @@ function startTrialExpirationCheckJob() {
     console.log("[Cron] Checking for expired trials...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredTrialUsers = await db7.query.users.findMany({
-        where: (users3, { and: and7, lt, eq: eq10, isNotNull: isNotNull2 }) => and7(
-          eq10(users3.subscriptionStatus, "trialing"),
+      const expiredTrialUsers = await db8.query.users.findMany({
+        where: (users3, { and: and8, lt, eq: eq11, isNotNull: isNotNull2 }) => and8(
+          eq11(users3.subscriptionStatus, "trialing"),
           isNotNull2(users3.trialExpiresAt),
           lt(users3.trialExpiresAt, now)
         )
@@ -18129,9 +18504,9 @@ function startTrialExpirationCheckJob() {
       if (expiredTrialUsers.length > 0) {
         console.log(`[Cron] Found ${expiredTrialUsers.length} expired trials`);
         for (const user2 of expiredTrialUsers) {
-          await db7.update(users).set({
+          await db8.update(users).set({
             subscriptionStatus: "inactive"
-          }).where(eq9(users.id, user2.id));
+          }).where(eq10(users.id, user2.id));
           console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
         }
       }
@@ -18148,9 +18523,9 @@ function startSubscriptionExpirationCheckJob() {
     console.log("[Cron] Checking for expired subscriptions...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredSubscriptions = await db7.query.users.findMany({
-        where: (users3, { and: and7, eq: eq10, isNotNull: isNotNull2, lt }) => and7(
-          eq10(users3.subscriptionStatus, "active"),
+      const expiredSubscriptions = await db8.query.users.findMany({
+        where: (users3, { and: and8, eq: eq11, isNotNull: isNotNull2, lt }) => and8(
+          eq11(users3.subscriptionStatus, "active"),
           isNotNull2(users3.subscriptionEndDate),
           lt(users3.subscriptionEndDate, now)
         ),
@@ -18161,9 +18536,9 @@ function startSubscriptionExpirationCheckJob() {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
         for (const user2 of expiredSubscriptions) {
           try {
-            await db7.update(users).set({
+            await db8.update(users).set({
               subscriptionStatus: "inactive"
-            }).where(eq9(users.id, user2.id));
+            }).where(eq10(users.id, user2.id));
             console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
           } catch (updateError) {
             console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);
@@ -18179,19 +18554,39 @@ function startSubscriptionExpirationCheckJob() {
   });
   console.log("\u2705 Subscription expiration check cron job scheduled (hourly at :30)");
 }
+function startRankingSnapshotJob() {
+  cron.schedule("0 5 * * *", async () => {
+    console.log("[Cron] Capturing daily ranking snapshot...");
+    try {
+      const response = await fetch(`http://localhost:${process.env.PORT || 5e3}/api/rankings/capture-snapshot`, {
+        method: "POST"
+      });
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`[Cron] \u2705 Ranking snapshot captured: ${result.message}`);
+      } else {
+        console.error(`[Cron] \u274C Failed to capture ranking snapshot: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("[Cron] Error capturing ranking snapshot:", error);
+    }
+  });
+  console.log("\u2705 Ranking snapshot cron job scheduled (daily at midnight ET)");
+}
 function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
   startSubscriptionExpirationCheckJob();
+  startRankingSnapshotJob();
   console.log("\u{1F550} All cron jobs started");
 }
-var db7, stripe3;
+var db8, stripe3;
 var init_cron_jobs = __esm({
   "server/cron-jobs.ts"() {
     "use strict";
     init_schema();
     init_schema();
-    db7 = drizzle7(process.env.DATABASE_URL, { schema: schema_exports });
+    db8 = drizzle8(process.env.DATABASE_URL, { schema: schema_exports });
     stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2024-11-20.acacia"
     });

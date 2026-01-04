@@ -231,11 +231,42 @@ export function startSubscriptionExpirationCheckJob() {
 }
 
 /**
+ * Capture daily ranking snapshot for historical performance tracking
+ * Runs daily at midnight ET (5 AM UTC)
+ */
+export function startRankingSnapshotJob() {
+  // Run every day at midnight ET (5 AM UTC)
+  cron.schedule("0 5 * * *", async () => {
+    console.log("[Cron] Capturing daily ranking snapshot...");
+
+    try {
+      // Call the snapshot capture endpoint
+      const response = await fetch(`http://localhost:${process.env.PORT || 5000}/api/rankings/capture-snapshot`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`[Cron] ✅ Ranking snapshot captured: ${result.message}`);
+      } else {
+        console.error(`[Cron] ❌ Failed to capture ranking snapshot: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("[Cron] Error capturing ranking snapshot:", error);
+      // Don't throw - let the cron job continue for next run
+    }
+  });
+
+  console.log("✅ Ranking snapshot cron job scheduled (daily at midnight ET)");
+}
+
+/**
  * Start all cron jobs
  */
 export function startAllCronJobs() {
   startSubscriptionSyncJob();
   startTrialExpirationCheckJob();
   startSubscriptionExpirationCheckJob();
+  startRankingSnapshotJob();
   console.log("🕐 All cron jobs started");
 }

@@ -19,6 +19,7 @@ import { ENV_CONFIG } from '@/lib/environment';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { DebugPanel } from '@/components/debug-panel';
 import { useAdOnNavigation } from '@/hooks/use-admob';
+import { PastPerformanceSection } from '@/components/past-performance-section';
 
 // Global cache for AI analysis - shared across all users/sessions
 const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
@@ -529,6 +530,9 @@ export default function Ranking() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6">
+
+      {/* Past Performance Section - FOMO driver for free users */}
+      <PastPerformanceSection className="mb-2" />
 
       {/* Last Updated */}
       {data && (

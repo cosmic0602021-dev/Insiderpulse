@@ -12,7 +12,7 @@ import { AdMobProvider } from "@/contexts/admob-context";
 import { ENV_CONFIG } from "@/lib/environment";
 import { useState, useEffect } from "react";
 import { Globe, Shield, ShieldCheck, Menu, X } from 'lucide-react';
-import LanguageSelection from "@/pages/language-selection";
+// LanguageSelection removed - now using automatic IP-based language detection
 import { CurrencySelector } from "@/components/currency-selector";
 import Dashboard from "@/pages/dashboard";
 import Settings from "@/pages/settings";
@@ -90,9 +90,8 @@ function AppRouter() {
 }
 
 function AppContent() {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, hasInitialized } = useLanguage();
   const { user, isAuthenticated, logout, openAuthModal } = useAuth();
-  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
   const [location, setLocation] = useLocation();
   const [activeView, setActiveView] = useState<View>(View.LIVE_TRADING);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -111,15 +110,6 @@ function AppContent() {
     { code: 'ja', label: '日本語' },
     { code: 'zh', label: '中文' },
   ];
-
-  useEffect(() => {
-    const languageSelected = localStorage.getItem('language-selected');
-    const savedLanguage = localStorage.getItem('language');
-
-    if (languageSelected === 'true' || savedLanguage) {
-      setHasSelectedLanguage(true);
-    }
-  }, []);
 
   // Map View to route paths
   const handleViewChange = (view: View) => {
@@ -173,8 +163,16 @@ function AppContent() {
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location);
 
-  if (!hasSelectedLanguage && !isPublicRoute) {
-    return <LanguageSelection onLanguageSelected={() => setHasSelectedLanguage(true)} />;
+  // Show loading while language is being detected via IP
+  if (!hasInitialized && !isPublicRoute) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#050505]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-neutral-600 border-t-emerald-500 rounded-full animate-spin" />
+          <div className="text-neutral-500 text-sm tracking-wider">INITIALIZING...</div>
+        </div>
+      </div>
+    );
   }
 
   if (isPublicRoute) {

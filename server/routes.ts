@@ -34,6 +34,7 @@ import { insiderCredibilityService } from "./insider-credibility-service";
 import { dataIntegrityService } from "./data-integrity-service";
 import { subscriptionService } from "./subscription-service";
 import { exchangeRateService } from "./exchange-rate-service";
+import { pastPerformanceService } from "./past-performance-service";
 
 // Initialize database
 const db = drizzle(process.env.DATABASE_URL!, { schema });
@@ -369,9 +370,55 @@ async function fetchRankingTickers(): Promise<string[]> {
 // Global WebSocket server for real-time updates
 let wss: WebSocketServer;
 
+// Country to language mapping for auto-detection
+const COUNTRY_LANGUAGE_MAP: Record<string, 'en' | 'ko' | 'ja' | 'zh'> = {
+  'KR': 'ko',  // South Korea
+  'JP': 'ja',  // Japan
+  'CN': 'zh',  // China
+  'TW': 'zh',  // Taiwan
+  'HK': 'zh',  // Hong Kong
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // 🌐 Language detection endpoint - detect user's language based on IP geolocation
+  app.get("/api/detect-language", async (req, res) => {
+    try {
+      const clientIP = ipGeolocationService.getClientIP(req);
+      const location = await ipGeolocationService.getLocation(clientIP);
+
+      if (!location) {
+        return res.json({
+          language: 'en',
+          country: 'UNKNOWN',
+          countryName: 'Unknown',
+          source: 'fallback'
+        });
+      }
+
+      const language = COUNTRY_LANGUAGE_MAP[location.country] || 'en';
+
+      console.log(`[detect-language] IP: ${clientIP}, Country: ${location.country} (${location.countryName}) -> Language: ${language}`);
+
+      return res.json({
+        language,
+        country: location.country,
+        countryName: location.countryName,
+        source: 'ip'
+      });
+    } catch (error) {
+      console.error('[detect-language] Error:', error);
+      return res.json({
+        language: 'en',
+        country: 'ERROR',
+        countryName: 'Error',
+        source: 'fallback'
+      });
+    }
+  });
+
   // 💳 STRIPE PAYMENT ENDPOINTS FOR REAL CARD PROCESSING
-  
+
   // Create payment intent for one-time premium features
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
@@ -4818,6 +4865,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating rankings:', error);
       res.status(500).json({ error: 'Failed to generate stock rankings' });
+    }
+  });
+
+  // Historical performance endpoint - shows past recommendation performance
+  app.get('/api/rankings/historical-performance', async (req, res) => {
+    try {
+      const monthsAgo = parseInt(req.query.monthsAgo as string) || 1;
+
+      // Validate monthsAgo parameter
+      if (monthsAgo !== 1 && monthsAgo !== 3) {
+        return res.status(400).json({
+          error: 'Invalid monthsAgo parameter. Must be 1 or 3.'
+        });
+      }
+
+      console.log(`[Rankings] Fetching historical performance for ${monthsAgo} month(s) ago...`);
+
+      const performance = await pastPerformanceService.getHistoricalPerformance(monthsAgo as 1 | 3);
+
+      return res.json(performance);
+    } catch (error) {
+      console.error('[Rankings] Error fetching historical performance:', error);
+      return res.status(500).json({
+        error: 'Failed to fetch historical performance',
+        dataAvailable: false
+      });
+    }
+  });
+
+  // Capture ranking snapshot (called by cron or manually)
+  app.post('/api/rankings/capture-snapshot', async (req, res) => {
+    try {
+      // Optional: Add admin authentication here
+      console.log('[Rankings] Manual snapshot capture requested...');
+
+      // Get current rankings
+      const rankingsResponse = await fetch(`http://localhost:${process.env.PORT || 5000}/api/rankings?limit=10`);
+      const rankingsData = await rankingsResponse.json();
+
+      if (!rankingsData.rankings || !Array.isArray(rankingsData.rankings)) {
+        return res.status(500).json({ error: 'Failed to get current rankings' });
+      }
+
+      // Transform to snapshot format
+      const snapshotData = rankingsData.rankings.map((r: any) => ({
+        ticker: r.ticker,
+        companyName: r.companyName,
+        score: r.score,
+        avgTradeValue: r.avgTradeValue || 0,
+        netBuying: r.netBuying || 0,
+        marketCap: r.marketCap || null,
+        uniqueInsiders: r.uniqueInsiders || 0,
+        recommendation: r.recommendation || 'HOLD',
+      }));
+
+      await pastPerformanceService.captureRankingSnapshot(snapshotData);
+
+      return res.json({
+        success: true,
+        message: `Snapshot captured for ${snapshotData.length} stocks`,
+        date: new Date().toISOString().split('T')[0]
+      });
+    } catch (error) {
+      console.error('[Rankings] Error capturing snapshot:', error);
+      return res.status(500).json({ error: 'Failed to capture snapshot' });
     }
   });
 

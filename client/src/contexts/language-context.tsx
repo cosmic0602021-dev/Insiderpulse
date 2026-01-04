@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { resolveApiUrl } from '@/lib/queryClient';
 
 export type Language = 'en' | 'ko' | 'ja' | 'zh';
 
@@ -6,6 +7,8 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  isDetecting: boolean;
+  hasInitialized: boolean;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -1184,7 +1187,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Transaction Filter
     'transactionFilter.coreOnly': 'Core Trades Only',
-    'transactionFilter.allTrades': 'All Trades (Advanced)',
+    'transactionFilter.allTrades': 'All Trades',
     'transactionFilter.helpModalTitle': 'Filter Explanation',
     'transactionFilter.coreOnlyDescription': 'Shows only trades where insiders used their own money to buy, or intentionally decided to sell. These are considered the most meaningful signals.',
     'transactionFilter.allTradesDescription': 'Shows all transaction types including option exercises, automatic sales (10b5-1), RSU vesting, bond conversions, and other derivative/compensation-based trades. Advanced users only.',
@@ -2117,7 +2120,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Transaction Filter
     'transactionFilter.coreOnly': '핵심 거래만 보기',
-    'transactionFilter.allTrades': '전체 거래 보기 (고급)',
+    'transactionFilter.allTrades': '전체 거래',
     'transactionFilter.helpModalTitle': '필터 설명',
     'transactionFilter.coreOnlyDescription': '내부자가 자기 자금으로 실제로 매수하거나, 의도적으로 매도한 거래만 보여줍니다. 이런 거래가 "진짜 신호"로 가장 많이 활용됩니다.',
     'transactionFilter.allTradesDescription': '옵션 행사, 자동 매도(10b5-1), 보상성 주식(RSU), 채권 전환 등 다양한 파생·보상 거래까지 모두 보여줍니다. 전문가용이며 복잡한 정보가 포함됩니다.',
@@ -2918,7 +2921,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Transaction Filter
     'transactionFilter.coreOnly': 'コア取引のみ',
-    'transactionFilter.allTrades': '全取引（上級）',
+    'transactionFilter.allTrades': '全取引',
     'transactionFilter.helpModalTitle': 'フィルター説明',
     'transactionFilter.coreOnlyDescription': 'インサイダーが自己資金で実際に購入したり、意図的に売却した取引のみを表示します。これらは「本当のシグナル」として最も活用されます。',
     'transactionFilter.allTradesDescription': 'オプション行使、自動売却(10b5-1)、RSU付与、債券転換など、様々なデリバティブ・報酬取引まで全て表示します。上級者向けで複雑な情報が含まれます。',
@@ -3719,7 +3722,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Transaction Filter
     'transactionFilter.coreOnly': '仅核心交易',
-    'transactionFilter.allTrades': '全部交易（高级）',
+    'transactionFilter.allTrades': '全部交易',
     'transactionFilter.helpModalTitle': '筛选器说明',
     'transactionFilter.coreOnlyDescription': '仅显示内部人员用自己的资金实际购买或有意出售的交易。这些被视为"真实信号"，最常被使用。',
     'transactionFilter.allTradesDescription': '显示所有交易类型，包括期权行使、自动出售(10b5-1)、RSU归属、债券转换等各种衍生品/补偿性交易。仅供高级用户使用，包含复杂信息。',
@@ -3732,51 +3735,96 @@ const translations: Record<Language, Record<string, string>> = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Helper function to detect browser language
+function detectBrowserLanguage(): Language {
+  try {
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith('ko')) return 'ko';
+    if (browserLang.startsWith('ja')) return 'ja';
+    if (browserLang.startsWith('zh')) return 'zh';
+  } catch (error) {
+    console.error('Browser language detection error:', error);
+  }
+  return 'en';
+}
+
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    // SSR 환경에서는 기본값 반환
-    if (typeof window === 'undefined') {
-      return 'en';
-    }
+  const [language, setLanguage] = useState<Language>('en');
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-    // 초기값을 결정하는 함수
-    try {
-      // localStorage에서 언어 가져오기
-      const savedLanguage = localStorage.getItem('language') as Language;
-
-      // 유효한 언어인지 확인
-      if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
-        console.log('🌍 Using saved language preference:', savedLanguage);
-        // Mark language as selected to skip language selection screen
-        localStorage.setItem('language-selected', 'true');
-        return savedLanguage;
+  // Initialize language on mount - check localStorage or detect via IP
+  useEffect(() => {
+    const initLanguage = async () => {
+      // SSR check
+      if (typeof window === 'undefined') {
+        setHasInitialized(true);
+        return;
       }
 
-      // 브라우저 언어 감지
-      const browserLang = navigator.language.toLowerCase();
-      console.log('🌍 Detecting browser language:', browserLang);
+      try {
+        // Check if already has saved language
+        const savedLanguage = localStorage.getItem('language') as Language;
+        const languageSelected = localStorage.getItem('language-selected');
 
-      let detectedLang: Language = 'en';
-      if (browserLang.startsWith('ko')) detectedLang = 'ko';
-      else if (browserLang.startsWith('ja')) detectedLang = 'ja';
-      else if (browserLang.startsWith('zh')) detectedLang = 'zh';
+        if (savedLanguage && languageSelected === 'true' && Object.keys(translations).includes(savedLanguage)) {
+          console.log('🌍 Using saved language preference:', savedLanguage);
+          setLanguage(savedLanguage);
+          setHasInitialized(true);
+          return;
+        }
 
-      // Save detected language and mark as selected
-      localStorage.setItem('language', detectedLang);
-      localStorage.setItem('language-selected', 'true');
+        // No saved language - detect by IP
+        console.log('🌍 No saved language, detecting by IP...');
+        setIsDetecting(true);
 
-      return detectedLang;
-    } catch (error) {
-      console.error('Language initialization error:', error);
-      return 'en'; // 에러 발생 시 영어로 기본 설정
-    }
-  });
+        try {
+          const response = await fetch(resolveApiUrl('/api/detect-language'), {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const detectedLang = data.language as Language;
+
+            console.log(`🌍 IP-based language detection: ${detectedLang} (country: ${data.country}, source: ${data.source})`);
+
+            setLanguage(detectedLang);
+            localStorage.setItem('language', detectedLang);
+            localStorage.setItem('language-selected', 'true');
+            localStorage.setItem('language-source', data.source);
+          } else {
+            throw new Error('API response not ok');
+          }
+        } catch (apiError) {
+          // Fallback to browser language detection
+          console.warn('🌍 IP detection failed, falling back to browser language:', apiError);
+          const browserLang = detectBrowserLanguage();
+
+          setLanguage(browserLang);
+          localStorage.setItem('language', browserLang);
+          localStorage.setItem('language-selected', 'true');
+          localStorage.setItem('language-source', 'browser');
+        }
+      } catch (error) {
+        console.error('Language initialization error:', error);
+        setLanguage('en');
+      } finally {
+        setIsDetecting(false);
+        setHasInitialized(true);
+      }
+    };
+
+    initLanguage();
+  }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
     // Only access localStorage in browser environment
     if (typeof window !== 'undefined') {
       localStorage.setItem('language', lang);
+      localStorage.setItem('language-selected', 'true');
     }
   };
 
@@ -3803,7 +3851,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, isDetecting, hasInitialized }}>
       {children}
     </LanguageContext.Provider>
   );

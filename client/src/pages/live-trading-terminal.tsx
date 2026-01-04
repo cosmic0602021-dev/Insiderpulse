@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 'lucide-react';
+import { Search, Lock, Clock, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 'lucide-react';
 import { TRANSLATIONS, formatNumber, formatPercent, type Language } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
 import type { InsiderTrade } from '@shared/schema';
@@ -11,7 +11,6 @@ import { useLanguage } from '@/contexts/language-context';
 import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLocation } from 'wouter';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
-import { CurrencySelector } from '@/components/currency-selector';
 import { TransactionTypeFilter } from '@/components/transaction-type-filter';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
@@ -292,19 +291,6 @@ export default function LiveTradingTerminal() {
                 </>
               )}
             </p>
-          </div>
-          <div className="flex gap-3 items-center self-end">
-            <span className="text-[10px] text-neutral-600 font-mono uppercase tracking-wider">
-              {language === 'ko' ? '업데이트됨' : language === 'ja' ? '更新' : language === 'zh' ? '更新时间' : 'UPDATED'}: {new Date().toLocaleTimeString(language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-            <CurrencySelector />
-            <button
-              className="p-2 border border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 transition-colors bg-neutral-900/30"
-              onClick={() => refetch()}
-              data-testid="button-refresh"
-            >
-              <Download size={14} />
-            </button>
           </div>
         </div>
 

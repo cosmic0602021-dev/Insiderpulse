@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
 import { notifyManager, isServer, QueryObserver, MutationObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
-import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, Check, ChevronDown, ChevronUp, HelpCircle, BellOff, Newspaper, CheckCircle, ExternalLink, Brain, Target, Info, TrendingUp, TrendingDown, BarChart3, Clock, Search, AlertTriangle, Lock, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, FileText, Terminal, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, ScanLine, Eye, Users, Share, MoreVertical, BellRing, Trash2, Menu } from "lucide-react";
+import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, ChevronDown, ChevronUp, Check, HelpCircle, BellOff, Newspaper, CheckCircle, ExternalLink, Brain, Target, Info, TrendingUp, TrendingDown, BarChart3, Clock, Search, AlertTriangle, Lock, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, FileText, Terminal, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, ScanLine, Eye, Users, Share, MoreVertical, BellRing, Trash2, Menu } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -2006,7 +2006,7 @@ const translations = {
     "checkout.termsAgreement": "Charges begin automatically after the free trial. If you do not wish to continue, please cancel your subscription before auto-billing occurs. I understand that refunds are not available after automatic billing.",
     // Transaction Filter
     "transactionFilter.coreOnly": "Core Trades Only",
-    "transactionFilter.allTrades": "All Trades (Advanced)",
+    "transactionFilter.allTrades": "All Trades",
     "transactionFilter.helpModalTitle": "Filter Explanation",
     "transactionFilter.coreOnlyDescription": "Shows only trades where insiders used their own money to buy, or intentionally decided to sell. These are considered the most meaningful signals.",
     "transactionFilter.allTradesDescription": "Shows all transaction types including option exercises, automatic sales (10b5-1), RSU vesting, bond conversions, and other derivative/compensation-based trades. Advanced users only.",
@@ -2888,7 +2888,7 @@ const translations = {
     "checkout.termsAgreement": "무료체험 종료 후 자동으로 결제가 진행됩니다. 원치 않으시는 경우 자동결제 전에 구독 해지를 해주세요. 자동결제 이후에는 환불이 불가함을 이해했습니다.",
     // Transaction Filter
     "transactionFilter.coreOnly": "핵심 거래만 보기",
-    "transactionFilter.allTrades": "전체 거래 보기 (고급)",
+    "transactionFilter.allTrades": "전체 거래",
     "transactionFilter.helpModalTitle": "필터 설명",
     "transactionFilter.coreOnlyDescription": '내부자가 자기 자금으로 실제로 매수하거나, 의도적으로 매도한 거래만 보여줍니다. 이런 거래가 "진짜 신호"로 가장 많이 활용됩니다.',
     "transactionFilter.allTradesDescription": "옵션 행사, 자동 매도(10b5-1), 보상성 주식(RSU), 채권 전환 등 다양한 파생·보상 거래까지 모두 보여줍니다. 전문가용이며 복잡한 정보가 포함됩니다.",
@@ -3647,7 +3647,7 @@ const translations = {
     "checkout.termsAgreement": "無料トライアル終了後、自動的に課金されます。継続を希望されない場合は、自動課金前にサブスクリプションをキャンセルしてください。自動課金後の返金は不可であることを理解しました。",
     // Transaction Filter
     "transactionFilter.coreOnly": "コア取引のみ",
-    "transactionFilter.allTrades": "全取引（上級）",
+    "transactionFilter.allTrades": "全取引",
     "transactionFilter.helpModalTitle": "フィルター説明",
     "transactionFilter.coreOnlyDescription": "インサイダーが自己資金で実際に購入したり、意図的に売却した取引のみを表示します。これらは「本当のシグナル」として最も活用されます。",
     "transactionFilter.allTradesDescription": "オプション行使、自動売却(10b5-1)、RSU付与、債券転換など、様々なデリバティブ・報酬取引まで全て表示します。上級者向けで複雑な情報が含まれます。",
@@ -4406,7 +4406,7 @@ const translations = {
     "checkout.termsAgreement": "免费试用结束后将自动收费。如果不想续费，请在自动计费前取消订阅。我理解自动计费后不可退款。",
     // Transaction Filter
     "transactionFilter.coreOnly": "仅核心交易",
-    "transactionFilter.allTrades": "全部交易（高级）",
+    "transactionFilter.allTrades": "全部交易",
     "transactionFilter.helpModalTitle": "筛选器说明",
     "transactionFilter.coreOnlyDescription": '仅显示内部人员用自己的资金实际购买或有意出售的交易。这些被视为"真实信号"，最常被使用。',
     "transactionFilter.allTradesDescription": "显示所有交易类型，包括期权行使、自动出售(10b5-1)、RSU归属、债券转换等各种衍生品/补偿性交易。仅供高级用户使用，包含复杂信息。",
@@ -4416,36 +4416,77 @@ const translations = {
   }
 };
 const LanguageContext = createContext(void 0);
+function detectBrowserLanguage() {
+  try {
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith("ko")) return "ko";
+    if (browserLang.startsWith("ja")) return "ja";
+    if (browserLang.startsWith("zh")) return "zh";
+  } catch (error) {
+    console.error("Browser language detection error:", error);
+  }
+  return "en";
+}
 const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState(() => {
-    if (typeof window === "undefined") {
-      return "en";
-    }
-    try {
-      const savedLanguage = localStorage.getItem("language");
-      if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
-        console.log("🌍 Using saved language preference:", savedLanguage);
-        localStorage.setItem("language-selected", "true");
-        return savedLanguage;
+  const [language, setLanguage] = useState("en");
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  useEffect(() => {
+    const initLanguage = async () => {
+      if (typeof window === "undefined") {
+        setHasInitialized(true);
+        return;
       }
-      const browserLang = navigator.language.toLowerCase();
-      console.log("🌍 Detecting browser language:", browserLang);
-      let detectedLang = "en";
-      if (browserLang.startsWith("ko")) detectedLang = "ko";
-      else if (browserLang.startsWith("ja")) detectedLang = "ja";
-      else if (browserLang.startsWith("zh")) detectedLang = "zh";
-      localStorage.setItem("language", detectedLang);
-      localStorage.setItem("language-selected", "true");
-      return detectedLang;
-    } catch (error) {
-      console.error("Language initialization error:", error);
-      return "en";
-    }
-  });
+      try {
+        const savedLanguage = localStorage.getItem("language");
+        const languageSelected = localStorage.getItem("language-selected");
+        if (savedLanguage && languageSelected === "true" && Object.keys(translations).includes(savedLanguage)) {
+          console.log("🌍 Using saved language preference:", savedLanguage);
+          setLanguage(savedLanguage);
+          setHasInitialized(true);
+          return;
+        }
+        console.log("🌍 No saved language, detecting by IP...");
+        setIsDetecting(true);
+        try {
+          const response = await fetch(resolveApiUrl("/api/detect-language"), {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const detectedLang = data.language;
+            console.log(`🌍 IP-based language detection: ${detectedLang} (country: ${data.country}, source: ${data.source})`);
+            setLanguage(detectedLang);
+            localStorage.setItem("language", detectedLang);
+            localStorage.setItem("language-selected", "true");
+            localStorage.setItem("language-source", data.source);
+          } else {
+            throw new Error("API response not ok");
+          }
+        } catch (apiError) {
+          console.warn("🌍 IP detection failed, falling back to browser language:", apiError);
+          const browserLang = detectBrowserLanguage();
+          setLanguage(browserLang);
+          localStorage.setItem("language", browserLang);
+          localStorage.setItem("language-selected", "true");
+          localStorage.setItem("language-source", "browser");
+        }
+      } catch (error) {
+        console.error("Language initialization error:", error);
+        setLanguage("en");
+      } finally {
+        setIsDetecting(false);
+        setHasInitialized(true);
+      }
+    };
+    initLanguage();
+  }, []);
   const handleSetLanguage = (lang) => {
     setLanguage(lang);
     if (typeof window !== "undefined") {
       localStorage.setItem("language", lang);
+      localStorage.setItem("language-selected", "true");
     }
   };
   useEffect(() => {
@@ -4464,7 +4505,7 @@ const LanguageProvider = ({ children }) => {
     }
     return text;
   };
-  return /* @__PURE__ */ jsx(LanguageContext.Provider, { value: { language, setLanguage: handleSetLanguage, t }, children });
+  return /* @__PURE__ */ jsx(LanguageContext.Provider, { value: { language, setLanguage: handleSetLanguage, t, isDetecting, hasInitialized }, children });
 };
 const useLanguage = () => {
   const context = useContext(LanguageContext);
@@ -5531,78 +5572,6 @@ function AdMobProvider({ children }) {
     error
   };
   return /* @__PURE__ */ jsx(AdMobContext.Provider, { value, children });
-}
-function LanguageSelection({ onLanguageSelected }) {
-  const { setLanguage } = useLanguage();
-  const [selectedLang, setSelectedLang] = useState(null);
-  const languages = [
-    {
-      code: "en",
-      name: "English",
-      nativeName: "English",
-      flag: "🇺🇸"
-    },
-    {
-      code: "ko",
-      name: "Korean",
-      nativeName: "한국어",
-      flag: "🇰🇷"
-    },
-    {
-      code: "ja",
-      name: "Japanese",
-      nativeName: "日本語",
-      flag: "🇯🇵"
-    },
-    {
-      code: "zh",
-      name: "Chinese",
-      nativeName: "中文",
-      flag: "🇨🇳"
-    }
-  ];
-  const handleLanguageSelect = (lang) => {
-    setSelectedLang(lang);
-    setLanguage(lang);
-    localStorage.setItem("language-selected", "true");
-    setTimeout(() => {
-      if (onLanguageSelected) {
-        onLanguageSelected();
-      }
-    }, 300);
-  };
-  return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4", children: /* @__PURE__ */ jsxs("div", { className: "w-full max-w-md", children: [
-    /* @__PURE__ */ jsxs("div", { className: "text-center mb-8", children: [
-      /* @__PURE__ */ jsx(
-        "img",
-        {
-          src: "/insiderpulse_logo1.png",
-          alt: "InsiderPulse Pro",
-          className: "h-56 mx-auto mb-6"
-        }
-      ),
-      /* @__PURE__ */ jsx("p", { className: "text-gray-200 text-lg font-medium", children: "Select your language" })
-    ] }),
-    /* @__PURE__ */ jsxs("div", { className: "bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700/50 p-6", children: [
-      /* @__PURE__ */ jsx("div", { className: "space-y-3", children: languages.map((lang) => /* @__PURE__ */ jsxs(
-        "button",
-        {
-          onClick: () => handleLanguageSelect(lang.code),
-          className: `w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${selectedLang === lang.code ? "border-green-500 bg-green-500/10" : "border-gray-700 hover:border-green-500/50 hover:bg-gray-700/50"}`,
-          children: [
-            /* @__PURE__ */ jsx("div", { className: "text-4xl", children: lang.flag }),
-            /* @__PURE__ */ jsxs("div", { className: "flex-1 text-left", children: [
-              /* @__PURE__ */ jsx("div", { className: "font-semibold text-white", children: lang.nativeName }),
-              /* @__PURE__ */ jsx("div", { className: "text-sm text-gray-400", children: lang.name })
-            ] }),
-            selectedLang === lang.code && /* @__PURE__ */ jsx("div", { className: "flex items-center justify-center w-6 h-6 rounded-full bg-green-500", children: /* @__PURE__ */ jsx(Check, { className: "w-4 h-4 text-white" }) })
-          ]
-        },
-        lang.code
-      )) }),
-      /* @__PURE__ */ jsx("div", { className: "mt-6 text-center text-sm text-gray-500", children: "You can change this later in settings" })
-    ] })
-  ] }) });
 }
 function CurrencySelector() {
   const { currency, setCurrency } = useCurrency();
@@ -6803,6 +6772,7 @@ function formatNumber(val) {
 }
 function TransactionTypeFilter({ value, onChange }) {
   const [showHelp, setShowHelp] = useState(false);
+  const { t } = useLanguage();
   return /* @__PURE__ */ jsxs(Fragment$1, { children: [
     /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 w-full", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex gap-2 flex-1 bg-neutral-900/60 p-1 rounded-lg border border-neutral-700/50", children: [
@@ -6811,7 +6781,7 @@ function TransactionTypeFilter({ value, onChange }) {
           {
             onClick: () => onChange("core"),
             className: `flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${value === "core" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500 hover:text-neutral-300"}`,
-            children: "핵심 거래만"
+            children: t("transactionFilter.coreOnly")
           }
         ),
         /* @__PURE__ */ jsx(
@@ -6819,7 +6789,7 @@ function TransactionTypeFilter({ value, onChange }) {
           {
             onClick: () => onChange("all"),
             className: `flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${value === "all" ? "bg-neutral-700 text-neutral-100" : "text-neutral-500 hover:text-neutral-300"}`,
-            children: "전체 거래"
+            children: t("transactionFilter.allTrades")
           }
         )
       ] }),
@@ -6828,14 +6798,14 @@ function TransactionTypeFilter({ value, onChange }) {
         {
           onClick: () => setShowHelp(true),
           className: "p-2 text-neutral-500 hover:text-neutral-300 transition-colors",
-          "aria-label": "필터 설명 보기",
+          "aria-label": t("transactionFilter.helpModalTitle"),
           children: /* @__PURE__ */ jsx(HelpCircle, { className: "w-5 h-5" })
         }
       )
     ] }),
     showHelp && /* @__PURE__ */ jsx("div", { className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70", children: /* @__PURE__ */ jsxs("div", { className: "bg-neutral-900 border border-neutral-700 rounded-lg max-w-md w-full p-6", children: [
       /* @__PURE__ */ jsxs("div", { className: "flex items-start justify-between mb-4", children: [
-        /* @__PURE__ */ jsx("h3", { className: "text-lg font-bold text-white", children: "거래 필터 설명" }),
+        /* @__PURE__ */ jsx("h3", { className: "text-lg font-bold text-white", children: t("transactionFilter.helpModalTitle") }),
         /* @__PURE__ */ jsx(
           "button",
           {
@@ -6847,18 +6817,12 @@ function TransactionTypeFilter({ value, onChange }) {
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "border-l-2 border-neutral-400 pl-4", children: [
-          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-white mb-1", children: "핵심 거래만 보기 (추천)" }),
-          /* @__PURE__ */ jsxs("p", { className: "text-sm text-neutral-400 leading-relaxed", children: [
-            "내부자가 실제로 ",
-            /* @__PURE__ */ jsx("span", { className: "text-white", children: "자기 돈을 써서 산 매수" }),
-            " 또는 ",
-            /* @__PURE__ */ jsx("span", { className: "text-white", children: "스스로 판단해 판 매도" }),
-            "만 보여줍니다. 이런 거래는 실제 자금 이동을 나타내는 거래입니다."
-          ] })
+          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-white mb-1", children: t("transactionFilter.coreOnly") }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 leading-relaxed", children: t("transactionFilter.coreOnlyDescription") })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "border-l-2 border-neutral-600 pl-4", children: [
-          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-neutral-300 mb-1", children: "전체 거래 보기 (고급)" }),
-          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 leading-relaxed", children: "옵션 행사, 보상성 주식 지급(RSU), 자동 매도(10b5-1), 채권 전환 등 내부자의 의지와 관련 없는 거래까지 모두 표시합니다. 전문가용이며 초보에게는 다소 복잡할 수 있습니다." })
+          /* @__PURE__ */ jsx("h4", { className: "font-semibold text-neutral-300 mb-1", children: t("transactionFilter.allTrades") }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-neutral-400 leading-relaxed", children: t("transactionFilter.allTradesDescription") })
         ] })
       ] }),
       /* @__PURE__ */ jsx(
@@ -6866,7 +6830,7 @@ function TransactionTypeFilter({ value, onChange }) {
         {
           onClick: () => setShowHelp(false),
           className: "mt-6 w-full bg-neutral-700 hover:bg-neutral-600 text-white font-medium py-2 rounded transition-colors",
-          children: "확인"
+          children: t("general.close")
         }
       )
     ] }) })
@@ -8326,41 +8290,22 @@ function LiveTradingTerminal() {
         }
       ` }),
     /* @__PURE__ */ jsxs("div", { className: "p-6 border-b border-neutral-900", children: [
-      /* @__PURE__ */ jsxs("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4", children: [
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsxs("h1", { className: "text-3xl font-light text-neutral-200 tracking-tight flex items-center gap-3", children: [
-            t.header,
-            !isPro && /* @__PURE__ */ jsx("span", { className: "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/20 text-amber-500 border border-amber-900/30 uppercase tracking-wider shadow-[0_0_10px_rgba(245,158,11,0.2)] whitespace-nowrap", children: t.delayedBadge })
-          ] }),
-          /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-600 mt-1 mono uppercase tracking-widest flex items-center gap-2", children: isPro ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
-            /* @__PURE__ */ jsx(Zap, { size: 10, className: "text-emerald-500" }),
-            " ",
-            t.realtime,
-            isConnected && /* @__PURE__ */ jsx("span", { className: "text-emerald-500", children: "● CONNECTED" })
-          ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-            /* @__PURE__ */ jsx(Clock, { size: 10, className: "text-amber-600" }),
-            " ",
-            t.delayed
-          ] }) })
+      /* @__PURE__ */ jsx("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4", children: /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsxs("h1", { className: "text-3xl font-light text-neutral-200 tracking-tight flex items-center gap-3", children: [
+          t.header,
+          !isPro && /* @__PURE__ */ jsx("span", { className: "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/20 text-amber-500 border border-amber-900/30 uppercase tracking-wider shadow-[0_0_10px_rgba(245,158,11,0.2)] whitespace-nowrap", children: t.delayedBadge })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex gap-3 items-center self-end", children: [
-          /* @__PURE__ */ jsxs("span", { className: "text-[10px] text-neutral-600 font-mono uppercase tracking-wider", children: [
-            language === "ko" ? "업데이트됨" : language === "ja" ? "更新" : language === "zh" ? "更新时间" : "UPDATED",
-            ": ",
-            (/* @__PURE__ */ new Date()).toLocaleTimeString(language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : language === "zh" ? "zh-CN" : "en-US", { hour: "2-digit", minute: "2-digit" })
-          ] }),
-          /* @__PURE__ */ jsx(CurrencySelector, {}),
-          /* @__PURE__ */ jsx(
-            "button",
-            {
-              className: "p-2 border border-neutral-800 text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 transition-colors bg-neutral-900/30",
-              onClick: () => refetch(),
-              "data-testid": "button-refresh",
-              children: /* @__PURE__ */ jsx(Download, { size: 14 })
-            }
-          )
-        ] })
-      ] }),
+        /* @__PURE__ */ jsx("p", { className: "text-xs text-neutral-600 mt-1 mono uppercase tracking-widest flex items-center gap-2", children: isPro ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx(Zap, { size: 10, className: "text-emerald-500" }),
+          " ",
+          t.realtime,
+          isConnected && /* @__PURE__ */ jsx("span", { className: "text-emerald-500", children: "● CONNECTED" })
+        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx(Clock, { size: 10, className: "text-amber-600" }),
+          " ",
+          t.delayed
+        ] }) })
+      ] }) }),
       /* @__PURE__ */ jsxs("div", { className: "flex flex-col md:flex-row gap-4 items-start md:items-center", children: [
         /* @__PURE__ */ jsxs("div", { className: "relative w-full md:w-[500px] group", children: [
           /* @__PURE__ */ jsx(Search, { className: "absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors", size: 14 }),
@@ -14278,9 +14223,8 @@ function PublicRouter() {
 }
 function AppContent() {
   var _a;
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, hasInitialized } = useLanguage();
   const { user, isAuthenticated, logout, openAuthModal } = useAuth();
-  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
   const [location2, setLocation] = useLocation();
   const [activeView, setActiveView] = useState(View.LIVE_TRADING);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -14294,13 +14238,6 @@ function AppContent() {
     { code: "ja", label: "日本語" },
     { code: "zh", label: "中文" }
   ];
-  useEffect(() => {
-    const languageSelected = localStorage.getItem("language-selected");
-    const savedLanguage = localStorage.getItem("language");
-    if (languageSelected === "true" || savedLanguage) {
-      setHasSelectedLanguage(true);
-    }
-  }, []);
   const handleViewChange = (view) => {
     setActiveView(view);
     setIsMobileMenuOpen(false);
@@ -14344,8 +14281,11 @@ function AppContent() {
   }, [location2]);
   const publicPaths = ["/", "/signup", "/login", "/forgot-password", "/reset-password", "/verify-code", "/verify-email", "/start-trial", "/premium-checkout"];
   const isPublicRoute = publicPaths.includes(location2);
-  if (!hasSelectedLanguage && !isPublicRoute) {
-    return /* @__PURE__ */ jsx(LanguageSelection, { onLanguageSelected: () => setHasSelectedLanguage(true) });
+  if (!hasInitialized && !isPublicRoute) {
+    return /* @__PURE__ */ jsx("div", { className: "flex h-screen w-screen items-center justify-center bg-[#050505]", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col items-center gap-3", children: [
+      /* @__PURE__ */ jsx("div", { className: "w-6 h-6 border-2 border-neutral-600 border-t-emerald-500 rounded-full animate-spin" }),
+      /* @__PURE__ */ jsx("div", { className: "text-neutral-500 text-sm tracking-wider", children: "INITIALIZING..." })
+    ] }) });
   }
   if (isPublicRoute) {
     return /* @__PURE__ */ jsx(PublicRouter, {});

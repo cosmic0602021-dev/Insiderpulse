@@ -376,3 +376,30 @@ export const insertTossUserMappingSchema = createInsertSchema(tossUserMappings).
 
 export type InsertTossUserMapping = z.infer<typeof insertTossUserMappingSchema>;
 export type TossUserMapping = typeof tossUserMappings.$inferSelect;
+
+// 4. Ranking Snapshots - Daily snapshots of top rankings for historical performance tracking
+export const rankingSnapshots = pgTable("ranking_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  snapshotDate: date("snapshot_date").notNull(),
+  ticker: varchar("ticker", { length: 10 }).notNull(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  rank: integer("rank").notNull(), // 1-10
+  score: integer("score").notNull(),
+  avgBuyPrice: decimal("avg_buy_price", { precision: 10, scale: 2 }).notNull(),
+  netBuying: decimal("net_buying", { precision: 15, scale: 2 }).notNull(),
+  marketCap: bigint("market_cap", { mode: "number" }),
+  uniqueInsiders: integer("unique_insiders").notNull(),
+  recommendation: varchar("recommendation", { length: 20 }).notNull(), // STRONG_BUY, BUY, HOLD
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  // Composite unique index for date + ticker
+  uniqueDateTicker: uniqueIndex("idx_ranking_snapshots_date_ticker").on(table.snapshotDate, table.ticker),
+}));
+
+export const insertRankingSnapshotSchema = createInsertSchema(rankingSnapshots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRankingSnapshot = z.infer<typeof insertRankingSnapshotSchema>;
+export type RankingSnapshot = typeof rankingSnapshots.$inferSelect;

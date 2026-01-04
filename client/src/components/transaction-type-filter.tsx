@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
+import { useLanguage } from '../contexts/language-context';
 
 interface TransactionTypeFilterProps {
   value: 'core' | 'all';
@@ -8,6 +9,7 @@ interface TransactionTypeFilterProps {
 
 export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilterProps) {
   const [showHelp, setShowHelp] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -22,7 +24,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
                 : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            핵심 거래만
+            {t('transactionFilter.coreOnly')}
           </button>
 
           <button
@@ -33,7 +35,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
                 : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            전체 거래
+            {t('transactionFilter.allTrades')}
           </button>
         </div>
 
@@ -41,7 +43,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
         <button
           onClick={() => setShowHelp(true)}
           className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors"
-          aria-label="필터 설명 보기"
+          aria-label={t('transactionFilter.helpModalTitle')}
         >
           <HelpCircle className="w-5 h-5" />
         </button>
@@ -52,7 +54,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
           <div className="bg-neutral-900 border border-neutral-700 rounded-lg max-w-md w-full p-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">거래 필터 설명</h3>
+              <h3 className="text-lg font-bold text-white">{t('transactionFilter.helpModalTitle')}</h3>
               <button
                 onClick={() => setShowHelp(false)}
                 className="text-neutral-400 hover:text-white transition-colors"
@@ -63,16 +65,16 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
 
             <div className="space-y-4">
               <div className="border-l-2 border-neutral-400 pl-4">
-                <h4 className="font-semibold text-white mb-1">핵심 거래만 보기 (추천)</h4>
+                <h4 className="font-semibold text-white mb-1">{t('transactionFilter.coreOnly')}</h4>
                 <p className="text-sm text-neutral-400 leading-relaxed">
-                  내부자가 실제로 <span className="text-white">자기 돈을 써서 산 매수</span> 또는 <span className="text-white">스스로 판단해 판 매도</span>만 보여줍니다. 이런 거래는 실제 자금 이동을 나타내는 거래입니다.
+                  {t('transactionFilter.coreOnlyDescription')}
                 </p>
               </div>
 
               <div className="border-l-2 border-neutral-600 pl-4">
-                <h4 className="font-semibold text-neutral-300 mb-1">전체 거래 보기 (고급)</h4>
+                <h4 className="font-semibold text-neutral-300 mb-1">{t('transactionFilter.allTrades')}</h4>
                 <p className="text-sm text-neutral-400 leading-relaxed">
-                  옵션 행사, 보상성 주식 지급(RSU), 자동 매도(10b5-1), 채권 전환 등 내부자의 의지와 관련 없는 거래까지 모두 표시합니다. 전문가용이며 초보에게는 다소 복잡할 수 있습니다.
+                  {t('transactionFilter.allTradesDescription')}
                 </p>
               </div>
             </div>
@@ -81,7 +83,7 @@ export function TransactionTypeFilter({ value, onChange }: TransactionTypeFilter
               onClick={() => setShowHelp(false)}
               className="mt-6 w-full bg-neutral-700 hover:bg-neutral-600 text-white font-medium py-2 rounded transition-colors"
             >
-              확인
+              {t('general.close')}
             </button>
           </div>
         </div>
