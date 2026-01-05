@@ -12008,8 +12008,8 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
   const { formatCurrency: formatCurrency2 } = useCurrency();
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
-  const topTier = data.slice(0, 3);
-  const lowerTier = data.slice(3);
+  data.slice(0, 3);
+  data.slice(3);
   const handleBuyerClick = (stock, buyer) => {
     if (!onSelectTrade) return;
     const trade = {
@@ -12202,51 +12202,40 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         lang === "ko" ? "연결됨" : "CONNECTED"
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar", children: [
-      /* @__PURE__ */ jsx("div", { className: "relative mb-2", children: !isPro ? /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-1.5 mb-1.5", children: [
-            /* @__PURE__ */ jsx(Lock, { size: 12, className: "text-amber-600" }),
-            /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold text-neutral-200 uppercase", children: t.restricted })
+    /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar", children: !isPro ? (
+      /* Locked State: All stocks locked */
+      /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-2 mb-2", children: [
+            /* @__PURE__ */ jsx(Lock, { size: 14, className: "text-amber-600" }),
+            /* @__PURE__ */ jsx("span", { className: "text-xs font-bold text-neutral-200 uppercase", children: t.restricted })
           ] }),
           /* @__PURE__ */ jsxs(
             "button",
             {
               onClick: onUpgrade,
-              className: "w-full py-1 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[9px] transition-all flex items-center justify-center gap-1",
+              className: "w-full py-1.5 px-4 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1",
               children: [
-                /* @__PURE__ */ jsx(ScanLine, { size: 10 }),
+                /* @__PURE__ */ jsx(ScanLine, { size: 12 }),
                 t.cta
               ]
             }
           )
         ] }) }),
-        /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3", children: [
-          /* @__PURE__ */ jsxs("span", { className: "text-xl font-black text-amber-500", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 opacity-25 pointer-events-none select-none filter blur-[3px]", children: data.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3", children: [
+          /* @__PURE__ */ jsxs("span", { className: "text-lg font-black text-amber-500 w-6", children: [
             "0",
             stock.rank
           ] }),
           /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
-          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500", children: stock.companyName }),
-          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-emerald-500 font-bold", children: t.strongBuy }),
-          /* @__PURE__ */ jsxs("span", { className: "text-[10px] text-neutral-500", children: [
-            stock.insiderCount,
-            lang === "ko" ? "명" : ""
-          ] })
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500 truncate flex-1", children: stock.companyName }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-emerald-500 font-bold", children: t.strongBuy })
         ] }, stock.ticker)) })
-      ] }) : (
-        /* Pro users see full cards */
-        /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: topTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker)) })
-      ) }),
-      /* @__PURE__ */ jsxs("div", { className: "grid gap-4", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2 px-1", children: [
-          /* @__PURE__ */ jsx("div", { className: "h-[1px] flex-1 bg-neutral-900" }),
-          /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono text-neutral-600 uppercase", children: "Additional Signals (Public)" }),
-          /* @__PURE__ */ jsx("div", { className: "h-[1px] flex-1 bg-neutral-900" })
-        ] }),
-        lowerTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker))
       ] })
-    ] })
+    ) : (
+      /* Pro users see full cards */
+      /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: data.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker)) })
+    ) })
   ] });
 };
 function StockSummaryModal({ isOpen, onClose, stock }) {

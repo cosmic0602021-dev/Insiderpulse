@@ -235,59 +235,44 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
-          
-          {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
-          <div className="relative mb-2">
-             {/* Locked State: Compact mini cards with overlay */}
-             {!isPro ? (
-               <div className="relative">
-                 {/* Compact Restricted Overlay */}
-                 <div className="absolute inset-0 z-20 flex items-center justify-center">
-                    <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm">
-                        <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                            <Lock size={12} className="text-amber-600" />
-                            <span className="text-[10px] font-bold text-neutral-200 uppercase">{t.restricted}</span>
-                        </div>
-                        <button
-                            onClick={onUpgrade}
-                            className="w-full py-1 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[9px] transition-all flex items-center justify-center gap-1"
-                        >
-                            <ScanLine size={10} />
-                            {t.cta}
-                        </button>
-                    </div>
-                 </div>
+          {!isPro ? (
+            /* Locked State: All stocks locked */
+            <div className="relative">
+              {/* Lock Overlay */}
+              <div className="absolute inset-0 z-20 flex items-center justify-center">
+                <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Lock size={14} className="text-amber-600" />
+                    <span className="text-xs font-bold text-neutral-200 uppercase">{t.restricted}</span>
+                  </div>
+                  <button
+                    onClick={onUpgrade}
+                    className="w-full py-1.5 px-4 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1"
+                  >
+                    <ScanLine size={12} />
+                    {t.cta}
+                  </button>
+                </div>
+              </div>
 
-                 {/* Compact blurred cards - all 3 visible */}
-                 <div className="flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]">
-                    {topTier.map(stock => (
-                      <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3">
-                        <span className="text-xl font-black text-amber-500">0{stock.rank}</span>
-                        <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
-                        <span className="text-[10px] text-neutral-500">{stock.companyName}</span>
-                        <span className="text-[10px] text-emerald-500 font-bold">{t.strongBuy}</span>
-                        <span className="text-[10px] text-neutral-500">{stock.insiderCount}{lang === 'ko' ? '명' : ''}</span>
-                      </div>
-                    ))}
-                 </div>
-               </div>
-             ) : (
-               /* Pro users see full cards */
-               <div className="grid gap-4">
-                  {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
-               </div>
-             )}
-          </div>
-
-          {/* LOWER TIER (Always Visible) - Ranks 4+ */}
-          <div className="grid gap-4">
-               <div className="flex items-center gap-2 mb-2 px-1">
-                   <div className="h-[1px] flex-1 bg-neutral-900"></div>
-                   <span className="text-[10px] font-mono text-neutral-600 uppercase">Additional Signals (Public)</span>
-                   <div className="h-[1px] flex-1 bg-neutral-900"></div>
-               </div>
-               {lowerTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
-          </div>
+              {/* Blurred stock list - all visible */}
+              <div className="flex flex-col gap-1 opacity-25 pointer-events-none select-none filter blur-[3px]">
+                {data.map(stock => (
+                  <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3">
+                    <span className="text-lg font-black text-amber-500 w-6">0{stock.rank}</span>
+                    <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
+                    <span className="text-[10px] text-neutral-500 truncate flex-1">{stock.companyName}</span>
+                    <span className="text-[10px] text-emerald-500 font-bold">{t.strongBuy}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Pro users see full cards */
+            <div className="grid gap-4">
+              {data.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
+            </div>
+          )}
       </div>
     </div>
   );
