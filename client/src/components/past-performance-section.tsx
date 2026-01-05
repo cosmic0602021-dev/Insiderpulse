@@ -114,7 +114,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // 기본: 펼친 상태로 10개 모두 표시
   const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
 
   const { data, isLoading, error } = useQuery<HistoricalPerformanceResponse>({
