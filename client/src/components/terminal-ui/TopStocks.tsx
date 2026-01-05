@@ -5,6 +5,7 @@ import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
 import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye } from 'lucide-react';
 import { ENV_CONFIG } from '@/lib/environment';
+import { PastPerformanceSection } from '@/components/past-performance-section';
 
 interface TopStocksProps {
   data: StockRecommendation[];
@@ -294,6 +295,9 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                  {lowerTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
             </div>
           )}
+
+          {/* Past Performance Section - 최근 추천 주식 성과 */}
+          <PastPerformanceSection className="mt-6" />
       </div>
     </div>
   );
