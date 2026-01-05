@@ -39,7 +39,7 @@ const EN = {
   },
   top: {
     header: 'Recommended Insider Stocks',
-    subHeader: 'Top Insider Trading Activity',
+    subHeader: 'Daily curated stocks with strong insider activity detected.',
     interval: 'Calculation Interval',
     restricted: 'Premium Access Required',
     securityLevel: 'INSTITUTIONAL GRADE DATA (Ranks 1-3)',
@@ -309,7 +309,7 @@ const KO = {
   },
   top: {
     header: '추천 내부자 주식',
-    subHeader: '상위 내부자 거래 활동',
+    subHeader: '매일 강력한 내부자 활동이 감지된 종목들을 선별합니다.',
     interval: '계산 간격',
     restricted: '프리미엄 액세스 필요',
     securityLevel: '기관급 데이터 (1~3위)',

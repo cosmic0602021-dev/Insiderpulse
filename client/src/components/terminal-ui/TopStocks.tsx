@@ -1,11 +1,22 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StockRecommendation, Language, Trade } from './types';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
-import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye } from 'lucide-react';
+import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye, PlayCircle } from 'lucide-react';
 import { ENV_CONFIG } from '@/lib/environment';
 import { PastPerformanceSection } from '@/components/past-performance-section';
+import { useAdOnNavigation } from '@/hooks/use-admob';
+
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 interface TopStocksProps {
   data: StockRecommendation[];
@@ -21,14 +32,21 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
   const isAppintos = ENV_CONFIG.isAppintos;
+  const { showAdBeforeNavigation } = useAdOnNavigation();
 
-  // Appintos: all 6 locked, insiderpulse.pro: only top 3 locked
-  const topTier = isAppintos ? data : data.slice(0, 3);
+  // Shuffle stocks for Appintos (so users don't just watch ad for #1)
+  const shuffledData = useMemo(() => {
+    if (!isAppintos) return data;
+    return shuffleArray(data);
+  }, [data, isAppintos]);
+
+  // Appintos: all 6 locked (shuffled), insiderpulse.pro: only top 3 locked
+  const topTier = isAppintos ? shuffledData : data.slice(0, 3);
   const lowerTier = isAppintos ? [] : data.slice(3);
 
   // Header text: Appintos uses different name
   const headerText = isAppintos
-    ? (lang === 'ko' ? '상위 내부자 주식' : 'Top Insider Stocks')
+    ? (lang === 'ko' ? '상위 내부자 종목' : 'Top Insider Stocks')
     : t.header;
 
   const handleBuyerClick = (stock: StockRecommendation, buyer: any) => {
@@ -86,7 +104,9 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
             <div className="w-full lg:w-1/4 border-r-0 lg:border-r border-neutral-900 pr-0 lg:pr-6 pb-6 lg:pb-0 border-b lg:border-b-0">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-baseline gap-3">
-                        <span className={`text-4xl font-black select-none ${stock.rank <= 3 ? 'text-amber-500' : 'text-neutral-800'}`}>0{stock.rank}</span>
+                        {!isAppintos && (
+                          <span className={`text-4xl font-black select-none ${stock.rank <= 3 ? 'text-amber-500' : 'text-neutral-800'}`}>0{stock.rank}</span>
+                        )}
                         <h3 className="text-xl font-bold text-neutral-200 tracking-wide">{stock.ticker}</h3>
                     </div>
                     {onViewDetails && (
@@ -249,38 +269,74 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       {/* Content Area */}
       <div className="p-3 sm:p-6 relative">
 
-          {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
+          {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 (or all 6 for Appintos) */}
           <div className="relative mb-4">
              {!isPro ? (
-               <>
-                 {/* Lock Overlay for Top 3 */}
-                 <div className="absolute inset-0 z-20 flex items-center justify-center">
-                   <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm">
-                     <div className="flex items-center justify-center gap-2 mb-2">
-                       <Lock size={14} className="text-amber-600" />
-                       <span className="text-xs font-bold text-neutral-200 uppercase">{t.restricted}</span>
-                     </div>
-                     <button
-                       onClick={onUpgrade}
-                       className="w-full py-1.5 px-4 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1"
-                     >
-                       <ScanLine size={12} />
-                       {t.cta}
-                     </button>
-                   </div>
-                 </div>
-                 {/* Compact blurred rows */}
-                 <div className="flex flex-col gap-1 opacity-25 pointer-events-none select-none filter blur-[3px]">
+               isAppintos ? (
+                 /* Appintos: Individual locked cards with ad unlock */
+                 <div className="grid gap-3">
                    {topTier.map(stock => (
-                     <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3">
-                       <span className="text-lg font-black text-amber-500 w-6">0{stock.rank}</span>
-                       <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
-                       <span className="text-[10px] text-neutral-500 truncate flex-1">{stock.companyName}</span>
-                       <span className="text-[10px] text-emerald-500 font-bold">{t.strongBuy}</span>
-                     </div>
+                     <button
+                       key={stock.ticker}
+                       onClick={() => {
+                         if (onViewDetails) {
+                           showAdBeforeNavigation(() => {
+                             onViewDetails(stock);
+                           });
+                         }
+                       }}
+                       className="w-full bg-[#0a0a0a] border border-neutral-800 p-4 flex items-center justify-between hover:border-emerald-600/50 hover:bg-neutral-900/50 transition-all group"
+                     >
+                       <div className="flex items-center gap-4">
+                         <div className="text-left">
+                           <div className="flex items-center gap-2">
+                             <span className="text-lg font-bold text-neutral-200">{stock.ticker}</span>
+                             <span className="text-[9px] bg-emerald-900/30 text-emerald-500 px-1.5 py-0.5 rounded font-bold uppercase">{t.strongBuy}</span>
+                           </div>
+                           <span className="text-xs text-neutral-500">{stock.companyName}</span>
+                         </div>
+                       </div>
+                       <div className="flex items-center gap-2 text-neutral-500 group-hover:text-emerald-400 transition-colors">
+                         <span className="text-[10px] uppercase tracking-wide">
+                           {lang === 'ko' ? '광고 보고 잠금 해제' : 'Watch Ad to Unlock'}
+                         </span>
+                         <PlayCircle size={18} />
+                       </div>
+                     </button>
                    ))}
                  </div>
-               </>
+               ) : (
+                 /* insiderpulse.pro: Full overlay lock with upgrade CTA */
+                 <>
+                   {/* Lock Overlay for Top 3 */}
+                   <div className="absolute inset-0 z-20 flex items-center justify-center">
+                     <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm">
+                       <div className="flex items-center justify-center gap-2 mb-2">
+                         <Lock size={14} className="text-amber-600" />
+                         <span className="text-xs font-bold text-neutral-200 uppercase">{t.restricted}</span>
+                       </div>
+                       <button
+                         onClick={onUpgrade}
+                         className="w-full py-1.5 px-4 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1"
+                       >
+                         <ScanLine size={12} />
+                         {t.cta}
+                       </button>
+                     </div>
+                   </div>
+                   {/* Compact blurred rows */}
+                   <div className="flex flex-col gap-1 opacity-25 pointer-events-none select-none filter blur-[3px]">
+                     {topTier.map(stock => (
+                       <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3">
+                         <span className="text-lg font-black text-amber-500 w-6">0{stock.rank}</span>
+                         <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
+                         <span className="text-[10px] text-neutral-500 truncate flex-1">{stock.companyName}</span>
+                         <span className="text-[10px] text-emerald-500 font-bold">{t.strongBuy}</span>
+                       </div>
+                     ))}
+                   </div>
+                 </>
+               )
              ) : (
                /* Pro users see full cards */
                <div className="grid gap-4">

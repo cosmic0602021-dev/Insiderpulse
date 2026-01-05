@@ -115,9 +115,9 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
 
-  // 앱인토스: "상위 내부자 주식 성과", insiderpulse.pro: "최근 추천종목 성과"
+  // 앱인토스: "최근 상위종목 성과", insiderpulse.pro: "최근 추천종목 성과"
   const title = ENV_CONFIG.isAppintos
-    ? (language === 'ko' ? '상위 내부자 주식 성과' : 'Top Insider Stocks Performance')
+    ? (language === 'ko' ? '최근 상위종목 성과' : 'Recent Top Stocks Performance')
     : t.title;
 
   const [isExpanded, setIsExpanded] = useState(false); // 기본: 접힌 상태, 클릭하면 펼쳐짐

@@ -3,6 +3,7 @@ import React from 'react';
 import { LayoutDashboard, Activity, User, Settings, Power, X, LogIn, Bell } from 'lucide-react';
 import { View, Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface SidebarProps {
   activeView: View;
@@ -19,6 +20,11 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro, isAuthenticated, userEmail, onLoginClick, onLogout, onCloseMobile }) => {
   const t = TRANSLATIONS[lang].sidebar;
   const common = TRANSLATIONS[lang].common;
+
+  // 앱인토스: "상위 내부자 종목", insiderpulse.pro: 기존 번역 사용
+  const topStocksLabel = ENV_CONFIG.isAppintos
+    ? (lang === 'ko' ? '상위 내부자 종목' : 'Top Insider Stocks')
+    : t.analysis;
 
   return (
     <div className="w-64 h-full bg-[#050505] border-r border-neutral-900 flex flex-col">
@@ -48,11 +54,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
             icon={<Activity size={14} />}
             label={t.live}
         />
-        <NavButton 
-            active={activeView === View.TOP_STOCKS} 
+        <NavButton
+            active={activeView === View.TOP_STOCKS}
             onClick={() => onChangeView(View.TOP_STOCKS)}
             icon={<LayoutDashboard size={14} />}
-            label={t.analysis}
+            label={topStocksLabel}
         />
         <NavButton
             active={activeView === View.NOTIFICATIONS}
