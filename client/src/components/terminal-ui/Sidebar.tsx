@@ -113,16 +113,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
 };
 
 const NavButton = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
-    <button 
+    <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 ${
-        active 
-          ? 'bg-neutral-900/50 text-neutral-200 border-neutral-500' 
+      className={`w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 text-left ${
+        active
+          ? 'bg-neutral-900/50 text-neutral-200 border-neutral-500'
           : 'text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20'
       }`}
     >
       {icon}
-      <span className="uppercase tracking-wide">{label}</span>
+      <span className="uppercase tracking-wide text-left">{label}</span>
     </button>
 );
 

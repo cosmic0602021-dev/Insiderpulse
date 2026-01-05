@@ -11622,10 +11622,10 @@ const NavButton = ({ active, onClick, icon, label }) => /* @__PURE__ */ jsxs(
   "button",
   {
     onClick,
-    className: `w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 ${active ? "bg-neutral-900/50 text-neutral-200 border-neutral-500" : "text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20"}`,
+    className: `w-full flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all border-l-2 text-left ${active ? "bg-neutral-900/50 text-neutral-200 border-neutral-500" : "text-neutral-600 hover:text-neutral-400 border-transparent hover:bg-neutral-900/20"}`,
     children: [
       icon,
-      /* @__PURE__ */ jsx("span", { className: "uppercase tracking-wide", children: label })
+      /* @__PURE__ */ jsx("span", { className: "uppercase tracking-wide text-left", children: label })
     ]
   }
 );
@@ -12221,23 +12221,17 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             }
           )
         ] }) }),
-        /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center justify-between", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsxs("span", { className: "text-xl font-black text-amber-500 w-6", children: [
-              "0",
-              stock.rank
-            ] }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
-              /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500 ml-2", children: stock.companyName })
-            ] })
+        /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3", children: [
+          /* @__PURE__ */ jsxs("span", { className: "text-xl font-black text-amber-500", children: [
+            "0",
+            stock.rank
           ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 text-[10px]", children: [
-            /* @__PURE__ */ jsx("span", { className: "text-emerald-500 font-bold", children: t.strongBuy }),
-            /* @__PURE__ */ jsxs("span", { className: "text-neutral-500", children: [
-              stock.insiderCount,
-              lang === "ko" ? "명" : " insiders"
-            ] })
+          /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500", children: stock.companyName }),
+          /* @__PURE__ */ jsx("span", { className: "text-[10px] text-emerald-500 font-bold", children: t.strongBuy }),
+          /* @__PURE__ */ jsxs("span", { className: "text-[10px] text-neutral-500", children: [
+            stock.insiderCount,
+            lang === "ko" ? "명" : ""
           ] })
         ] }, stock.ticker)) })
       ] }) : (
