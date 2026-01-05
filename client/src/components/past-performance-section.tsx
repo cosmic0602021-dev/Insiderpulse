@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, AlertTriangle, Clock, DollarSign, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Clock } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
 
@@ -114,7 +114,6 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const t = translations[language] || translations.en;
 
   const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
-  const [showAll, setShowAll] = useState(false);
 
   const { data, isLoading, error } = useQuery<HistoricalPerformanceResponse>({
     queryKey: ['rankings', 'historical-performance', selectedPeriod],
@@ -133,10 +132,9 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
       <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
         <div className="animate-pulse">
           <div className="h-5 bg-neutral-800 rounded w-48 mb-4" />
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="h-16 bg-neutral-800 rounded" />
-            <div className="h-16 bg-neutral-800 rounded" />
-            <div className="h-16 bg-neutral-800 rounded" />
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="h-12 bg-neutral-800 rounded" />
+            <div className="h-12 bg-neutral-800 rounded" />
           </div>
         </div>
       </div>
@@ -177,131 +175,68 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   }
 
   const { summary, stocks, period } = data;
-  const displayStocks = showAll ? stocks : stocks.slice(0, 5);
+  const displayStocks = stocks.slice(0, 5); // TOP 5만 표시
 
   return (
     <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
-      {/* Header with tabs */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+      {/* Header - 간결한 제목 */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-neutral-200 flex items-center gap-2">
           <Target size={14} className="text-emerald-500" />
           {t.title}
         </h3>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setSelectedPeriod(1)}
-            className={`px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 1 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
-          >
-            {t.oneMonth}
-          </button>
-          <button
-            onClick={() => setSelectedPeriod(3)}
-            className={`px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 3 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
-          >
-            {t.threeMonths}
-          </button>
-        </div>
+        <span className="text-[10px] text-neutral-500">
+          {new Date(period.snapshotDate).toLocaleDateString()}
+        </span>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {/* Average Return */}
-        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
-          <div className="text-xs text-neutral-500 mb-1">{t.avgReturn}</div>
-          <div className={`text-lg font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+      {/* Summary Stats - 2열로 간결하게 */}
+      <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 mb-3">
+        <div className="text-center flex-1">
+          <div className={`text-xl font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%
           </div>
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">{t.avgReturn}</div>
         </div>
-
-        {/* Win Rate */}
-        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
-          <div className="text-xs text-neutral-500 mb-1">{t.winRate}</div>
-          <div className="text-lg font-bold text-neutral-200">
+        <div className="w-px h-8 bg-neutral-700" />
+        <div className="text-center flex-1">
+          <div className="text-xl font-bold text-neutral-200">
             {summary.winnersCount}/{summary.winnersCount + summary.losersCount}
-            <span className="text-xs text-neutral-500 ml-1">{t.stocksUp}</span>
           </div>
-        </div>
-
-        {/* Hypothetical Gain */}
-        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
-          <div className="text-xs text-neutral-500 mb-1">{t.invested}</div>
-          <div className={`text-lg font-bold ${summary.hypotheticalGain >= 1000 ? 'text-emerald-400' : 'text-red-400'}`}>
-            ${summary.hypotheticalGain.toLocaleString()}
-          </div>
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">{t.stocksUp}</div>
         </div>
       </div>
 
-      {/* Stock Performance List */}
-      <div className="space-y-2">
+      {/* Stock Performance List - 깔끔하게 */}
+      <div className="space-y-1.5">
         {displayStocks.map((stock) => (
-          <StockPerformanceRow key={stock.ticker} stock={stock} t={t} />
+          <StockPerformanceRow key={stock.ticker} stock={stock} />
         ))}
-      </div>
-
-      {/* Show More/Less Button */}
-      {stocks.length > 5 && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="w-full mt-3 py-2 text-xs text-neutral-400 hover:text-neutral-300 flex items-center justify-center gap-1 border-t border-neutral-800"
-        >
-          {showAll ? (
-            <>
-              <ChevronUp size={14} />
-              {t.showLess}
-            </>
-          ) : (
-            <>
-              <ChevronDown size={14} />
-              {t.showAll} ({stocks.length})
-            </>
-          )}
-        </button>
-      )}
-
-      {/* Footer - snapshot date */}
-      <div className="mt-3 pt-3 border-t border-neutral-800 text-xs text-neutral-600 text-center">
-        {t.basedOn}: {new Date(period.snapshotDate).toLocaleDateString()}
       </div>
     </div>
   );
 }
 
-function StockPerformanceRow({ stock, t }: { stock: StockPerformance; t: typeof translations.en }) {
+function StockPerformanceRow({ stock }: { stock: StockPerformance }) {
   const isPositive = stock.returnPercent >= 0;
 
   return (
-    <div className="flex items-center justify-between py-2 px-2 bg-neutral-800/30 rounded hover:bg-neutral-800/50 transition-colors">
-      {/* Left: Rank + Ticker */}
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-xs text-neutral-500 w-5">#{stock.rank}</span>
-        <div className="min-w-0">
-          <div className="font-medium text-sm text-neutral-200 truncate">{stock.ticker}</div>
-          <div className="text-xs text-neutral-500 truncate max-w-[120px]">{stock.companyName}</div>
-        </div>
+    <div className="flex items-center justify-between py-1.5 px-2 bg-neutral-800/30 rounded">
+      {/* Left: Ticker */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-[10px] text-neutral-600 w-4">{stock.rank}</span>
+        <span className="font-medium text-sm text-neutral-200">{stock.ticker}</span>
       </div>
 
-      {/* Center: Price Change */}
-      <div className="text-center text-xs">
-        <div className="text-neutral-400">
-          ${stock.entryPrice.toFixed(2)} → ${stock.exitPrice.toFixed(2)}
-        </div>
-        {stock.hadInsiderSell && stock.sellIndicator && (
-          <div className="flex items-center gap-1 text-amber-500 mt-0.5">
-            <AlertTriangle size={10} />
-            <span className="text-[10px]">{stock.sellIndicator}</span>
-          </div>
-        )}
+      {/* Center: Price */}
+      <div className="text-[11px] text-neutral-500">
+        ${stock.entryPrice.toFixed(2)} → ${stock.exitPrice.toFixed(2)}
       </div>
 
       {/* Right: Return */}
-      <div className={`text-right min-w-[70px] ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-        <div className="flex items-center justify-end gap-1 font-medium">
-          {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-          <span>{isPositive ? '+' : ''}{stock.returnPercent.toFixed(1)}%</span>
-        </div>
-        <div className="text-xs opacity-75">
-          {isPositive ? '+' : ''}${stock.returnDollar.toFixed(0)}
-        </div>
+      <div className={`flex items-center gap-1 font-semibold text-sm ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+        <span>{isPositive ? '+' : ''}{stock.returnPercent.toFixed(1)}%</span>
       </div>
     </div>
   );

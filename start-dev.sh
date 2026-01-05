@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # InsiderPulse Development Server Starter
 # Automatically manages port 5000 conflicts
+
+# Fix PATH for Replit environment
+export PATH="/nix/store/8y4ls7z2sfxbq6ch3yp45l28p29qswvx-nodejs-20.19.3-wrapped/bin:$PATH"
 
 PORT=5000
 
