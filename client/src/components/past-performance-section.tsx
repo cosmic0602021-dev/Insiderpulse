@@ -176,7 +176,9 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   }
 
   const { summary, stocks, period } = data;
-  const displayStocks = stocks.slice(0, 5); // TOP 5만 표시
+  // 수익률 높은 순으로 정렬 - 10개 전체 표시 (마이너스도 보여야 신뢰감)
+  const sortedStocks = [...stocks].sort((a, b) => b.returnPercent - a.returnPercent);
+  const displayStocks = sortedStocks.slice(0, 10);
 
   // 접힌 상태: 한 줄 요약만 표시
   if (!isExpanded) {
@@ -222,6 +224,11 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
         </div>
       </button>
 
+      {/* 추천 날짜 */}
+      <div className="text-center text-xs text-neutral-500 mb-2">
+        {t.basedOn}: <span className="text-neutral-400 font-medium">{new Date(period.snapshotDate).toLocaleDateString()}</span>
+      </div>
+
       {/* Summary Stats - 2열로 간결하게 */}
       <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 mb-3">
         <div className="text-center flex-1">
@@ -241,23 +248,29 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
 
       {/* Stock Performance List - 깔끔하게 */}
       <div className="space-y-1.5">
-        {displayStocks.map((stock) => (
-          <StockPerformanceRow key={stock.ticker} stock={stock} />
+        {displayStocks.map((stock, index) => (
+          <StockPerformanceRow key={stock.ticker} stock={stock} displayRank={index + 1} />
         ))}
       </div>
     </div>
   );
 }
 
-function StockPerformanceRow({ stock }: { stock: StockPerformance }) {
+function StockPerformanceRow({ stock, displayRank }: { stock: StockPerformance; displayRank: number }) {
   const isPositive = stock.returnPercent >= 0;
+  const isTopThree = displayRank <= 3;
+
+  // 1,2,3등 금색 스타일
+  const rankStyle = isTopThree
+    ? 'text-amber-400 font-bold'
+    : 'text-neutral-600';
 
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 bg-neutral-800/30 rounded">
+    <div className={`flex items-center justify-between py-1.5 px-2 rounded ${isTopThree ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-neutral-800/30'}`}>
       {/* Left: Ticker */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-[10px] text-neutral-600 w-4">{stock.rank}</span>
-        <span className="font-medium text-sm text-neutral-200">{stock.ticker}</span>
+        <span className={`text-[10px] w-4 ${rankStyle}`}>{displayRank}</span>
+        <span className={`font-medium text-sm ${isTopThree ? 'text-amber-300' : 'text-neutral-200'}`}>{stock.ticker}</span>
       </div>
 
       {/* Center: Price */}
