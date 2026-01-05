@@ -225,7 +225,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#050505] relative">
+    <div className="flex flex-col bg-[#050505] relative">
       <div className="p-6 border-b border-neutral-900 flex justify-between items-end bg-[#050505] z-10 relative">
           <div>
             <h1 className="text-3xl font-light text-neutral-200 tracking-tight uppercase flex items-center gap-3">
@@ -242,7 +242,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       </div>
       
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
+      <div className="p-3 sm:p-6 relative">
 
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
           <div className="relative mb-4">

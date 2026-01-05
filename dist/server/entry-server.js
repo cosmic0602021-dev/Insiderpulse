@@ -12187,7 +12187,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
       )) })
     ] })
   ] }) });
-  return /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col h-full overflow-hidden bg-[#050505] relative", children: [
+  return /* @__PURE__ */ jsxs("div", { className: "flex flex-col bg-[#050505] relative", children: [
     /* @__PURE__ */ jsx("div", { className: "p-6 border-b border-neutral-900 flex justify-between items-end bg-[#050505] z-10 relative", children: /* @__PURE__ */ jsxs("div", { children: [
       /* @__PURE__ */ jsxs("h1", { className: "text-3xl font-light text-neutral-200 tracking-tight uppercase flex items-center gap-3", children: [
         headerText,
@@ -12204,7 +12204,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         lang === "ko" ? "연결됨" : "CONNECTED"
       ] })
     ] }) }),
-    /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar", children: [
+    /* @__PURE__ */ jsxs("div", { className: "p-3 sm:p-6 relative", children: [
       /* @__PURE__ */ jsx("div", { className: "relative mb-4", children: !isPro ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
         /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-2 mb-2", children: [
