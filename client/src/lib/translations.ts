@@ -14,7 +14,7 @@ const EN = {
   sidebar: {
     modules: 'Modules',
     live: 'Live Trading',
-    analysis: 'Recommended Insider Stocks',
+    analysis: 'Top Insider Stocks',
     config: 'Configuration',
     notifications: 'Notifications',
     watched: 'Watched Assets',
@@ -38,7 +38,7 @@ const EN = {
     noRecords: 'NO_RECORDS_FOUND'
   },
   top: {
-    header: 'Recommended Insider Stocks',
+    header: 'Top Insider Stocks',
     subHeader: 'Top Insider Trading Activity',
     interval: 'Calculation Interval',
     restricted: 'Premium Access Required',
@@ -284,7 +284,7 @@ const KO = {
   sidebar: {
     modules: '모듈',
     live: '실시간 거래',
-    analysis: '추천 내부자 주식',
+    analysis: '상위 내부자 주식',
     config: '설정',
     notifications: '알림관리',
     watched: '관심 종목',
@@ -308,7 +308,7 @@ const KO = {
     noRecords: '기록 없음'
   },
   top: {
-    header: '추천 내부자 주식',
+    header: '상위 내부자 주식',
     subHeader: '상위 내부자 거래 활동',
     interval: '계산 간격',
     restricted: '프리미엄 액세스 필요',

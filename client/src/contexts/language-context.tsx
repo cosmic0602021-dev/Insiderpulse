@@ -527,7 +527,7 @@ const translations: Record<Language, Record<string, string>> = {
     'priceChart.currentLabel': 'Current:',
     
     // Ranking page (App Store compliance - no investment recommendations)
-    'ranking.title': 'Recommended Insider Stocks',
+    'ranking.title': 'Top Insider Stocks',
     'ranking.subtitle': 'SEC insider trading data analysis and categorization',
     'ranking.topStocks': 'Top 10 Insider Activity',
     'ranking.recommendation': 'Signal',
@@ -1695,7 +1695,7 @@ const translations: Record<Language, Record<string, string>> = {
     'priceChart.currentLabel': '현재:',
     
     // Ranking page
-    'ranking.title': '추천 내부자 주식',
+    'ranking.title': '상위 내부자 주식',
     'ranking.subtitle': 'SEC 내부자 거래 데이터 분석 및 분류',
     'ranking.topStocks': '내부자 활동 TOP 10',
     'ranking.recommendation': '신호',
