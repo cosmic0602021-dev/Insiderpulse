@@ -12243,7 +12243,8 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
           /* @__PURE__ */ jsx("div", { className: "h-[1px] flex-1 bg-neutral-900" })
         ] }),
         lowerTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker))
-      ] })
+      ] }),
+      /* @__PURE__ */ jsx(PastPerformanceSection, { className: "mt-6" })
     ] })
   ] });
 };
