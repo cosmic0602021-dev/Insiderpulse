@@ -15,7 +15,7 @@ interface AuthContextType {
   login: (user: User, token: string) => void;
   logout: () => void;
   refreshUser: () => Promise<boolean>;
-  openAuthModal: (mode: 'login' | 'signup') => void;
+  openAuthModal: (mode: 'login' | 'signup') => void | Promise<void>;
   closeAuthModal: () => void;
   loginWithToss: () => Promise<boolean>; // 앱인토스 토스 로그인
 }
