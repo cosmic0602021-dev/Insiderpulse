@@ -4,7 +4,7 @@ import { parse } from "regexparam";
 import * as React from "react";
 import { createContext, forwardRef, useContext, cloneElement, createElement, isValidElement, useRef, Fragment, useState, useEffect, useCallback, useId, useMemo, memo } from "react";
 import { useSyncExternalStore } from "use-sync-external-store/shim/index.js";
-import { notifyManager, isServer, QueryObserver, MutationObserver, QueryClient } from "@tanstack/query-core";
+import { shouldThrowError, notifyManager, noop, isServer, QueryObserver, MutationObserver, QueryClient } from "@tanstack/query-core";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
 import { X, Bell, Zap, Smartphone, ShieldCheck, Share2, Plus, Download, ChevronDown, ChevronUp, Check, HelpCircle, BellOff, Newspaper, CheckCircle, ExternalLink, Brain, Target, Info, TrendingUp, TrendingDown, BarChart3, Clock, Search, AlertTriangle, Lock, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, CreditCard, Loader2, Mail, AlertCircle, ArrowLeft, Database, Activity, Scan, Crosshair, Globe, Fingerprint, ArrowRight, CheckCircle2, XCircle, Sparkles, Shield, FileText, Terminal, Hash, Building2, LayoutDashboard, User, Settings, Power, LogIn, Crown, Ticket, DollarSign, Monitor, ScanLine, Eye, Users, Share, MoreVertical, BellRing, Trash2, Menu } from "lucide-react";
@@ -59,11 +59,20 @@ const subscribeToLocationUpdates = (callback) => {
 };
 const useLocationProperty = (fn, ssrFn) => useSyncExternalStore(subscribeToLocationUpdates, fn, ssrFn);
 const currentSearch = () => location.search;
-const useSearch = ({ ssrSearch = "" } = {}) => useLocationProperty(currentSearch, () => ssrSearch);
+const useSearch = ({ ssrSearch } = {}) => useLocationProperty(
+  currentSearch,
+  // != null checks for both null and undefined, but allows empty string ""
+  // This allows proper hydration: server renders with ssrSearch="?foo",
+  // client hydrates with just <Router /> and reads from location.search
+  ssrSearch != null ? () => ssrSearch : currentSearch
+);
 const currentPathname = () => location.pathname;
 const usePathname = ({ ssrPath } = {}) => useLocationProperty(
   currentPathname,
-  ssrPath ? () => ssrPath : currentPathname
+  // != null checks for both null and undefined, but allows empty string ""
+  // This allows proper hydration: server renders with ssrPath="/foo",
+  // client hydrates with just <Router /> and reads from location.pathname
+  ssrPath != null ? () => ssrPath : currentPathname
 );
 const navigate = (to, { replace = false, state = null } = {}) => history[replace ? eventReplaceState : eventPushState](state, "", to);
 const useBrowserLocation = (opts = {}) => [usePathname(opts), navigate];
@@ -100,8 +109,12 @@ const defaultRouter = {
   // this option is used to override the current location during SSR
   ssrPath: void 0,
   ssrSearch: void 0,
+  // optional context to track render state during SSR
+  ssrContext: void 0,
   // customizes how `href` props are transformed for <Link />
-  hrefs: (x) => x
+  hrefs: (x) => x,
+  // wraps navigate calls, useful for view transitions
+  aroundNav: (n, t, o) => n(t, o)
 };
 const RouterCtx = createContext(defaultRouter);
 const useRouter = () => useContext(RouterCtx);
@@ -111,7 +124,9 @@ const useLocationFromRouter = (router) => {
   const [location2, navigate2] = router.hook(router);
   return [
     relativePath(router.base, location2),
-    useEvent((to, navOpts) => navigate2(absolutePath(to, router.base), navOpts))
+    useEvent(
+      (to, opts) => router.aroundNav(navigate2, absolutePath(to, router.base), opts)
+    )
   ];
 };
 const useLocation = () => useLocationFromRouter(useRouter());
@@ -134,24 +149,25 @@ const matchRoute = (parser, route, path, loose) => {
 };
 const useRoute = (pattern) => matchRoute(useRouter().parser, pattern, useLocation()[0]);
 const Router = ({ children, ...props }) => {
-  var _a, _b;
+  var _a, _b, _c;
   const parent_ = useRouter();
   const parent = props.hook ? defaultRouter : parent_;
   let value = parent;
-  const [path, search] = ((_a = props.ssrPath) == null ? void 0 : _a.split("?")) ?? [];
-  if (search) props.ssrSearch = search, props.ssrPath = path;
+  const [path, search = props.ssrSearch ?? ""] = ((_a = props.ssrPath) == null ? void 0 : _a.split("?")) ?? [];
+  if (path) props.ssrSearch = search, props.ssrPath = path;
   props.hrefs = props.hrefs ?? ((_b = props.hook) == null ? void 0 : _b.hrefs);
+  props.searchHook = props.searchHook ?? ((_c = props.hook) == null ? void 0 : _c.searchHook);
   let ref = useRef({}), prev = ref.current, next = prev;
   for (let k in parent) {
     const option = k === "base" ? (
       /* base is special case, it is appended to the parent's base */
-      parent[k] + (props[k] || "")
-    ) : props[k] || parent[k];
+      parent[k] + (props[k] ?? "")
+    ) : props[k] ?? parent[k];
     if (prev === next && option !== next[k]) {
       ref.current = next = { ...next };
     }
     next[k] = option;
-    if (option !== parent[k]) value = next;
+    if (option !== parent[k] || option !== value[k]) value = next;
   }
   return createElement(RouterCtx.Provider, { value, children });
 };
@@ -160,10 +176,10 @@ const h_route = ({ children, component }, params) => {
   return typeof children === "function" ? children(params) : children;
 };
 const useCachedParams = (value) => {
-  let prev = useRef(Params0), curr = prev.current;
-  for (const k in value) if (value[k] !== curr[k]) curr = value;
-  if (Object.keys(value).length === 0) curr = value;
-  return prev.current = curr;
+  let prev = useRef(Params0);
+  const curr = prev.current;
+  return prev.current = // Update cache if number of params changed or any value changed
+  Object.keys(value).length !== Object.keys(curr).length || Object.entries(value).some(([k, v]) => v !== curr[k]) ? value : curr;
 };
 const Route = ({ path, nest, match, ...renderProps }) => {
   const router = useRouter();
@@ -191,6 +207,7 @@ forwardRef((props, ref) => {
     /* eslint-disable no-unused-vars */
     replace,
     state,
+    transition,
     /* eslint-enable no-unused-vars */
     ...restProps
   } = props;
@@ -281,16 +298,9 @@ function createValue() {
 }
 var QueryErrorResetBoundaryContext = React.createContext(createValue());
 var useQueryErrorResetBoundary = () => React.useContext(QueryErrorResetBoundaryContext);
-function shouldThrowError(throwError, params) {
-  if (typeof throwError === "function") {
-    return throwError(...params);
-  }
-  return !!throwError;
-}
-function noop() {
-}
-var ensurePreventErrorBoundaryRetry = (options, errorResetBoundary) => {
-  if (options.suspense || options.throwOnError || options.experimental_prefetchInRender) {
+var ensurePreventErrorBoundaryRetry = (options, errorResetBoundary, query) => {
+  const throwOnError = (query == null ? void 0 : query.state.error) && typeof options.throwOnError === "function" ? shouldThrowError(options.throwOnError, [query.state.error, query]) : options.throwOnError;
+  if (options.suspense || options.experimental_prefetchInRender || throwOnError) {
     if (!errorResetBoundary.isReset()) {
       options.retryOnMount = false;
     }
@@ -305,17 +315,22 @@ var getHasError = ({
   result,
   errorResetBoundary,
   throwOnError,
-  query
+  query,
+  suspense
 }) => {
-  return result.isError && !errorResetBoundary.isReset() && !result.isFetching && query && shouldThrowError(throwOnError, [result.error, query]);
+  return result.isError && !errorResetBoundary.isReset() && !result.isFetching && query && (suspense && result.data === void 0 || shouldThrowError(throwOnError, [result.error, query]));
 };
 var ensureSuspenseTimers = (defaultedOptions) => {
   if (defaultedOptions.suspense) {
-    if (defaultedOptions.staleTime === void 0) {
-      defaultedOptions.staleTime = 1e3;
-    }
+    const MIN_SUSPENSE_TIME_MS = 1e3;
+    const clamp = (value) => value === "static" ? value : Math.max(value ?? MIN_SUSPENSE_TIME_MS, MIN_SUSPENSE_TIME_MS);
+    const originalStaleTime = defaultedOptions.staleTime;
+    defaultedOptions.staleTime = typeof originalStaleTime === "function" ? (...args) => clamp(originalStaleTime(...args)) : clamp(originalStaleTime);
     if (typeof defaultedOptions.gcTime === "number") {
-      defaultedOptions.gcTime = Math.max(defaultedOptions.gcTime, 1e3);
+      defaultedOptions.gcTime = Math.max(
+        defaultedOptions.gcTime,
+        MIN_SUSPENSE_TIME_MS
+      );
     }
   }
 };
@@ -325,7 +340,7 @@ var fetchOptimistic = (defaultedOptions, observer, errorResetBoundary) => observ
   errorResetBoundary.clearReset();
 });
 function useBaseQuery(options, Observer, queryClient2) {
-  var _a, _b, _c, _d, _e;
+  var _a, _b, _c, _d;
   if (process.env.NODE_ENV !== "production") {
     if (typeof options !== "object" || Array.isArray(options)) {
       throw new Error(
@@ -333,17 +348,25 @@ function useBaseQuery(options, Observer, queryClient2) {
       );
     }
   }
-  const client = useQueryClient();
   const isRestoring = useIsRestoring();
   const errorResetBoundary = useQueryErrorResetBoundary();
+  const client = useQueryClient();
   const defaultedOptions = client.defaultQueryOptions(options);
   (_b = (_a = client.getDefaultOptions().queries) == null ? void 0 : _a._experimental_beforeQuery) == null ? void 0 : _b.call(
     _a,
     defaultedOptions
   );
+  const query = client.getQueryCache().get(defaultedOptions.queryHash);
+  if (process.env.NODE_ENV !== "production") {
+    if (!defaultedOptions.queryFn) {
+      console.error(
+        `[${defaultedOptions.queryHash}]: No queryFn was passed as an option, and no default queryFn was found. The queryFn parameter is only optional when using a default queryFn. More info here: https://tanstack.com/query/latest/docs/framework/react/guides/default-query-function`
+      );
+    }
+  }
   defaultedOptions._optimisticResults = isRestoring ? "isRestoring" : "optimistic";
   ensureSuspenseTimers(defaultedOptions);
-  ensurePreventErrorBoundaryRetry(defaultedOptions, errorResetBoundary);
+  ensurePreventErrorBoundaryRetry(defaultedOptions, errorResetBoundary, query);
   useClearResetErrorBoundary(errorResetBoundary);
   const isNewCacheEntry = !client.getQueryCache().get(defaultedOptions.queryHash);
   const [observer] = React.useState(
@@ -353,20 +376,21 @@ function useBaseQuery(options, Observer, queryClient2) {
     )
   );
   const result = observer.getOptimisticResult(defaultedOptions);
+  const shouldSubscribe = !isRestoring && options.subscribed !== false;
   React.useSyncExternalStore(
     React.useCallback(
       (onStoreChange) => {
-        const unsubscribe = isRestoring ? noop : observer.subscribe(notifyManager.batchCalls(onStoreChange));
+        const unsubscribe = shouldSubscribe ? observer.subscribe(notifyManager.batchCalls(onStoreChange)) : noop;
         observer.updateResult();
         return unsubscribe;
       },
-      [observer, isRestoring]
+      [observer, shouldSubscribe]
     ),
     () => observer.getCurrentResult(),
     () => observer.getCurrentResult()
   );
   React.useEffect(() => {
-    observer.setOptions(defaultedOptions, { listeners: false });
+    observer.setOptions(defaultedOptions);
   }, [defaultedOptions, observer]);
   if (shouldSuspend(defaultedOptions, result)) {
     throw fetchOptimistic(defaultedOptions, observer, errorResetBoundary);
@@ -375,7 +399,8 @@ function useBaseQuery(options, Observer, queryClient2) {
     result,
     errorResetBoundary,
     throwOnError: defaultedOptions.throwOnError,
-    query: client.getQueryCache().get(defaultedOptions.queryHash)
+    query,
+    suspense: defaultedOptions.suspense
   })) {
     throw result.error;
   }
@@ -390,7 +415,7 @@ function useBaseQuery(options, Observer, queryClient2) {
       fetchOptimistic(defaultedOptions, observer, errorResetBoundary)
     ) : (
       // subscribe to the "cache promise" so that we can finalize the currentThenable once data comes in
-      (_e = client.getQueryCache().get(defaultedOptions.queryHash)) == null ? void 0 : _e.promise
+      query == null ? void 0 : query.promise
     );
     promise == null ? void 0 : promise.catch(noop).finally(() => {
       observer.updateResult();
@@ -876,7 +901,7 @@ const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }
   }
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
-const translations = {
+const translations$1 = {
   en: {
     // Navigation
     "nav.dashboard": "Dashboard",
@@ -4440,7 +4465,7 @@ const LanguageProvider = ({ children }) => {
       try {
         const savedLanguage = localStorage.getItem("language");
         const languageSelected = localStorage.getItem("language-selected");
-        if (savedLanguage && languageSelected === "true" && Object.keys(translations).includes(savedLanguage)) {
+        if (savedLanguage && languageSelected === "true" && Object.keys(translations$1).includes(savedLanguage)) {
           console.log("🌍 Using saved language preference:", savedLanguage);
           setLanguage(savedLanguage);
           setHasInitialized(true);
@@ -4495,8 +4520,8 @@ const LanguageProvider = ({ children }) => {
     }
   }, [language]);
   const t = (key, variables) => {
-    const currentTranslations = translations[language];
-    const fallbackTranslations = translations.en;
+    const currentTranslations = translations$1[language];
+    const fallbackTranslations = translations$1.en;
     let text = currentTranslations[key] || fallbackTranslations[key] || key;
     if (variables) {
       Object.entries(variables).forEach(([varKey, varValue]) => {
@@ -11986,6 +12011,255 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
     ] })
   ] });
 };
+const translations = {
+  en: {
+    title: "Past Recommendation Performance",
+    oneMonth: "1 Month Ago",
+    threeMonths: "3 Months Ago",
+    avgReturn: "Avg Return",
+    winRate: "Win Rate",
+    invested: "$1,000 Invested",
+    stocksUp: "stocks went up",
+    entry: "Entry",
+    exit: "Exit",
+    soldOn: "Sold on",
+    noData: "Performance data not yet available",
+    noDataDesc: "Data collection has started. Check back soon.",
+    showAll: "Show all",
+    showLess: "Show less",
+    basedOn: "Based on recommendations from"
+  },
+  ko: {
+    title: "과거 추천 성과",
+    oneMonth: "1개월 전",
+    threeMonths: "3개월 전",
+    avgReturn: "평균 수익률",
+    winRate: "승률",
+    invested: "$1,000 투자 시",
+    stocksUp: "종목 상승",
+    entry: "진입가",
+    exit: "청산가",
+    soldOn: "매도일",
+    noData: "성과 데이터 준비 중",
+    noDataDesc: "데이터 수집이 시작되었습니다. 잠시 후 확인해주세요.",
+    showAll: "전체 보기",
+    showLess: "접기",
+    basedOn: "기준일"
+  },
+  ja: {
+    title: "過去の推奨パフォーマンス",
+    oneMonth: "1ヶ月前",
+    threeMonths: "3ヶ月前",
+    avgReturn: "平均リターン",
+    winRate: "勝率",
+    invested: "$1,000投資時",
+    stocksUp: "銘柄上昇",
+    entry: "エントリー",
+    exit: "イグジット",
+    soldOn: "売却日",
+    noData: "パフォーマンスデータ準備中",
+    noDataDesc: "データ収集を開始しました。しばらくお待ちください。",
+    showAll: "すべて表示",
+    showLess: "折りたたむ",
+    basedOn: "基準日"
+  },
+  zh: {
+    title: "过去推荐表现",
+    oneMonth: "1个月前",
+    threeMonths: "3个月前",
+    avgReturn: "平均回报",
+    winRate: "胜率",
+    invested: "$1,000投资",
+    stocksUp: "股票上涨",
+    entry: "入场价",
+    exit: "出场价",
+    soldOn: "卖出日",
+    noData: "表现数据准备中",
+    noDataDesc: "数据收集已开始。请稍后查看。",
+    showAll: "显示全部",
+    showLess: "收起",
+    basedOn: "基准日"
+  }
+};
+function PastPerformanceSection({ className = "" }) {
+  const { language } = useLanguage();
+  const t = translations[language] || translations.en;
+  const [selectedPeriod, setSelectedPeriod] = useState(1);
+  const [showAll, setShowAll] = useState(false);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["rankings", "historical-performance", selectedPeriod],
+    queryFn: async () => {
+      const response = await fetch(resolveApiUrl(`/api/rankings/historical-performance?monthsAgo=${selectedPeriod}`));
+      if (!response.ok) throw new Error("Failed to fetch");
+      return response.json();
+    },
+    staleTime: 1e3 * 60 * 30,
+    // 30 minutes
+    refetchOnWindowFocus: false
+  });
+  if (isLoading) {
+    return /* @__PURE__ */ jsx("div", { className: `bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`, children: /* @__PURE__ */ jsxs("div", { className: "animate-pulse", children: [
+      /* @__PURE__ */ jsx("div", { className: "h-5 bg-neutral-800 rounded w-48 mb-4" }),
+      /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-4 mb-4", children: [
+        /* @__PURE__ */ jsx("div", { className: "h-16 bg-neutral-800 rounded" }),
+        /* @__PURE__ */ jsx("div", { className: "h-16 bg-neutral-800 rounded" }),
+        /* @__PURE__ */ jsx("div", { className: "h-16 bg-neutral-800 rounded" })
+      ] })
+    ] }) });
+  }
+  if (error || !data || !data.dataAvailable) {
+    return /* @__PURE__ */ jsxs("div", { className: `bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`, children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-4", children: [
+        /* @__PURE__ */ jsxs("h3", { className: "text-sm font-medium text-neutral-300 flex items-center gap-2", children: [
+          /* @__PURE__ */ jsx(Target, { size: 14, className: "text-emerald-500" }),
+          t.title
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setSelectedPeriod(1),
+              className: `px-2 py-1 text-xs rounded ${selectedPeriod === 1 ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400"}`,
+              children: t.oneMonth
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "button",
+            {
+              onClick: () => setSelectedPeriod(3),
+              className: `px-2 py-1 text-xs rounded ${selectedPeriod === 3 ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400"}`,
+              children: t.threeMonths
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "text-center py-6 text-neutral-500", children: [
+        /* @__PURE__ */ jsx(Clock, { size: 24, className: "mx-auto mb-2 opacity-50" }),
+        /* @__PURE__ */ jsx("p", { className: "text-sm", children: t.noData }),
+        /* @__PURE__ */ jsx("p", { className: "text-xs mt-1 text-neutral-600", children: (data == null ? void 0 : data.message) || t.noDataDesc })
+      ] })
+    ] });
+  }
+  const { summary, stocks, period } = data;
+  const displayStocks = showAll ? stocks : stocks.slice(0, 5);
+  return /* @__PURE__ */ jsxs("div", { className: `bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`, children: [
+    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-4", children: [
+      /* @__PURE__ */ jsxs("h3", { className: "text-sm font-medium text-neutral-300 flex items-center gap-2", children: [
+        /* @__PURE__ */ jsx(Target, { size: 14, className: "text-emerald-500" }),
+        t.title
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => setSelectedPeriod(1),
+            className: `px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 1 ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"}`,
+            children: t.oneMonth
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => setSelectedPeriod(3),
+            className: `px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 3 ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"}`,
+            children: t.threeMonths
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-3 mb-4", children: [
+      /* @__PURE__ */ jsxs("div", { className: "bg-neutral-800/50 rounded-lg p-3 text-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-500 mb-1", children: t.avgReturn }),
+        /* @__PURE__ */ jsxs("div", { className: `text-lg font-bold ${summary.avgReturn >= 0 ? "text-emerald-400" : "text-red-400"}`, children: [
+          summary.avgReturn >= 0 ? "+" : "",
+          summary.avgReturn.toFixed(1),
+          "%"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "bg-neutral-800/50 rounded-lg p-3 text-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-500 mb-1", children: t.winRate }),
+        /* @__PURE__ */ jsxs("div", { className: "text-lg font-bold text-neutral-200", children: [
+          summary.winnersCount,
+          "/",
+          summary.winnersCount + summary.losersCount,
+          /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-500 ml-1", children: t.stocksUp })
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "bg-neutral-800/50 rounded-lg p-3 text-center", children: [
+        /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-500 mb-1", children: t.invested }),
+        /* @__PURE__ */ jsxs("div", { className: `text-lg font-bold ${summary.hypotheticalGain >= 1e3 ? "text-emerald-400" : "text-red-400"}`, children: [
+          "$",
+          summary.hypotheticalGain.toLocaleString()
+        ] })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "space-y-2", children: displayStocks.map((stock) => /* @__PURE__ */ jsx(StockPerformanceRow, { stock, t }, stock.ticker)) }),
+    stocks.length > 5 && /* @__PURE__ */ jsx(
+      "button",
+      {
+        onClick: () => setShowAll(!showAll),
+        className: "w-full mt-3 py-2 text-xs text-neutral-400 hover:text-neutral-300 flex items-center justify-center gap-1 border-t border-neutral-800",
+        children: showAll ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx(ChevronUp, { size: 14 }),
+          t.showLess
+        ] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+          /* @__PURE__ */ jsx(ChevronDown, { size: 14 }),
+          t.showAll,
+          " (",
+          stocks.length,
+          ")"
+        ] })
+      }
+    ),
+    /* @__PURE__ */ jsxs("div", { className: "mt-3 pt-3 border-t border-neutral-800 text-xs text-neutral-600 text-center", children: [
+      t.basedOn,
+      ": ",
+      new Date(period.snapshotDate).toLocaleDateString()
+    ] })
+  ] });
+}
+function StockPerformanceRow({ stock, t }) {
+  const isPositive = stock.returnPercent >= 0;
+  return /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between py-2 px-2 bg-neutral-800/30 rounded hover:bg-neutral-800/50 transition-colors", children: [
+    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 min-w-0", children: [
+      /* @__PURE__ */ jsxs("span", { className: "text-xs text-neutral-500 w-5", children: [
+        "#",
+        stock.rank
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
+        /* @__PURE__ */ jsx("div", { className: "font-medium text-sm text-neutral-200 truncate", children: stock.ticker }),
+        /* @__PURE__ */ jsx("div", { className: "text-xs text-neutral-500 truncate max-w-[120px]", children: stock.companyName })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "text-center text-xs", children: [
+      /* @__PURE__ */ jsxs("div", { className: "text-neutral-400", children: [
+        "$",
+        stock.entryPrice.toFixed(2),
+        " → $",
+        stock.exitPrice.toFixed(2)
+      ] }),
+      stock.hadInsiderSell && stock.sellIndicator && /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-amber-500 mt-0.5", children: [
+        /* @__PURE__ */ jsx(AlertTriangle, { size: 10 }),
+        /* @__PURE__ */ jsx("span", { className: "text-[10px]", children: stock.sellIndicator })
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: `text-right min-w-[70px] ${isPositive ? "text-emerald-400" : "text-red-400"}`, children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-end gap-1 font-medium", children: [
+        isPositive ? /* @__PURE__ */ jsx(TrendingUp, { size: 12 }) : /* @__PURE__ */ jsx(TrendingDown, { size: 12 }),
+        /* @__PURE__ */ jsxs("span", { children: [
+          isPositive ? "+" : "",
+          stock.returnPercent.toFixed(1),
+          "%"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "text-xs opacity-75", children: [
+        isPositive ? "+" : "",
+        "$",
+        stock.returnDollar.toFixed(0)
+      ] })
+    ] })
+  ] });
+}
 function StockSummaryModal({ isOpen, onClose, stock }) {
   var _a, _b, _c;
   const { language } = useLanguage();
@@ -12879,18 +13153,21 @@ function TopStocksTerminal() {
       })
     };
   });
-  return /* @__PURE__ */ jsxs(Fragment$1, { children: [
-    /* @__PURE__ */ jsx(
-      TopStocks,
-      {
-        data: stockRecommendations,
-        lang: language,
-        isPro,
-        onUpgrade: handleUpgrade,
-        onSelectTrade: handleSelectTrade,
-        onViewDetails: handleViewDetails
-      }
-    ),
+  return /* @__PURE__ */ jsxs("div", { className: "flex flex-col h-full overflow-hidden bg-[#050505]", children: [
+    /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto", children: [
+      /* @__PURE__ */ jsx("div", { className: "p-4 pb-0", children: /* @__PURE__ */ jsx(PastPerformanceSection, { className: "mb-4" }) }),
+      /* @__PURE__ */ jsx(
+        TopStocks,
+        {
+          data: stockRecommendations,
+          lang: language,
+          isPro,
+          onUpgrade: handleUpgrade,
+          onSelectTrade: handleSelectTrade,
+          onViewDetails: handleViewDetails
+        }
+      )
+    ] }),
     selectedTrade && /* @__PURE__ */ jsx(
       TradeDetailModal,
       {

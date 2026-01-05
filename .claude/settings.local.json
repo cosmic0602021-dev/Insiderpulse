@@ -227,7 +227,10 @@
       "Bash(# 빌드\nnpm run build 2>&1 | tail -3\n\n# 커밋 리셋\ngit reset HEAD~1\n\n# 다시 add & commit\ngit add client/src/lib/toss-login.ts client/src/lib/environment.ts client/src/components/terminal-ui/ProfileView.tsx server/index.ts dist/index.js .gitignore\ngit add dist/server/ dist/web/assets/ dist/web/index.html\n\ngit commit -m \"\"$\\(cat <<''EOF''\nFix Toss login persistence and add ProfileView user info\n\n- Add checkExistingTossSession\\(\\) for session-based auth\n- Improve performTossLogin\\(\\) to use server userId\n- Add ensureAppintosUserIdAsync\\(\\) for session-first approach\n- Display user info in ProfileView for Appintos\n- Note: STRIPE_SECRET_KEY must be set in Replit Secrets\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\"\")",
       "Bash(__NEW_LINE__ echo \"=== 현재 사용자 상태 ===\")",
       "Bash(__NEW_LINE__ echo \"=== 현재 계정 상태 ===\")",
-      "Bash(npx esbuild:*)"
+      "Bash(npx esbuild:*)",
+      "Bash(DEBUG=vite:*)",
+      "Bash(npx vite build --config vite.config.ts)",
+      "Bash(npx vite build:*)"
     ],
     "deny": [],
     "ask": []

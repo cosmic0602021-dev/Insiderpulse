@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { TickerTradesModal } from '@/components/ticker-trades-modal';
-import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown, Target, Clock, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
 import { apiClient, queryKeys } from '@/lib/api';
@@ -19,7 +19,154 @@ import { ENV_CONFIG } from '@/lib/environment';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { DebugPanel } from '@/components/debug-panel';
 import { useAdOnNavigation } from '@/hooks/use-admob';
-import PastPerformanceSection from '@/components/past-performance-section';
+
+// Inline PastPerformanceSection Component
+interface HistoricalStock {
+  rank: number;
+  ticker: string;
+  companyName: string;
+  entryPrice: number;
+  exitPrice: number;
+  returnPercent: number;
+  returnDollar: number;
+  hadInsiderSell: boolean;
+  sellDate?: string;
+  sellIndicator?: string;
+}
+
+interface HistoricalPerformanceData {
+  period: { monthsAgo: number; snapshotDate: string; evaluationDate: string; };
+  summary: { avgReturn: number; winRate: number; winnersCount: number; losersCount: number; hypotheticalGain: number; };
+  stocks: HistoricalStock[];
+  dataAvailable: boolean;
+  message?: string;
+}
+
+const perfTranslations = {
+  en: { title: 'Past Recommendation Performance', oneMonth: '1 Month Ago', threeMonths: '3 Months Ago', avgReturn: 'Avg Return', winRate: 'Win Rate', invested: '$1,000 Invested', stocksUp: 'stocks went up', noData: 'Performance data not yet available', noDataDesc: 'Data collection has started. Check back soon.', showAll: 'Show all', showLess: 'Show less', basedOn: 'Based on recommendations from' },
+  ko: { title: '과거 추천 성과', oneMonth: '1개월 전', threeMonths: '3개월 전', avgReturn: '평균 수익률', winRate: '승률', invested: '$1,000 투자 시', stocksUp: '종목 상승', noData: '성과 데이터 준비 중', noDataDesc: '데이터 수집이 시작되었습니다.', showAll: '전체 보기', showLess: '접기', basedOn: '기준일' },
+  ja: { title: '過去の推奨パフォーマンス', oneMonth: '1ヶ月前', threeMonths: '3ヶ月前', avgReturn: '平均リターン', winRate: '勝率', invested: '$1,000投資時', stocksUp: '銘柄上昇', noData: 'パフォーマンスデータ準備中', noDataDesc: 'データ収集を開始しました。', showAll: 'すべて表示', showLess: '折りたたむ', basedOn: '基準日' },
+  zh: { title: '过去推荐表现', oneMonth: '1个月前', threeMonths: '3个月前', avgReturn: '平均回报', winRate: '胜率', invested: '$1,000投资', stocksUp: '股票上涨', noData: '表现数据准备中', noDataDesc: '数据收集已开始。', showAll: '显示全部', showLess: '收起', basedOn: '基准日' },
+};
+
+export function PastPerformanceSection({ className = '' }: { className?: string }) {
+  const { language } = useLanguage();
+  const t = perfTranslations[language as keyof typeof perfTranslations] || perfTranslations.en;
+  const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
+  const [showAll, setShowAll] = useState(false);
+
+  const { data, isLoading, error } = useQuery<HistoricalPerformanceData>({
+    queryKey: ['rankings', 'historical-performance', selectedPeriod],
+    queryFn: async () => {
+      const response = await fetch(resolveApiUrl(`/api/rankings/historical-performance?monthsAgo=${selectedPeriod}`));
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-5 bg-neutral-800 rounded w-48 mb-4" />
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="h-16 bg-neutral-800 rounded" />
+            <div className="h-16 bg-neutral-800 rounded" />
+            <div className="h-16 bg-neutral-800 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data || !data.dataAvailable) {
+    return (
+      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+            <Target size={14} className="text-emerald-500" />
+            {t.title}
+          </h3>
+          <div className="flex gap-1">
+            <button onClick={() => setSelectedPeriod(1)} className={`px-2 py-1 text-xs rounded ${selectedPeriod === 1 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>{t.oneMonth}</button>
+            <button onClick={() => setSelectedPeriod(3)} className={`px-2 py-1 text-xs rounded ${selectedPeriod === 3 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}>{t.threeMonths}</button>
+          </div>
+        </div>
+        <div className="text-center py-6 text-neutral-500">
+          <Clock size={24} className="mx-auto mb-2 opacity-50" />
+          <p className="text-sm">{t.noData}</p>
+          <p className="text-xs mt-1 text-neutral-600">{data?.message || t.noDataDesc}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { summary, stocks, period } = data;
+  const displayStocks = showAll ? stocks : stocks.slice(0, 5);
+
+  return (
+    <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-neutral-300 flex items-center gap-2">
+          <Target size={14} className="text-emerald-500" />
+          {t.title}
+        </h3>
+        <div className="flex gap-1">
+          <button onClick={() => setSelectedPeriod(1)} className={`px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 1 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}>{t.oneMonth}</button>
+          <button onClick={() => setSelectedPeriod(3)} className={`px-2 py-1 text-xs rounded transition-colors ${selectedPeriod === 3 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}>{t.threeMonths}</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
+          <div className="text-xs text-neutral-500 mb-1">{t.avgReturn}</div>
+          <div className={`text-lg font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%</div>
+        </div>
+        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
+          <div className="text-xs text-neutral-500 mb-1">{t.winRate}</div>
+          <div className="text-lg font-bold text-neutral-200">{summary.winnersCount}/{summary.winnersCount + summary.losersCount}<span className="text-xs text-neutral-500 ml-1">{t.stocksUp}</span></div>
+        </div>
+        <div className="bg-neutral-800/50 rounded-lg p-3 text-center">
+          <div className="text-xs text-neutral-500 mb-1">{t.invested}</div>
+          <div className={`text-lg font-bold ${summary.hypotheticalGain >= 1000 ? 'text-emerald-400' : 'text-red-400'}`}>${summary.hypotheticalGain.toLocaleString()}</div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {displayStocks.map((stock) => (
+          <div key={stock.ticker} className="flex items-center justify-between py-2 px-2 bg-neutral-800/30 rounded hover:bg-neutral-800/50 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-xs text-neutral-500 w-5">#{stock.rank}</span>
+              <div className="min-w-0">
+                <div className="font-medium text-sm text-neutral-200 truncate">{stock.ticker}</div>
+                <div className="text-xs text-neutral-500 truncate max-w-[120px]">{stock.companyName}</div>
+              </div>
+            </div>
+            <div className="text-center text-xs">
+              <div className="text-neutral-400">${stock.entryPrice.toFixed(2)} → ${stock.exitPrice.toFixed(2)}</div>
+              {stock.hadInsiderSell && stock.sellIndicator && (
+                <div className="flex items-center gap-1 text-amber-500 mt-0.5"><AlertTriangle size={10} /><span className="text-[10px]">{stock.sellIndicator}</span></div>
+              )}
+            </div>
+            <div className={`text-right min-w-[70px] ${stock.returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className="flex items-center justify-end gap-1 font-medium">
+                {stock.returnPercent >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                <span>{stock.returnPercent >= 0 ? '+' : ''}{stock.returnPercent.toFixed(1)}%</span>
+              </div>
+              <div className="text-xs opacity-75">{stock.returnPercent >= 0 ? '+' : ''}${stock.returnDollar.toFixed(0)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {stocks.length > 5 && (
+        <button onClick={() => setShowAll(!showAll)} className="w-full mt-3 py-2 text-xs text-neutral-400 hover:text-neutral-300 flex items-center justify-center gap-1 border-t border-neutral-800">
+          {showAll ? <><ChevronUp size={14} />{t.showLess}</> : <><ChevronDown size={14} />{t.showAll} ({stocks.length})</>}
+        </button>
+      )}
+      <div className="mt-3 pt-3 border-t border-neutral-800 text-xs text-neutral-600 text-center">{t.basedOn}: {new Date(period.snapshotDate).toLocaleDateString()}</div>
+    </div>
+  );
+}
 
 // Global cache for AI analysis - shared across all users/sessions
 const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();

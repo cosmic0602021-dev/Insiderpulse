@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import TopStocks from '@/components/terminal-ui/TopStocks';
+import { PastPerformanceSection } from '@/components/past-performance-section';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -215,15 +216,24 @@ export default function TopStocksTerminal() {
   });
 
   return (
-    <>
-      <TopStocks
-        data={stockRecommendations}
-        lang={language as Language}
-        isPro={isPro}
-        onUpgrade={handleUpgrade}
-        onSelectTrade={handleSelectTrade}
-        onViewDetails={handleViewDetails}
-      />
+    <div className="flex flex-col h-full overflow-hidden bg-[#050505]">
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Past Performance Section */}
+        <div className="p-4 pb-0">
+          <PastPerformanceSection className="mb-4" />
+        </div>
+
+        {/* Top Stocks List */}
+        <TopStocks
+          data={stockRecommendations}
+          lang={language as Language}
+          isPro={isPro}
+          onUpgrade={handleUpgrade}
+          onSelectTrade={handleSelectTrade}
+          onViewDetails={handleViewDetails}
+        />
+      </div>
       {selectedTrade && (
         <TradeDetailModal
           trade={selectedTrade}
@@ -236,6 +246,6 @@ export default function TopStocksTerminal() {
         isOpen={isSummaryModalOpen}
         onClose={handleCloseSummaryModal}
       />
-    </>
+    </div>
   );
 }
