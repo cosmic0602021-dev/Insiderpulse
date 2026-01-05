@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, TrendingDown, Target, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface StockPerformance {
   rank: number;
@@ -114,6 +115,11 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
 
+  // 앱인토스: "상위 내부자 주식 성과", insiderpulse.pro: "최근 추천종목 성과"
+  const title = ENV_CONFIG.isAppintos
+    ? (language === 'ko' ? '상위 내부자 주식 성과' : 'Top Insider Stocks Performance')
+    : t.title;
+
   const [isExpanded, setIsExpanded] = useState(false); // 기본: 접힌 상태, 클릭하면 펼쳐짐
   const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
 
@@ -150,7 +156,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-neutral-300 flex items-center gap-2">
             <Target size={14} className="text-emerald-500" />
-            {t.title}
+            {title}
           </h3>
           <div className="flex gap-1">
             <button
@@ -193,7 +199,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
             <Target size={18} className="text-emerald-400" />
           </div>
           <div className="text-left">
-            <span className="text-sm font-bold text-white block">{t.title}</span>
+            <span className="text-sm font-bold text-white block">{title}</span>
             <span className="text-xs text-emerald-400/80">{t.avgReturn}: {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%</span>
           </div>
         </div>
@@ -222,7 +228,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
       >
         <h3 className="text-sm font-semibold text-neutral-200 flex items-center gap-2">
           <Target size={14} className="text-emerald-500" />
-          {t.title}
+          {title}
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-neutral-500">

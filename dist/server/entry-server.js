@@ -8652,6 +8652,7 @@ const translations = {
 function PastPerformanceSection({ className = "" }) {
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
+  const title = ENV_CONFIG.isAppintos ? language === "ko" ? "상위 내부자 주식 성과" : "Top Insider Stocks Performance" : t.title;
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(1);
   const { data, isLoading, error } = useQuery({
@@ -8679,7 +8680,7 @@ function PastPerformanceSection({ className = "" }) {
       /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between mb-4", children: [
         /* @__PURE__ */ jsxs("h3", { className: "text-sm font-medium text-neutral-300 flex items-center gap-2", children: [
           /* @__PURE__ */ jsx(Target, { size: 14, className: "text-emerald-500" }),
-          t.title
+          title
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "flex gap-1", children: [
           /* @__PURE__ */ jsx(
@@ -8720,7 +8721,7 @@ function PastPerformanceSection({ className = "" }) {
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
             /* @__PURE__ */ jsx("div", { className: "bg-emerald-600/20 p-2 rounded-lg", children: /* @__PURE__ */ jsx(Target, { size: 18, className: "text-emerald-400" }) }),
             /* @__PURE__ */ jsxs("div", { className: "text-left", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-white block", children: t.title }),
+              /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-white block", children: title }),
               /* @__PURE__ */ jsxs("span", { className: "text-xs text-emerald-400/80", children: [
                 t.avgReturn,
                 ": ",
@@ -8754,7 +8755,7 @@ function PastPerformanceSection({ className = "" }) {
         children: [
           /* @__PURE__ */ jsxs("h3", { className: "text-sm font-semibold text-neutral-200 flex items-center gap-2", children: [
             /* @__PURE__ */ jsx(Target, { size: 14, className: "text-emerald-500" }),
-            t.title
+            title
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500", children: new Date(period.snapshotDate).toLocaleDateString() }),
