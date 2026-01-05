@@ -8715,26 +8715,31 @@ function PastPerformanceSection({ className = "" }) {
       "button",
       {
         onClick: () => setIsExpanded(true),
-        className: `w-full bg-neutral-900/50 border border-neutral-800 rounded-lg p-3 flex items-center justify-between hover:bg-neutral-800/50 transition-colors ${className}`,
+        className: `w-full bg-emerald-900/30 border-2 border-emerald-600/50 rounded-lg p-4 flex items-center justify-between hover:bg-emerald-800/40 hover:border-emerald-500/70 transition-all ${className}`,
         children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx(Target, { size: 14, className: "text-emerald-500" }),
-            /* @__PURE__ */ jsx("span", { className: "text-sm text-neutral-300", children: t.title })
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
+            /* @__PURE__ */ jsx("div", { className: "bg-emerald-600/20 p-2 rounded-lg", children: /* @__PURE__ */ jsx(Target, { size: 18, className: "text-emerald-400" }) }),
+            /* @__PURE__ */ jsxs("div", { className: "text-left", children: [
+              /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-white block", children: t.title }),
+              /* @__PURE__ */ jsxs("span", { className: "text-xs text-emerald-400/80", children: [
+                t.avgReturn,
+                ": ",
+                summary.avgReturn >= 0 ? "+" : "",
+                summary.avgReturn.toFixed(1),
+                "%"
+              ] })
+            ] })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-            /* @__PURE__ */ jsxs("span", { className: `text-sm font-bold ${summary.avgReturn >= 0 ? "text-emerald-400" : "text-red-400"}`, children: [
-              summary.avgReturn >= 0 ? "+" : "",
-              summary.avgReturn.toFixed(1),
-              "%"
+            /* @__PURE__ */ jsxs("div", { className: "text-right", children: [
+              /* @__PURE__ */ jsxs("span", { className: `text-lg font-bold ${summary.avgReturn >= 0 ? "text-emerald-400" : "text-red-400"}`, children: [
+                summary.winnersCount,
+                "/",
+                summary.winnersCount + summary.losersCount
+              ] }),
+              /* @__PURE__ */ jsx("span", { className: "text-xs text-neutral-400 block", children: t.stocksUp })
             ] }),
-            /* @__PURE__ */ jsxs("span", { className: "text-xs text-neutral-500", children: [
-              summary.winnersCount,
-              "/",
-              summary.winnersCount + summary.losersCount,
-              " ",
-              t.stocksUp
-            ] }),
-            /* @__PURE__ */ jsx(ChevronDown, { size: 16, className: "text-neutral-500" })
+            /* @__PURE__ */ jsx("div", { className: "bg-emerald-600/30 p-1.5 rounded-full", children: /* @__PURE__ */ jsx(ChevronDown, { size: 20, className: "text-emerald-300" }) })
           ] })
         ]
       }

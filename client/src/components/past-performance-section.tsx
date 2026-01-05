@@ -181,25 +181,32 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const sortedStocks = [...stocks].sort((a, b) => b.returnPercent - a.returnPercent);
   const displayStocks = sortedStocks.slice(0, 10);
 
-  // 접힌 상태: 한 줄 요약만 표시
+  // 접힌 상태: 한 줄 요약만 표시 (눈에 잘 띄게)
   if (!isExpanded) {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className={`w-full bg-neutral-900/50 border border-neutral-800 rounded-lg p-3 flex items-center justify-between hover:bg-neutral-800/50 transition-colors ${className}`}
+        className={`w-full bg-emerald-900/30 border-2 border-emerald-600/50 rounded-lg p-4 flex items-center justify-between hover:bg-emerald-800/40 hover:border-emerald-500/70 transition-all ${className}`}
       >
-        <div className="flex items-center gap-2">
-          <Target size={14} className="text-emerald-500" />
-          <span className="text-sm text-neutral-300">{t.title}</span>
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-600/20 p-2 rounded-lg">
+            <Target size={18} className="text-emerald-400" />
+          </div>
+          <div className="text-left">
+            <span className="text-sm font-bold text-white block">{t.title}</span>
+            <span className="text-xs text-emerald-400/80">{t.avgReturn}: {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%</span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-sm font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%
-          </span>
-          <span className="text-xs text-neutral-500">
-            {summary.winnersCount}/{summary.winnersCount + summary.losersCount} {t.stocksUp}
-          </span>
-          <ChevronDown size={16} className="text-neutral-500" />
+          <div className="text-right">
+            <span className={`text-lg font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {summary.winnersCount}/{summary.winnersCount + summary.losersCount}
+            </span>
+            <span className="text-xs text-neutral-400 block">{t.stocksUp}</span>
+          </div>
+          <div className="bg-emerald-600/30 p-1.5 rounded-full">
+            <ChevronDown size={20} className="text-emerald-300" />
+          </div>
         </div>
       </button>
     );
