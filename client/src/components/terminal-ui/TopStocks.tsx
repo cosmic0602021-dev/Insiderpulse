@@ -240,7 +240,12 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
             </p>
           </div>
       </div>
-      
+
+      {/* Past Performance Section - 헤더 바로 아래 */}
+      <div className="px-3 sm:px-6 pt-4">
+        <PastPerformanceSection />
+      </div>
+
       {/* Content Area */}
       <div className="p-3 sm:p-6 relative">
 
@@ -295,9 +300,6 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                  {lowerTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
             </div>
           )}
-
-          {/* Past Performance Section - 최근 추천 주식 성과 */}
-          <PastPerformanceSection className="mt-6" />
       </div>
     </div>
   );

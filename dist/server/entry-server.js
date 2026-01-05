@@ -12204,6 +12204,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
         lang === "ko" ? "연결됨" : "CONNECTED"
       ] })
     ] }) }),
+    /* @__PURE__ */ jsx("div", { className: "px-3 sm:px-6 pt-4", children: /* @__PURE__ */ jsx(PastPerformanceSection, {}) }),
     /* @__PURE__ */ jsxs("div", { className: "p-3 sm:p-6 relative", children: [
       /* @__PURE__ */ jsx("div", { className: "relative mb-4", children: !isPro ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
         /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm", children: [
@@ -12243,8 +12244,7 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
           /* @__PURE__ */ jsx("div", { className: "h-[1px] flex-1 bg-neutral-900" })
         ] }),
         lowerTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker))
-      ] }),
-      /* @__PURE__ */ jsx(PastPerformanceSection, { className: "mt-6" })
+      ] })
     ] })
   ] });
 };
