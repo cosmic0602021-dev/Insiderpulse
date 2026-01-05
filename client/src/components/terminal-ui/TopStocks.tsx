@@ -237,7 +237,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
-          <div className="relative mb-3">
+          <div className={`relative mb-2 ${!isPro ? 'max-h-[35vh] overflow-hidden' : ''}`}>
              {/* Compact Restricted Overlay */}
              {!isPro && (
                 <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[10rem] sm:max-w-[12rem]">
@@ -256,9 +256,9 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                     </div>
                 </div>
              )}
-             
+
              {/* Show all Top 3 ranks (blurred for non-Pro users) */}
-             <div className={`grid gap-4 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : ''}`}>
+             <div className={`grid gap-2 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : 'gap-4'}`}>
                 {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
              </div>
           </div>

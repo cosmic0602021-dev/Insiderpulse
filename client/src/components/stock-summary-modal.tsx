@@ -533,6 +533,107 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     };
   }, [stock, stats, t, langKey]);
 
+  // Fallback 분석 인사이트 생성 (서버 AI 분석이 없을 때 사용)
+  const analysisInsights = useMemo(() => {
+    if (!stock || !stats) return { summary: '', insights: [] };
+    const insights: string[] = [];
+    const currentPriceChange = stats.currentPrice && stats.avgPrice > 0
+      ? ((stats.currentPrice - stats.avgPrice) / stats.avgPrice) * 100
+      : 0;
+
+    // 클러스터 매수 분석
+    if (stats.buyerCount >= 3) {
+      insights.push(langKey === 'ko'
+        ? '다수 내부자 동시 매수는 역사적으로 긍정적 신호와 상관관계가 높습니다'
+        : langKey === 'ja'
+        ? '複数インサイダーの同時購入は歴史的にポジティブなシグナルと相関しています'
+        : langKey === 'zh'
+        ? '多位内部人士同时购买历史上与积极信号相关'
+        : 'Multiple simultaneous insider purchases historically correlate with positive outcomes');
+    } else if (stats.buyerCount >= 2) {
+      insights.push(langKey === 'ko'
+        ? '복수 내부자의 동시 매수 활동이 감지되었습니다'
+        : langKey === 'ja'
+        ? '複数インサイダーによる協調的な買い活動が検出されました'
+        : langKey === 'zh'
+        ? '检测到多位内部人士协调买入活动'
+        : 'Coordinated insider buying activity detected');
+    }
+
+    // 거래 규모 분석
+    if (stats.totalAmount > 5000000) {
+      const amountM = (stats.totalAmount / 1000000).toFixed(1);
+      insights.push(langKey === 'ko'
+        ? `$${amountM}M 대규모 매수는 내부자의 강한 확신을 시사합니다`
+        : langKey === 'ja'
+        ? `$${amountM}Mの大規模購入はインサイダーの強い確信を示しています`
+        : langKey === 'zh'
+        ? `$${amountM}M大规模买入表明内部人士有强烈信心`
+        : `$${amountM}M position indicates high conviction level`);
+    } else if (stats.totalAmount > 1000000) {
+      const amountM = (stats.totalAmount / 1000000).toFixed(1);
+      insights.push(langKey === 'ko'
+        ? `$${amountM}M 규모의 유의미한 매수 활동`
+        : langKey === 'ja'
+        ? `$${amountM}M規模の有意義な購入活動`
+        : langKey === 'zh'
+        ? `$${amountM}M规模的重要买入活动`
+        : `Significant $${amountM}M purchase activity`);
+    }
+
+    // 시가총액 대비 분석
+    if (stock.marketCap && stock.marketCap > 0) {
+      const ratio = (stats.totalAmount / stock.marketCap) * 100;
+      if (ratio >= 0.5) {
+        insights.push(langKey === 'ko'
+          ? `시가총액의 ${ratio.toFixed(2)}% 매수 - 지분 확대 의지 표명`
+          : langKey === 'ja'
+          ? `時価総額の${ratio.toFixed(2)}%購入 - 持分拡大の意志を示す`
+          : langKey === 'zh'
+          ? `购买市值的${ratio.toFixed(2)}% - 表明增持意愿`
+          : `${ratio.toFixed(2)}% of market cap - signaling commitment to stake increase`);
+      }
+    }
+
+    // 수익률 분석 (해석 추가)
+    if (currentPriceChange > 10) {
+      insights.push(langKey === 'ko'
+        ? `내부자 매수 이후 ${currentPriceChange.toFixed(1)}% 상승 - 내부자 판단 검증됨`
+        : langKey === 'ja'
+        ? `インサイダー購入後${currentPriceChange.toFixed(1)}%上昇 - インサイダーの判断が検証されました`
+        : langKey === 'zh'
+        ? `内部人士买入后上涨${currentPriceChange.toFixed(1)}% - 内部人士判断得到验证`
+        : `${currentPriceChange.toFixed(1)}% gain since purchase - insider thesis validated`);
+    } else if (currentPriceChange > 0) {
+      insights.push(langKey === 'ko'
+        ? `매수 이후 ${currentPriceChange.toFixed(1)}% 수익 실현 중`
+        : langKey === 'ja'
+        ? `購入後${currentPriceChange.toFixed(1)}%の利益を実現中`
+        : langKey === 'zh'
+        ? `买入后实现${currentPriceChange.toFixed(1)}%收益`
+        : `Currently ${currentPriceChange.toFixed(1)}% above entry price`);
+    } else if (currentPriceChange < -10) {
+      insights.push(langKey === 'ko'
+        ? `매수 대비 ${Math.abs(currentPriceChange).toFixed(1)}% 하락 - 추가 매수 기회 또는 재평가 필요`
+        : langKey === 'ja'
+        ? `購入価格から${Math.abs(currentPriceChange).toFixed(1)}%下落 - 追加購入機会または再評価が必要`
+        : langKey === 'zh'
+        ? `较买入价下跌${Math.abs(currentPriceChange).toFixed(1)}% - 可能是加仓机会`
+        : `${Math.abs(currentPriceChange).toFixed(1)}% below entry - potential accumulation zone`);
+    }
+
+    // 요약 문장 생성
+    const summary = langKey === 'ko'
+      ? `${stats.buyerCount}명 내부자의 집단 매수 활동이 SEC에 보고되었습니다.`
+      : langKey === 'ja'
+      ? `${stats.buyerCount}名のインサイダーによる集団購入活動がSECに報告されました。`
+      : langKey === 'zh'
+      ? `${stats.buyerCount}位内部人士的集体买入活动已向SEC报告。`
+      : `Cluster buying activity by ${stats.buyerCount} insiders reported to SEC.`;
+
+    return { summary, insights };
+  }, [stock, stats, langKey]);
+
   const priceHistory = useMemo(() => {
     if (!stock || !stats) return [];
 
@@ -804,7 +905,7 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
                 </span>
               </div>
-              {!isLoadingAnalysis && comprehensiveAnalysis?.executiveSummary && (
+              {!isLoadingAnalysis && (comprehensiveAnalysis?.aiSummary || comprehensiveAnalysis?.executiveSummary) && (
                 <div className="flex items-center gap-1 text-purple-400/60">
                   <span className="text-[8px] font-mono uppercase">
                     {isAnalysisExpanded ? (langKey === 'ko' ? '접기' : 'Less') : (langKey === 'ko' ? '더보기' : 'More')}
@@ -824,11 +925,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                      'Analyzing...'}
                   </span>
                 </div>
-              ) : comprehensiveAnalysis?.executiveSummary ? (
+              ) : (comprehensiveAnalysis?.aiSummary || comprehensiveAnalysis?.executiveSummary) ? (
                 <div className="pl-5 space-y-2">
                   {/* Executive Summary */}
                   <p className="text-[11px] md:text-xs text-white leading-relaxed font-medium">
-                    {comprehensiveAnalysis.executiveSummary}
+                    {comprehensiveAnalysis.aiSummary || comprehensiveAnalysis.executiveSummary}
                   </p>
 
                   {/* Expanded Analysis */}
@@ -1064,21 +1165,28 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   </div>
                 </div>
               ) : (
-                <div className="pl-5 space-y-1">
-                  <p className="text-[11px] text-neutral-300 leading-relaxed">
-                    {langKey === 'ko'
-                      ? `${stock.insiderCount}명의 내부자가 ${stock.companyName} 주식을 매수했습니다. 평균 매수가는 ${formatCurrency(stock.avgBuyPrice)}입니다.`
-                      : langKey === 'ja'
-                      ? `${stock.insiderCount}名のインサイダーが${stock.companyName}株を購入しました。平均購入価格は${formatCurrency(stock.avgBuyPrice)}です。`
-                      : langKey === 'zh'
-                      ? `${stock.insiderCount}位内部人士购买了${stock.companyName}股票。平均购买价格为${formatCurrency(stock.avgBuyPrice)}。`
-                      : `${stock.insiderCount} insider(s) purchased ${stock.companyName} stock at an average price of ${formatCurrency(stock.avgBuyPrice)}.`}
+                <div className="pl-5 space-y-2">
+                  <p className="text-[11px] text-white leading-relaxed font-medium">
+                    {analysisInsights.summary}
                   </p>
-                  <p className="text-[9px] text-neutral-500 italic">
-                    {langKey === 'ko' ? 'AI 상세 분석은 준비 중입니다.' :
-                     langKey === 'ja' ? 'AI詳細分析は準備中です。' :
-                     langKey === 'zh' ? 'AI详细分析正在准备中。' :
-                     'AI detailed analysis is being prepared.'}
+                  {analysisInsights.insights.length > 0 && (
+                    <ul className="space-y-1.5 mt-2">
+                      {analysisInsights.insights.map((insight, idx) => (
+                        <li key={idx} className="text-[10px] text-neutral-300 leading-relaxed flex items-start gap-1.5">
+                          <span className="text-purple-400 mt-0.5">•</span>
+                          <span>{insight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-[8px] text-neutral-500 italic mt-2 border-t border-neutral-800 pt-2">
+                    {langKey === 'ko'
+                      ? '* SEC Form 4 공시 데이터 기반 실시간 분석'
+                      : langKey === 'ja'
+                      ? '* SEC Form 4提出書類に基づくリアルタイム分析'
+                      : langKey === 'zh'
+                      ? '* 基于SEC Form 4申报数据的实时分析'
+                      : '* Real-time analysis based on SEC Form 4 filings'}
                   </p>
                 </div>
               )}

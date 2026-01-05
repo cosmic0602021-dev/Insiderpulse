@@ -531,9 +531,6 @@ export default function Ranking() {
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6">
 
-      {/* Past Performance Section */}
-      <PastPerformanceSection className="mb-2" />
-
       {/* Last Updated */}
       {data && (
         <div className="text-right text-xs text-muted-foreground">
@@ -554,48 +551,54 @@ export default function Ranking() {
 
       {/* Rankings List */}
       <div className="space-y-4">
-        {data?.rankings.map((item, index) => {
-          const isLocked = !isPremium && index < 3; // Top 3 locked for free users
+        {/* Compact Locked Card for Top 3 (Non-Premium Users) */}
+        {!isPremium && (
+          <Card
+            className="hover-elevate cursor-pointer"
+            onClick={() => setLocation('/premium-checkout')}
+          >
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 bg-[#0a0a0a]/95 rounded-lg p-2.5 sm:p-3 border border-amber-500/30">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">
+                      {t('ranking.lockedTitle') || 'Top 3 Premium Rankings'}
+                    </h3>
+                    <p className="text-[9px] sm:text-[10px] text-gray-400 truncate leading-tight">
+                      {t('ranking.lockedDescription') || 'Upgrade to unlock top insider picks'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocation('/premium-checkout');
+                  }}
+                  size="sm"
+                  className="shrink-0 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-2 sm:px-3 py-1 text-[10px] sm:text-xs whitespace-nowrap"
+                >
+                  <Crown className="w-3 h-3 mr-1" />
+                  {t('ranking.unlockButton') || 'Unlock'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Public Rankings (skip first 3 for non-premium) */}
+        {(isPremium ? data?.rankings : data?.rankings.slice(3))?.map((item, index) => {
+          const actualIndex = isPremium ? index : index + 3;
 
           return (
-            isLocked ? (
-            <Card
-              key={item.ticker}
-              className="hover-elevate cursor-pointer"
-              onClick={() => setLocation('/premium-checkout')}
-            >
-              <CardContent className="p-2 sm:p-4">
-                <div className="text-center p-2 sm:p-3 space-y-1 sm:space-y-1.5 bg-black/85 backdrop-blur-md rounded-lg border border-amber-500/30 shadow-xl">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-amber-500/20 mb-0.5">
-                    <Lock className="w-5 h-5 sm:w-7 sm:h-7 text-amber-500" />
-                  </div>
-                  <h3 className="text-sm sm:text-lg font-bold text-white">
-                    {t('ranking.lockedTitle') || `Premium Feature: #${index + 1} Ranking`}
-                  </h3>
-                  <p className="text-[10px] sm:text-xs text-gray-300 max-w-xs mx-auto">
-                    {t('ranking.lockedDescription') || 'Upgrade to Insider Pro to see top stocks ranked by insider trading activity'}
-                  </p>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocation('/premium-checkout');
-                    }}
-                    size="sm"
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm"
-                  >
-                    <Crown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    {t('ranking.unlockButton') || 'Unlock Top Rankings'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
           <Card
             key={item.ticker}
-            ref={el => cardRefs.current[index] = el}
+            ref={el => cardRefs.current[actualIndex] = el}
             className="hover-elevate cursor-pointer relative"
             data-testid={`ranking-item-${item.ticker.toLowerCase()}`}
-            onClick={() => handleStockClick(item, index)}
+            onClick={() => handleStockClick(item, actualIndex)}
           >
             {/* 공유 버튼 */}
             <Button
@@ -604,10 +607,10 @@ export default function Ranking() {
               className="absolute top-2 right-2 z-10 hover:bg-muted/50"
               onClick={(e) => {
                 e.stopPropagation(); // 카드 클릭 이벤트 방지
-                shareRankingCard(index);
+                shareRankingCard(actualIndex);
               }}
             >
-              {sharedCardIndex === index ? (
+              {sharedCardIndex === actualIndex ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
                 <Share2 className="h-4 w-4" />
@@ -633,7 +636,7 @@ export default function Ranking() {
                 {/* Left side - Company info */}
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
                   <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
-                    <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                    <span className="text-lg font-bold text-primary">#{actualIndex + 1}</span>
                   </div>
 
                   {/* Company Logo */}
@@ -966,10 +969,12 @@ export default function Ranking() {
               ) : null}
             </CardContent>
           </Card>
-          )
         );
         })}
       </div>
+
+      {/* Past Performance Section */}
+      <PastPerformanceSection className="mt-4" />
 
       {/* Empty state */}
       {data && data.rankings.length === 0 && (

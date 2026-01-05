@@ -219,11 +219,6 @@ export default function TopStocksTerminal() {
     <div className="flex flex-col h-full overflow-hidden bg-[#050505]">
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Past Performance Section */}
-        <div className="p-4 pb-0">
-          <PastPerformanceSection className="mb-4" />
-        </div>
-
         {/* Top Stocks List */}
         <TopStocks
           data={stockRecommendations}
@@ -233,6 +228,11 @@ export default function TopStocksTerminal() {
           onSelectTrade={handleSelectTrade}
           onViewDetails={handleViewDetails}
         />
+
+        {/* Past Performance Section */}
+        <div className="p-4 pt-0">
+          <PastPerformanceSection className="mt-4" />
+        </div>
       </div>
       {selectedTrade && (
         <TradeDetailModal

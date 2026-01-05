@@ -14,7 +14,7 @@ const EN = {
   sidebar: {
     modules: 'Modules',
     live: 'Live Trading',
-    analysis: 'Top Insider Activity', // Changed from 'Recommended Stocks'
+    analysis: 'Recommended Insider Stocks',
     config: 'Configuration',
     notifications: 'Notifications',
     watched: 'Watched Assets',
@@ -38,8 +38,8 @@ const EN = {
     noRecords: 'NO_RECORDS_FOUND'
   },
   top: {
-    header: 'Top Insider Activity', // Changed from 'Top Alpha Signals'
-    subHeader: 'High-Volume Insider Transactions', // Changed from 'High-Conviction Institutional Signals'
+    header: 'Recommended Insider Stocks',
+    subHeader: 'Top Insider Trading Activity',
     interval: 'Calculation Interval',
     restricted: 'Premium Access Required',
     securityLevel: 'INSTITUTIONAL GRADE DATA (Ranks 1-3)',
@@ -48,10 +48,10 @@ const EN = {
     cta: 'Upgrade to Reveal Data', // Changed from 'Signals'
     aes: 'AES-256 ENCRYPTED',
     blind: 'BLIND_TRUST_MODE',
-    signal: 'Buy Volume', // Changed from 'Buy Intensity' - volume indicator
-    strongBuy: 'High Volume', // Volume indicator without market cap reference
-    mediumBuy: 'Medium Volume', // Volume indicator
-    lowBuy: 'Low Volume', // Volume indicator
+    signal: 'Signal',
+    strongBuy: 'Strong',
+    mediumBuy: 'Medium',
+    lowBuy: 'Weak',
     insiders: 'Insiders',
     institutional: 'Insider Purchases',
     avgPrice: 'Insider Avg Price',
@@ -284,7 +284,7 @@ const KO = {
   sidebar: {
     modules: '모듈',
     live: '실시간 거래',
-    analysis: '내부자 활동 TOP', // Changed from '추천 주식'
+    analysis: '추천 내부자 주식',
     config: '설정',
     notifications: '알림관리',
     watched: '관심 종목',
@@ -308,8 +308,8 @@ const KO = {
     noRecords: '기록 없음'
   },
   top: {
-    header: '상위 내부자 활동', // Changed from '상위 알파 시그널'
-    subHeader: '대량 내부자 거래', // Changed from '기관급 고확신 매집 시그널'
+    header: '추천 내부자 주식',
+    subHeader: '상위 내부자 거래 활동',
     interval: '계산 간격',
     restricted: '프리미엄 액세스 필요',
     securityLevel: '기관급 데이터 (1~3위)',
@@ -318,10 +318,10 @@ const KO = {
     cta: '데이터 잠금 해제', // Changed from '시그널 잠금 해제'
     aes: 'AES-256 암호화',
     blind: '블라인드 트러스트 모드',
-    signal: '매수량', // Changed to volume indicator
-    strongBuy: '높은 매수량', // Volume indicator without market cap reference
-    mediumBuy: '중간 매수량', // Volume indicator
-    lowBuy: '낮은 매수량', // Volume indicator
+    signal: '신호',
+    strongBuy: '강함',
+    mediumBuy: '중간',
+    lowBuy: '약함',
     insiders: '내부자',
     institutional: '내부자 매수 활동', // Changed from '내부자 매수 내역'
     avgPrice: '내부자 평균 매수가',
@@ -557,8 +557,12 @@ const JA = {
   },
   top: {
     ...EN.top,
-    signal: '購入強度',
-    strongBuy: '強い買い',
+    header: '推奨インサイダー銘柄',
+    subHeader: 'トップインサイダー取引活動',
+    signal: 'シグナル',
+    strongBuy: '強い',
+    mediumBuy: '中間',
+    lowBuy: '弱い',
     buyPrice: '購入価格',
     shareCount: '株式数',
     totalAmount: '総額',
@@ -581,7 +585,7 @@ const JA = {
   sidebar: {
     ...EN.sidebar,
     live: 'ライブトレーディング',
-    analysis: 'インサイダー活動トップ', // App Store compliance: changed from 'おすすめ銘柄'
+    analysis: '推奨インサイダー銘柄',
     config: '設定',
     notifications: '通知管理',
     watched: 'ウォッチリスト',
@@ -699,8 +703,12 @@ const ZH = {
   },
   top: {
     ...EN.top,
-    signal: '买入强度',
-    strongBuy: '强劲买入',
+    header: '推荐内幕股票',
+    subHeader: '顶级内幕交易活动',
+    signal: '信号',
+    strongBuy: '强',
+    mediumBuy: '中',
+    lowBuy: '弱',
     buyPrice: '购买价格',
     shareCount: '股数',
     totalAmount: '总额',
@@ -723,7 +731,7 @@ const ZH = {
   sidebar: {
     ...EN.sidebar,
     live: '实时交易',
-    analysis: '内部人活动排行', // App Store compliance: changed from '推荐股票'
+    analysis: '推荐内幕股票',
     config: '配置',
     notifications: '通知管理',
     watched: '关注列表',
