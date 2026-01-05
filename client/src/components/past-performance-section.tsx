@@ -15,6 +15,7 @@ interface StockPerformance {
   hadInsiderSell: boolean;
   sellDate?: string;
   sellIndicator?: string;
+  recommendedDate: string;
 }
 
 interface PerformanceSummary {
@@ -40,7 +41,7 @@ interface HistoricalPerformanceResponse {
 // Translations
 const translations = {
   en: {
-    title: 'Past Recommendation Performance',
+    title: 'Recent Recommendation Performance',
     oneMonth: '1 Month Ago',
     threeMonths: '3 Months Ago',
     avgReturn: 'Avg Return',
@@ -54,10 +55,10 @@ const translations = {
     noDataDesc: 'Data collection has started. Check back soon.',
     showAll: 'Show all',
     showLess: 'Show less',
-    basedOn: 'Based on recommendations from',
+    basedOn: 'Recommended on',
   },
   ko: {
-    title: '과거 추천 성과',
+    title: '최근 추천종목 성과',
     oneMonth: '1개월 전',
     threeMonths: '3개월 전',
     avgReturn: '평균 수익률',
@@ -71,10 +72,10 @@ const translations = {
     noDataDesc: '데이터 수집이 시작되었습니다. 잠시 후 확인해주세요.',
     showAll: '전체 보기',
     showLess: '접기',
-    basedOn: '기준일',
+    basedOn: '추천일',
   },
   ja: {
-    title: '過去の推奨パフォーマンス',
+    title: '最近の推奨銘柄パフォーマンス',
     oneMonth: '1ヶ月前',
     threeMonths: '3ヶ月前',
     avgReturn: '平均リターン',
@@ -88,10 +89,10 @@ const translations = {
     noDataDesc: 'データ収集を開始しました。しばらくお待ちください。',
     showAll: 'すべて表示',
     showLess: '折りたたむ',
-    basedOn: '基準日',
+    basedOn: '推奨日',
   },
   zh: {
-    title: '过去推荐表现',
+    title: '最近推荐股票表现',
     oneMonth: '1个月前',
     threeMonths: '3个月前',
     avgReturn: '平均回报',
@@ -105,7 +106,7 @@ const translations = {
     noDataDesc: '数据收集已开始。请稍后查看。',
     showAll: '显示全部',
     showLess: '收起',
-    basedOn: '基准日',
+    basedOn: '推荐日',
   },
 };
 
@@ -224,11 +225,6 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
         </div>
       </button>
 
-      {/* 추천 날짜 */}
-      <div className="text-center text-xs text-neutral-500 mb-2">
-        {t.basedOn}: <span className="text-neutral-400 font-medium">{new Date(period.snapshotDate).toLocaleDateString()}</span>
-      </div>
-
       {/* Summary Stats - 2열로 간결하게 */}
       <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 mb-3">
         <div className="text-center flex-1">
@@ -265,12 +261,19 @@ function StockPerformanceRow({ stock, displayRank }: { stock: StockPerformance; 
     ? 'text-amber-400 font-bold'
     : 'text-neutral-600';
 
+  // 추천일 포맷 (M/D)
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+
   return (
     <div className={`flex items-center justify-between py-1.5 px-2 rounded ${isTopThree ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-neutral-800/30'}`}>
-      {/* Left: Ticker */}
+      {/* Left: Rank + Ticker + Date */}
       <div className="flex items-center gap-2 min-w-0">
         <span className={`text-[10px] w-4 ${rankStyle}`}>{displayRank}</span>
         <span className={`font-medium text-sm ${isTopThree ? 'text-amber-300' : 'text-neutral-200'}`}>{stock.ticker}</span>
+        <span className="text-[9px] text-neutral-500">{formatDate(stock.recommendedDate)}</span>
       </div>
 
       {/* Center: Price */}

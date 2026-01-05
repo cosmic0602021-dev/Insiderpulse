@@ -18,6 +18,7 @@ interface StockPerformance {
   hadInsiderSell: boolean;
   sellDate?: string;
   sellIndicator?: string;
+  recommendedDate: string; // 추천 날짜
 }
 
 interface PerformanceSummary {
@@ -213,6 +214,7 @@ class PastPerformanceService {
       hadInsiderSell: sellInfo.hasSell,
       sellDate: sellInfo.sellDate,
       sellIndicator: sellInfo.sellerInfo,
+      recommendedDate: snapshotDate, // 추천 날짜
     };
   }
 
