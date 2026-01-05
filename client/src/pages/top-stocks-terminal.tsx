@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import TopStocks from '@/components/terminal-ui/TopStocks';
-import { PastPerformanceSection } from '@/components/past-performance-section';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -219,7 +218,7 @@ export default function TopStocksTerminal() {
     <div className="flex flex-col h-full overflow-hidden bg-[#050505]">
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Top Stocks List */}
+        {/* Top Stocks List - includes PastPerformanceSection at bottom */}
         <TopStocks
           data={stockRecommendations}
           lang={language as Language}
@@ -228,11 +227,6 @@ export default function TopStocksTerminal() {
           onSelectTrade={handleSelectTrade}
           onViewDetails={handleViewDetails}
         />
-
-        {/* Past Performance Section */}
-        <div className="p-4 pt-0">
-          <PastPerformanceSection className="mt-4" />
-        </div>
       </div>
       {selectedTrade && (
         <TradeDetailModal

@@ -13178,20 +13178,17 @@ function TopStocksTerminal() {
     };
   });
   return /* @__PURE__ */ jsxs("div", { className: "flex flex-col h-full overflow-hidden bg-[#050505]", children: [
-    /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto", children: [
-      /* @__PURE__ */ jsx(
-        TopStocks,
-        {
-          data: stockRecommendations,
-          lang: language,
-          isPro,
-          onUpgrade: handleUpgrade,
-          onSelectTrade: handleSelectTrade,
-          onViewDetails: handleViewDetails
-        }
-      ),
-      /* @__PURE__ */ jsx("div", { className: "p-4 pt-0", children: /* @__PURE__ */ jsx(PastPerformanceSection, { className: "mt-4" }) })
-    ] }),
+    /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-y-auto", children: /* @__PURE__ */ jsx(
+      TopStocks,
+      {
+        data: stockRecommendations,
+        lang: language,
+        isPro,
+        onUpgrade: handleUpgrade,
+        onSelectTrade: handleSelectTrade,
+        onViewDetails: handleViewDetails
+      }
+    ) }),
     selectedTrade && /* @__PURE__ */ jsx(
       TradeDetailModal,
       {
