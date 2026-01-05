@@ -50,6 +50,11 @@ npx granite build
 ```
 결과물: `/home/runner/workspace/insiderpulse.ait`
 
+### .ait 파일 배포 (앱인토스 업로드)
+```bash
+npx ait deploy --api-key rhz8SlVm1muKVeprT3r7D-VAnb6WgJzl5CbCBr4U3-c --location insiderpulse.ait
+```
+
 ---
 
 ## 프로젝트 구조
