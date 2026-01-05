@@ -12203,8 +12203,8 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar", children: [
-      /* @__PURE__ */ jsxs("div", { className: `relative mb-2 ${!isPro ? "max-h-[35vh] overflow-hidden" : ""}`, children: [
-        !isPro && /* @__PURE__ */ jsx("div", { className: "absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[10rem] sm:max-w-[12rem]", children: /* @__PURE__ */ jsxs("div", { className: "w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm", children: [
+      /* @__PURE__ */ jsx("div", { className: "relative mb-2", children: !isPro ? /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+        /* @__PURE__ */ jsx("div", { className: "absolute inset-0 z-20 flex items-center justify-center", children: /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm", children: [
           /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-1.5 mb-1.5", children: [
             /* @__PURE__ */ jsx(Lock, { size: 12, className: "text-amber-600" }),
             /* @__PURE__ */ jsx("span", { className: "text-[10px] font-bold text-neutral-200 uppercase", children: t.restricted })
@@ -12221,8 +12221,28 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             }
           )
         ] }) }),
-        /* @__PURE__ */ jsx("div", { className: `grid gap-2 ${!isPro ? "opacity-20 pointer-events-none select-none filter blur-sm" : "gap-4"}`, children: topTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker)) })
-      ] }),
+        /* @__PURE__ */ jsx("div", { className: "grid grid-cols-3 gap-2 opacity-20 pointer-events-none select-none filter blur-sm", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-900 p-3", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
+            /* @__PURE__ */ jsxs("span", { className: "text-2xl font-black text-amber-500", children: [
+              "0",
+              stock.rank
+            ] }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("div", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
+              /* @__PURE__ */ jsx("div", { className: "text-[9px] text-neutral-500 truncate max-w-[80px]", children: stock.companyName })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-emerald-600 font-bold", children: t.strongBuy }),
+          /* @__PURE__ */ jsxs("div", { className: "text-[9px] text-neutral-500 mt-1", children: [
+            stock.insiderCount,
+            " ",
+            t.insiders
+          ] })
+        ] }, stock.ticker)) })
+      ] }) : (
+        /* Pro users see full cards */
+        /* @__PURE__ */ jsx("div", { className: "grid gap-4", children: topTier.map((stock) => /* @__PURE__ */ jsx(StockCard, { stock }, stock.ticker)) })
+      ) }),
       /* @__PURE__ */ jsxs("div", { className: "grid gap-4", children: [
         /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2 px-1", children: [
           /* @__PURE__ */ jsx("div", { className: "h-[1px] flex-1 bg-neutral-900" }),

@@ -237,11 +237,13 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
-          <div className={`relative mb-2 ${!isPro ? 'max-h-[35vh] overflow-hidden' : ''}`}>
-             {/* Compact Restricted Overlay */}
-             {!isPro && (
-                <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[10rem] sm:max-w-[12rem]">
-                    <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm">
+          <div className="relative mb-2">
+             {/* Locked State: Compact mini cards with overlay */}
+             {!isPro ? (
+               <div className="relative">
+                 {/* Compact Restricted Overlay */}
+                 <div className="absolute inset-0 z-20 flex items-center justify-center">
+                    <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-2 text-center shadow-2xl rounded-sm">
                         <div className="flex items-center justify-center gap-1.5 mb-1.5">
                             <Lock size={12} className="text-amber-600" />
                             <span className="text-[10px] font-bold text-neutral-200 uppercase">{t.restricted}</span>
@@ -254,13 +256,31 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                             {t.cta}
                         </button>
                     </div>
-                </div>
-             )}
+                 </div>
 
-             {/* Show all Top 3 ranks (blurred for non-Pro users) */}
-             <div className={`grid gap-2 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : 'gap-4'}`}>
-                {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
-             </div>
+                 {/* Compact blurred cards - all 3 visible */}
+                 <div className="grid grid-cols-3 gap-2 opacity-20 pointer-events-none select-none filter blur-sm">
+                    {topTier.map(stock => (
+                      <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-900 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl font-black text-amber-500">0{stock.rank}</span>
+                          <div>
+                            <div className="text-sm font-bold text-neutral-200">{stock.ticker}</div>
+                            <div className="text-[9px] text-neutral-500 truncate max-w-[80px]">{stock.companyName}</div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-emerald-600 font-bold">{t.strongBuy}</div>
+                        <div className="text-[9px] text-neutral-500 mt-1">{stock.insiderCount} {t.insiders}</div>
+                      </div>
+                    ))}
+                 </div>
+               </div>
+             ) : (
+               /* Pro users see full cards */
+               <div className="grid gap-4">
+                  {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
+               </div>
+             )}
           </div>
 
           {/* LOWER TIER (Always Visible) - Ranks 4+ */}
