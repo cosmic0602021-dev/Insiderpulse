@@ -4,6 +4,7 @@ import { StockRecommendation, Language, Trade } from './types';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
 import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye } from 'lucide-react';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface TopStocksProps {
   data: StockRecommendation[];
@@ -18,10 +19,16 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   const { formatCurrency } = useCurrency();
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
+  const isAppintos = ENV_CONFIG.isAppintos;
 
-  // Split data into Restricted (Top 3) and Visible (4+)
-  const topTier = data.slice(0, 3);
-  const lowerTier = data.slice(3);
+  // Appintos: all 6 locked, insiderpulse.pro: only top 3 locked
+  const topTier = isAppintos ? data : data.slice(0, 3);
+  const lowerTier = isAppintos ? [] : data.slice(3);
+
+  // Header text: Appintos uses different name
+  const headerText = isAppintos
+    ? (lang === 'ko' ? '상위 내부자 주식' : 'Top Insider Stocks')
+    : t.header;
 
   const handleBuyerClick = (stock: StockRecommendation, buyer: any) => {
     if (!onSelectTrade) return;
@@ -221,7 +228,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       <div className="p-6 border-b border-neutral-900 flex justify-between items-end bg-[#050505] z-10 relative">
           <div>
             <h1 className="text-3xl font-light text-neutral-200 tracking-tight uppercase flex items-center gap-3">
-                {t.header}
+                {headerText}
                 {!isPro && <div className="bg-amber-900/20 border border-amber-900/50 text-amber-600 p-1 rounded-sm"><Lock size={14} /></div>}
             </h1>
             <p className="text-xs text-neutral-600 mt-1 mono uppercase tracking-widest flex items-center gap-2">
@@ -276,15 +283,17 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
              )}
           </div>
 
-          {/* LOWER TIER (Always Visible) - Ranks 4+ */}
-          <div className="grid gap-4">
-               <div className="flex items-center gap-2 mb-2 px-1">
-                   <div className="h-[1px] flex-1 bg-neutral-900"></div>
-                   <span className="text-[10px] font-mono text-neutral-600 uppercase">Additional Signals (Public)</span>
-                   <div className="h-[1px] flex-1 bg-neutral-900"></div>
-               </div>
-               {lowerTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
-          </div>
+          {/* LOWER TIER (Always Visible) - Ranks 4+ (Not shown in Appintos) */}
+          {lowerTier.length > 0 && (
+            <div className="grid gap-4">
+                 <div className="flex items-center gap-2 mb-2 px-1">
+                     <div className="h-[1px] flex-1 bg-neutral-900"></div>
+                     <span className="text-[10px] font-mono text-neutral-600 uppercase">Additional Signals (Public)</span>
+                     <div className="h-[1px] flex-1 bg-neutral-900"></div>
+                 </div>
+                 {lowerTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
+            </div>
+          )}
       </div>
     </div>
   );
