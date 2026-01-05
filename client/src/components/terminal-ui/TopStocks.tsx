@@ -237,7 +237,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       <div className="flex-1 overflow-y-auto p-3 sm:p-6 relative custom-scrollbar">
           
           {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 */}
-          <div className="relative mb-8">
+          <div className="relative mb-3">
              {/* Compact Restricted Overlay */}
              {!isPro && (
                 <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center mx-auto max-w-[10rem] sm:max-w-[12rem]">
@@ -257,14 +257,14 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                 </div>
              )}
              
-             {/* Only show rank #1 in background (blurred) - hide #2 and #3 */}
-             <div className={`grid gap-6 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : ''}`}>
-                {isPro ? topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />) : topTier.slice(0, 1).map(stock => <StockCard key={stock.ticker} stock={stock} />)}
+             {/* Show all Top 3 ranks (blurred for non-Pro users) */}
+             <div className={`grid gap-4 ${!isPro ? 'opacity-20 pointer-events-none select-none filter blur-sm' : ''}`}>
+                {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
              </div>
           </div>
 
           {/* LOWER TIER (Always Visible) - Ranks 4+ */}
-          <div className="grid gap-6">
+          <div className="grid gap-4">
                <div className="flex items-center gap-2 mb-2 px-1">
                    <div className="h-[1px] flex-1 bg-neutral-900"></div>
                    <span className="text-[10px] font-mono text-neutral-600 uppercase">Additional Signals (Public)</span>

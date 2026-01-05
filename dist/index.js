@@ -10696,7 +10696,9 @@ var init_past_performance_service = __esm({
           returnDollar: Math.round(returnDollar * 100) / 100,
           hadInsiderSell: sellInfo.hasSell,
           sellDate: sellInfo.sellDate,
-          sellIndicator: sellInfo.sellerInfo
+          sellIndicator: sellInfo.sellerInfo,
+          recommendedDate: snapshotDate
+          // 추천 날짜
         };
       }
       /**
