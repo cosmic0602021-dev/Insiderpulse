@@ -12221,22 +12221,23 @@ const TopStocks = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails 
             }
           )
         ] }) }),
-        /* @__PURE__ */ jsx("div", { className: "grid grid-cols-3 gap-2 opacity-20 pointer-events-none select-none filter blur-sm", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-900 p-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 mb-2", children: [
-            /* @__PURE__ */ jsxs("span", { className: "text-2xl font-black text-amber-500", children: [
+        /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]", children: topTier.map((stock) => /* @__PURE__ */ jsxs("div", { className: "bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center justify-between", children: [
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsxs("span", { className: "text-xl font-black text-amber-500 w-6", children: [
               "0",
               stock.rank
             ] }),
             /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("div", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
-              /* @__PURE__ */ jsx("div", { className: "text-[9px] text-neutral-500 truncate max-w-[80px]", children: stock.companyName })
+              /* @__PURE__ */ jsx("span", { className: "text-sm font-bold text-neutral-200", children: stock.ticker }),
+              /* @__PURE__ */ jsx("span", { className: "text-[10px] text-neutral-500 ml-2", children: stock.companyName })
             ] })
           ] }),
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-emerald-600 font-bold", children: t.strongBuy }),
-          /* @__PURE__ */ jsxs("div", { className: "text-[9px] text-neutral-500 mt-1", children: [
-            stock.insiderCount,
-            " ",
-            t.insiders
+          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3 text-[10px]", children: [
+            /* @__PURE__ */ jsx("span", { className: "text-emerald-500 font-bold", children: t.strongBuy }),
+            /* @__PURE__ */ jsxs("span", { className: "text-neutral-500", children: [
+              stock.insiderCount,
+              lang === "ko" ? "명" : " insiders"
+            ] })
           ] })
         ] }, stock.ticker)) })
       ] }) : (

@@ -259,18 +259,20 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                  </div>
 
                  {/* Compact blurred cards - all 3 visible */}
-                 <div className="grid grid-cols-3 gap-2 opacity-20 pointer-events-none select-none filter blur-sm">
+                 <div className="flex flex-col gap-1 opacity-30 pointer-events-none select-none filter blur-[2px]">
                     {topTier.map(stock => (
-                      <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-900 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl font-black text-amber-500">0{stock.rank}</span>
+                      <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-black text-amber-500 w-6">0{stock.rank}</span>
                           <div>
-                            <div className="text-sm font-bold text-neutral-200">{stock.ticker}</div>
-                            <div className="text-[9px] text-neutral-500 truncate max-w-[80px]">{stock.companyName}</div>
+                            <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
+                            <span className="text-[10px] text-neutral-500 ml-2">{stock.companyName}</span>
                           </div>
                         </div>
-                        <div className="text-[10px] text-emerald-600 font-bold">{t.strongBuy}</div>
-                        <div className="text-[9px] text-neutral-500 mt-1">{stock.insiderCount} {t.insiders}</div>
+                        <div className="flex items-center gap-3 text-[10px]">
+                          <span className="text-emerald-500 font-bold">{t.strongBuy}</span>
+                          <span className="text-neutral-500">{stock.insiderCount}{lang === 'ko' ? '명' : ' insiders'}</span>
+                        </div>
                       </div>
                     ))}
                  </div>
