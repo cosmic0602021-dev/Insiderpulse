@@ -58,6 +58,7 @@ export default function LiveTrading() {
   const [loadedCount, setLoadedCount] = useState(100);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [adClickCount, setAdClickCount] = useState(0); // 광고 클릭 카운터 (2클릭마다 광고)
 
   // Map filter type to transaction types array
   const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
@@ -91,11 +92,23 @@ export default function LiveTrading() {
 
   const handleTradeClick = async (trade: InsiderTrade) => {
     if (ENV_CONFIG.isAppintos) {
-      // 앱인토스 환경: 광고 표시 후 모달 열기
-      await showAdBeforeNavigation(() => {
+      // 앱인토스 환경: 2클릭마다 광고 표시
+      const newClickCount = adClickCount + 1;
+      setAdClickCount(newClickCount);
+
+      if (newClickCount % 2 === 0) {
+        // 2번째 클릭: 광고 표시 후 모달 열기
+        console.log('[LiveTrading] Ad trigger: click count =', newClickCount);
+        await showAdBeforeNavigation(() => {
+          setSelectedTrade(trade);
+          setIsModalOpen(true);
+        });
+      } else {
+        // 1번째 클릭: 광고 없이 바로 모달 열기
+        console.log('[LiveTrading] No ad: click count =', newClickCount);
         setSelectedTrade(trade);
         setIsModalOpen(true);
-      });
+      }
     } else {
       // 웹 환경: 광고 없이 바로 모달 열기
       setSelectedTrade(trade);

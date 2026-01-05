@@ -5097,6 +5097,202 @@ const queryKeys = {
     detail: (id) => ["trades", "detail", id]
   }
 };
+let appLoginApi;
+async function ensureAppLoginAPI() {
+  if (appLoginApi) return true;
+  try {
+    console.log("[TossLogin] Loading appLogin API dynamically...");
+    const framework = await import("@apps-in-toss/web-framework");
+    if (!framework.appLogin) {
+      console.error("[TossLogin] appLogin function not found in framework");
+      return false;
+    }
+    appLoginApi = framework.appLogin;
+    console.log("[TossLogin] appLogin API loaded successfully");
+    return true;
+  } catch (error) {
+    console.error("[TossLogin] Failed to load appLogin API:", error);
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert(`[TossLogin] API 로드 실패:
+${error instanceof Error ? error.message : String(error)}`);
+    }
+    return false;
+  }
+}
+async function checkExistingTossSession() {
+  if (!ENV_CONFIG.isAppintos) return null;
+  try {
+    console.log("[TossLogin] Checking existing session...");
+    const response = await fetch(resolveApiUrl("/api/toss-login/me"), {
+      method: "GET",
+      credentials: "include",
+      // 쿠키 포함
+      mode: "cors"
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.user) {
+        console.log("[TossLogin] Found existing session, user:", data.user.id);
+        localStorage.setItem("appintos_user_id", data.user.id);
+        return data.user;
+      }
+    }
+    console.log("[TossLogin] No existing session found");
+  } catch (error) {
+    console.log("[TossLogin] Session check failed:", error);
+  }
+  return null;
+}
+async function requestTossLogin() {
+  if (!ENV_CONFIG.isAppintos) {
+    console.warn("[TossLogin] Not in Apps-in-Toss environment");
+    return null;
+  }
+  try {
+    console.log("[TossLogin] Requesting Toss Login via SDK...");
+    const apiLoaded = await ensureAppLoginAPI();
+    if (!apiLoaded || !appLoginApi) {
+      console.error("[TossLogin] appLogin API not available");
+      if (typeof window !== "undefined" && window.alert) {
+        window.alert("[TossLogin] appLogin API를 로드할 수 없습니다.\n앱인토스 환경에서 실행 중인지 확인해주세요.");
+      }
+      return null;
+    }
+    const result = await appLoginApi();
+    if (result && result.authorizationCode) {
+      console.log("[TossLogin] Got authorization code, referrer:", result.referrer);
+      return {
+        authorizationCode: result.authorizationCode,
+        referrer: result.referrer
+        // 'sandbox' or 'DEFAULT'
+      };
+    }
+    console.warn("[TossLogin] No authorization code received");
+    return null;
+  } catch (error) {
+    const errorMessage = (error == null ? void 0 : error.message) || (error == null ? void 0 : error.toString()) || "Unknown error";
+    const errorCode = (error == null ? void 0 : error.code) || "NO_CODE";
+    console.error("[TossLogin] appLogin failed:", {
+      message: errorMessage,
+      code: errorCode,
+      error
+    });
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert(`[TossLogin Error]
+Code: ${errorCode}
+Message: ${errorMessage}`);
+    }
+    return null;
+  }
+}
+async function exchangeTossToken(authorizationCode, referrer) {
+  try {
+    const response = await fetch(resolveApiUrl("/api/toss-login/token"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ authorizationCode, referrer }),
+      mode: "cors"
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      console.error("[TossLogin] Token exchange failed:", error);
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("[TossLogin] Token exchange error:", error);
+    return null;
+  }
+}
+async function getTossUserInfo() {
+  try {
+    const response = await fetch(resolveApiUrl("/api/toss-login/me"), {
+      method: "GET",
+      mode: "cors"
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error("[TossLogin] Get user info error:", error);
+    return null;
+  }
+}
+async function performTossLogin() {
+  const debugLog = (step, data) => {
+    console.log(`[TossLogin] ${step}`, data);
+  };
+  try {
+    debugLog("Step 0: Checking existing session...");
+    const existingUser = await checkExistingTossSession();
+    if (existingUser) {
+      debugLog("Step 0 SUCCESS: Using existing session", { userId: existingUser.id });
+      return { success: true, user: existingUser };
+    }
+    debugLog("Step 1: Requesting authorization code...");
+    const authResult = await requestTossLogin();
+    if (!authResult) {
+      debugLog("Step 1 FAILED: No auth result");
+      return { success: false, error: "토스 로그인을 취소했거나 실패했습니다." };
+    }
+    debugLog("Step 1 SUCCESS: Got auth code", {
+      codePrefix: authResult.authorizationCode.substring(0, 10) + "...",
+      referrer: authResult.referrer
+    });
+    debugLog("Step 2: Exchanging token...");
+    try {
+      const tokenResult = await exchangeTossToken(authResult.authorizationCode, authResult.referrer);
+      if (tokenResult) {
+        debugLog("Step 2 SUCCESS: Token exchanged", {
+          success: tokenResult.success,
+          userId: tokenResult.userId
+        });
+        if (tokenResult.userId) {
+          localStorage.setItem("appintos_user_id", tokenResult.userId);
+          debugLog("Step 2 COMPLETE: Using server userId", { userId: tokenResult.userId });
+          return {
+            success: true,
+            user: {
+              id: tokenResult.userId,
+              tossUserId: tokenResult.userId
+            }
+          };
+        }
+        const user = await getTossUserInfo();
+        if (user) {
+          debugLog("Step 2 COMPLETE: Got user info from /me", { userId: user.id });
+          localStorage.setItem("appintos_user_id", user.id);
+          return { success: true, user };
+        }
+      }
+    } catch (e) {
+      debugLog("Step 2 FAILED: Token exchange error", { error: String(e) });
+    }
+    let userId = localStorage.getItem("appintos_user_id");
+    if (!userId) {
+      userId = `toss_anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem("appintos_user_id", userId);
+      debugLog("Step 3: Created new fallback ID", { userId });
+    } else {
+      debugLog("Step 3: Using existing localStorage ID", { userId });
+    }
+    return {
+      success: true,
+      user: {
+        id: userId,
+        tossUserId: userId
+      }
+    };
+  } catch (error) {
+    debugLog("FATAL ERROR", { error: String(error) });
+    return { success: false, error: "로그인 중 오류가 발생했습니다." };
+  }
+}
 const AuthContext = createContext(void 0);
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -5106,6 +5302,50 @@ function AuthProvider({ children }) {
   const [authModalMode, setAuthModalMode] = useState("login");
   useEffect(() => {
     const initAuth = async () => {
+      if (ENV_CONFIG.isAppintos) {
+        console.log("🔐 [AUTH] Appintos environment detected, checking Toss session...");
+        const savedTossUser = localStorage.getItem("authUser");
+        const savedTossToken = localStorage.getItem("authToken");
+        if (savedTossToken && savedTossUser && savedTossToken.startsWith("toss_")) {
+          try {
+            const parsedUser = JSON.parse(savedTossUser);
+            console.log("✅ [AUTH] Found existing Toss user in localStorage:", parsedUser.id);
+            setUser(parsedUser);
+            setToken(savedTossToken);
+            setIsLoading(false);
+            return;
+          } catch (e) {
+            console.log("❌ [AUTH] Failed to parse saved Toss user");
+          }
+        }
+        try {
+          const tossUser = await checkExistingTossSession();
+          if (tossUser) {
+            console.log("✅ [AUTH] Found existing Toss session:", tossUser.id);
+            const userObj = {
+              id: tossUser.id,
+              email: tossUser.email || `${tossUser.id}@toss.user`,
+              password: "",
+              subscriptionTier: "free",
+              subscriptionStatus: "active",
+              hasUsedTrial: false,
+              createdAt: /* @__PURE__ */ new Date()
+            };
+            const tossToken = `toss_${btoa(tossUser.id)}_${Date.now()}`;
+            setUser(userObj);
+            setToken(tossToken);
+            localStorage.setItem("authToken", tossToken);
+            localStorage.setItem("authUser", JSON.stringify(userObj));
+            localStorage.setItem("appintos_user_id", tossUser.id);
+          } else {
+            console.log("ℹ️ [AUTH] No Toss session found, user not logged in");
+          }
+        } catch (error) {
+          console.log("⚠️ [AUTH] Toss session check failed:", error);
+        }
+        setIsLoading(false);
+        return;
+      }
       const savedToken = localStorage.getItem("authToken");
       const savedUser = localStorage.getItem("authUser");
       if (savedToken && savedUser) {
@@ -5197,6 +5437,44 @@ function AuthProvider({ children }) {
       return false;
     }
   };
+  const loginWithToss = async () => {
+    if (!ENV_CONFIG.isAppintos) {
+      console.log("[AUTH] Not in Appintos, skipping Toss login");
+      return false;
+    }
+    try {
+      console.log("🔐 [AUTH] Starting Toss login...");
+      const result = await performTossLogin();
+      if (result.success && result.user) {
+        console.log("✅ [AUTH] Toss login successful:", result.user.id);
+        const tossUser = {
+          id: result.user.id,
+          email: result.user.email || `${result.user.id}@toss.user`,
+          password: "",
+          // 토스 로그인은 패스워드 없음
+          subscriptionTier: "free",
+          subscriptionStatus: "active",
+          hasUsedTrial: false,
+          createdAt: /* @__PURE__ */ new Date()
+        };
+        const tossToken = `toss_${btoa(result.user.id)}_${Date.now()}`;
+        setUser(tossUser);
+        setToken(tossToken);
+        localStorage.setItem("authToken", tossToken);
+        localStorage.setItem("authUser", JSON.stringify(tossUser));
+        localStorage.setItem("appintos_user_id", result.user.id);
+        queryClient.invalidateQueries({ queryKey: ["trades"] });
+        console.log("✅ [AUTH] Toss user logged in");
+        return true;
+      } else {
+        console.log("❌ [AUTH] Toss login failed:", result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ [AUTH] Toss login error:", error);
+      return false;
+    }
+  };
   useEffect(() => {
     const handleAuthLogout = () => {
       console.log("🔓 Received auth:logout event, logging out...");
@@ -5219,7 +5497,12 @@ function AuthProvider({ children }) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [user, token]);
-  const openAuthModal = (mode) => {
+  const openAuthModal = async (mode) => {
+    if (ENV_CONFIG.isAppintos) {
+      console.log("[AUTH] Appintos detected, using Toss login instead of modal");
+      await loginWithToss();
+      return;
+    }
     setAuthModalMode(mode);
     setShowAuthModal(true);
   };
@@ -5240,7 +5523,8 @@ function AuthProvider({ children }) {
         logout,
         refreshUser,
         openAuthModal,
-        closeAuthModal
+        closeAuthModal,
+        loginWithToss
       },
       children: isLoading ? /* @__PURE__ */ jsx("div", { className: "min-h-screen flex items-center justify-center", children: /* @__PURE__ */ jsx("div", { className: "animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" }) }) : children
     }
