@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Target, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
 
@@ -113,6 +113,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
 
   const { data, isLoading, error } = useQuery<HistoricalPerformanceResponse>({
@@ -177,18 +178,49 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const { summary, stocks, period } = data;
   const displayStocks = stocks.slice(0, 5); // TOP 5만 표시
 
+  // 접힌 상태: 한 줄 요약만 표시
+  if (!isExpanded) {
+    return (
+      <button
+        onClick={() => setIsExpanded(true)}
+        className={`w-full bg-neutral-900/50 border border-neutral-800 rounded-lg p-3 flex items-center justify-between hover:bg-neutral-800/50 transition-colors ${className}`}
+      >
+        <div className="flex items-center gap-2">
+          <Target size={14} className="text-emerald-500" />
+          <span className="text-sm text-neutral-300">{t.title}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%
+          </span>
+          <span className="text-xs text-neutral-500">
+            {summary.winnersCount}/{summary.winnersCount + summary.losersCount} {t.stocksUp}
+          </span>
+          <ChevronDown size={16} className="text-neutral-500" />
+        </div>
+      </button>
+    );
+  }
+
+  // 펼친 상태: 전체 내용 표시
   return (
     <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
-      {/* Header - 간결한 제목 */}
-      <div className="flex items-center justify-between mb-3">
+      {/* Header - 클릭하면 접힘 */}
+      <button
+        onClick={() => setIsExpanded(false)}
+        className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
+      >
         <h3 className="text-sm font-semibold text-neutral-200 flex items-center gap-2">
           <Target size={14} className="text-emerald-500" />
           {t.title}
         </h3>
-        <span className="text-[10px] text-neutral-500">
-          {new Date(period.snapshotDate).toLocaleDateString()}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-neutral-500">
+            {new Date(period.snapshotDate).toLocaleDateString()}
+          </span>
+          <ChevronUp size={16} className="text-neutral-500" />
+        </div>
+      </button>
 
       {/* Summary Stats - 2열로 간결하게 */}
       <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 mb-3">
