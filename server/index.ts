@@ -9,6 +9,7 @@ process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancien
 // 🔧 Stripe: STRIPE_SECRET_KEY must be set in Replit Secrets dashboard for production
 
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { exec } from "child_process";
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 // CORS middleware - 앱인토스 및 허용된 origin 지원
 const ALLOWED_ORIGINS = [

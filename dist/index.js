@@ -1,9 +1,9 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __glob = (map) => (path5) => {
-  var fn = map[path5];
+var __glob = (map) => (path6) => {
+  var fn = map[path6];
   if (fn) return fn();
-  throw new Error("Module not found in bundle: " + path5);
+  throw new Error("Module not found in bundle: " + path6);
 };
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
@@ -10818,6 +10818,268 @@ var init_past_performance_service = __esm({
   }
 });
 
+// server/toss-login-routes.ts
+import express2 from "express";
+import https2 from "https";
+import fs2 from "fs";
+import path2 from "path";
+import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
+import { eq as eq8 } from "drizzle-orm";
+async function callTossApi(method, endpoint, body, accessToken) {
+  if (!fs2.existsSync(CERT_PATH) || !fs2.existsSync(KEY_PATH)) {
+    console.error("[TossLogin] mTLS certificates not found");
+    throw new Error("mTLS certificates not configured");
+  }
+  const cert = fs2.readFileSync(CERT_PATH);
+  const key = fs2.readFileSync(KEY_PATH);
+  const url = new URL(endpoint, TOSS_API_BASE);
+  const options = {
+    hostname: url.hostname,
+    port: 443,
+    path: url.pathname,
+    method,
+    cert,
+    key,
+    headers: {
+      "Content-Type": "application/json",
+      ...accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}
+    }
+  };
+  return new Promise((resolve, reject) => {
+    const req = https2.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => data += chunk);
+      res.on("end", () => {
+        try {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(JSON.parse(data));
+          } else {
+            console.error("[TossLogin] API error:", res.statusCode, data);
+            reject(new Error(`Toss API error: ${res.statusCode} - ${data}`));
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on("error", (e) => {
+      console.error("[TossLogin] Request error:", e);
+      reject(e);
+    });
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+    req.end();
+  });
+}
+var router4, db7, TOSS_API_BASE, CERT_PATH, KEY_PATH, tossUserSessions, toss_login_routes_default;
+var init_toss_login_routes = __esm({
+  "server/toss-login-routes.ts"() {
+    "use strict";
+    init_schema();
+    router4 = express2.Router();
+    db7 = drizzle7(process.env.DATABASE_URL, { schema: schema_exports });
+    TOSS_API_BASE = "https://api-partner.toss.im";
+    CERT_PATH = path2.join(process.cwd(), "certs", "mtls_public.crt");
+    KEY_PATH = path2.join(process.cwd(), "certs", "mtls_private.key");
+    tossUserSessions = /* @__PURE__ */ new Map();
+    router4.post("/token", async (req, res) => {
+      try {
+        const { authorizationCode, referrer } = req.body;
+        if (!authorizationCode) {
+          return res.status(400).json({ error: "Missing authorizationCode" });
+        }
+        console.log("[TossLogin] Exchanging token, referrer:", referrer);
+        const tokenResponse = await callTossApi(
+          "POST",
+          "/api-partner/v1/apps-in-toss/user/oauth2/generate-token",
+          {
+            authorizationCode,
+            referrer: referrer || "DEFAULT"
+          }
+        );
+        console.log("[TossLogin] Token response received:", {
+          hasAccessToken: !!tokenResponse.accessToken,
+          hasRefreshToken: !!tokenResponse.refreshToken,
+          userKey: tokenResponse.userKey
+        });
+        if (!tokenResponse.accessToken) {
+          return res.status(400).json({ error: "Failed to get access token" });
+        }
+        const userKey = tokenResponse.userKey;
+        const sessionId = `toss_${userKey}_${Date.now()}`;
+        tossUserSessions.set(sessionId, {
+          accessToken: tokenResponse.accessToken,
+          refreshToken: tokenResponse.refreshToken,
+          userKey,
+          expiresAt: Date.now() + (tokenResponse.expiresIn || 3600) * 1e3
+        });
+        let dbUser = await db7.select().from(users).where(eq8(users.id, `toss_${userKey}`)).limit(1);
+        if (dbUser.length === 0) {
+          console.log("[TossLogin] Creating new user for userKey:", userKey);
+          await db7.insert(users).values({
+            id: `toss_${userKey}`,
+            email: `${userKey}@toss.user`,
+            password: "",
+            // No password for Toss login users
+            subscriptionTier: "free",
+            subscriptionStatus: "active",
+            hasUsedTrial: false,
+            createdAt: /* @__PURE__ */ new Date()
+          });
+        }
+        res.cookie("toss_session", sessionId, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 14 * 24 * 60 * 60 * 1e3
+          // 14 days (refresh token lifetime)
+        });
+        return res.json({
+          success: true,
+          userId: `toss_${userKey}`,
+          expiresIn: tokenResponse.expiresIn
+        });
+      } catch (error) {
+        console.error("[TossLogin] Token exchange error:", error);
+        return res.status(500).json({
+          error: "Token exchange failed",
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    });
+    router4.get("/me", async (req, res) => {
+      try {
+        const sessionId = req.cookies?.toss_session;
+        if (!sessionId) {
+          return res.status(401).json({ error: "No session" });
+        }
+        const session = tossUserSessions.get(sessionId);
+        if (!session) {
+          return res.status(401).json({ error: "Invalid session" });
+        }
+        if (Date.now() > session.expiresAt) {
+          try {
+            const refreshResponse = await callTossApi(
+              "POST",
+              "/api-partner/v1/apps-in-toss/user/oauth2/refresh-token",
+              { refreshToken: session.refreshToken }
+            );
+            if (refreshResponse.accessToken) {
+              session.accessToken = refreshResponse.accessToken;
+              session.expiresAt = Date.now() + (refreshResponse.expiresIn || 3600) * 1e3;
+              if (refreshResponse.refreshToken) {
+                session.refreshToken = refreshResponse.refreshToken;
+              }
+            }
+          } catch (refreshError) {
+            console.error("[TossLogin] Token refresh failed:", refreshError);
+            tossUserSessions.delete(sessionId);
+            return res.status(401).json({ error: "Session expired" });
+          }
+        }
+        const userId = `toss_${session.userKey}`;
+        const dbUser = await db7.select().from(users).where(eq8(users.id, userId)).limit(1);
+        if (dbUser.length === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        return res.json({
+          user: {
+            id: dbUser[0].id,
+            email: dbUser[0].email,
+            tossUserId: session.userKey,
+            subscriptionTier: dbUser[0].subscriptionTier,
+            subscriptionStatus: dbUser[0].subscriptionStatus
+          }
+        });
+      } catch (error) {
+        console.error("[TossLogin] Get user error:", error);
+        return res.status(500).json({ error: "Failed to get user info" });
+      }
+    });
+    router4.post("/refresh", async (req, res) => {
+      try {
+        const { refreshToken } = req.body;
+        const sessionId = req.cookies?.toss_session;
+        if (!refreshToken && !sessionId) {
+          return res.status(400).json({ error: "Missing refresh token" });
+        }
+        const session = sessionId ? tossUserSessions.get(sessionId) : null;
+        const tokenToRefresh = refreshToken || session?.refreshToken;
+        if (!tokenToRefresh) {
+          return res.status(400).json({ error: "No refresh token available" });
+        }
+        const refreshResponse = await callTossApi(
+          "POST",
+          "/api-partner/v1/apps-in-toss/user/oauth2/refresh-token",
+          { refreshToken: tokenToRefresh }
+        );
+        if (session) {
+          session.accessToken = refreshResponse.accessToken;
+          session.expiresAt = Date.now() + (refreshResponse.expiresIn || 3600) * 1e3;
+          if (refreshResponse.refreshToken) {
+            session.refreshToken = refreshResponse.refreshToken;
+          }
+        }
+        return res.json({
+          success: true,
+          expiresIn: refreshResponse.expiresIn
+        });
+      } catch (error) {
+        console.error("[TossLogin] Refresh error:", error);
+        return res.status(500).json({ error: "Token refresh failed" });
+      }
+    });
+    router4.post("/disconnect", async (req, res) => {
+      try {
+        const sessionId = req.cookies?.toss_session;
+        if (sessionId) {
+          const session = tossUserSessions.get(sessionId);
+          if (session) {
+            try {
+              await callTossApi(
+                "POST",
+                "/api-partner/v1/apps-in-toss/user/oauth2/access/remove-by-access-token",
+                { accessToken: session.accessToken }
+              );
+            } catch (e) {
+              console.log("[TossLogin] Token revocation failed (ignoring):", e);
+            }
+            tossUserSessions.delete(sessionId);
+          }
+        }
+        res.clearCookie("toss_session");
+        return res.json({ success: true });
+      } catch (error) {
+        console.error("[TossLogin] Disconnect error:", error);
+        return res.status(500).json({ error: "Disconnect failed" });
+      }
+    });
+    router4.post("/callback", async (req, res) => {
+      try {
+        const { userKey, referrer, reason } = req.body;
+        console.log("[TossLogin] Disconnect callback received:", {
+          userKey,
+          referrer,
+          reason
+          // UNLINK, WITHDRAWAL_TERMS, or WITHDRAWAL_TOSS
+        });
+        for (const [sessionId, session] of tossUserSessions.entries()) {
+          if (session.userKey === userKey) {
+            tossUserSessions.delete(sessionId);
+            console.log("[TossLogin] Removed session for disconnected user:", userKey);
+          }
+        }
+        return res.json({ success: true });
+      } catch (error) {
+        console.error("[TossLogin] Callback error:", error);
+        return res.status(500).json({ error: "Callback processing failed" });
+      }
+    });
+    toss_login_routes_default = router4;
+  }
+});
+
 // import("./finviz-collector.ts?ts=*") in server/routes.ts
 var globImport_finviz_collector_ts_ts;
 var init_ = __esm({
@@ -11557,7 +11819,7 @@ var auto_scheduler_exports = {};
 __export(auto_scheduler_exports, {
   autoScheduler: () => autoScheduler
 });
-import { eq as eq8 } from "drizzle-orm";
+import { eq as eq9 } from "drizzle-orm";
 var AutoScheduler, autoScheduler;
 var init_auto_scheduler = __esm({
   "server/auto-scheduler.ts"() {
@@ -11672,7 +11934,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq8(collectionRuns.id, runId));
+          }).where(eq9(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] OpenInsider collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("OpenInsider", processedCount, duration);
@@ -11684,7 +11946,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq8(collectionRuns.id, runId));
+            }).where(eq9(collectionRuns.id, runId));
           }
           this.openInsiderFailures++;
           if (this.openInsiderFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11715,7 +11977,7 @@ var init_auto_scheduler = __esm({
             status: "success",
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date()
-          }).where(eq8(collectionRuns.id, runId));
+          }).where(eq9(collectionRuns.id, runId));
           console.log(`\u2705 [AUTO] MarketBeat collection completed in ${duration}ms`);
           console.log(`   \u{1F4CA} Processed: ${processedCount} new trades`);
           this.logCollectionStats("MarketBeat", processedCount, duration);
@@ -11727,7 +11989,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq8(collectionRuns.id, runId));
+            }).where(eq9(collectionRuns.id, runId));
           }
           this.marketBeatFailures++;
           if (this.marketBeatFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -11790,7 +12052,7 @@ var init_auto_scheduler = __esm({
             tradesCollected: processedCount,
             completedAt: /* @__PURE__ */ new Date(),
             metadata: { totalTrades: trades.length }
-          }).where(eq8(collectionRuns.id, runId));
+          }).where(eq9(collectionRuns.id, runId));
           console.log(`
 \u2705 [AUTO] SEC RSS Collection Complete`);
           console.log(`   \u23F1\uFE0F Duration: ${duration}ms`);
@@ -11811,7 +12073,7 @@ var init_auto_scheduler = __esm({
               status: "failure",
               completedAt: /* @__PURE__ */ new Date(),
               errorMessage: error instanceof Error ? error.message : String(error)
-            }).where(eq8(collectionRuns.id, runId));
+            }).where(eq9(collectionRuns.id, runId));
           }
           this.secRssFailures++;
           if (this.secRssFailures >= this.FAILURE_ALERT_THRESHOLD) {
@@ -12123,11 +12385,11 @@ Timestamp: ${report.timestamp.toISOString()}
 });
 
 // server/routes.ts
-import express2 from "express";
+import express3 from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
-import { drizzle as drizzle7 } from "drizzle-orm/neon-http";
-import { eq as eq9, and as and7, desc as desc4, inArray as inArray3, isNotNull } from "drizzle-orm";
+import { drizzle as drizzle8 } from "drizzle-orm/neon-http";
+import { eq as eq10, and as and7, desc as desc4, inArray as inArray3, isNotNull } from "drizzle-orm";
 import { z as z3 } from "zod";
 import Stripe2 from "stripe";
 import bcrypt from "bcrypt";
@@ -12444,8 +12706,8 @@ async function registerRoutes(app2) {
           error: "User not authenticated"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -12465,23 +12727,23 @@ async function registerRoutes(app2) {
             });
           } else if (existingSub.status === "canceled" || existingSub.status === "incomplete_expired") {
             console.log(`\u2705 Subscription ${existingSub.id} status is ${existingSub.status}, syncing DB and allowing new checkout`);
-            await db7.update(users).set({
+            await db8.update(users).set({
               subscriptionStatus: existingSub.status === "canceled" ? "canceled" : "inactive",
               stripeSubscriptionId: null
-            }).where(eq9(users.id, userId));
+            }).where(eq10(users.id, userId));
           } else if (existingSub.cancel_at_period_end && (existingSub.status === "active" || existingSub.status === "trialing")) {
             console.log(`\u26A0\uFE0F Subscription ${existingSub.id} is set to cancel but still ${existingSub.status}, keeping DB status unchanged`);
           }
         } catch (error) {
           console.log(`\u26A0\uFE0F Stored subscription ${user2.stripeSubscriptionId} not found in Stripe, allowing new checkout`);
-          await db7.update(users).set({
+          await db8.update(users).set({
             subscriptionStatus: "inactive",
             stripeSubscriptionId: null
-          }).where(eq9(users.id, userId));
+          }).where(eq10(users.id, userId));
         }
       }
-      const updatedUser = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const updatedUser = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!updatedUser) {
         return res.status(404).json({
@@ -12507,13 +12769,13 @@ async function registerRoutes(app2) {
           } else {
             console.error(`\u26A0\uFE0F Unexpected Stripe error, will create new customer:`, error);
           }
-          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
+          await db8.update(users).set({ stripeCustomerId: null }).where(eq10(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer ID from database for user ${userId}`);
           customerId = null;
         }
       } else if (customerId) {
         console.warn(`\u26A0\uFE0F Invalid customer ID format: "${customerId}", will create new one`);
-        await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
+        await db8.update(users).set({ stripeCustomerId: null }).where(eq10(users.id, userId));
         customerId = null;
       }
       if (customerId) {
@@ -12536,7 +12798,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
+        await db8.update(users).set({ stripeCustomerId: customerId }).where(eq10(users.id, userId));
         console.log(`\u{1F4BE} Created fresh Stripe customer for user ${userId} (Link removed)`);
       }
       if (customerId) {
@@ -12558,7 +12820,7 @@ async function registerRoutes(app2) {
           }
         } catch (error) {
           console.error(`\u274C Failed to check subscriptions for customer ${customerId}:`, error.message);
-          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
+          await db8.update(users).set({ stripeCustomerId: null }).where(eq10(users.id, userId));
           return res.status(400).json({
             error: "\uACB0\uC81C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.",
             details: "Customer validation failed"
@@ -12644,7 +12906,7 @@ async function registerRoutes(app2) {
       } catch (error) {
         console.error(`\u274C Failed to create checkout session:`, error.message);
         if (error.message?.includes("customer") || error.code === "resource_missing") {
-          await db7.update(users).set({ stripeCustomerId: null }).where(eq9(users.id, userId));
+          await db8.update(users).set({ stripeCustomerId: null }).where(eq10(users.id, userId));
           console.log(`\u{1F504} Cleared invalid customer from database`);
         }
         return res.status(500).json({
@@ -12698,8 +12960,8 @@ async function registerRoutes(app2) {
           message: "\uCFE0\uD3F0 \uCF54\uB4DC\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12766,13 +13028,13 @@ async function registerRoutes(app2) {
       const newTrialExpiresAt = new Date(newTrialEnd * 1e3);
       const newUsedCoupons = [...usedCoupons, normalizedCoupon];
       const newExtensionDays = (user2.couponExtensionDays || 0) + 3;
-      await db7.update(users).set({
+      await db8.update(users).set({
         trialExpiresAt: newTrialExpiresAt,
         subscriptionEndDate: newTrialExpiresAt,
         usedCoupons: newUsedCoupons,
         couponExtensionDays: newExtensionDays,
         lastCouponUsedAt: /* @__PURE__ */ new Date()
-      }).where(eq9(users.id, userId));
+      }).where(eq10(users.id, userId));
       console.log(`\u2705 Coupon "${normalizedCoupon}" redeemed by ${user2.email}, trial extended to ${newTrialExpiresAt}`);
       return res.status(200).json({
         success: true,
@@ -12802,8 +13064,8 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2) {
         return res.status(404).json({
@@ -12846,10 +13108,10 @@ async function registerRoutes(app2) {
         console.log(`\u{1F4B3} Cancelled legacy trial for user ${userId}`);
         periodEnd = user2.trialExpiresAt || user2.subscriptionEndDate || /* @__PURE__ */ new Date();
       }
-      await db7.update(users).set({
+      await db8.update(users).set({
         subscriptionStatus: "canceled",
         subscriptionEndDate: periodEnd
-      }).where(eq9(users.id, userId));
+      }).where(eq10(users.id, userId));
       if (feedback && feedback.trim()) {
         try {
           const nodemailer2 = await import("nodemailer");
@@ -12909,8 +13171,8 @@ async function registerRoutes(app2) {
           error: "User not authenticated"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2 || !user2.stripeCustomerId) {
         return res.status(404).json({
@@ -12960,7 +13222,7 @@ async function registerRoutes(app2) {
       return null;
     }
   };
-  app2.post("/api/stripe/webhook", express2.raw({ type: "application/json" }), async (req, res) => {
+  app2.post("/api/stripe/webhook", express3.raw({ type: "application/json" }), async (req, res) => {
     const sig = req.headers["stripe-signature"];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
@@ -12986,16 +13248,16 @@ async function registerRoutes(app2) {
         const subscriptionId = session.subscription;
         if (customerId && subscriptionId) {
           try {
-            let user2 = await db7.query.users.findFirst({
-              where: eq9(users.stripeCustomerId, customerId)
+            let user2 = await db8.query.users.findFirst({
+              where: eq10(users.stripeCustomerId, customerId)
             });
             if (!user2) {
               console.log(`\u26A0\uFE0F User not found by Stripe customer ID ${customerId}, trying email fallback...`);
               const customer = await stripe2.customers.retrieve(customerId);
               if (customer && !customer.deleted && customer.email) {
                 console.log(`\u{1F50D} Searching for user by email: ${customer.email}`);
-                user2 = await db7.query.users.findFirst({
-                  where: eq9(users.email, customer.email)
+                user2 = await db8.query.users.findFirst({
+                  where: eq10(users.email, customer.email)
                 });
                 if (user2) {
                   console.log(`\u2705 Found user by email fallback: ${customer.email}`);
@@ -13018,7 +13280,7 @@ async function registerRoutes(app2) {
               } else if (priceId === yearlyPriceId || priceId === monthlyPriceId) {
                 console.log(`\u{1F3AF} Detected PRO PLAN subscription - setting tier to 'insider_pro'`);
               }
-              await db7.update(users).set({
+              await db8.update(users).set({
                 subscriptionTier: tier,
                 subscriptionStatus: subscription.status,
                 stripeCustomerId: customerId,
@@ -13026,7 +13288,7 @@ async function registerRoutes(app2) {
                 subscriptionStartDate: new Date(subscription.created * 1e3),
                 subscriptionEndDate: periodEnd,
                 hasUsedTrial: true
-              }).where(eq9(users.id, user2.id));
+              }).where(eq10(users.id, user2.id));
               console.log(`\u2705 [Webhook Success] User ${user2.email} upgraded to ${tier} until ${periodEnd}`);
               console.log(`\u{1F4CA} [Webhook Success] Details: userId=${user2.id}, customerId=${customerId}, subscriptionId=${subscriptionId}, status=${subscription.status}`);
             } else {
@@ -13051,23 +13313,23 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u{1F504} Subscription updated:", subscription.id);
         try {
-          const user2 = await db7.query.users.findFirst({
-            where: eq9(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db8.query.users.findFirst({
+            where: eq10(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             if (subscription.cancel_at_period_end) {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
-              await db7.update(users).set({
+              await db8.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq9(users.id, user2.id));
+              }).where(eq10(users.id, user2.id));
               console.log(`\u26A0\uFE0F Subscription will cancel for user ${user2.email} at ${periodEnd} (keeping active status until then)`);
             } else if (subscription.status === "active") {
               const periodEnd = new Date(subscription.current_period_end * 1e3);
-              await db7.update(users).set({
+              await db8.update(users).set({
                 subscriptionStatus: "active",
                 subscriptionEndDate: periodEnd
-              }).where(eq9(users.id, user2.id));
+              }).where(eq10(users.id, user2.id));
               console.log(`\u2705 Subscription reactivated for user ${user2.email}`);
             }
           }
@@ -13080,8 +13342,8 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u274C Subscription deleted:", subscription.id);
         try {
-          const user2 = await db7.query.users.findFirst({
-            where: eq9(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db8.query.users.findFirst({
+            where: eq10(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const periodEnd = new Date(subscription.current_period_end * 1e3);
@@ -13098,8 +13360,8 @@ async function registerRoutes(app2) {
         console.log("\u{1F4B0} Payment succeeded for invoice:", invoice.id);
         if (invoice.subscription) {
           try {
-            const user2 = await db7.query.users.findFirst({
-              where: eq9(users.stripeSubscriptionId, invoice.subscription)
+            const user2 = await db8.query.users.findFirst({
+              where: eq10(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               const subscription = await stripe2.subscriptions.retrieve(invoice.subscription);
@@ -13111,7 +13373,7 @@ async function registerRoutes(app2) {
                 updates.subscriptionStatus = "active";
                 console.log(`\u2705 Trial ended, subscription now active for user ${user2.email}`);
               }
-              await db7.update(users).set(updates).where(eq9(users.id, user2.id));
+              await db8.update(users).set(updates).where(eq10(users.id, user2.id));
               console.log(`\u{1F4B3} Renewed subscription for user ${user2.email} until ${periodEnd}`);
             }
           } catch (error) {
@@ -13125,8 +13387,8 @@ async function registerRoutes(app2) {
         console.log("\u274C Payment failed for invoice:", invoice.id);
         if (invoice.subscription) {
           try {
-            const user2 = await db7.query.users.findFirst({
-              where: eq9(users.stripeSubscriptionId, invoice.subscription)
+            const user2 = await db8.query.users.findFirst({
+              where: eq10(users.stripeSubscriptionId, invoice.subscription)
             });
             if (user2) {
               console.log(`\u26A0\uFE0F Payment failed for user ${user2.email} - Stripe will retry automatically`);
@@ -13142,8 +13404,8 @@ async function registerRoutes(app2) {
         const subscription = event.data.object;
         console.log("\u23F0 Trial ending soon for subscription:", subscription.id);
         try {
-          const user2 = await db7.query.users.findFirst({
-            where: eq9(users.stripeSubscriptionId, subscription.id)
+          const user2 = await db8.query.users.findFirst({
+            where: eq10(users.stripeSubscriptionId, subscription.id)
           });
           if (user2) {
             const trialEnd = new Date(subscription.trial_end * 1e3);
@@ -13169,8 +13431,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F50D} Syncing subscription for email: ${email}`);
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -13209,14 +13471,14 @@ async function registerRoutes(app2) {
       const trialEnd = activeSubscription.trial_end ? new Date(activeSubscription.trial_end * 1e3) : null;
       const isTrialing = activeSubscription.status === "trialing";
       const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
-      await db7.update(users).set({
+      await db8.update(users).set({
         stripeCustomerId: customer.id,
         stripeSubscriptionId: activeSubscription.id,
         subscriptionTier: "insider_pro",
         subscriptionStatus: activeSubscription.status,
         subscriptionEndDate,
         subscriptionStartDate: new Date(activeSubscription.created * 1e3)
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       console.log(`\u2705 Database updated for user ${email}`);
       return res.json({
         success: true,
@@ -13242,8 +13504,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/admin/check-production-db", protectAdminEndpoint, async (req, res) => {
     try {
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, "user_1762200564967_t6whya")
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, "user_1762200564967_t6whya")
       });
       res.json({
         userFound: !!user2,
@@ -13289,8 +13551,8 @@ async function registerRoutes(app2) {
             results.skipped++;
             continue;
           }
-          const user2 = await db7.query.users.findFirst({
-            where: eq9(users.email, customer.email)
+          const user2 = await db8.query.users.findFirst({
+            where: eq10(users.email, customer.email)
           });
           if (!user2) {
             console.warn(`\u26A0\uFE0F No database user for email ${customer.email}`);
@@ -13301,14 +13563,14 @@ async function registerRoutes(app2) {
           const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1e3) : null;
           const isTrialing = subscription.status === "trialing";
           const subscriptionEndDate = isTrialing && trialEnd ? trialEnd : periodEnd;
-          await db7.update(users).set({
+          await db8.update(users).set({
             stripeCustomerId: customer.id,
             stripeSubscriptionId: subscription.id,
             subscriptionTier: "insider_pro",
             subscriptionStatus: subscription.status,
             subscriptionEndDate,
             subscriptionStartDate: new Date(subscription.created * 1e3)
-          }).where(eq9(users.id, user2.id));
+          }).where(eq10(users.id, user2.id));
           console.log(`\u2705 Synced ${customer.email}`);
           results.synced++;
         } catch (error) {
@@ -13353,8 +13615,8 @@ async function registerRoutes(app2) {
           message: "\uBE44\uBC00\uBC88\uD638\uB294 \uCD5C\uC18C 8\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4"
         });
       }
-      const existingUser = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const existingUser = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       if (existingUser) {
         if (existingUser.emailVerified) {
@@ -13369,11 +13631,11 @@ async function registerRoutes(app2) {
         const verificationCode2 = Math.floor(1e5 + Math.random() * 9e5).toString();
         const verificationCodeExpires2 = new Date(Date.now() + 10 * 60 * 1e3);
         console.log("\u{1F511} New verification code generated:", verificationCode2);
-        const updatedUser = await db7.update(users).set({
+        const updatedUser = await db8.update(users).set({
           password: hashedPassword2,
           verificationCode: verificationCode2,
           verificationCodeExpires: verificationCodeExpires2
-        }).where(eq9(users.email, email)).returning();
+        }).where(eq10(users.email, email)).returning();
         console.log("\u2705 User updated with new verification code:", {
           id: updatedUser[0].id,
           email: updatedUser[0].email
@@ -13400,7 +13662,7 @@ async function registerRoutes(app2) {
       const verificationCode = Math.floor(1e5 + Math.random() * 9e5).toString();
       const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1e3);
       console.log("\u{1F511} Verification code generated:", verificationCode);
-      const newUser = await db7.insert(users).values({
+      const newUser = await db8.insert(users).values({
         id: `user_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         email,
         password: hashedPassword,
@@ -13450,8 +13712,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uACFC \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       console.log("\u{1F464} User found:", user2 ? `Yes (${user2.email}, ID: ${user2.id})` : "No");
       if (user2) {
@@ -13498,7 +13760,7 @@ async function registerRoutes(app2) {
         const clientIP = ipGeolocationService.getClientIP(req);
         const locationData = await ipGeolocationService.getLocation(clientIP);
         if (locationData) {
-          await db7.insert(userSessions).values({
+          await db8.insert(userSessions).values({
             userId: user2.id,
             ipAddress: clientIP,
             country: locationData.country,
@@ -13546,8 +13808,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       if (!user2) {
         console.log("\u26A0\uFE0F User not found, but returning success for security");
@@ -13563,10 +13825,10 @@ async function registerRoutes(app2) {
       );
       const resetExpires = new Date(Date.now() + 60 * 60 * 1e3);
       console.log("\u{1F4BE} Saving reset token to database...");
-      await db7.update(users).set({
+      await db8.update(users).set({
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       console.log("\u2705 Reset token saved to database");
       try {
         console.log("\u{1F4E7} Attempting to send password reset email...");
@@ -13619,8 +13881,8 @@ async function registerRoutes(app2) {
           message: "\uC720\uD6A8\uD558\uC9C0 \uC54A\uAC70\uB098 \uB9CC\uB8CC\uB41C \uD1A0\uD070\uC785\uB2C8\uB2E4"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, decoded.email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, decoded.email)
       });
       if (!user2) {
         return res.status(404).json({
@@ -13641,11 +13903,11 @@ async function registerRoutes(app2) {
         });
       }
       const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-      await db7.update(users).set({
+      await db8.update(users).set({
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       console.log("\u2705 Password reset successful for:", decoded.email);
       res.json({
         success: true,
@@ -13683,16 +13945,16 @@ async function registerRoutes(app2) {
         });
       }
       console.log("\u{1F50D} Looking for user with email:", decoded.email);
-      const user2 = await db7.query.users.findFirst({
+      const user2 = await db8.query.users.findFirst({
         where: and7(
-          eq9(users.email, decoded.email),
-          eq9(users.verificationToken, token)
+          eq10(users.email, decoded.email),
+          eq10(users.verificationToken, token)
         )
       });
       if (!user2) {
         console.log("\u274C User not found with email and token combo");
-        const userByEmail = await db7.query.users.findFirst({
-          where: eq9(users.email, decoded.email)
+        const userByEmail = await db8.query.users.findFirst({
+          where: eq10(users.email, decoded.email)
         });
         if (userByEmail) {
           console.log("\u26A0\uFE0F User exists but token mismatch");
@@ -13721,11 +13983,11 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D \uB9C1\uD06C\uAC00 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uC6B4 \uC778\uC99D \uB9C1\uD06C\uB97C \uC694\uCCAD\uD574\uC8FC\uC138\uC694"
         });
       }
-      await db7.update(users).set({
+      await db8.update(users).set({
         emailVerified: true,
         verificationToken: null,
         verificationTokenExpires: null
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       console.log("\u2705 Email verified successfully for:", user2.email);
       res.json({
         success: true,
@@ -13749,8 +14011,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uACFC \uC778\uC99D \uCF54\uB4DC\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -13781,11 +14043,11 @@ async function registerRoutes(app2) {
           message: "\uC778\uC99D \uCF54\uB4DC\uAC00 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uC6B4 \uCF54\uB4DC\uB97C \uC694\uCCAD\uD574\uC8FC\uC138\uC694"
         });
       }
-      await db7.update(users).set({
+      await db8.update(users).set({
         emailVerified: true,
         verificationCode: null,
         verificationCodeExpires: null
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       console.log("\u2705 Email verified successfully with code:", email);
       res.json({
         success: true,
@@ -13809,8 +14071,8 @@ async function registerRoutes(app2) {
           message: "\uC774\uBA54\uC77C\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694"
         });
       }
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.email, email)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.email, email)
       });
       if (!user2) {
         console.log("\u274C User not found:", email);
@@ -13829,10 +14091,10 @@ async function registerRoutes(app2) {
       }
       const verificationCode = Math.floor(1e5 + Math.random() * 9e5).toString();
       const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1e3);
-      await db7.update(users).set({
+      await db8.update(users).set({
         verificationCode,
         verificationCodeExpires
-      }).where(eq9(users.id, user2.id));
+      }).where(eq10(users.id, user2.id));
       try {
         await emailNotificationService.sendVerificationCode(email, verificationCode);
         console.log("\u{1F4E7} New verification code sent to:", email);
@@ -13864,8 +14126,8 @@ async function registerRoutes(app2) {
       }
       const decoded = jwt2.verify(token, JWT_SECRET);
       console.log(`\u{1F510} [/api/auth/verify] Token decoded - userId: ${decoded.userId}, email: ${decoded.email}`);
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, decoded.userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, decoded.userId)
       });
       if (!user2) {
         console.log(`\u274C [/api/auth/verify] User not found for userId: ${decoded.userId}`);
@@ -13977,7 +14239,7 @@ async function registerRoutes(app2) {
       const stockPriceMap = /* @__PURE__ */ new Map();
       if (uniqueTickers.length > 0) {
         try {
-          const prices = await db7.query.stockPrices.findMany({
+          const prices = await db8.query.stockPrices.findMany({
             where: (stockPrices2, { inArray: inArray4 }) => inArray4(stockPrices2.ticker, uniqueTickers),
             columns: {
               ticker: true,
@@ -14110,8 +14372,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F4B3} Creating SetupIntent for trial user: ${userId}`);
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -14158,7 +14420,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
+        await db8.update(users).set({ stripeCustomerId: customerId }).where(eq10(users.id, userId));
         console.log(`\u2705 Created Stripe customer for user ${userId}: ${customerId}`);
       }
       const setupIntent = await stripe2.setupIntents.create({
@@ -14206,8 +14468,8 @@ async function registerRoutes(app2) {
         });
       }
       console.log(`\u{1F3AF} Activating trial with card for user: ${userId}, plan: ${planType}`);
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       if (!user2 || !user2.email) {
         return res.status(404).json({
@@ -14262,7 +14524,7 @@ async function registerRoutes(app2) {
           }
         });
         customerId = customer.id;
-        await db7.update(users).set({ stripeCustomerId: customerId }).where(eq9(users.id, userId));
+        await db8.update(users).set({ stripeCustomerId: customerId }).where(eq10(users.id, userId));
         console.log(`\u2705 Created Stripe customer: ${customerId}`);
       }
       await stripe2.paymentMethods.attach(paymentMethodId, {
@@ -14292,7 +14554,7 @@ async function registerRoutes(app2) {
       console.log(`\u2705 Created Stripe subscription with immediate billing: ${subscription.id}`);
       const subscriptionStart = /* @__PURE__ */ new Date();
       const subscriptionEnd = new Date(subscription.current_period_end * 1e3);
-      await db7.update(users).set({
+      await db8.update(users).set({
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscription.id,
         subscriptionTier: "insider_pro",
@@ -14302,7 +14564,7 @@ async function registerRoutes(app2) {
         subscriptionEndDate: subscriptionEnd,
         hasUsedTrial: false
         // No trial used - immediate billing
-      }).where(eq9(users.id, userId));
+      }).where(eq10(users.id, userId));
       console.log(`\u2705 Subscription created for user ${userId} - billing immediately`);
       const subscriptionMessage = "\uAD6C\uB3C5\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uACB0\uC81C \uC644\uB8CC \uD6C4 \uC989\uC2DC \uD504\uB9AC\uBBF8\uC5C4 \uAE30\uB2A5\uC744 \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
       res.json({
@@ -14333,8 +14595,8 @@ async function registerRoutes(app2) {
       console.log(`\u{1F511} [/api/trial/status] Checking status for user ${userId.substring(0, 20)}...`);
       const isAppintos = isAppintosEnvironment2(req);
       const accessLevel = await subscriptionService.getUserAccessLevel(userId, isAppintos);
-      const user2 = await db7.query.users.findFirst({
-        where: eq9(users.id, userId)
+      const user2 = await db8.query.users.findFirst({
+        where: eq10(users.id, userId)
       });
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
@@ -14516,7 +14778,7 @@ async function registerRoutes(app2) {
     try {
       const tradeId = req.params.id;
       const language = req.query.language || "en";
-      const tradeResults = await db7.select({
+      const tradeResults = await db8.select({
         id: insiderTrades.id,
         ticker: insiderTrades.ticker,
         companyName: insiderTrades.companyName,
@@ -14530,7 +14792,7 @@ async function registerRoutes(app2) {
         transactionDate: insiderTrades.transactionDate,
         comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
         analysisGeneratedAt: insiderTrades.analysisGeneratedAt
-      }).from(insiderTrades).where(eq9(insiderTrades.id, tradeId)).limit(1);
+      }).from(insiderTrades).where(eq10(insiderTrades.id, tradeId)).limit(1);
       if (!tradeResults || tradeResults.length === 0) {
         return res.status(404).json({
           error: "TRADE_NOT_FOUND",
@@ -14707,10 +14969,10 @@ async function registerRoutes(app2) {
         [language]: localizedAnalysis
       };
       try {
-        await db7.update(insiderTrades).set({
+        await db8.update(insiderTrades).set({
           comprehensiveAnalysis: updatedCache,
           analysisGeneratedAt: /* @__PURE__ */ new Date()
-        }).where(eq9(insiderTrades.id, tradeId));
+        }).where(eq10(insiderTrades.id, tradeId));
         console.log(`\u{1F4BE} Cached analysis for languages: ${Object.keys(updatedCache).join(", ")}`);
       } catch (cacheError) {
         console.error("\u26A0\uFE0F Cache save failed:", cacheError);
@@ -15224,7 +15486,7 @@ async function registerRoutes(app2) {
       const uniqueTickers = Array.from(tickerMetrics.keys());
       const stockPriceMap = /* @__PURE__ */ new Map();
       if (uniqueTickers.length > 0) {
-        const prices = await db7.query.stockPrices.findMany({
+        const prices = await db8.query.stockPrices.findMany({
           where: (stockPrices2, { inArray: inArray4 }) => inArray4(stockPrices2.ticker, uniqueTickers),
           columns: {
             ticker: true,
@@ -15527,7 +15789,7 @@ async function registerRoutes(app2) {
       const cachedAnalyses = /* @__PURE__ */ new Map();
       if (rankingTickers.length > 0) {
         try {
-          const analysisResults = await db7.select({
+          const analysisResults = await db8.select({
             ticker: insiderTrades.ticker,
             comprehensiveAnalysis: insiderTrades.comprehensiveAnalysis,
             analysisGeneratedAt: insiderTrades.analysisGeneratedAt
@@ -15636,7 +15898,7 @@ async function registerRoutes(app2) {
       console.log("\u{1F3AF} Fetching ranking tickers for AI analysis eligibility check...");
       const thirtyDaysAgo = /* @__PURE__ */ new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const recentTrades = await db7.query.insiderTrades.findMany({
+      const recentTrades = await db8.query.insiderTrades.findMany({
         where: (trades, { gte: gte4 }) => gte4(trades.filedDate, thirtyDaysAgo)
       });
       console.log(`\u{1F4CA} Found ${recentTrades.length} trades in last 30 days for ticker extraction`);
@@ -16531,6 +16793,7 @@ async function registerRoutes(app2) {
   });
   app2.use(data_collection_api_default);
   app2.use("/api/notifications", notification_routes_default);
+  app2.use("/api/toss-login", toss_login_routes_default);
   app2.get("/api/enhanced/simple-test", (req, res) => {
     res.json({
       success: true,
@@ -16774,7 +17037,7 @@ async function debugMarketCapStatus() {
   try {
     console.log("\n\u{1F50D} ===== MarketCap Debug Info =====");
     const { sql: sql6 } = await import("drizzle-orm");
-    const result = await db7.execute(sql6`
+    const result = await db8.execute(sql6`
       SELECT
         COUNT(*) as total,
         COUNT(CASE WHEN market_cap IS NOT NULL THEN 1 END) as with_marketcap,
@@ -16801,7 +17064,7 @@ function broadcastUpdate(type, data) {
     });
   }
 }
-var db7, stripe2, openai2, sectorCache, SECTOR_CACHE_TTL, finnhubRequestQueue, finnhubActiveRequests, FINNHUB_MAX_CONCURRENT, FINNHUB_REQUEST_DELAY, rankingTickersCache, RANKING_CACHE_TTL, wss, COUNTRY_LANGUAGE_MAP;
+var db8, stripe2, openai2, sectorCache, SECTOR_CACHE_TTL, finnhubRequestQueue, finnhubActiveRequests, FINNHUB_MAX_CONCURRENT, FINNHUB_REQUEST_DELAY, rankingTickersCache, RANKING_CACHE_TTL, wss, COUNTRY_LANGUAGE_MAP;
 var init_routes = __esm({
   "server/routes.ts"() {
     "use strict";
@@ -16827,11 +17090,12 @@ var init_routes = __esm({
     init_subscription_service();
     init_exchange_rate_service();
     init_past_performance_service();
+    init_toss_login_routes();
     init_();
     init_2();
     init_3();
     init_4();
-    db7 = drizzle7(process.env.DATABASE_URL, { schema: schema_exports });
+    db8 = drizzle8(process.env.DATABASE_URL, { schema: schema_exports });
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
     }
@@ -18417,14 +18681,14 @@ __export(cron_jobs_exports, {
 });
 import cron from "node-cron";
 import Stripe3 from "stripe";
-import { drizzle as drizzle8 } from "drizzle-orm/neon-http";
-import { eq as eq10 } from "drizzle-orm";
+import { drizzle as drizzle9 } from "drizzle-orm/neon-http";
+import { eq as eq11 } from "drizzle-orm";
 function startSubscriptionSyncJob() {
   cron.schedule("0 2 * * *", async () => {
     console.log("[Cron] Starting daily subscription sync...");
     try {
-      const insiderProUsers = await db8.query.users.findMany({
-        where: eq10(users.subscriptionTier, "insider_pro")
+      const insiderProUsers = await db9.query.users.findMany({
+        where: eq11(users.subscriptionTier, "insider_pro")
       });
       console.log(`[Cron] Found ${insiderProUsers.length} Insider Pro users to check`);
       let syncedCount = 0;
@@ -18452,10 +18716,10 @@ function startSubscriptionSyncJob() {
               dbStatus = "active";
               console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
             }
-            await db8.update(users).set({
+            await db9.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq10(users.id, user2.id));
+            }).where(eq11(users.id, user2.id));
             console.log(`[Cron] \u2705 Synced user ${user2.id} (${user2.email})`);
             syncedCount++;
           } else if (dbStatusMismatch || dbEndDateMismatch) {
@@ -18466,10 +18730,10 @@ function startSubscriptionSyncJob() {
               dbStatus = "active";
               console.log(`[Cron]     \u26A0\uFE0F Stripe says "canceled" but period_end is ${stripePeriodEnd}, keeping "active"`);
             }
-            await db8.update(users).set({
+            await db9.update(users).set({
               subscriptionStatus: dbStatus,
               subscriptionEndDate: stripePeriodEnd
-            }).where(eq10(users.id, user2.id));
+            }).where(eq11(users.id, user2.id));
             syncedCount++;
           } else {
             console.log(`[Cron] \u2713 User ${user2.id} (${user2.email}) is in sync`);
@@ -18496,9 +18760,9 @@ function startTrialExpirationCheckJob() {
     console.log("[Cron] Checking for expired trials...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredTrialUsers = await db8.query.users.findMany({
-        where: (users3, { and: and8, lt, eq: eq11, isNotNull: isNotNull2 }) => and8(
-          eq11(users3.subscriptionStatus, "trialing"),
+      const expiredTrialUsers = await db9.query.users.findMany({
+        where: (users3, { and: and8, lt, eq: eq12, isNotNull: isNotNull2 }) => and8(
+          eq12(users3.subscriptionStatus, "trialing"),
           isNotNull2(users3.trialExpiresAt),
           lt(users3.trialExpiresAt, now)
         )
@@ -18506,9 +18770,9 @@ function startTrialExpirationCheckJob() {
       if (expiredTrialUsers.length > 0) {
         console.log(`[Cron] Found ${expiredTrialUsers.length} expired trials`);
         for (const user2 of expiredTrialUsers) {
-          await db8.update(users).set({
+          await db9.update(users).set({
             subscriptionStatus: "inactive"
-          }).where(eq10(users.id, user2.id));
+          }).where(eq11(users.id, user2.id));
           console.log(`[Cron] Updated user ${user2.id} (${user2.email}) trial status to inactive`);
         }
       }
@@ -18525,9 +18789,9 @@ function startSubscriptionExpirationCheckJob() {
     console.log("[Cron] Checking for expired subscriptions...");
     try {
       const now = /* @__PURE__ */ new Date();
-      const expiredSubscriptions = await db8.query.users.findMany({
-        where: (users3, { and: and8, eq: eq11, isNotNull: isNotNull2, lt }) => and8(
-          eq11(users3.subscriptionStatus, "active"),
+      const expiredSubscriptions = await db9.query.users.findMany({
+        where: (users3, { and: and8, eq: eq12, isNotNull: isNotNull2, lt }) => and8(
+          eq12(users3.subscriptionStatus, "active"),
           isNotNull2(users3.subscriptionEndDate),
           lt(users3.subscriptionEndDate, now)
         ),
@@ -18538,9 +18802,9 @@ function startSubscriptionExpirationCheckJob() {
         console.log(`[Cron] Found ${expiredSubscriptions.length} expired subscriptions`);
         for (const user2 of expiredSubscriptions) {
           try {
-            await db8.update(users).set({
+            await db9.update(users).set({
               subscriptionStatus: "inactive"
-            }).where(eq10(users.id, user2.id));
+            }).where(eq11(users.id, user2.id));
             console.log(`[Cron] Updated user ${user2.id} (${user2.email}) subscription status to inactive (endDate: ${user2.subscriptionEndDate})`);
           } catch (updateError) {
             console.error(`[Cron] Failed to update user ${user2.id}:`, updateError);
@@ -18582,13 +18846,13 @@ function startAllCronJobs() {
   startRankingSnapshotJob();
   console.log("\u{1F550} All cron jobs started");
 }
-var db8, stripe3;
+var db9, stripe3;
 var init_cron_jobs = __esm({
   "server/cron-jobs.ts"() {
     "use strict";
     init_schema();
     init_schema();
-    db8 = drizzle8(process.env.DATABASE_URL, { schema: schema_exports });
+    db9 = drizzle9(process.env.DATABASE_URL, { schema: schema_exports });
     stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2024-11-20.acacia"
     });
@@ -18597,21 +18861,22 @@ var init_cron_jobs = __esm({
 
 // server/index.ts
 init_routes();
-import path4 from "path";
-import fs3 from "fs";
+import path5 from "path";
+import fs4 from "fs";
 import "dotenv/config";
-import express4 from "express";
+import express5 from "express";
+import cookieParser from "cookie-parser";
 
 // server/vite.ts
-import express3 from "express";
-import fs2 from "fs";
-import path3 from "path";
+import express4 from "express";
+import fs3 from "fs";
+import path4 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path2 from "path";
+import path3 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -18625,18 +18890,18 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path2.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path2.resolve(import.meta.dirname, "shared"),
-      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
+      "@": path3.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path3.resolve(import.meta.dirname, "shared"),
+      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path2.resolve(import.meta.dirname, "client"),
+  root: path3.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path2.resolve(import.meta.dirname, "dist/web"),
+    outDir: path3.resolve(import.meta.dirname, "dist/web"),
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: path2.resolve(import.meta.dirname, "client/index.html")
+        main: path3.resolve(import.meta.dirname, "client/index.html")
       }
     }
   },
@@ -18701,13 +18966,13 @@ async function setupVite(app2, server) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path3.resolve(
+      const clientTemplate = path4.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
       const { html: appHtml } = render(url);
       const html = template.replace(`<!--app-html-->`, appHtml).replace(
@@ -18723,20 +18988,20 @@ async function setupVite(app2, server) {
   });
 }
 async function serveStatic(app2) {
-  const distPath = path3.resolve(import.meta.dirname, "web");
-  const ssrServerPath = path3.resolve(import.meta.dirname, "server", "entry-server.js");
-  if (!fs2.existsSync(distPath)) {
+  const distPath = path4.resolve(import.meta.dirname, "web");
+  const ssrServerPath = path4.resolve(import.meta.dirname, "server", "entry-server.js");
+  if (!fs3.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express3.static(distPath));
-  const hasSSR = fs2.existsSync(ssrServerPath);
+  app2.use(express4.static(distPath));
+  const hasSSR = fs3.existsSync(ssrServerPath);
   app2.use("*", async (req, res) => {
-    const templatePath = path3.resolve(distPath, "index.html");
+    const templatePath = path4.resolve(distPath, "index.html");
     try {
       if (hasSSR) {
-        const template = await fs2.promises.readFile(templatePath, "utf-8");
+        const template = await fs3.promises.readFile(templatePath, "utf-8");
         const { render } = await import(ssrServerPath);
         const { html: appHtml } = render(req.originalUrl);
         const html = template.replace(`<!--app-html-->`, appHtml);
@@ -18757,15 +19022,16 @@ import { exec as exec2 } from "child_process";
 import { promisify as promisify2 } from "util";
 process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
 var execAsync2 = promisify2(exec2);
-var app = express4();
+var app = express5();
 app.use((req, res, next) => {
   if (req.path === "/api/stripe/webhook") {
     next();
   } else {
-    express4.json()(req, res, next);
+    express5.json()(req, res, next);
   }
 });
-app.use(express4.urlencoded({ extended: false }));
+app.use(express5.urlencoded({ extended: false }));
+app.use(cookieParser());
 var ALLOWED_ORIGINS = [
   "https://insiderpulse.apps.tossmini.com",
   // 토스 앱인토스 실제 서비스
@@ -18806,8 +19072,8 @@ app.use((req, res, next) => {
   next();
 });
 app.get("/insiderpulse.ait", (req, res) => {
-  const filePath = path4.resolve(process.cwd(), "insiderpulse.ait");
-  if (fs3.existsSync(filePath)) {
+  const filePath = path5.resolve(process.cwd(), "insiderpulse.ait");
+  if (fs4.existsSync(filePath)) {
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Content-Disposition", 'attachment; filename="insiderpulse.ait"');
     return res.sendFile(filePath);
@@ -18816,8 +19082,8 @@ app.get("/insiderpulse.ait", (req, res) => {
   }
 });
 app.get("/insiderpulse_015353.ait", (req, res) => {
-  const filePath = path4.resolve(process.cwd(), "insiderpulse_015353.ait");
-  if (fs3.existsSync(filePath)) {
+  const filePath = path5.resolve(process.cwd(), "insiderpulse_015353.ait");
+  if (fs4.existsSync(filePath)) {
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Content-Disposition", 'attachment; filename="insiderpulse_015353.ait"');
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -18828,7 +19094,7 @@ app.get("/insiderpulse_015353.ait", (req, res) => {
 });
 app.use((req, res, next) => {
   const start = Date.now();
-  const path5 = req.path;
+  const path6 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -18837,8 +19103,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path5.startsWith("/api")) {
-      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
+    if (path6.startsWith("/api")) {
+      let logLine = `${req.method} ${path6} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -18857,9 +19123,9 @@ app.use((req, res, next) => {
   console.log("\u{1F525} Peak coverage: 15:00-18:00 ET (55-65% of all filings)");
   app.get("/sitemap.xml", (_req, res) => {
     try {
-      const filePath = path4.join(process.cwd(), "sitemap", "sitemap.xml");
-      if (fs3.existsSync(filePath)) {
-        const file = fs3.readFileSync(filePath);
+      const filePath = path5.join(process.cwd(), "sitemap", "sitemap.xml");
+      if (fs4.existsSync(filePath)) {
+        const file = fs4.readFileSync(filePath);
         res.setHeader("Content-Type", "application/xml");
         res.send(file);
       } else {
@@ -18872,9 +19138,9 @@ app.use((req, res, next) => {
   });
   app.get("/robots.txt", (_req, res) => {
     try {
-      const filePath = path4.join(process.cwd(), "sitemap", "robots.txt");
-      if (fs3.existsSync(filePath)) {
-        const file = fs3.readFileSync(filePath);
+      const filePath = path5.join(process.cwd(), "sitemap", "robots.txt");
+      if (fs4.existsSync(filePath)) {
+        const file = fs4.readFileSync(filePath);
         res.setHeader("Content-Type", "text/plain");
         res.send(file);
       } else {

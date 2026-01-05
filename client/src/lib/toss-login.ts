@@ -22,7 +22,7 @@ async function ensureAppLoginAPI(): Promise<boolean> {
 
   try {
     console.log('[TossLogin] Loading appLogin API dynamically...');
-    const framework = await import('@apps-in-toss/web-framework');
+    const framework = await import('@apps-in-toss/web-framework') as any;
 
     if (!framework.appLogin) {
       console.error('[TossLogin] appLogin function not found in framework');

@@ -35,6 +35,8 @@ import { dataIntegrityService } from "./data-integrity-service";
 import { subscriptionService } from "./subscription-service";
 import { exchangeRateService } from "./exchange-rate-service";
 import { pastPerformanceService } from "./past-performance-service";
+import tossLoginRouter from "./toss-login-routes";
+import cookieParser from "cookie-parser";
 
 // Initialize database
 const db = drizzle(process.env.DATABASE_URL!, { schema });
@@ -6082,6 +6084,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 🔔 Register push notification API endpoints
   app.use('/api/notifications', notificationRouter);
+
+  // 🔐 Register Toss Login API endpoints (Apps-in-Toss)
+  app.use('/api/toss-login', tossLoginRouter);
 
   // 🚀 Simple test endpoints for enhanced API
   app.get('/api/enhanced/simple-test', (req, res) => {

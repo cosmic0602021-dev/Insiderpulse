@@ -59,15 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const tossUser = await checkExistingTossSession();
           if (tossUser) {
             console.log('✅ [AUTH] Found existing Toss session:', tossUser.id);
-            const userObj: User = {
+            // Create minimal User object for Toss login (frontend context only)
+            const userObj = {
               id: tossUser.id,
               email: tossUser.email || `${tossUser.id}@toss.user`,
               password: '',
+              role: 'user',
+              emailVerified: true,
               subscriptionTier: 'free',
               subscriptionStatus: 'active',
               hasUsedTrial: false,
               createdAt: new Date(),
-            };
+            } as User;
             const tossToken = `toss_${btoa(tossUser.id)}_${Date.now()}`;
 
             setUser(userObj);
@@ -217,15 +220,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('✅ [AUTH] Toss login successful:', result.user.id);
 
         // 토스 유저를 일반 User 객체로 변환 (free tier로 설정)
-        const tossUser: User = {
+        const tossUser = {
           id: result.user.id,
           email: result.user.email || `${result.user.id}@toss.user`,
           password: '', // 토스 로그인은 패스워드 없음
+          role: 'user',
+          emailVerified: true,
           subscriptionTier: 'free',
           subscriptionStatus: 'active',
           hasUsedTrial: false,
           createdAt: new Date(),
-        };
+        } as User;
 
         // 토큰은 userId를 base64 인코딩한 간단한 토큰 사용 (서버에서 별도 처리 필요 없음)
         const tossToken = `toss_${btoa(result.user.id)}_${Date.now()}`;
