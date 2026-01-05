@@ -1388,7 +1388,7 @@ const translations$1 = {
     "priceChart.tradePriceLabel": "Trade Price:",
     "priceChart.currentLabel": "Current:",
     // Ranking page (App Store compliance - no investment recommendations)
-    "ranking.title": "Top Insider Stocks",
+    "ranking.title": "Recommended Insider Stocks",
     "ranking.subtitle": "SEC insider trading data analysis and categorization",
     "ranking.topStocks": "Top 10 Insider Activity",
     "ranking.recommendation": "Signal",
@@ -2509,7 +2509,7 @@ const translations$1 = {
     "priceChart.tradePriceLabel": "거래 가격:",
     "priceChart.currentLabel": "현재:",
     // Ranking page
-    "ranking.title": "상위 내부자 주식",
+    "ranking.title": "추천 내부자 주식",
     "ranking.subtitle": "SEC 내부자 거래 데이터 분석 및 분류",
     "ranking.topStocks": "내부자 활동 TOP 10",
     "ranking.recommendation": "신호",
@@ -5913,7 +5913,7 @@ const EN = {
   sidebar: {
     modules: "Modules",
     live: "Live Trading",
-    analysis: "Top Insider Stocks",
+    analysis: "Recommended Insider Stocks",
     config: "Configuration",
     notifications: "Notifications",
     watched: "Watched Assets",
@@ -5937,7 +5937,7 @@ const EN = {
     noRecords: "NO_RECORDS_FOUND"
   },
   top: {
-    header: "Top Insider Stocks",
+    header: "Recommended Insider Stocks",
     subHeader: "Top Insider Trading Activity",
     interval: "Calculation Interval",
     restricted: "Premium Access Required",
@@ -6196,7 +6196,7 @@ const KO = {
   sidebar: {
     modules: "모듈",
     live: "실시간 거래",
-    analysis: "상위 내부자 주식",
+    analysis: "추천 내부자 주식",
     config: "설정",
     notifications: "알림관리",
     watched: "관심 종목",
@@ -6222,7 +6222,7 @@ const KO = {
     noRecords: "기록 없음"
   },
   top: {
-    header: "상위 내부자 주식",
+    header: "추천 내부자 주식",
     subHeader: "상위 내부자 거래 활동",
     interval: "계산 간격",
     restricted: "프리미엄 액세스 필요",
