@@ -4,9 +4,20 @@
  */
 
 // Build version for cache busting (updated on each deploy)
-export const BUILD_VERSION = '2025.1229.2000';
-export const BUILD_ID = 'v20-performance';
+export const BUILD_VERSION = '2025.0106.0300';
+export const BUILD_ID = 'v23-admob-provider-fix';
 console.log('[BUILD] Version:', BUILD_VERSION, 'ID:', BUILD_ID);
+
+// 환경 디버그 (앱 시작 시 바로 출력)
+if (typeof window !== 'undefined') {
+  console.log('[ENV DEBUG] Protocol:', window.location.protocol);
+  console.log('[ENV DEBUG] Hostname:', window.location.hostname);
+  console.log('[ENV DEBUG] URL:', window.location.href);
+  console.log('[ENV DEBUG] ReactNativeWebView:', !!(window as any).ReactNativeWebView);
+  console.log('[ENV DEBUG] __APPINTOS__:', !!(window as any).__APPINTOS__);
+  console.log('[ENV DEBUG] UserAgent:', navigator.userAgent?.substring(0, 100));
+  console.log('[ENV DEBUG] Referrer:', document.referrer);
+}
 
 export interface EnvironmentConfig {
   isAppintos: boolean;
@@ -25,7 +36,7 @@ export function isAppintosEnvironment(): boolean {
   }
 
   try {
-    // 프로토콜 확인 (intoss:// 또는 intoss-private://) - 최우선 감지
+    // 1. 프로토콜 확인 (intoss:// 또는 intoss-private://) - 최우선 감지
     const protocol = window.location.protocol;
     if (protocol.includes('intoss')) {
       console.log('🔍 [ENV] Detected intoss protocol:', protocol);
@@ -33,19 +44,28 @@ export function isAppintosEnvironment(): boolean {
       return true;
     }
 
-    // React Native WebView 환경 감지 (가장 확실한 방법)
+    // 2. React Native WebView 환경 감지 (가장 확실한 방법)
     if ((window as any).ReactNativeWebView) {
       console.log('🔍 [ENV] Detected ReactNativeWebView');
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
       return true;
     }
 
-    // Appintos 특정 객체 감지
+    // 3. Appintos 특정 객체 감지
     if ((window as any).__APPINTOS__) {
       console.log('🔍 [ENV] Detected __APPINTOS__');
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
       return true;
     }
 
-    // 세션/로컬 스토리지 플래그 확인 (이전에 감지된 경우)
+    // 4. @apps-in-toss/web-framework 로드 여부 확인 (빌드 시 주입됨)
+    if ((window as any).__AIT_FRAMEWORK__ || (window as any).AppsInToss) {
+      console.log('🔍 [ENV] Detected AIT Framework');
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
+      return true;
+    }
+
+    // 5. 세션/로컬 스토리지 플래그 확인 (이전에 감지된 경우)
     try {
       if (sessionStorage.getItem('appintos_mode') === 'true' ||
           sessionStorage.getItem('appintos_signature')) {
@@ -56,7 +76,7 @@ export function isAppintosEnvironment(): boolean {
       // 스토리지 접근 실패 무시
     }
 
-    // URL 파라미터 확인
+    // 6. URL 파라미터 확인
     const urlParams = new URLSearchParams(window.location.search);
 
     // _deploymentId 파라미터 확인 (앱인토스 테스트 환경)
@@ -68,33 +88,46 @@ export function isAppintosEnvironment(): boolean {
 
     if (urlParams.has('signature') || urlParams.has('appintos')) {
       console.log('🔍 [ENV] Detected signature/appintos param');
-      // 플래그 저장 (다음 요청에서도 감지 가능하도록)
-      try {
-        sessionStorage.setItem('appintos_mode', 'true');
-      } catch (e) {}
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
       return true;
     }
 
-    // 호스트네임 확인 (tossmini.com: 앱인토스 실제 서비스/QR테스트 도메인)
+    // 7. 호스트네임 확인 (tossmini.com: 앱인토스 실제 서비스/QR테스트 도메인)
     const hostname = window.location.hostname;
     if (hostname.includes('apps-in-toss') || hostname.includes('.toss.im') || hostname.includes('tossmini.com')) {
       console.log('🔍 [ENV] Detected Appintos hostname:', hostname);
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
       return true;
     }
 
-    // User-Agent 기반 토스앱 감지 (추가)
+    // 8. User-Agent 기반 토스앱 감지
     const userAgent = navigator.userAgent || '';
     if (userAgent.includes('Toss') || userAgent.includes('toss') || userAgent.includes('AppsInToss')) {
       console.log('🔍 [ENV] Detected Toss in User-Agent:', userAgent.substring(0, 50));
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
       return true;
     }
 
-    // 모바일 WebView 감지 (iOS/Android wv 플래그)
+    // 9. 모바일 WebView 감지 (iOS/Android wv 플래그)
     const isMobileWebView = (userAgent.includes('wv') || userAgent.includes('WebView')) &&
                             (userAgent.includes('iPhone') || userAgent.includes('Android'));
     if (isMobileWebView) {
       console.log('🔍 [ENV] Detected Mobile WebView:', userAgent.substring(0, 50));
-      // WebView에서도 앱인토스일 가능성이 높으므로 true
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
+      return true;
+    }
+
+    // 10. document.referrer 확인 (토스에서 열린 경우)
+    const referrer = document.referrer || '';
+    if (referrer.includes('toss') || referrer.includes('tossmini')) {
+      console.log('🔍 [ENV] Detected Toss in referrer:', referrer);
+      try { sessionStorage.setItem('appintos_mode', 'true'); } catch (e) {}
+      return true;
+    }
+
+    // 11. 빌드 환경 변수 확인 (VITE_FORCE_APPINTOS로 강제 활성화 가능)
+    if (import.meta.env.VITE_FORCE_APPINTOS === 'true') {
+      console.log('🔍 [ENV] Forced Appintos mode via VITE_FORCE_APPINTOS');
       return true;
     }
 

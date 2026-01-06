@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
-import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Ticket, CheckCircle2, Sparkles, Zap, BarChart3, Shield } from 'lucide-react';
+import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Ticket, CheckCircle2, Sparkles, Zap, BarChart3, Shield, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
 import { ENV_CONFIG } from '@/lib/environment';
+import { performTossLogin } from '@/lib/toss-login';
 
 interface ProfileViewProps {
   lang: Language;
@@ -21,6 +22,41 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
   const [couponCode, setCouponCode] = useState('');
   const [couponStatus, setCouponStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [isTossLoggingIn, setIsTossLoggingIn] = useState(false);
+  const [tossUserId, setTossUserId] = useState<string | null>(null);
+
+  // Check for existing Toss login on mount
+  useEffect(() => {
+    // 디버그 로그 (토스앱에서 확인용)
+    console.log('[ProfileView] isAppintos:', ENV_CONFIG.isAppintos);
+    console.log('[ProfileView] localStorage appintos_user_id:', localStorage.getItem('appintos_user_id'));
+
+    if (ENV_CONFIG.isAppintos) {
+      const storedId = localStorage.getItem('appintos_user_id');
+      console.log('[ProfileView] Setting tossUserId:', storedId);
+      setTossUserId(storedId);
+    }
+  }, []);
+
+  // Handle Toss Login
+  const handleTossLogin = async () => {
+    setIsTossLoggingIn(true);
+    try {
+      const result = await performTossLogin();
+      if (result.success && result.user) {
+        setTossUserId(result.user.id);
+        // Refresh to update auth state
+        window.location.reload();
+      } else {
+        alert(result.error || '로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('[ProfileView] Toss login error:', error);
+      alert('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsTossLoggingIn(false);
+    }
+  };
   
   const isPro = user?.subscriptionTier === 'insider_pro' || user?.subscriptionTier === 'insider';
   const isTrialing = user?.subscriptionStatus === 'trialing';
@@ -126,21 +162,49 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
                             <User className="text-neutral-500" size={20} />
                             <h2 className="text-lg font-bold text-neutral-300">사용자 정보</h2>
                         </div>
-                        <div className="grid grid-cols-1 gap-4">
-                            <div>
-                                <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">사용자 ID</div>
-                                <div className="text-neutral-300 mono font-medium text-sm break-all">
-                                    {typeof window !== 'undefined' ? (localStorage.getItem('appintos_user_id') || '로그인 필요') : '...'}
+
+                        {/* 로그인되지 않은 경우: 로그인 버튼 표시 */}
+                        {!tossUserId ? (
+                            <div className="text-center py-6">
+                                <p className="text-neutral-400 text-sm mb-4">
+                                    토스 계정으로 로그인하면 모든 기능을 이용할 수 있습니다.
+                                </p>
+                                <button
+                                    onClick={handleTossLogin}
+                                    disabled={isTossLoggingIn}
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 text-white font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-3 transition-colors rounded"
+                                >
+                                    {isTossLoggingIn ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            로그인 중...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <LogIn size={18} />
+                                            토스로 로그인
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            /* 로그인된 경우: 사용자 정보 표시 */
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">사용자 ID</div>
+                                    <div className="text-neutral-300 mono font-medium text-sm break-all">
+                                        {tossUserId}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">로그인 상태</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span className="text-emerald-500 text-sm">토스 인증됨</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">로그인 상태</div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    <span className="text-emerald-500 text-sm">토스 인증됨</span>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* 무료 서비스 섹션 */}

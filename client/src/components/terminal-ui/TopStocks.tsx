@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StockRecommendation, Language, Trade } from './types';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
@@ -33,6 +33,9 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   const tData = TRANSLATIONS[lang].data;
   const isAppintos = ENV_CONFIG.isAppintos;
   const { showAdBeforeNavigation } = useAdOnNavigation();
+
+  // 앱인토스: 광고 시청 후 잠금 해제된 종목 추적
+  const [unlockedStocks, setUnlockedStocks] = useState<Set<string>>(new Set());
 
   // Shuffle stocks for Appintos (so users don't just watch ad for #1)
   const shuffledData = useMemo(() => {
@@ -276,33 +279,41 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                  /* Appintos: Individual locked cards with ad unlock */
                  <div className="grid gap-3">
                    {topTier.map(stock => (
-                     <button
-                       key={stock.ticker}
-                       onClick={() => {
-                         if (onViewDetails) {
+                     unlockedStocks.has(stock.ticker) ? (
+                       /* 잠금 해제된 카드 - 실제 정보 표시 */
+                       <StockCard key={stock.ticker} stock={stock} />
+                     ) : (
+                       /* 잠긴 카드 - ???? 표시 */
+                       <button
+                         key={stock.ticker}
+                         onClick={() => {
                            showAdBeforeNavigation(() => {
-                             onViewDetails(stock);
+                             // 광고 시청 후 잠금 해제
+                             setUnlockedStocks(prev => new Set([...prev, stock.ticker]));
+                             if (onViewDetails) {
+                               onViewDetails(stock);
+                             }
                            });
-                         }
-                       }}
-                       className="w-full bg-[#0a0a0a] border border-neutral-800 p-4 flex items-center justify-between hover:border-emerald-600/50 hover:bg-neutral-900/50 transition-all group"
-                     >
-                       <div className="flex items-center gap-4">
-                         <div className="text-left">
-                           <div className="flex items-center gap-2">
-                             <span className="text-lg font-bold text-neutral-200">{stock.ticker}</span>
-                             <span className="text-[9px] bg-emerald-900/30 text-emerald-500 px-1.5 py-0.5 rounded font-bold uppercase">{t.strongBuy}</span>
+                         }}
+                         className="w-full bg-[#0a0a0a] border border-neutral-800 p-4 flex items-center justify-between hover:border-emerald-600/50 hover:bg-neutral-900/50 transition-all group"
+                       >
+                         <div className="flex items-center gap-4">
+                           <div className="text-left">
+                             <div className="flex items-center gap-2">
+                               <span className="text-lg font-bold text-neutral-200">????</span>
+                               <span className="text-[9px] bg-emerald-900/30 text-emerald-500 px-1.5 py-0.5 rounded font-bold uppercase">{t.strongBuy}</span>
+                             </div>
+                             <span className="text-xs text-neutral-500 blur-sm">{lang === 'ko' ? '광고 보고 확인' : 'Watch ad to see'}</span>
                            </div>
-                           <span className="text-xs text-neutral-500">{stock.companyName}</span>
                          </div>
-                       </div>
-                       <div className="flex items-center gap-2 text-neutral-500 group-hover:text-emerald-400 transition-colors">
-                         <span className="text-[10px] uppercase tracking-wide">
-                           {lang === 'ko' ? '광고 보고 잠금 해제' : 'Watch Ad to Unlock'}
-                         </span>
-                         <PlayCircle size={18} />
-                       </div>
-                     </button>
+                         <div className="flex items-center gap-2 text-neutral-500 group-hover:text-emerald-400 transition-colors">
+                           <span className="text-[10px] uppercase tracking-wide">
+                             {lang === 'ko' ? '광고 보고 잠금 해제' : 'Watch Ad to Unlock'}
+                           </span>
+                           <PlayCircle size={18} />
+                         </div>
+                       </button>
+                     )
                    ))}
                  </div>
                ) : (

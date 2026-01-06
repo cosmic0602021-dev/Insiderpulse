@@ -392,42 +392,39 @@ export default function LiveTrading() {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#0a0a0f] text-white relative">
-      {/* 🚨 ABSOLUTE TEST MARKER */}
-      <div style={{position: 'fixed', top: 0, left: 0, zIndex: 99999, background: 'red', color: 'white', padding: '20px', fontSize: '24px', width: '100%'}}>
-        ✅ REACT IS RENDERING! {new Date().toLocaleTimeString()}
-      </div>
-
       {/* Stripe Mesh Gradient Background */}
       <StripeMeshGradient variant="blue" opacity={0.3} animate={true} />
 
       <div className="space-y-3 sm:space-y-6 p-3 sm:p-6 relative z-10">
-      {/* FOMO Alert Manager - All FOMO alerts */}
-      <FOMOAlertManager
-        trialExpiresAt={accessLevel?.trialExpiresAt || null}
-        isTrialing={accessLevel?.isTrialing || false}
-        hasTrial={accessLevel?.hasUsedTrial || false}
-        recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
-          companyName: t.companyName,
-          ticker: t.ticker || '',
-          totalValue: t.totalValue,
-          traderTitle: t.traderTitle || 'Insider',
-        }))}
-        onUpgrade={handleUpgrade}
-        onUnlock={handleUnlock}
-      />
+      {/* FOMO Alert Manager - All FOMO alerts (not shown in Appintos) */}
+      {!ENV_CONFIG.isAppintos && (
+        <FOMOAlertManager
+          trialExpiresAt={accessLevel?.trialExpiresAt || null}
+          isTrialing={accessLevel?.isTrialing || false}
+          hasTrial={accessLevel?.hasUsedTrial || false}
+          recentLockedTrades={validatedData.trades.slice(0, 5).map(t => ({
+            companyName: t.companyName,
+            ticker: t.ticker || '',
+            totalValue: t.totalValue,
+            traderTitle: t.traderTitle || 'Insider',
+          }))}
+          onUpgrade={handleUpgrade}
+          onUnlock={handleUnlock}
+        />
+      )}
 
-      {/* Trial Timer Banner - Active trial countdown */}
-      {accessLevel?.isTrialing && accessLevel?.trialExpiresAt && (
+      {/* Trial Timer Banner - Active trial countdown (not shown in Appintos) */}
+      {!ENV_CONFIG.isAppintos && accessLevel?.isTrialing && accessLevel?.trialExpiresAt && (
         <TrialTimerBanner trialExpiresAt={accessLevel.trialExpiresAt} />
       )}
 
-      {/* Trial Expired Banner - Show after trial ends */}
-      {accessLevel?.hasUsedTrial && !accessLevel?.isTrialing && !accessLevel?.hasRealtimeAccess && (
+      {/* Trial Expired Banner - Show after trial ends (not shown in Appintos) */}
+      {!ENV_CONFIG.isAppintos && accessLevel?.hasUsedTrial && !accessLevel?.isTrialing && !accessLevel?.hasRealtimeAccess && (
         <TrialExpiredBanner onUpgrade={handleUpgrade} />
       )}
 
-      {/* Free Zone Banner - 48h delay notice (only for users who haven't used trial) */}
-      {accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && (
+      {/* Free Zone Banner - 48h delay notice (not shown in Appintos) */}
+      {!ENV_CONFIG.isAppintos && accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && (
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
       )}
 
@@ -436,7 +433,12 @@ export default function LiveTrading() {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{t('page.livetrading.title')}</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+                {ENV_CONFIG.isAppintos
+                  ? (language === 'ko' ? '실시간 내부자 거래' : 'Live Insider Trading')
+                  : t('page.livetrading.title')
+                }
+              </h1>
               <p className="text-sm text-slate-400">
                 {t('page.livetrading.subtitle')}
               </p>
@@ -459,13 +461,6 @@ export default function LiveTrading() {
                 <span className="hidden sm:inline">{t('liveTrading.realData')}</span>
               </Badge>
             </div>
-          </div>
-
-          {/* 🚨 TEST MARKER - If you see this, code is updated! */}
-          <div className="w-full py-4 text-center">
-            <h2 className="text-4xl font-bold text-red-500 animate-pulse">
-              ⚠️ 새 버전 로드됨! 2025-11-26 15:26 ⚠️
-            </h2>
           </div>
 
           {/* Search Bar - Premium glass style */}
@@ -549,8 +544,8 @@ export default function LiveTrading() {
         </div>
       </GlassCard>
 
-      {/* Locked Real-Time Trades Section - FOMO Zone */}
-      {accessLevel && !accessLevel.hasRealtimeAccess && (
+      {/* Locked Real-Time Trades Section - FOMO Zone (not shown in Appintos) */}
+      {accessLevel && !accessLevel.hasRealtimeAccess && !ENV_CONFIG.isAppintos && (
         <LockedTradesSection
           trades={validatedData.trades.slice(0, 5)} // Show 5 locked trades as teaser
           onUnlock={handleUnlock}
@@ -563,7 +558,7 @@ export default function LiveTrading() {
           <CardTitle className="flex items-center gap-2 text-white">
             <Shield className="h-5 w-5 text-white" />
             {t('liveTrading.verifiedTradesList')}
-            {accessLevel && !accessLevel.hasRealtimeAccess && (
+            {!ENV_CONFIG.isAppintos && accessLevel && !accessLevel.hasRealtimeAccess && (
               <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">
                 {t('freeZone.delayedData')}
               </Badge>

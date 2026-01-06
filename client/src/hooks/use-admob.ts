@@ -1,10 +1,12 @@
 /**
  * useAdOnNavigation Hook
  * 페이지 전환 시 광고를 표시하는 Custom Hook
+ *
+ * 주의: AdMobProvider 없이도 작동하도록 직접 API 호출 사용
  */
 
-import { useAdMob } from '@/contexts/admob-context';
 import { ENV_CONFIG } from '@/lib/environment';
+import { showInterstitialAd, loadInterstitialAd } from '@/lib/admob';
 
 /**
  * 페이지 전환 시 광고를 표시하는 Hook
@@ -21,8 +23,6 @@ import { ENV_CONFIG } from '@/lib/environment';
  * ```
  */
 export function useAdOnNavigation() {
-  const { showAd, isAdLoaded, isAdShowing } = useAdMob();
-
   /**
    * 광고를 표시한 후 네비게이션 콜백을 실행합니다
    *
@@ -31,8 +31,7 @@ export function useAdOnNavigation() {
    *
    * 동작 방식:
    * 1. 웹 환경: 광고 없이 즉시 콜백 실행
-   * 2. 앱인토스 + 광고 로드됨: 광고 표시 → 광고 닫힘 → 콜백 실행
-   * 3. 앱인토스 + 광고 없음/실패: 에러 로깅 후 콜백 실행 (앱 차단 안 함)
+   * 2. 앱인토스: 광고 표시 시도 → 광고 닫힘/실패 → 콜백 실행
    */
   const showAdBeforeNavigation = async (navigationCallback: () => void): Promise<void> => {
     // 웹 환경: 광고 없이 즉시 이동
@@ -42,22 +41,19 @@ export function useAdOnNavigation() {
       return;
     }
 
+    console.log('[useAdOnNavigation] Appintos environment, attempting to show ad');
+
     // 앱인토스 환경: 광고 시도
     try {
-      // 광고가 이미 표시 중이면 대기
-      if (isAdShowing) {
-        console.log('[useAdOnNavigation] Ad is already showing, waiting...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // 직접 showInterstitialAd 호출 (새 API 사용)
+      console.log('[useAdOnNavigation] Calling showInterstitialAd...');
+      await showInterstitialAd();
+      console.log('[useAdOnNavigation] Ad dismissed successfully');
 
-      // 광고 표시
-      if (isAdLoaded) {
-        console.log('[useAdOnNavigation] Showing ad before navigation...');
-        await showAd();
-        console.log('[useAdOnNavigation] Ad dismissed, executing callback');
-      } else {
-        console.warn('[useAdOnNavigation] Ad not loaded, proceeding without ad');
-      }
+      // 다음 광고 프리로드 (백그라운드)
+      loadInterstitialAd().catch(err => {
+        console.warn('[useAdOnNavigation] Failed to preload next ad:', err);
+      });
     } catch (error) {
       // 광고 실패해도 앱 차단하지 않음
       console.error('[useAdOnNavigation] Ad failed, but continuing:', error);
@@ -69,22 +65,21 @@ export function useAdOnNavigation() {
 
   return {
     showAdBeforeNavigation,
-    isAdLoaded,
-    isAdShowing,
+    isAdLoaded: false, // 직접 API 사용 시 상태 추적 불가
+    isAdShowing: false,
   };
 }
 
 /**
  * 광고 표시 상태를 확인하는 간단한 Hook
+ * 참고: 직접 API 사용 시 상태 추적이 제한적임
  */
 export function useAdStatus() {
-  const { isAdLoaded, isAdShowing, isAdLoading, error } = useAdMob();
-
   return {
-    isAdLoaded,
-    isAdShowing,
-    isAdLoading,
-    hasError: error !== null,
-    error,
+    isAdLoaded: false,
+    isAdShowing: false,
+    isAdLoading: false,
+    hasError: false,
+    error: null,
   };
 }

@@ -26,6 +26,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
     ? (lang === 'ko' ? '상위 내부자 종목' : 'Top Insider Stocks')
     : t.analysis;
 
+  // 앱인토스: "실시간 내부자 거래", insiderpulse.pro: 기존 번역 사용
+  const liveLabel = ENV_CONFIG.isAppintos
+    ? (lang === 'ko' ? '실시간 내부자 거래' : 'Live Insider Trading')
+    : t.live;
+
   return (
     <div className="w-64 h-full bg-[#050505] border-r border-neutral-900 flex flex-col">
       <div className="p-6 border-b border-neutral-900 flex items-center justify-between">
@@ -48,11 +53,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
       <div className="flex-1 px-2 py-6 space-y-1">
         <div className="text-[9px] font-bold text-neutral-700 uppercase px-4 mb-2 tracking-widest">{t.modules}</div>
         
-        <NavButton 
-            active={activeView === View.LIVE_TRADING} 
+        <NavButton
+            active={activeView === View.LIVE_TRADING}
             onClick={() => onChangeView(View.LIVE_TRADING)}
             icon={<Activity size={14} />}
-            label={t.live}
+            label={liveLabel}
         />
         <NavButton
             active={activeView === View.TOP_STOCKS}

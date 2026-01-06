@@ -1,243 +1,237 @@
 /**
- * AdMob 광고 관리 모듈
- * 앱인토스 환경에서 전면형 광고(Interstitial Ads)를 로드하고 표시합니다.
+ * AdMob 광고 관리 모듈 (완전 재작성)
+ * 앱인토스 환경에서 GoogleAdMob API를 사용하여 광고를 표시합니다.
+ *
+ * API 시그니처:
+ * - GoogleAdMob.loadAppsInTossAdMob({ options: { adGroupId }, onEvent, onError })
+ * - GoogleAdMob.showAppsInTossAdMob({ options: { adGroupId }, onEvent, onError })
+ * - 반환값: cleanup 함수 (Promise 아님!)
  */
 
 import { ENV_CONFIG } from './environment';
 
-// 앱인토스 광고 API 타입 (타입 정의는 admob.d.ts에서 확장)
-interface LoadAdMobInterstitialAdParams {
-  adUnitId: string;
-}
-
-interface ShowAdMobInterstitialAdParams {
-  ad: InterstitialAd;
-}
-
-interface InterstitialAd {
-  id: string;
-  [key: string]: any;
-}
-
-interface LoadAdMobInterstitialAdEvent {
-  ad?: InterstitialAd;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
-interface ShowAdMobInterstitialAdEvent {
-  ad?: InterstitialAd;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
-// 앱인토스 프레임워크 API 동적 import
-let loadAdMobInterstitialAdApi: ((params: LoadAdMobInterstitialAdParams) => Promise<{ ad: InterstitialAd }>) | undefined;
-let showAdMobInterstitialAdApi: ((params: ShowAdMobInterstitialAdParams) => Promise<void>) | undefined;
+// GoogleAdMob API 캐시
+let GoogleAdMobApi: any;
+let isAdLoaded = false;
 
 /**
- * 앱인토스 API를 lazy load합니다 (첫 사용 시에만 로드)
+ * 광고 그룹 ID
+ * 앱인토스 콘솔에서 발급받은 ID 사용
  */
-async function ensureAdMobAPIs() {
-  if (!ENV_CONFIG.isAppintos) {
-    throw new Error('[AdMob] Not in Appintos environment');
-  }
+export const AD_GROUP_ID = import.meta.env.PROD
+  ? import.meta.env.VITE_INTERSTITIAL_AD_GROUP_ID || 'ait.v2.live.39610dea1b124846'
+  : 'ait-ad-test-interstitial-id';
 
-  if (loadAdMobInterstitialAdApi && showAdMobInterstitialAdApi) {
-    return; // 이미 로드됨
+export const REWARDED_AD_GROUP_ID = import.meta.env.PROD
+  ? import.meta.env.VITE_REWARDED_AD_GROUP_ID || 'ait.v2.live.e07da976ac954c4a'
+  : 'ait-ad-test-rewarded-id';
+
+/**
+ * GoogleAdMob API 동적 로드
+ */
+async function ensureGoogleAdMobAPI(): Promise<boolean> {
+  if (GoogleAdMobApi) return true;
+
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Not in Appintos environment, skipping');
+    return false;
   }
 
   try {
-    const framework = await import('@apps-in-toss/web-framework');
-    loadAdMobInterstitialAdApi = framework.loadAdMobInterstitialAd;
-    showAdMobInterstitialAdApi = framework.showAdMobInterstitialAd;
-    console.log('[AdMob] APIs loaded successfully');
+    console.log('[AdMob] Loading GoogleAdMob API...');
+    const framework = await import('@apps-in-toss/web-framework') as any;
+
+    console.log('[AdMob] Framework exports:', Object.keys(framework));
+
+    GoogleAdMobApi = framework.GoogleAdMob;
+
+    if (!GoogleAdMobApi) {
+      console.error('[AdMob] GoogleAdMob not found in framework!');
+      return false;
+    }
+
+    console.log('[AdMob] GoogleAdMob methods:', Object.keys(GoogleAdMobApi));
+
+    if (!GoogleAdMobApi.loadAppsInTossAdMob) {
+      console.error('[AdMob] loadAppsInTossAdMob not found!');
+      return false;
+    }
+
+    if (!GoogleAdMobApi.showAppsInTossAdMob) {
+      console.error('[AdMob] showAppsInTossAdMob not found!');
+      return false;
+    }
+
+    // isSupported 체크
+    if (GoogleAdMobApi.loadAppsInTossAdMob.isSupported && !GoogleAdMobApi.loadAppsInTossAdMob.isSupported()) {
+      console.error('[AdMob] loadAppsInTossAdMob is not supported in this environment');
+      return false;
+    }
+
+    console.log('[AdMob] GoogleAdMob API loaded successfully');
+    return true;
   } catch (error) {
-    console.error('[AdMob] Failed to load APIs:', error);
-    throw error;
+    console.error('[AdMob] Failed to load GoogleAdMob API:', error);
+    return false;
   }
 }
 
 /**
- * AdMob 광고 단위 ID
- * 프로덕션: 실제 광고 단위 ID (토스 콘솔에서 발급)
- * 테스트: Google 제공 테스트 광고 ID
+ * 전면형 광고 로드 (Promise로 래핑)
  */
-export const ADMOB_AD_UNIT_ID = import.meta.env.PROD
-  ? import.meta.env.VITE_ADMOB_AD_UNIT_ID || 'ca-app-pub-XXXXXXXXXXXXX/YYYYYYYYYY' // 실제 ID로 교체 필요
-  : 'ca-app-pub-3940256099942544/1033173712'; // Google 테스트 전면형 광고 ID
+export async function loadInterstitialAd(adGroupId: string = AD_GROUP_ID): Promise<void> {
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Skipping ad load (not in Appintos)');
+    return;
+  }
+
+  const apiReady = await ensureGoogleAdMobAPI();
+  if (!apiReady) {
+    console.warn('[AdMob] API not ready, skipping load');
+    return;
+  }
+
+  console.log('[AdMob] Loading ad with adGroupId:', adGroupId);
+
+  return new Promise((resolve, reject) => {
+    const cleanup = GoogleAdMobApi.loadAppsInTossAdMob({
+      options: { adGroupId },
+      onEvent: (event: any) => {
+        console.log('[AdMob] Load event:', event.type, event);
+        if (event.type === 'loaded') {
+          isAdLoaded = true;
+          console.log('[AdMob] Ad loaded successfully');
+          resolve();
+        }
+      },
+      onError: (error: any) => {
+        console.error('[AdMob] Load error:', error);
+        isAdLoaded = false;
+        reject(error);
+      }
+    });
+
+    // cleanup 함수는 언마운트 시 호출 (여기서는 사용 안 함)
+    console.log('[AdMob] Load initiated, cleanup function:', typeof cleanup);
+  });
+}
 
 /**
- * AdMob 광고 관리 클래스
- * 싱글톤 패턴으로 전역에서 하나의 인스턴스만 사용
+ * 전면형 광고 표시 (Promise로 래핑)
+ * dismissed 이벤트가 발생하면 resolve
+ */
+export async function showInterstitialAd(adGroupId: string = AD_GROUP_ID): Promise<void> {
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Skipping ad show (not in Appintos)');
+    return;
+  }
+
+  const apiReady = await ensureGoogleAdMobAPI();
+  if (!apiReady) {
+    console.warn('[AdMob] API not ready, skipping show');
+    return;
+  }
+
+  console.log('[AdMob] Showing ad with adGroupId:', adGroupId);
+
+  return new Promise((resolve, reject) => {
+    const cleanup = GoogleAdMobApi.showAppsInTossAdMob({
+      options: { adGroupId },
+      onEvent: (event: any) => {
+        console.log('[AdMob] Show event:', event.type, event);
+
+        switch (event.type) {
+          case 'requested':
+            console.log('[AdMob] Ad show requested');
+            break;
+          case 'show':
+            console.log('[AdMob] Ad is now showing');
+            break;
+          case 'impression':
+            console.log('[AdMob] Ad impression recorded');
+            break;
+          case 'clicked':
+            console.log('[AdMob] Ad was clicked');
+            break;
+          case 'dismissed':
+            console.log('[AdMob] Ad dismissed, resolving promise');
+            isAdLoaded = false;
+            resolve();
+            break;
+          case 'failedToShow':
+            console.error('[AdMob] Ad failed to show');
+            reject(new Error('Ad failed to show'));
+            break;
+          case 'userEarnedReward':
+            console.log('[AdMob] User earned reward:', event.data);
+            break;
+        }
+      },
+      onError: (error: any) => {
+        console.error('[AdMob] Show error:', error);
+        reject(error);
+      }
+    });
+
+    console.log('[AdMob] Show initiated, cleanup function:', typeof cleanup);
+  });
+}
+
+/**
+ * 광고 로드 상태 확인
+ */
+export function isAdReady(): boolean {
+  return isAdLoaded;
+}
+
+/**
+ * 앱 초기화 시 광고 프리로드
+ */
+export async function initializeAdMob(): Promise<void> {
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Skipping initialization (not in Appintos)');
+    return;
+  }
+
+  console.log('[AdMob] Initializing...');
+
+  try {
+    await loadInterstitialAd(AD_GROUP_ID);
+    console.log('[AdMob] Initialization complete');
+  } catch (e) {
+    console.error('[AdMob] Initialization failed:', e);
+    // 초기화 실패해도 앱은 계속 실행
+  }
+}
+
+/**
+ * 레거시 호환성을 위한 AdMobManager 클래스
+ * 기존 코드와 호환을 위해 유지하지만 내부적으로 새 API 사용
  */
 class AdMobManager {
-  private loadedAd: InterstitialAd | null = null;
-  private isLoading: boolean = false;
-  private isShowing: boolean = false;
-  private loadPromise: Promise<void> | null = null;
-
-  /**
-   * 전면형 광고 로드
-   * @param adUnitId - AdMob 광고 단위 ID
-   */
-  async loadInterstitialAd(adUnitId: string = ADMOB_AD_UNIT_ID): Promise<void> {
-    // 웹 환경에서는 광고 로드 안 함
-    if (!ENV_CONFIG.isAppintos) {
-      console.log('[AdMob] Skipping ad load (not in Appintos environment)');
-      return;
-    }
-
-    // API 로드 확인
-    await ensureAdMobAPIs();
-
-    // 이미 로드 중이면 기존 Promise 반환
-    if (this.isLoading && this.loadPromise) {
-      console.log('[AdMob] Ad is already loading, returning existing promise');
-      return this.loadPromise;
-    }
-
-    // 이미 로드된 광고가 있으면 스킵
-    if (this.loadedAd) {
-      console.log('[AdMob] Ad already loaded');
-      return;
-    }
-
-    this.isLoading = true;
-    this.loadPromise = this._performLoad(adUnitId);
-
-    try {
-      await this.loadPromise;
-    } finally {
-      this.isLoading = false;
-      this.loadPromise = null;
-    }
+  async loadInterstitialAd(adGroupId: string = AD_GROUP_ID): Promise<void> {
+    return loadInterstitialAd(adGroupId);
   }
 
-  /**
-   * 실제 광고 로드 수행
-   */
-  private async _performLoad(adUnitId: string): Promise<void> {
-    try {
-      console.log('[AdMob] Loading interstitial ad...', adUnitId);
-
-      if (!loadAdMobInterstitialAdApi) {
-        throw new Error('loadAdMobInterstitialAd API not available');
-      }
-
-      const result = await loadAdMobInterstitialAdApi({ adUnitId });
-
-      if (result.ad) {
-        this.loadedAd = result.ad;
-        console.log('[AdMob] Ad loaded successfully:', result.ad.id);
-      } else {
-        throw new Error('Ad load returned no ad object');
-      }
-    } catch (error) {
-      console.error('[AdMob] Failed to load ad:', error);
-      this.loadedAd = null;
-      throw error;
-    }
-  }
-
-  /**
-   * 전면형 광고 표시
-   * @returns Promise<void> - 광고가 닫힐 때까지 대기
-   */
   async showInterstitialAd(): Promise<void> {
-    // 웹 환경에서는 광고 표시 안 함
-    if (!ENV_CONFIG.isAppintos) {
-      console.log('[AdMob] Skipping ad show (not in Appintos environment)');
-      return;
-    }
-
-    // API 로드 확인
-    await ensureAdMobAPIs();
-
-    // 광고가 로드되지 않았으면 에러
-    if (!this.loadedAd) {
-      throw new Error('[AdMob] No ad loaded. Call loadInterstitialAd() first.');
-    }
-
-    // 이미 광고가 표시 중이면 스킵
-    if (this.isShowing) {
-      console.warn('[AdMob] Ad is already showing');
-      return;
-    }
-
-    this.isShowing = true;
-    const adToShow = this.loadedAd;
-
-    try {
-      console.log('[AdMob] Showing interstitial ad...');
-
-      if (!showAdMobInterstitialAdApi) {
-        throw new Error('showAdMobInterstitialAd API not available');
-      }
-
-      await showAdMobInterstitialAdApi({ ad: adToShow });
-
-      console.log('[AdMob] Ad dismissed successfully');
-
-      // 광고 표시 후 로드된 광고 초기화
-      this.loadedAd = null;
-
-      // 다음 광고 사전 로드 (1초 후)
-      setTimeout(() => {
-        this.loadInterstitialAd(ADMOB_AD_UNIT_ID).catch((error) => {
-          console.error('[AdMob] Failed to preload next ad:', error);
-        });
-      }, 1000);
-    } catch (error) {
-      console.error('[AdMob] Failed to show ad:', error);
-      this.loadedAd = null; // 실패한 광고 제거
-      throw error;
-    } finally {
-      this.isShowing = false;
-    }
+    return showInterstitialAd(AD_GROUP_ID);
   }
 
-  /**
-   * 광고 로드 상태 확인
-   */
   get isAdLoaded(): boolean {
-    return this.loadedAd !== null;
+    return isAdLoaded;
   }
 
-  /**
-   * 광고 표시 상태 확인
-   */
   get isAdShowing(): boolean {
-    return this.isShowing;
+    return false; // 상태 추적이 필요하면 추가
   }
 
-  /**
-   * 광고 로딩 상태 확인
-   */
   get isAdLoading(): boolean {
-    return this.isLoading;
+    return false; // 상태 추적이 필요하면 추가
   }
 }
 
-/**
- * 전역 AdMob 관리자 인스턴스 (싱글톤)
- */
 export const adMobManager = new AdMobManager();
 
-/**
- * 앱 시작 시 첫 광고 로드 (앱인토스 환경에서만)
- * main.tsx나 App.tsx에서 호출
- */
-export function initializeAdMob(): Promise<void> {
-  if (!ENV_CONFIG.isAppintos) {
-    console.log('[AdMob] Skipping initialization (not in Appintos environment)');
-    return Promise.resolve();
-  }
-
-  console.log('[AdMob] Initializing AdMob...');
-  return adMobManager.loadInterstitialAd(ADMOB_AD_UNIT_ID);
-}
+// 레거시 export 유지
+export const ADMOB_AD_UNIT_ID = AD_GROUP_ID;
+export const REWARDED_AD_UNIT_ID = REWARDED_AD_GROUP_ID;
