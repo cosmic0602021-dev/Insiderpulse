@@ -32,6 +32,7 @@ import type { InsiderTrade } from '@shared/schema';
 import { ENV_CONFIG } from '@/lib/environment';
 import { DebugPanel } from '@/components/debug-panel';
 import { useAdOnNavigation } from '@/hooks/use-admob';
+import { LoadingScreen } from '@/components/loading-screen';
 
 interface DataQualityStatus {
   isValid: boolean;
@@ -202,7 +203,8 @@ export default function LiveTrading() {
     staleTime: 5 * 60 * 1000, // 5분 캐시 (was 30s) - Cost optimization
     refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신 (was 30s) - Cost optimization
     refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
+    placeholderData: (previousData) => previousData, // 이전 데이터 즉시 표시 - faster perceived loading
   });
 
   // Memoize allTrades to prevent unnecessary re-renders from empty array creation
@@ -367,14 +369,7 @@ export default function LiveTrading() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] bg-[#0a0a0f] text-white">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-white" />
-          <p className="text-white">{t('liveTrading.loadingRealData')}</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message={t('liveTrading.loadingRealData')} />;
   }
 
   if (error) {

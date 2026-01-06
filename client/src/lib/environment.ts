@@ -4,8 +4,8 @@
  */
 
 // Build version for cache busting (updated on each deploy)
-export const BUILD_VERSION = '2025.0106.0300';
-export const BUILD_ID = 'v23-admob-provider-fix';
+export const BUILD_VERSION = '2025.0106.0400';
+export const BUILD_ID = 'v24-loading-animation-upgrade';
 console.log('[BUILD] Version:', BUILD_VERSION, 'ID:', BUILD_ID);
 
 // 환경 디버그 (앱 시작 시 바로 출력)

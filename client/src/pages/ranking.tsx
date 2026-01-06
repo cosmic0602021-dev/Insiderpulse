@@ -20,6 +20,7 @@ import { resolveApiUrl } from '@/lib/queryClient';
 import { DebugPanel } from '@/components/debug-panel';
 import { useAdOnNavigation } from '@/hooks/use-admob';
 import { PastPerformanceSection } from '@/components/past-performance-section';
+import { LoadingScreen } from '@/components/loading-screen';
 
 // Global cache for AI analysis - shared across all users/sessions
 const analysisCache: Map<string, { data: any; timestamp: number }> = new Map();
@@ -135,6 +136,8 @@ export default function Ranking() {
       return result;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: 'always',
+    placeholderData: (previousData) => previousData, // 이전 데이터 즉시 표시 - faster perceived loading
   });
 
   const handleRefresh = async () => {
@@ -425,36 +428,7 @@ export default function Ranking() {
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Skeleton className="h-12 w-12 rounded" />
-                    <Skeleton className="h-16 w-16 rounded-lg" />
-                    <div>
-                      <Skeleton className="h-5 w-24 mb-2" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <LoadingScreen message={t('ranking.loading') || 'Loading rankings...'} />;
   }
 
   if (error) {

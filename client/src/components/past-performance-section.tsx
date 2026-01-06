@@ -192,7 +192,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className={`w-full bg-emerald-900/30 border-2 border-emerald-600/50 rounded-lg p-4 flex items-center justify-between hover:bg-emerald-800/40 hover:border-emerald-500/70 transition-all ${className}`}
+        className={`group w-full bg-emerald-900/30 border-2 border-emerald-600/50 rounded-lg p-4 flex items-center justify-between hover:bg-emerald-800/40 hover:border-emerald-500/70 transition-all ${className}`}
       >
         <div className="flex items-center gap-3">
           <div className="bg-emerald-600/20 p-2 rounded-lg">
@@ -210,8 +210,8 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
             </span>
             <span className="text-xs text-neutral-400 block">{t.stocksUp}</span>
           </div>
-          <div className="bg-emerald-600/30 p-1.5 rounded-full">
-            <ChevronDown size={20} className="text-emerald-300" />
+          <div className="bg-emerald-600/30 p-1.5 rounded-full animate-bounce-slow">
+            <ChevronDown size={20} className="text-emerald-300 group-hover:text-white transition-colors" />
           </div>
         </div>
       </button>
