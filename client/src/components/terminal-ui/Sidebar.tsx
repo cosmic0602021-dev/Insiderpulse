@@ -107,16 +107,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onChangeView, lang, isPro
                 </div>
             </>
         ) : (
-            <div className="flex items-center justify-between px-2">
-                <div className="text-[10px] font-medium text-neutral-500 mono uppercase">Guest Access</div>
-                <button 
-                    onClick={onLoginClick}
-                    className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wide border border-emerald-900/30 bg-emerald-900/10 px-3 py-1.5 rounded hover:bg-emerald-900/20 transition-colors"
-                >
-                    <LogIn size={12} />
-                    Login
-                </button>
-            </div>
+            // 앱인토스에서는 자체 로그인 버튼 숨김 (토스 로그인만 사용)
+            !ENV_CONFIG.isAppintos && (
+                <div className="flex items-center justify-between px-2">
+                    <div className="text-[10px] font-medium text-neutral-500 mono uppercase">Guest Access</div>
+                    <button
+                        onClick={onLoginClick}
+                        className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wide border border-emerald-900/30 bg-emerald-900/10 px-3 py-1.5 rounded hover:bg-emerald-900/20 transition-colors"
+                    >
+                        <LogIn size={12} />
+                        Login
+                    </button>
+                </div>
+            )
         )}
       </div>
     </div>

@@ -231,7 +231,8 @@
       "Bash(DEBUG=vite:*)",
       "Bash(npx vite build --config vite.config.ts)",
       "Bash(npx vite build:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(identify:*)"
     ],
     "deny": [],
     "ask": []

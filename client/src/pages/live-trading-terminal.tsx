@@ -99,9 +99,9 @@ export default function LiveTradingTerminal() {
 
   // 핵심거래: isDerivative=false (Table I 직접 거래만, 파생상품 제외)
 
-  // Fetch ALL trades from backend - filtering happens on frontend for instant switching
-  // 초기 로드를 2700으로 설정하여 모든 거래 유형(GRANT, OPTION_EXERCISE 등)이 포함되도록 함
-  const INITIAL_LOAD_LIMIT = 2700;
+  // Fetch trades from backend - frontend filtering for instant type switching
+  // 초기 로드를 200으로 설정 (2700은 너무 커서 로딩이 느려짐)
+  const INITIAL_LOAD_LIMIT = 200;
   
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({

@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AdMobProvider } from "@/contexts/admob-context";
 import { ENV_CONFIG } from "@/lib/environment";
 import { useState, useEffect } from "react";
-import { Globe, Shield, ShieldCheck, Menu, X } from 'lucide-react';
+import { Globe, Shield, ShieldCheck, Menu, X, LayoutDashboard, Activity, User, Cog } from 'lucide-react';
 // LanguageSelection removed - now using automatic IP-based language detection
 import { CurrencySelector } from "@/components/currency-selector";
 import Dashboard from "@/pages/dashboard";
@@ -192,32 +192,35 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen bg-[#050505] text-neutral-300 font-sans overflow-hidden">
-      
-      {/* Mobile Sidebar Overlay */}
-      {isMobileMenuOpen && (
-        <div 
+
+      {/* Mobile Sidebar Overlay - 앱인토스에서는 숨김 */}
+      {!ENV_CONFIG.isAppintos && isMobileMenuOpen && (
+        <div
           className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#050505] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.5)] border-r border-neutral-800' : '-translate-x-full'}`}>
-        <TerminalSidebar 
-          activeView={activeView} 
-          onChangeView={handleViewChange} 
-          lang={terminalLang} 
-          isPro={isPro}
-          isAuthenticated={isAuthenticated}
-          userEmail={user?.email}
-          onLoginClick={() => openAuthModal('login')}
-          onLogout={logout}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
-        />
-      </div>
-      
+      {/* Sidebar Container - 앱인토스에서는 숨김 (토스 공통 내비게이션 사용) */}
+      {!ENV_CONFIG.isAppintos && (
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#050505] transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.5)] border-r border-neutral-800' : '-translate-x-full'}`}>
+          <TerminalSidebar
+            activeView={activeView}
+            onChangeView={handleViewChange}
+            lang={terminalLang}
+            isPro={isPro}
+            isAuthenticated={isAuthenticated}
+            userEmail={user?.email}
+            onLoginClick={() => openAuthModal('login')}
+            onLogout={logout}
+            onCloseMobile={() => setIsMobileMenuOpen(false)}
+          />
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col relative bg-[#050505] w-full min-w-0">
-        {/* Top Bar Status - Minimalist Terminal Header */}
+        {/* Top Bar Status - 앱인토스에서는 숨김 (토스 공통 내비게이션 사용) */}
+        {!ENV_CONFIG.isAppintos && (
         <div className="h-10 border-b border-neutral-900 flex items-center justify-between px-4 md:px-6 text-[10px] tracking-widest text-neutral-600 uppercase select-none bg-[#050505] relative z-30">
           <div className="flex items-center gap-4 md:gap-6">
             {/* Mobile Menu Toggle */}
@@ -292,6 +295,7 @@ function AppContent() {
             <CurrencySelector />
           </div>
         </div>
+        )}
 
         <div className="flex-1 overflow-hidden relative w-full">
           <main className="h-full overflow-hidden w-full">
@@ -312,6 +316,40 @@ function AppContent() {
             )}
           </main>
         </div>
+
+        {/* 앱인토스 하단 탭 네비게이션 */}
+        {ENV_CONFIG.isAppintos && (
+          <div className="h-14 border-t border-neutral-800 bg-[#0a0a0a] flex items-center justify-around px-2 shrink-0">
+            <button
+              onClick={() => handleViewChange(View.TOP_STOCKS)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.TOP_STOCKS ? 'text-emerald-500' : 'text-neutral-500'}`}
+            >
+              <LayoutDashboard size={20} />
+              <span className="text-[10px]">상위종목</span>
+            </button>
+            <button
+              onClick={() => handleViewChange(View.LIVE_TRADING)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.LIVE_TRADING ? 'text-emerald-500' : 'text-neutral-500'}`}
+            >
+              <Activity size={20} />
+              <span className="text-[10px]">실시간</span>
+            </button>
+            <button
+              onClick={() => handleViewChange(View.PROFILE)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.PROFILE ? 'text-emerald-500' : 'text-neutral-500'}`}
+            >
+              <User size={20} />
+              <span className="text-[10px]">프로필</span>
+            </button>
+            <button
+              onClick={() => handleViewChange(View.SETTINGS)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.SETTINGS ? 'text-emerald-500' : 'text-neutral-500'}`}
+            >
+              <Cog size={20} />
+              <span className="text-[10px]">설정</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
