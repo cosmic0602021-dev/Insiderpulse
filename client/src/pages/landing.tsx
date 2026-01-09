@@ -347,10 +347,10 @@ export default function LandingPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-  // Redirect authenticated users to trades page
+  // Redirect authenticated users to ranking page (Top Insider Stocks)
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/trades');
+      navigate('/ranking');
     }
   }, [isAuthenticated, navigate]);
 
@@ -373,7 +373,7 @@ export default function LandingPage() {
   const handleEnter = () => {
     const hasAccepted = localStorage.getItem('disclaimer-accepted');
     if (hasAccepted) {
-      navigate('/trades');
+      navigate('/ranking');
     } else {
       setShowDisclaimer(true);
     }
@@ -381,7 +381,7 @@ export default function LandingPage() {
 
   const handleDisclaimerAccept = () => {
     setShowDisclaimer(false);
-    navigate('/trades');
+    navigate('/ranking');
   };
 
   return (

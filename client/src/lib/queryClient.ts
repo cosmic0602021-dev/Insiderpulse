@@ -64,7 +64,7 @@ export async function apiRequest(
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: isLocalhost() ? "include" : "omit",
+    credentials: (isLocalhost() || ENV_CONFIG.isAppintos) ? "include" : "omit",
     mode: 'cors',
   });
 
@@ -93,7 +93,7 @@ export const getQueryFn: <T>(options: {
 
     const res = await fetch(url, {
       headers,
-      credentials: isLocalhost() ? "include" : "omit",
+      credentials: (isLocalhost() || ENV_CONFIG.isAppintos) ? "include" : "omit",
       mode: 'cors',
     });
 

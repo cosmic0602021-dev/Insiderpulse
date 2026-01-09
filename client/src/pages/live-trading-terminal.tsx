@@ -12,6 +12,8 @@ import { useWebSocket, getWebSocketUrl } from '@/lib/websocket';
 import { useLocation } from 'wouter';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { TransactionTypeFilter } from '@/components/transaction-type-filter';
+import { ENV_CONFIG } from '@/lib/environment';
+import { showInterstitialAd, loadInterstitialAd } from '@/lib/admob';
 import { formatDistanceToNow } from 'date-fns';
 import { ko, ja, zhCN, enUS } from 'date-fns/locale';
 
@@ -84,13 +86,16 @@ export default function LiveTradingTerminal() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
+  const [adClickCount, setAdClickCount] = useState(0);  // 앱인토스 광고 클릭 카운터
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].live;
   const tData = TRANSLATIONS[langKey].data;
   const tCommon = TRANSLATIONS[langKey].common;
 
-  const isPro = accessLevel?.hasRealtimeAccess || false;
+  // 앱인토스에서는 모든 데이터 실시간 공개 (isPro 취급)
+  const isAppintos = ENV_CONFIG.isAppintos;
+  const isPro = isAppintos || accessLevel?.hasRealtimeAccess || false;
 
   // 핵심거래: isDerivative=false (Table I 직접 거래만, 파생상품 제외)
 
@@ -220,13 +225,33 @@ export default function LiveTradingTerminal() {
   const realTimeItems = isPro ? filteredData.slice(0, 3) : [];
   const historicalItems = isPro ? filteredData.slice(3) : filteredData;
 
-  const handleSelectTrade = (trade: TerminalTrade) => {
+  const handleSelectTrade = async (trade: TerminalTrade) => {
     // Find original InsiderTrade
     const original = allTrades.find(t => t.id === trade.id);
-    if (original) {
-      setSelectedTrade(original);
-      setIsModalOpen(true);
+    if (!original) return;
+
+    // 앱인토스: 2번째 클릭마다 전면형 광고 표시
+    if (isAppintos) {
+      const newCount = adClickCount + 1;
+      setAdClickCount(newCount);
+
+      if (newCount % 2 === 0) {
+        // 2, 4, 6번째 클릭: 광고 표시 후 모달 열기
+        try {
+          console.log('[LiveTrading] Showing interstitial ad (click count:', newCount, ')');
+          await showInterstitialAd();
+          // 다음 광고 프리로드
+          loadInterstitialAd().catch(err => {
+            console.warn('[LiveTrading] Failed to preload next ad:', err);
+          });
+        } catch (error) {
+          console.error('[LiveTrading] Ad failed:', error);
+        }
+      }
     }
+
+    setSelectedTrade(original);
+    setIsModalOpen(true);
   };
 
   const handleUpgrade = () => {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { resolveApiUrl } from '@/lib/queryClient';
+import { ENV_CONFIG } from '@/lib/environment';
 
 export type Language = 'en' | 'ko' | 'ja' | 'zh';
 
@@ -3749,7 +3750,10 @@ function detectBrowserLanguage(): Language {
 }
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  // 앱인토스에서는 기본 언어를 한국어로 설정
+  const [language, setLanguage] = useState<Language>(
+    typeof window !== 'undefined' && ENV_CONFIG.isAppintos ? 'ko' : 'en'
+  );
   const [isDetecting, setIsDetecting] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 

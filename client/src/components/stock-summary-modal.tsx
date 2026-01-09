@@ -126,14 +126,22 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
       // PRIORITY 2: Check prop - analysis from ranking data (shared across all users) - NO API CALL
       // 🔒 CRITICAL: This is the main cache that enables cross-user sharing
-      // The ranking API returns language-specific analysis, so this is already the correct language
+      // ✅ analysisLanguage 확인: 현재 언어와 일치할 때만 사용
       if (stock.comprehensiveAnalysis) {
-        const cacheKey = `${stock.ticker}_${language}`;
-        console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} (${language}) - NO API CALL NEEDED!`);
-        setComprehensiveAnalysis(stock.comprehensiveAnalysis);
-        setAnalysisError(null);
-        analysisCache.current.set(cacheKey, stock.comprehensiveAnalysis);
-        return;
+        const analysisData = stock.comprehensiveAnalysis as any;
+        const analysisLang = analysisData?.analysisLanguage;
+
+        // 언어가 일치하거나, 언어 필드가 없는 경우(레거시 데이터)에만 사용
+        if (analysisLang === language || (!analysisLang && language === 'en')) {
+          const cacheKey = `${stock.ticker}_${language}`;
+          console.log(`✅ Using pre-loaded analysis from ranking data for ${stock.ticker} (${language}) - NO API CALL NEEDED!`);
+          setComprehensiveAnalysis(stock.comprehensiveAnalysis);
+          setAnalysisError(null);
+          analysisCache.current.set(cacheKey, stock.comprehensiveAnalysis);
+          return;
+        } else {
+          console.log(`🔄 Analysis language mismatch: have ${analysisLang || 'unknown'}, need ${language} - will fetch from API`);
+        }
       }
 
       // PRIORITY 3: Check session cache (Map) with language-specific key - NO API CALL

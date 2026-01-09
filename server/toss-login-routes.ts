@@ -42,9 +42,20 @@ async function callTossApi(
   body?: object,
   accessToken?: string
 ): Promise<any> {
-  // Check if certificates exist
-  if (!fs.existsSync(CERT_PATH) || !fs.existsSync(KEY_PATH)) {
-    console.error('[TossLogin] mTLS certificates not found');
+  console.log('[TossLogin] callTossApi called:', { method, endpoint });
+
+  // Check if certificates exist (with detailed logging)
+  const certExists = fs.existsSync(CERT_PATH);
+  const keyExists = fs.existsSync(KEY_PATH);
+  console.log('[TossLogin] Certificate check:', {
+    certPath: CERT_PATH,
+    certExists,
+    keyPath: KEY_PATH,
+    keyExists
+  });
+
+  if (!certExists || !keyExists) {
+    console.error('[TossLogin] mTLS certificates not found!');
     throw new Error('mTLS certificates not configured');
   }
 
@@ -104,11 +115,17 @@ router.post('/token', async (req, res) => {
   try {
     const { authorizationCode, referrer } = req.body;
 
+    console.log('[TossLogin] /token called:', {
+      hasAuthCode: !!authorizationCode,
+      codeLength: authorizationCode?.length,
+      referrer
+    });
+
     if (!authorizationCode) {
       return res.status(400).json({ error: 'Missing authorizationCode' });
     }
 
-    console.log('[TossLogin] Exchanging token, referrer:', referrer);
+    console.log('[TossLogin] Exchanging token with Toss API...');
 
     // Call Toss API to exchange authorization code for token
     const tokenResponse = await callTossApi(
@@ -159,13 +176,16 @@ router.post('/token', async (req, res) => {
       });
     }
 
-    // Set session cookie
+    // Set session cookie (cross-origin 설정 필수)
     res.cookie('toss_session', sessionId, {
       httpOnly: true,
       secure: true,
-      sameSite: 'none',
+      sameSite: 'none',  // cross-origin 요청에서 쿠키 전송 필수
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days (refresh token lifetime)
+      path: '/',  // 전체 경로에서 사용 가능
     });
+
+    console.log('[TossLogin] Session cookie set:', { sessionId, userId: `toss_${userKey}` });
 
     return res.json({
       success: true,

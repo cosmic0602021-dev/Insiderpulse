@@ -149,14 +149,20 @@ class ApiClient {
       if (!response.ok) {
         // Handle 401 Unauthorized - token expired or invalid
         if (response.status === 401) {
-          console.log('🔓 Token expired or invalid, clearing session');
-          // Clear localStorage and token
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('authUser');
-          this.setToken(null);
+          const currentToken = this.token;
+          // 토스 토큰은 세션 쿠키 기반 인증을 사용하므로 401에서 로그아웃하지 않음
+          if (currentToken && currentToken.startsWith('toss_')) {
+            console.log('🔐 [API CLIENT] 401 received but Toss token detected, skipping logout');
+          } else {
+            console.log('🔓 Token expired or invalid, clearing session');
+            // Clear localStorage and token
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authUser');
+            this.setToken(null);
 
-          // Dispatch custom event to notify auth context
-          window.dispatchEvent(new Event('auth:logout'));
+            // Dispatch custom event to notify auth context
+            window.dispatchEvent(new Event('auth:logout'));
+          }
         }
 
         // If server returned an error object with message, use it

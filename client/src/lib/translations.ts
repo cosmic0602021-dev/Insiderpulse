@@ -291,7 +291,7 @@ const KO = {
     noData: '데이터 스트림 없음'
   },
   live: {
-    header: '내부자 거래 피드',
+    header: '실시간 내부자 거래',
     delayedBadge: '48시간 지연',
     delayed: '지연된 피드 (48시간)',
     realtime: '실시간 연결됨',

@@ -1,12 +1,13 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { StockRecommendation, Language, Trade } from './types';
 import { formatNumber, TRANSLATIONS } from '@/lib/translations';
 import { useCurrency } from '@/contexts/currency-context';
 import { Activity, Lock, ShieldCheck, EyeOff, ScanLine, Eye, PlayCircle } from 'lucide-react';
 import { ENV_CONFIG } from '@/lib/environment';
 import { PastPerformanceSection } from '@/components/past-performance-section';
-import { useAdOnNavigation } from '@/hooks/use-admob';
+import { useRewardedAd } from '@/hooks/use-admob';
+import { loadRewardedAd } from '@/lib/admob';
 
 // Fisher-Yates shuffle algorithm
 function shuffleArray<T>(array: T[]): T[] {
@@ -16,6 +17,55 @@ function shuffleArray<T>(array: T[]): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+// 잠금 카드에 표시할 힌트 생성 (수치 없이 정성적 힌트만)
+function getStockHint(stock: StockRecommendation, lang: Language): string {
+  const hints = {
+    ko: {
+      ceo: '🔥 CEO 대량 매수 포착',
+      cfo: '💼 CFO 매수 활동 감지',
+      director: '👔 이사진 매수 포착',
+      multiple: '💎 내부자 집중 매수 중',
+      large: '🚀 대규모 매수 발생',
+      default: '📈 임원진 매수 활동',
+    },
+    en: {
+      ceo: '🔥 CEO Major Purchase',
+      cfo: '💼 CFO Buying Activity',
+      director: '👔 Director Purchase',
+      multiple: '💎 Multiple Insiders Buying',
+      large: '🚀 Large Purchase Detected',
+      default: '📈 Executive Buying Activity',
+    },
+    ja: {
+      ceo: '🔥 CEO大量購入',
+      cfo: '💼 CFO購入活動',
+      director: '👔 取締役購入',
+      multiple: '💎 複数インサイダー購入中',
+      large: '🚀 大規模購入検出',
+      default: '📈 役員購入活動',
+    },
+    zh: {
+      ceo: '🔥 CEO大量买入',
+      cfo: '💼 CFO买入活动',
+      director: '👔 董事买入',
+      multiple: '💎 多位内部人买入中',
+      large: '🚀 大规模买入',
+      default: '📈 高管买入活动',
+    },
+  };
+
+  const h = hints[lang] || hints.en;
+  const firstBuyer = stock.buyers?.[0];
+  const relation = firstBuyer?.relation?.toUpperCase() || '';
+
+  if (relation.includes('CEO') || relation.includes('CHIEF EXECUTIVE')) return h.ceo;
+  if (relation.includes('CFO') || relation.includes('CHIEF FINANCIAL')) return h.cfo;
+  if (relation.includes('DIRECTOR') || relation.includes('CHAIRMAN')) return h.director;
+  if (stock.insiderCount >= 3) return h.multiple;
+  if (stock.totalBuyAmount > 1000000) return h.large;
+  return h.default;
 }
 
 interface TopStocksProps {
@@ -32,10 +82,20 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
   const isAppintos = ENV_CONFIG.isAppintos;
-  const { showAdBeforeNavigation } = useAdOnNavigation();
+  const { showRewardedAdWithCallback } = useRewardedAd();
 
   // 앱인토스: 광고 시청 후 잠금 해제된 종목 추적
   const [unlockedStocks, setUnlockedStocks] = useState<Set<string>>(new Set());
+
+  // 앱인토스: 컴포넌트 마운트 시 보상형 광고 프리로드
+  useEffect(() => {
+    if (isAppintos) {
+      console.log('[TopStocks] Preloading rewarded ad...');
+      loadRewardedAd().catch(err => {
+        console.warn('[TopStocks] Failed to preload rewarded ad:', err);
+      });
+    }
+  }, [isAppintos]);
 
   // Shuffle stocks for Appintos (so users don't just watch ad for #1)
   const shuffledData = useMemo(() => {
@@ -255,7 +315,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                 {headerText}
                 {!isPro && <div className="bg-amber-900/20 border border-amber-900/50 text-amber-600 p-1 rounded-sm"><Lock size={14} /></div>}
             </h1>
-            <p className="text-xs text-neutral-600 mt-1 mono uppercase tracking-widest flex items-center gap-2">
+            <p className="text-xs text-neutral-400 mt-1 mono uppercase tracking-widest flex items-center gap-2">
                 <Activity size={12} /> {t.subHeader}
             </p>
             <p className="text-[10px] text-emerald-500 mt-1 font-mono flex items-center gap-1">
@@ -283,34 +343,45 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
                        /* 잠금 해제된 카드 - 실제 정보 표시 */
                        <StockCard key={stock.ticker} stock={stock} />
                      ) : (
-                       /* 잠긴 카드 - ???? 표시 */
+                       /* 잠긴 카드 - 블러 티커 + 힌트 표시, 보상형 광고 끝까지 시청해야 잠금 해제 */
                        <button
                          key={stock.ticker}
                          onClick={() => {
-                           showAdBeforeNavigation(() => {
-                             // 광고 시청 후 잠금 해제
-                             setUnlockedStocks(prev => new Set([...prev, stock.ticker]));
-                             if (onViewDetails) {
-                               onViewDetails(stock);
+                           showRewardedAdWithCallback(
+                             // 성공: 광고 끝까지 시청 → 잠금 해제
+                             () => {
+                               setUnlockedStocks(prev => new Set([...prev, stock.ticker]));
+                               if (onViewDetails) {
+                                 onViewDetails(stock);
+                               }
+                             },
+                             // 취소: 광고 중간에 닫음 → 잠금 유지
+                             () => {
+                               console.log('[TopStocks] Ad cancelled, stock remains locked');
                              }
-                           });
+                           );
                          }}
                          className="w-full bg-[#0a0a0a] border border-neutral-800 p-4 flex items-center justify-between hover:border-emerald-600/50 hover:bg-neutral-900/50 transition-all group"
                        >
                          <div className="flex items-center gap-4">
                            <div className="text-left">
-                             <div className="flex items-center gap-2">
-                               <span className="text-lg font-bold text-neutral-200">????</span>
-                               <span className="text-[9px] bg-emerald-900/30 text-emerald-500 px-1.5 py-0.5 rounded font-bold uppercase">{t.strongBuy}</span>
+                             {/* 블러 처리된 티커 */}
+                             <div className="flex items-center gap-2 mb-1">
+                               <span className="text-lg font-bold text-neutral-400 blur-[6px] select-none">
+                                 {stock.ticker}
+                               </span>
                              </div>
-                             <span className="text-xs text-neutral-500 blur-sm">{lang === 'ko' ? '광고 보고 확인' : 'Watch ad to see'}</span>
+                             {/* 힌트 (이모지 + 텍스트) */}
+                             <span className="text-sm text-emerald-400 font-medium">
+                               {getStockHint(stock, lang)}
+                             </span>
                            </div>
                          </div>
                          <div className="flex items-center gap-2 text-neutral-500 group-hover:text-emerald-400 transition-colors">
-                           <span className="text-[10px] uppercase tracking-wide">
-                             {lang === 'ko' ? '광고 보고 잠금 해제' : 'Watch Ad to Unlock'}
+                           <span className="text-xs">
+                             {lang === 'ko' ? '광고 보고 종목 확인' : 'Watch Ad to Reveal'}
                            </span>
-                           <PlayCircle size={18} />
+                           <PlayCircle size={16} />
                          </div>
                        </button>
                      )

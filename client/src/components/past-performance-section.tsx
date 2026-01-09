@@ -1,302 +1,259 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Target, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
 import { ENV_CONFIG } from '@/lib/environment';
 
-interface StockPerformance {
-  rank: number;
+// 랭킹 데이터에서 성과 계산
+interface RankingItem {
   ticker: string;
   companyName: string;
-  entryPrice: number;
-  exitPrice: number;
-  returnPercent: number;
-  returnDollar: number;
-  hadInsiderSell: boolean;
-  sellDate?: string;
-  sellIndicator?: string;
-  recommendedDate: string;
-}
-
-interface PerformanceSummary {
-  avgReturn: number;
-  winRate: number;
-  winnersCount: number;
-  losersCount: number;
-  hypotheticalGain: number;
-}
-
-interface HistoricalPerformanceResponse {
-  period: {
-    monthsAgo: number;
-    snapshotDate: string;
-    evaluationDate: string;
+  lastTradeDate: string;
+  currentPrice?: number;
+  priceChangePercent?: number;
+  insiders: Array<{
+    pricePerShare: number;
+    date: string;
+  }>;
+  enhancedTrade?: {
+    currentPrice?: number;
+    pricePerShare?: number;
   };
-  summary: PerformanceSummary;
-  stocks: StockPerformance[];
-  dataAvailable: boolean;
-  message?: string;
+}
+
+interface RankingsResponse {
+  rankings: RankingItem[];
 }
 
 // Translations
 const translations = {
   en: {
-    title: 'Recent Recommendation Performance',
-    oneMonth: '1 Month Ago',
-    threeMonths: '3 Months Ago',
+    title: 'Live Performance Tracker',
+    subtitle: 'Returns from past stock recommendations',
     avgReturn: 'Avg Return',
-    winRate: 'Win Rate',
-    invested: '$1,000 Invested',
-    stocksUp: 'stocks went up',
+    stocksUp: 'Winners',
     entry: 'Entry',
-    exit: 'Exit',
-    soldOn: 'Sold on',
-    noData: 'Performance data not yet available',
-    noDataDesc: 'Data collection has started. Check back soon.',
-    showAll: 'Show all',
-    showLess: 'Show less',
-    basedOn: 'Recommended on',
+    current: 'Now',
+    noData: 'Loading performance data...',
+    updated: 'Live',
+    recDate: "Rec'd",
   },
   ko: {
-    title: '최근 추천종목 성과',
-    oneMonth: '1개월 전',
-    threeMonths: '3개월 전',
+    title: '실시간 성과 추적',
+    subtitle: '지난 추천 주식 현재 수익률',
     avgReturn: '평균 수익률',
-    winRate: '승률',
-    invested: '$1,000 투자 시',
-    stocksUp: '종목 상승',
-    entry: '진입가',
-    exit: '청산가',
-    soldOn: '매도일',
-    noData: '성과 데이터 준비 중',
-    noDataDesc: '데이터 수집이 시작되었습니다. 잠시 후 확인해주세요.',
-    showAll: '전체 보기',
-    showLess: '접기',
-    basedOn: '추천일',
+    stocksUp: '상승 종목',
+    entry: '진입',
+    current: '현재',
+    noData: '성과 데이터 로딩 중...',
+    updated: '실시간',
+    recDate: '추천일',
   },
   ja: {
-    title: '最近の推奨銘柄パフォーマンス',
-    oneMonth: '1ヶ月前',
-    threeMonths: '3ヶ月前',
+    title: 'リアルタイム成績',
+    subtitle: '過去の推奨銘柄のリターン',
     avgReturn: '平均リターン',
-    winRate: '勝率',
-    invested: '$1,000投資時',
-    stocksUp: '銘柄上昇',
+    stocksUp: '上昇銘柄',
     entry: 'エントリー',
-    exit: 'イグジット',
-    soldOn: '売却日',
-    noData: 'パフォーマンスデータ準備中',
-    noDataDesc: 'データ収集を開始しました。しばらくお待ちください。',
-    showAll: 'すべて表示',
-    showLess: '折りたたむ',
-    basedOn: '推奨日',
+    current: '現在',
+    noData: 'パフォーマンスデータ読み込み中...',
+    updated: 'ライブ',
+    recDate: '推薦日',
   },
   zh: {
-    title: '最近推荐股票表现',
-    oneMonth: '1个月前',
-    threeMonths: '3个月前',
+    title: '实时表现追踪',
+    subtitle: '过去推荐股票的收益',
     avgReturn: '平均回报',
-    winRate: '胜率',
-    invested: '$1,000投资',
-    stocksUp: '股票上涨',
-    entry: '入场价',
-    exit: '出场价',
-    soldOn: '卖出日',
-    noData: '表现数据准备中',
-    noDataDesc: '数据收集已开始。请稍后查看。',
-    showAll: '显示全部',
-    showLess: '收起',
-    basedOn: '推荐日',
+    stocksUp: '上涨股票',
+    entry: '入场',
+    current: '现价',
+    noData: '正在加载表现数据...',
+    updated: '实时',
+    recDate: '推荐日',
   },
 };
 
 export function PastPerformanceSection({ className = '' }: { className?: string }) {
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  // 앱인토스: "최근 상위종목 성과", insiderpulse.pro: "최근 추천종목 성과"
-  const title = ENV_CONFIG.isAppintos
-    ? (language === 'ko' ? '최근 상위종목 성과' : 'Recent Top Stocks Performance')
-    : t.title;
-
-  const [isExpanded, setIsExpanded] = useState(false); // 기본: 접힌 상태, 클릭하면 펼쳐짐
-  const [selectedPeriod, setSelectedPeriod] = useState<1 | 3>(1);
-
-  const { data, isLoading, error } = useQuery<HistoricalPerformanceResponse>({
-    queryKey: ['rankings', 'historical-performance', selectedPeriod],
+  // 현재 랭킹 데이터에서 성과 계산
+  const { data, isLoading } = useQuery<RankingsResponse>({
+    queryKey: ['rankings', 'performance-live', language],
     queryFn: async () => {
-      const response = await fetch(resolveApiUrl(`/api/rankings/historical-performance?monthsAgo=${selectedPeriod}`));
+      const response = await fetch(resolveApiUrl(`/api/rankings?limit=10&language=${language}`));
       if (!response.ok) throw new Error('Failed to fetch');
       return response.json();
     },
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
-  // Loading state
+  // 성과 데이터 계산
+  const performanceData = data?.rankings?.map(item => {
+    const entryPrice = item.enhancedTrade?.pricePerShare || item.insiders?.[0]?.pricePerShare || 0;
+    const currentPrice = item.currentPrice || item.enhancedTrade?.currentPrice || 0;
+    const returnPercent = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0;
+    const tradeDate = item.lastTradeDate || item.insiders?.[0]?.date;
+
+    return {
+      ticker: item.ticker,
+      companyName: item.companyName,
+      entryPrice,
+      currentPrice,
+      returnPercent,
+      tradeDate,
+    };
+  }).filter(item => item.entryPrice > 0 && item.currentPrice > 0)
+    .sort((a, b) => b.returnPercent - a.returnPercent) || [];
+
+  // 요약 통계
+  const avgReturn = performanceData.length > 0
+    ? performanceData.reduce((sum, item) => sum + item.returnPercent, 0) / performanceData.length
+    : 0;
+  const winnersCount = performanceData.filter(item => item.returnPercent > 0).length;
+  const totalCount = performanceData.length;
+
+  // Loading
   if (isLoading) {
     return (
       <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
         <div className="animate-pulse">
           <div className="h-5 bg-neutral-800 rounded w-48 mb-4" />
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="h-12 bg-neutral-800 rounded" />
-            <div className="h-12 bg-neutral-800 rounded" />
+          <div className="space-y-2">
+            {[1,2,3].map(i => <div key={i} className="h-10 bg-neutral-800 rounded" />)}
           </div>
         </div>
       </div>
     );
   }
 
-  // Error or no data
-  if (error || !data || !data.dataAvailable) {
-    return (
-      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-neutral-300 flex items-center gap-2">
-            <Target size={14} className="text-emerald-500" />
-            {title}
-          </h3>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setSelectedPeriod(1)}
-              className={`px-2 py-1 text-xs rounded ${selectedPeriod === 1 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}
-            >
-              {t.oneMonth}
-            </button>
-            <button
-              onClick={() => setSelectedPeriod(3)}
-              className={`px-2 py-1 text-xs rounded ${selectedPeriod === 3 ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-400'}`}
-            >
-              {t.threeMonths}
-            </button>
-          </div>
-        </div>
-        <div className="text-center py-6 text-neutral-500">
-          <Clock size={24} className="mx-auto mb-2 opacity-50" />
-          <p className="text-sm">{t.noData}</p>
-          <p className="text-xs mt-1 text-neutral-600">{data?.message || t.noDataDesc}</p>
-        </div>
-      </div>
-    );
+  // No data
+  if (!performanceData.length) {
+    return null; // 데이터 없으면 숨김
   }
 
-  const { summary, stocks, period } = data;
-  // 수익률 높은 순으로 정렬 - 10개 전체 표시 (마이너스도 보여야 신뢰감)
-  const sortedStocks = [...stocks].sort((a, b) => b.returnPercent - a.returnPercent);
-  const displayStocks = sortedStocks.slice(0, 10);
-
-  // 접힌 상태: 한 줄 요약만 표시 (눈에 잘 띄게)
+  // 접힌 상태
   if (!isExpanded) {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className={`group w-full bg-emerald-900/30 border-2 border-emerald-600/50 rounded-lg p-4 flex items-center justify-between hover:bg-emerald-800/40 hover:border-emerald-500/70 transition-all ${className}`}
+        className={`w-full bg-gradient-to-r from-emerald-900/40 to-neutral-900/50 border border-emerald-700/30 rounded-lg p-3 flex items-center justify-between hover:from-emerald-800/50 transition-all ${className}`}
       >
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-600/20 p-2 rounded-lg">
-            <Target size={18} className="text-emerald-400" />
-          </div>
-          <div className="text-left">
-            <span className="text-sm font-bold text-white block">{title}</span>
-            <span className="text-xs text-emerald-400/80">{t.avgReturn}: {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <Zap size={14} className="text-emerald-400" />
+          <span className="text-sm font-medium text-emerald-300">{t.title}</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className={`text-lg font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {summary.winnersCount}/{summary.winnersCount + summary.losersCount}
-            </span>
-            <span className="text-xs text-neutral-400 block">{t.stocksUp}</span>
-          </div>
-          <div className="bg-emerald-600/30 p-1.5 rounded-full animate-bounce-slow">
-            <ChevronDown size={20} className="text-emerald-300 group-hover:text-white transition-colors" />
-          </div>
+          <span className={`text-sm font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {avgReturn >= 0 ? '+' : ''}{avgReturn.toFixed(1)}%
+          </span>
+          <span className="text-xs text-neutral-400">
+            {winnersCount}/{totalCount} {t.stocksUp}
+          </span>
+          <ChevronDown size={16} className="text-emerald-400" />
         </div>
       </button>
     );
   }
 
-  // 펼친 상태: 전체 내용 표시
+  // 펼친 상태
   return (
-    <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
-      {/* Header - 클릭하면 접힘 */}
+    <div className={`bg-gradient-to-b from-neutral-900/80 to-neutral-900/50 border border-neutral-700/50 rounded-lg overflow-hidden ${className}`}>
+      {/* Header */}
       <button
         onClick={() => setIsExpanded(false)}
-        className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
+        className="w-full bg-gradient-to-r from-emerald-900/30 to-transparent p-3 flex items-center justify-between hover:from-emerald-800/40 transition-all"
       >
-        <h3 className="text-sm font-semibold text-neutral-200 flex items-center gap-2">
-          <Target size={14} className="text-emerald-500" />
-          {title}
-        </h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-neutral-500">
-            {new Date(period.snapshotDate).toLocaleDateString()}
+          <Zap size={16} className="text-emerald-400" />
+          <div className="text-left">
+            <span className="text-sm font-bold text-white block">{t.title}</span>
+            <span className="text-[10px] text-emerald-400/70">{t.subtitle}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            {t.updated}
           </span>
-          <ChevronUp size={16} className="text-neutral-500" />
+          <ChevronUp size={16} className="text-neutral-400" />
         </div>
       </button>
 
-      {/* Summary Stats - 2열로 간결하게 */}
-      <div className="flex items-center justify-between bg-neutral-800/50 rounded-lg p-3 mb-3">
-        <div className="text-center flex-1">
-          <div className={`text-xl font-bold ${summary.avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {summary.avgReturn >= 0 ? '+' : ''}{summary.avgReturn.toFixed(1)}%
+      {/* Summary Stats */}
+      <div className="px-3 pb-2">
+        <div className="flex items-center gap-4 py-2 border-b border-neutral-800/50">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-neutral-500 uppercase">{t.avgReturn}</span>
+            <span className={`text-lg font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {avgReturn >= 0 ? '+' : ''}{avgReturn.toFixed(1)}%
+            </span>
           </div>
-          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">{t.avgReturn}</div>
-        </div>
-        <div className="w-px h-8 bg-neutral-700" />
-        <div className="text-center flex-1">
-          <div className="text-xl font-bold text-neutral-200">
-            {summary.winnersCount}/{summary.winnersCount + summary.losersCount}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-neutral-500 uppercase">{t.stocksUp}</span>
+            <span className="text-lg font-bold text-white">{winnersCount}<span className="text-neutral-500 text-sm">/{totalCount}</span></span>
           </div>
-          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">{t.stocksUp}</div>
         </div>
       </div>
 
-      {/* Stock Performance List - 깔끔하게 */}
-      <div className="space-y-1.5">
-        {displayStocks.map((stock, index) => (
-          <StockPerformanceRow key={stock.ticker} stock={stock} displayRank={index + 1} />
+      {/* Stock List */}
+      <div className="px-2 pb-2 space-y-1">
+        {performanceData.slice(0, 10).map((stock, index) => (
+          <StockRow key={stock.ticker} stock={stock} rank={index + 1} t={t} />
         ))}
       </div>
     </div>
   );
 }
 
-function StockPerformanceRow({ stock, displayRank }: { stock: StockPerformance; displayRank: number }) {
+function StockRow({ stock, rank, t }: {
+  stock: { ticker: string; companyName: string; entryPrice: number; currentPrice: number; returnPercent: number; tradeDate: string };
+  rank: number;
+  t: typeof translations.en;
+}) {
   const isPositive = stock.returnPercent >= 0;
-  const isTopThree = displayRank <= 3;
+  const isTopThree = rank <= 3;
 
-  // 1,2,3등 금색 스타일
-  const rankStyle = isTopThree
-    ? 'text-amber-400 font-bold'
-    : 'text-neutral-600';
-
-  // 추천일 포맷 (M/D)
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
     const d = new Date(dateStr);
     return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
   return (
-    <div className={`flex items-center justify-between py-1.5 px-2 rounded ${isTopThree ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-neutral-800/30'}`}>
-      {/* Left: Rank + Ticker + Date */}
-      <div className="flex items-center gap-2 min-w-0">
-        <span className={`text-[10px] w-4 ${rankStyle}`}>{displayRank}</span>
-        <span className={`font-medium text-sm ${isTopThree ? 'text-amber-300' : 'text-neutral-200'}`}>{stock.ticker}</span>
-        <span className="text-[9px] text-neutral-500">{formatDate(stock.recommendedDate)}</span>
+    <div className={`flex items-center justify-between py-2 px-2 rounded-lg transition-colors ${
+      isTopThree
+        ? 'bg-gradient-to-r from-amber-500/15 to-transparent border-l-2 border-amber-400'
+        : 'bg-neutral-800/30 hover:bg-neutral-800/50'
+    }`}>
+      {/* Left: Rank + Ticker */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <span className={`text-xs w-5 font-bold ${isTopThree ? 'text-amber-400' : 'text-neutral-600'}`}>
+          {rank}
+        </span>
+        <div className="min-w-0">
+          <span className={`font-bold text-sm ${isTopThree ? 'text-amber-300' : 'text-white'}`}>
+            {stock.ticker}
+          </span>
+          <span className="text-[10px] text-neutral-500 ml-2">{t.recDate} {formatDate(stock.tradeDate)}</span>
+        </div>
       </div>
 
-      {/* Center: Price */}
-      <div className="text-[11px] text-neutral-500">
-        ${stock.entryPrice.toFixed(2)} → ${stock.exitPrice.toFixed(2)}
+      {/* Center: Price Journey */}
+      <div className="text-[11px] text-neutral-400 flex items-center gap-1">
+        <span>${stock.entryPrice.toFixed(2)}</span>
+        <span className="text-neutral-600">→</span>
+        <span className={isPositive ? 'text-emerald-400' : 'text-red-400'}>${stock.currentPrice.toFixed(2)}</span>
       </div>
 
       {/* Right: Return */}
-      <div className={`flex items-center gap-1 font-semibold text-sm ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+      <div className={`flex items-center gap-1 font-bold text-sm min-w-[70px] justify-end ${
+        isPositive ? 'text-emerald-400' : 'text-red-400'
+      }`}>
+        {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
         <span>{isPositive ? '+' : ''}{stock.returnPercent.toFixed(1)}%</span>
       </div>
     </div>

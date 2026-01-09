@@ -171,6 +171,7 @@ export async function exchangeTossToken(authorizationCode: string, referrer: str
       },
       body: JSON.stringify({ authorizationCode, referrer }),
       mode: 'cors',
+      credentials: 'include',  // 쿠키 전송 필수
     });
 
     if (!response.ok) {
@@ -195,6 +196,7 @@ export async function getTossUserInfo(): Promise<TossUser | null> {
     const response = await fetch(resolveApiUrl('/api/toss-login/me'), {
       method: 'GET',
       mode: 'cors',
+      credentials: 'include',  // 쿠키 전송 필수
     });
 
     if (!response.ok) {
@@ -221,6 +223,7 @@ export async function refreshTossToken(refreshToken: string): Promise<TossTokenR
       },
       body: JSON.stringify({ refreshToken }),
       mode: 'cors',
+      credentials: 'include',  // 쿠키 전송 필수
     });
 
     if (!response.ok) {
@@ -243,6 +246,7 @@ export async function disconnectTossLogin(): Promise<boolean> {
     const response = await fetch(resolveApiUrl('/api/toss-login/disconnect'), {
       method: 'POST',
       mode: 'cors',
+      credentials: 'include',  // 쿠키 전송 필수
     });
 
     return response.ok;

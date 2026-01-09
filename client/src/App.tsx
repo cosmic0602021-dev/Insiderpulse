@@ -93,7 +93,9 @@ function AppContent() {
   const { language, setLanguage, hasInitialized } = useLanguage();
   const { user, isAuthenticated, logout, openAuthModal } = useAuth();
   const [location, setLocation] = useLocation();
-  const [activeView, setActiveView] = useState<View>(View.LIVE_TRADING);
+  const [activeView, setActiveView] = useState<View>(
+    ENV_CONFIG.isAppintos ? View.TOP_STOCKS : View.LIVE_TRADING
+  );
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

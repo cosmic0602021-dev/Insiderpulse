@@ -4833,11 +4833,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rankingsWithAnalysis = topRankings.map(ranking => {
         const cached = cachedAnalyses.get(ranking.ticker);
         // 요청 언어에 맞는 분석 선택, 없으면 영어 fallback
+        const hasRequestedLang = !!cached?.[language];
         const analysis = cached?.[language] || cached?.en || null;
+        // ✅ analysisLanguage 추가: 클라이언트에서 올바른 언어인지 확인 가능
+        const analysisLanguage = hasRequestedLang ? language : (cached?.en ? 'en' : null);
 
         return {
           ...ranking,
-          comprehensiveAnalysis: analysis,
+          comprehensiveAnalysis: analysis ? { ...analysis, analysisLanguage } : null,
           hasComprehensiveAnalysis: !!analysis,
         };
       });

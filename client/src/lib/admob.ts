@@ -13,6 +13,7 @@ import { ENV_CONFIG } from './environment';
 // GoogleAdMob API 캐시
 let GoogleAdMobApi: any;
 let isAdLoaded = false;
+let isRewardedAdLoaded = false;
 
 /**
  * 광고 그룹 ID
@@ -185,7 +186,125 @@ export function isAdReady(): boolean {
 }
 
 /**
- * 앱 초기화 시 광고 프리로드
+ * 보상형 광고 로드 (Promise로 래핑)
+ */
+export async function loadRewardedAd(adGroupId: string = REWARDED_AD_GROUP_ID): Promise<void> {
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Skipping rewarded ad load (not in Appintos)');
+    return;
+  }
+
+  const apiReady = await ensureGoogleAdMobAPI();
+  if (!apiReady) {
+    console.warn('[AdMob] API not ready, skipping rewarded load');
+    return;
+  }
+
+  console.log('[AdMob] Loading rewarded ad with adGroupId:', adGroupId);
+
+  return new Promise((resolve, reject) => {
+    GoogleAdMobApi.loadAppsInTossAdMob({
+      options: { adGroupId },
+      onEvent: (event: any) => {
+        console.log('[AdMob] Rewarded load event:', event.type, event);
+        if (event.type === 'loaded') {
+          isRewardedAdLoaded = true;
+          console.log('[AdMob] Rewarded ad loaded successfully');
+          resolve();
+        }
+      },
+      onError: (error: any) => {
+        console.error('[AdMob] Rewarded load error:', error);
+        isRewardedAdLoaded = false;
+        reject(error);
+      }
+    });
+  });
+}
+
+/**
+ * 보상형 광고 표시 (Promise로 래핑)
+ * @returns true if user earned reward (watched full ad), false otherwise
+ */
+export async function showRewardedAd(adGroupId: string = REWARDED_AD_GROUP_ID): Promise<boolean> {
+  if (!ENV_CONFIG.isAppintos) {
+    console.log('[AdMob] Skipping rewarded ad show (not in Appintos)');
+    return true; // 앱인토스가 아니면 바로 허용
+  }
+
+  const apiReady = await ensureGoogleAdMobAPI();
+  if (!apiReady) {
+    console.warn('[AdMob] API not ready, skipping rewarded show');
+    // 디버깅: API가 준비되지 않은 이유 알림
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert('[AdMob] 광고 API 로드 실패. 앱을 다시 시작해주세요.');
+    }
+    return false;
+  }
+
+  console.log('[AdMob] Showing rewarded ad with adGroupId:', adGroupId);
+
+  return new Promise((resolve, reject) => {
+    let userEarnedReward = false;
+
+    GoogleAdMobApi.showAppsInTossAdMob({
+      options: { adGroupId },
+      onEvent: (event: any) => {
+        console.log('[AdMob] Rewarded show event:', event.type, event);
+
+        switch (event.type) {
+          case 'requested':
+            console.log('[AdMob] Rewarded ad show requested');
+            break;
+          case 'show':
+            console.log('[AdMob] Rewarded ad is now showing');
+            break;
+          case 'impression':
+            console.log('[AdMob] Rewarded ad impression recorded');
+            break;
+          case 'clicked':
+            console.log('[AdMob] Rewarded ad was clicked');
+            break;
+          case 'userEarnedReward':
+            console.log('[AdMob] User earned reward!', event.data);
+            userEarnedReward = true;
+            break;
+          case 'dismissed':
+            console.log('[AdMob] Rewarded ad dismissed, earned:', userEarnedReward);
+            isRewardedAdLoaded = false;
+            resolve(userEarnedReward);
+            break;
+          case 'failedToShow':
+            console.error('[AdMob] Rewarded ad failed to show');
+            // 디버깅: 광고 표시 실패 알림
+            if (typeof window !== 'undefined' && window.alert) {
+              window.alert('[AdMob] 광고 표시 실패. 잠시 후 다시 시도해주세요.');
+            }
+            reject(new Error('Rewarded ad failed to show'));
+            break;
+        }
+      },
+      onError: (error: any) => {
+        console.error('[AdMob] Rewarded show error:', error);
+        // 디버깅: 에러 상세 정보 알림
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert(`[AdMob Error] ${JSON.stringify(error)}`);
+        }
+        reject(error);
+      }
+    });
+  });
+}
+
+/**
+ * 보상형 광고 로드 상태 확인
+ */
+export function isRewardedAdReady(): boolean {
+  return isRewardedAdLoaded;
+}
+
+/**
+ * 앱 초기화 시 광고 프리로드 (전면 + 보상형 모두)
  */
 export async function initializeAdMob(): Promise<void> {
   if (!ENV_CONFIG.isAppintos) {
@@ -196,7 +315,14 @@ export async function initializeAdMob(): Promise<void> {
   console.log('[AdMob] Initializing...');
 
   try {
+    // 전면 광고 프리로드
     await loadInterstitialAd(AD_GROUP_ID);
+    console.log('[AdMob] Interstitial ad preloaded');
+
+    // 보상형 광고도 프리로드
+    await loadRewardedAd(REWARDED_AD_GROUP_ID);
+    console.log('[AdMob] Rewarded ad preloaded');
+
     console.log('[AdMob] Initialization complete');
   } catch (e) {
     console.error('[AdMob] Initialization failed:', e);
@@ -217,8 +343,20 @@ class AdMobManager {
     return showInterstitialAd(AD_GROUP_ID);
   }
 
+  async loadRewardedAd(adGroupId: string = REWARDED_AD_GROUP_ID): Promise<void> {
+    return loadRewardedAd(adGroupId);
+  }
+
+  async showRewardedAd(): Promise<boolean> {
+    return showRewardedAd(REWARDED_AD_GROUP_ID);
+  }
+
   get isAdLoaded(): boolean {
     return isAdLoaded;
+  }
+
+  get isRewardedAdLoaded(): boolean {
+    return isRewardedAdLoaded;
   }
 
   get isAdShowing(): boolean {
