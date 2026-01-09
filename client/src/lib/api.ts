@@ -95,9 +95,12 @@ class ApiClient {
     }
 
     // Add auth token if available FIRST
-    if (this.token) {
+    // 토스 토큰은 세션 쿠키로 인증하므로 Authorization 헤더에 포함하지 않음
+    if (this.token && !this.token.startsWith('toss_')) {
       headers['Authorization'] = `Bearer ${this.token}`;
       console.log('🔑 [API CLIENT] Adding Authorization header to request:', endpoint);
+    } else if (this.token?.startsWith('toss_')) {
+      console.log('🔐 [API CLIENT] Toss token detected, using session cookie instead:', endpoint);
     } else {
       console.log('⚠️ [API CLIENT] No token available for request:', endpoint);
     }
@@ -130,6 +133,7 @@ class ApiClient {
         headers,
         signal: controller.signal,
         mode: 'cors',  // 명시적 CORS 모드
+        credentials: 'include',  // 세션 쿠키 전송 (토스 인증용)
       });
 
       clearTimeout(timeoutId);

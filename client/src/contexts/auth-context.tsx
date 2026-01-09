@@ -181,6 +181,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    // 토스 사용자는 세션 기반 확인 (JWT verify 대신 /api/toss-login/me 사용)
+    if (savedToken.startsWith('toss_')) {
+      try {
+        console.log('🔄 [AUTH] Refreshing Toss user session...');
+        const tossUser = await checkExistingTossSession();
+        if (tossUser) {
+          console.log('✅ [AUTH] Toss session still valid:', tossUser.id);
+          // 기존 사용자 정보 유지 (세션만 확인)
+          return true;
+        } else {
+          console.log('❌ [AUTH] Toss session expired');
+          return false;
+        }
+      } catch (error) {
+        console.log('⚠️ [AUTH] Toss session refresh failed:', error);
+        return false;
+      }
+    }
+
+    // 일반 사용자는 기존 JWT 검증 로직
     try {
       console.log('🔄 Manually refreshing user data from server...');
       apiClient.setToken(savedToken);
