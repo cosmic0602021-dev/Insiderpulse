@@ -366,8 +366,8 @@ export default function App() {
       }
     };
 
-    // Ping health endpoint every 5 minutes
-    const interval = setInterval(keepAlive, 5 * 60 * 1000);
+    // Ping health endpoint every 2 minutes (reduced from 5 to prevent cold starts)
+    const interval = setInterval(keepAlive, 2 * 60 * 1000);
 
     // Initial ping
     keepAlive();

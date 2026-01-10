@@ -171,8 +171,15 @@ export function getEnvironmentConfig(): EnvironmentConfig {
 function getRelativeWebSocketUrl(): string {
   // SSR 환경 체크
   if (typeof window === 'undefined') {
-    // SSR에서는 기본값 반환 (클라이언트에서 재평가됨)
     return 'ws://localhost:5000/api/ws';
+  }
+
+  const hostname = window.location.hostname;
+
+  // localhost가 아니면 항상 프로덕션 WebSocket URL 사용
+  // (Replit 내부 URL로 연결되는 버그 수정)
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return 'wss://insiderpulse.pro/api/ws';
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
