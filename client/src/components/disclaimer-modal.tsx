@@ -126,7 +126,7 @@ export function DisclaimerModal({ onAccept }: DisclaimerModalProps) {
           </p>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
           <div className="p-4 rounded-lg bg-neutral-900/50 border border-neutral-800">
             <div className="flex items-start gap-3 mb-3">
               <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
