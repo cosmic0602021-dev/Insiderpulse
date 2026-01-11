@@ -339,8 +339,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <div className="min-h-screen flex flex-col items-center justify-start pt-[25vh] bg-[#050505]">
+          <div className="flex flex-col items-center gap-5">
+            <div className="ecg-loader">
+              <svg viewBox="0 0 140 50">
+                <path d="M0,25 L30,25 L35,25 L40,10 L45,40 L50,25 L55,25 L60,25 L70,20 L80,30 L90,25 L140,25" />
+              </svg>
+            </div>
+            <div className="text-neutral-300 text-sm">
+              {['내부자 소식 엿듣는 중...', '월가 찐친한테 연락 중...', 'SEC 공시 뒤지는 중...', '억만장자 포트폴리오 훔쳐보는 중...', '내부자들 뒷담화 듣는 중...', '비밀 정보원 접선 중...', 'CEO 트위터 스토킹 중...'][Math.floor(Math.random() * 7)]}
+            </div>
+          </div>
         </div>
       ) : (
         children

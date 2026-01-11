@@ -110,9 +110,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: true,      // Refetch when window regains focus
-      refetchOnMount: 'always',        // Always refetch on component mount
-      staleTime: 5 * 60 * 1000,        // Data becomes stale after 5 minutes
+      refetchOnWindowFocus: false,     // 포커스 시 refetch 안함 (성능 최적화)
+      refetchOnMount: false,           // 캐시 있으면 재사용 (성능 최적화)
+      staleTime: 10 * 60 * 1000,       // 10분간 fresh 상태 유지
       gcTime: 10 * 60 * 1000,          // Garbage collect after 10 minutes
       retry: false,
     },

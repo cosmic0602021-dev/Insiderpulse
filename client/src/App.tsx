@@ -152,30 +152,14 @@ function AppContent() {
     }
   }, [location]);
 
-  // Invalidate queries on route change for fresh data
-  useEffect(() => {
-    // Invalidate relevant queries when navigating to data-heavy pages
-    if (location.startsWith('/dashboard') || location.startsWith('/ranking')) {
-      queryClient.invalidateQueries({ queryKey: ['trades'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-      queryClient.invalidateQueries({ queryKey: ['topStocks'] });
-    }
-  }, [location]);
+  // 라우트 변경 시 캐시 무효화 제거 - 성능 최적화
+  // React Query가 staleTime 기반으로 자동 관리하도록 위임
 
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location);
 
-  // Show loading while language is being detected via IP
-  if (!hasInitialized && !isPublicRoute) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#050505]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 border-2 border-neutral-600 border-t-emerald-500 rounded-full animate-spin" />
-          <div className="text-neutral-500 text-sm tracking-wider">INITIALIZING...</div>
-        </div>
-      </div>
-    );
-  }
+  // 언어 초기화 대기 화면 - hasInitialized가 이제 항상 true이므로 표시되지 않음
+  // (IP 감지는 백그라운드에서 실행, 브라우저 언어로 즉시 렌더링)
 
   if (isPublicRoute) {
     return <PublicRouter />;

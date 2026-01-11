@@ -81,7 +81,7 @@ export default function LiveTradingTerminal() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadedCount, setLoadedCount] = useState(200);
+  const [loadedCount, setLoadedCount] = useState(50);
   const [allLoadedTrades, setAllLoadedTrades] = useState<InsiderTrade[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreData, setHasMoreData] = useState(true);
@@ -100,8 +100,8 @@ export default function LiveTradingTerminal() {
   // 핵심거래: isDerivative=false (Table I 직접 거래만, 파생상품 제외)
 
   // Fetch trades from backend - frontend filtering for instant type switching
-  // 초기 로드를 200으로 설정 (2700은 너무 커서 로딩이 느려짐)
-  const INITIAL_LOAD_LIMIT = 200;
+  // 초기 로드를 50으로 설정 (성능 최적화 - 추가 데이터는 스크롤로 로드)
+  const INITIAL_LOAD_LIMIT = 50;
   
   const { data: tradesResponse, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.trades.list({
@@ -389,8 +389,15 @@ export default function LiveTradingTerminal() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="p-8 text-center text-neutral-600 text-sm font-mono">
-            LOADING_TRADE_DATA...
+          <div className="h-[70vh] pt-[15vh] flex flex-col items-center justify-start gap-5">
+            <div className="ecg-loader">
+              <svg viewBox="0 0 140 50">
+                <path d="M0,25 L30,25 L35,25 L40,10 L45,40 L50,25 L55,25 L60,25 L70,20 L80,30 L90,25 L140,25" />
+              </svg>
+            </div>
+            <div className="text-neutral-300 text-sm">
+              {['내부자 소식 엿듣는 중...', '월가 찐친한테 연락 중...', 'SEC 공시 뒤지는 중...', '억만장자 포트폴리오 훔쳐보는 중...', '내부자들 뒷담화 듣는 중...', '비밀 정보원 접선 중...', 'CEO 트위터 스토킹 중...'][Math.floor(Math.random() * 7)]}
+            </div>
           </div>
         )}
 
@@ -524,8 +531,14 @@ export default function LiveTradingTerminal() {
                 >
                   {isLoadingMore ? (
                     <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 border border-neutral-500 border-t-transparent rounded-full animate-spin"></span>
-                      {tCommon.loading || 'Loading...'}
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full bg-neutral-400 pulse-dot"
+                          style={{ animationDelay: `${i * 0.15}s` }}
+                        />
+                      ))}
+                      <span className="ml-1">{tCommon.loading || 'Loading...'}</span>
                     </span>
                   ) : (
                     <span>{tCommon.loadMore || 'Load More Historical Data'}</span>

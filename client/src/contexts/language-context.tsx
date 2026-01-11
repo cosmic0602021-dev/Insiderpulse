@@ -3749,78 +3749,76 @@ function detectBrowserLanguage(): Language {
   return 'en';
 }
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // 앱인토스에서는 기본 언어를 한국어로 설정
-  const [language, setLanguage] = useState<Language>(
-    typeof window !== 'undefined' && ENV_CONFIG.isAppintos ? 'ko' : 'en'
-  );
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
+// 초기 언어 동기적으로 결정 (렌더링 차단 없음)
+const getInitialLanguage = (): Language => {
+  if (typeof window === 'undefined') return 'en';
 
-  // Initialize language on mount - check localStorage or detect via IP
+  // 앱인토스는 한국어 기본
+  if (ENV_CONFIG.isAppintos) return 'ko';
+
+  // localStorage에 저장된 언어 확인
+  const savedLanguage = localStorage.getItem('language') as Language;
+  const languageSelected = localStorage.getItem('language-selected');
+  if (savedLanguage && languageSelected === 'true' && Object.keys(translations).includes(savedLanguage)) {
+    return savedLanguage;
+  }
+
+  // 브라우저 언어 사용 (동기적)
+  return detectBrowserLanguage();
+};
+
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // 즉시 렌더링 - 초기 언어는 동기적으로 결정
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(true); // 즉시 true로 설정 (렌더링 차단 없음)
+
+  // IP 기반 언어 감지는 백그라운드에서 실행 (렌더링 차단 안 함)
   useEffect(() => {
-    const initLanguage = async () => {
+    const detectLanguageInBackground = async () => {
       // SSR check
-      if (typeof window === 'undefined') {
-        setHasInitialized(true);
+      if (typeof window === 'undefined') return;
+
+      // 이미 언어가 선택된 경우 IP 감지 스킵
+      const languageSelected = localStorage.getItem('language-selected');
+      if (languageSelected === 'true') {
+        console.log('🌍 Language already set, skipping IP detection');
         return;
       }
 
+      // 백그라운드에서 IP 기반 감지 실행
+      console.log('🌍 Detecting language by IP in background...');
+      setIsDetecting(true);
+
       try {
-        // Check if already has saved language
-        const savedLanguage = localStorage.getItem('language') as Language;
-        const languageSelected = localStorage.getItem('language-selected');
+        const response = await fetch(resolveApiUrl('/api/detect-language'), {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
 
-        if (savedLanguage && languageSelected === 'true' && Object.keys(translations).includes(savedLanguage)) {
-          console.log('🌍 Using saved language preference:', savedLanguage);
-          setLanguage(savedLanguage);
-          setHasInitialized(true);
-          return;
-        }
+        if (response.ok) {
+          const data = await response.json();
+          const detectedLang = data.language as Language;
 
-        // No saved language - detect by IP
-        console.log('🌍 No saved language, detecting by IP...');
-        setIsDetecting(true);
+          console.log(`🌍 IP-based language detection: ${detectedLang} (country: ${data.country}, source: ${data.source})`);
 
-        try {
-          const response = await fetch(resolveApiUrl('/api/detect-language'), {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const detectedLang = data.language as Language;
-
-            console.log(`🌍 IP-based language detection: ${detectedLang} (country: ${data.country}, source: ${data.source})`);
-
-            setLanguage(detectedLang);
-            localStorage.setItem('language', detectedLang);
-            localStorage.setItem('language-selected', 'true');
-            localStorage.setItem('language-source', data.source);
-          } else {
-            throw new Error('API response not ok');
-          }
-        } catch (apiError) {
-          // Fallback to browser language detection
-          console.warn('🌍 IP detection failed, falling back to browser language:', apiError);
-          const browserLang = detectBrowserLanguage();
-
-          setLanguage(browserLang);
-          localStorage.setItem('language', browserLang);
+          // IP 감지 결과가 현재 언어와 다르면 업데이트
+          setLanguage(detectedLang);
+          localStorage.setItem('language', detectedLang);
           localStorage.setItem('language-selected', 'true');
-          localStorage.setItem('language-source', 'browser');
+          localStorage.setItem('language-source', data.source);
         }
-      } catch (error) {
-        console.error('Language initialization error:', error);
-        setLanguage('en');
+      } catch (apiError) {
+        // IP 감지 실패해도 이미 브라우저 언어로 설정되어 있음
+        console.warn('🌍 IP detection failed (using browser language):', apiError);
+        localStorage.setItem('language-selected', 'true');
+        localStorage.setItem('language-source', 'browser');
       } finally {
         setIsDetecting(false);
-        setHasInitialized(true);
       }
     };
 
-    initLanguage();
+    detectLanguageInBackground();
   }, []);
 
   const handleSetLanguage = (lang: Language) => {
