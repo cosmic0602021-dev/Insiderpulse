@@ -641,4 +641,65 @@ body {
     stroke-dasharray: 300;
     animation: ecg-draw 1.8s ease-in-out infinite, ecg-glow 1.8s ease-in-out infinite;
   }
+
+  /* 상승 차트 로딩 애니메이션 (성과 추적용) */
+  @keyframes chart-draw {
+    0% {
+      stroke-dashoffset: 200;
+    }
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes chart-glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.5));
+    }
+    50% {
+      filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8));
+    }
+  }
+
+  @keyframes arrow-bounce {
+    0%, 100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-3px);
+      opacity: 0.7;
+    }
+  }
+
+  .chart-loader {
+    width: 100px;
+    height: 45px;
+    position: relative;
+  }
+
+  .chart-loader svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .chart-loader .chart-line {
+    stroke: #34d399;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    stroke-dasharray: 200;
+    animation: chart-draw 2s ease-out infinite, chart-glow 2s ease-in-out infinite;
+  }
+
+  .chart-loader .chart-arrow {
+    fill: #34d399;
+    animation: arrow-bounce 1s ease-in-out infinite;
+  }
+
+  .chart-loader .chart-dot {
+    fill: #34d399;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
 }

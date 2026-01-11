@@ -119,11 +119,29 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   // Loading
   if (isLoading) {
     return (
-      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-4 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-5 bg-neutral-800 rounded w-48 mb-4" />
-          <div className="space-y-2">
-            {[1,2,3].map(i => <div key={i} className="h-10 bg-neutral-800 rounded" />)}
+      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-6 ${className}`}>
+        <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <div className="chart-loader">
+            <svg viewBox="0 0 100 45">
+              {/* 상승하는 차트 라인 */}
+              <path
+                className="chart-line"
+                d="M5,35 L20,30 L35,32 L50,20 L65,22 L80,10 L95,5"
+              />
+              {/* 끝점에 화살표 */}
+              <polygon
+                className="chart-arrow"
+                points="92,2 98,5 92,8"
+              />
+              {/* 끝점에 점 */}
+              <circle
+                className="chart-dot"
+                cx="80" cy="10" r="3"
+              />
+            </svg>
+          </div>
+          <div className="text-emerald-400/80 text-xs font-medium">
+            {['수익률 계산 중...', '과거 추천 분석 중...', '성과 집계 중...'][Math.floor(Math.random() * 3)]}
           </div>
         </div>
       </div>
