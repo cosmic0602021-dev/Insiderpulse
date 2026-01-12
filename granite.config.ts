@@ -5,7 +5,7 @@ export default defineConfig({
   brand: {
     displayName: '인사이더펄스',
     primaryColor: '#3182F6',
-    icon: './client/public/favicon.ico',
+    icon: 'https://insiderpulse.pro/insiderpulse_appintoss.png',
     bridgeColorMode: 'basic',
   },
   web: {

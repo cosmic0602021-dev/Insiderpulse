@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Target, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
@@ -119,32 +120,36 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   // Loading
   if (isLoading) {
     return (
-      <div className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-6 ${className}`}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-6 ${className}`}
+      >
         <div className="flex flex-col items-center justify-center py-8 gap-4">
-          <div className="chart-loader">
-            <svg viewBox="0 0 100 45">
-              {/* 상승하는 차트 라인 */}
-              <path
-                className="chart-line"
-                d="M5,35 L20,30 L35,32 L50,20 L65,22 L80,10 L95,5"
-              />
-              {/* 끝점에 화살표 */}
-              <polygon
-                className="chart-arrow"
-                points="92,2 98,5 92,8"
-              />
-              {/* 끝점에 점 */}
-              <circle
-                className="chart-dot"
-                cx="80" cy="10" r="3"
-              />
-            </svg>
-          </div>
-          <div className="text-emerald-400/80 text-xs font-medium">
-            {['수익률 계산 중...', '과거 추천 분석 중...', '성과 집계 중...'][Math.floor(Math.random() * 3)]}
-          </div>
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.6, 1, 0.6]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="text-emerald-400"
+          >
+            <TrendingUp size={48} strokeWidth={1.5} />
+          </motion.div>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="text-emerald-400/80 text-xs font-medium"
+          >
+            {t.noData}
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -153,77 +158,143 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
     return null; // 데이터 없으면 숨김
   }
 
-  // 접힌 상태
-  if (!isExpanded) {
-    return (
-      <button
-        onClick={() => setIsExpanded(true)}
-        className={`w-full bg-gradient-to-r from-emerald-900/40 to-neutral-900/50 border border-emerald-700/30 rounded-lg p-3 flex items-center justify-between hover:from-emerald-800/50 transition-all ${className}`}
-      >
-        <div className="flex items-center gap-2">
-          <Zap size={14} className="text-emerald-400" />
-          <span className="text-sm font-medium text-emerald-300">{t.title}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-sm font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {avgReturn >= 0 ? '+' : ''}{avgReturn.toFixed(1)}%
-          </span>
-          <span className="text-xs text-neutral-400">
-            {winnersCount}/{totalCount} {t.stocksUp}
-          </span>
-          <ChevronDown size={16} className="text-emerald-400" />
-        </div>
-      </button>
-    );
-  }
-
-  // 펼친 상태
+  // AnimatePresence로 부드러운 전환
   return (
-    <div className={`bg-gradient-to-b from-neutral-900/80 to-neutral-900/50 border border-neutral-700/50 rounded-lg overflow-hidden ${className}`}>
-      {/* Header */}
-      <button
-        onClick={() => setIsExpanded(false)}
-        className="w-full bg-gradient-to-r from-emerald-900/30 to-transparent p-3 flex items-center justify-between hover:from-emerald-800/40 transition-all"
-      >
-        <div className="flex items-center gap-2">
-          <Zap size={16} className="text-emerald-400" />
-          <div className="text-left">
-            <span className="text-sm font-bold text-white block">{t.title}</span>
-            <span className="text-[10px] text-emerald-400/70">{t.subtitle}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            {t.updated}
-          </span>
-          <ChevronUp size={16} className="text-neutral-400" />
-        </div>
-      </button>
-
-      {/* Summary Stats */}
-      <div className="px-3 pb-2">
-        <div className="flex items-center gap-4 py-2 border-b border-neutral-800/50">
+    <AnimatePresence mode="wait">
+      {!isExpanded ? (
+        // 접힌 상태
+        <motion.button
+          key="collapsed"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          onClick={() => setIsExpanded(true)}
+          className={`w-full bg-gradient-to-r from-emerald-900/40 to-neutral-900/50 border border-emerald-700/30 rounded-lg p-3 flex items-center justify-between hover:from-emerald-800/50 transition-colors ${className}`}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-neutral-500 uppercase">{t.avgReturn}</span>
-            <span className={`text-lg font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <motion.div
+              animate={{ rotate: [0, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Zap size={14} className="text-emerald-400" />
+            </motion.div>
+            <span className="text-sm font-medium text-emerald-300">{t.title}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {avgReturn >= 0 ? '+' : ''}{avgReturn.toFixed(1)}%
             </span>
+            <span className="text-xs text-neutral-400">
+              {winnersCount}/{totalCount} {t.stocksUp}
+            </span>
+            <motion.div
+              animate={{ y: [0, 2, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <ChevronDown size={16} className="text-emerald-400" />
+            </motion.div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-neutral-500 uppercase">{t.stocksUp}</span>
-            <span className="text-lg font-bold text-white">{winnersCount}<span className="text-neutral-500 text-sm">/{totalCount}</span></span>
-          </div>
-        </div>
-      </div>
+        </motion.button>
+      ) : (
+        // 펼친 상태
+        <motion.div
+          key="expanded"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className={`bg-gradient-to-b from-neutral-900/80 to-neutral-900/50 border border-neutral-700/50 rounded-lg overflow-hidden ${className}`}
+        >
+          {/* Header */}
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}
+            onClick={() => setIsExpanded(false)}
+            className="w-full bg-gradient-to-r from-emerald-900/30 to-transparent p-3 flex items-center justify-between transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ rotate: [0, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Zap size={16} className="text-emerald-400" />
+              </motion.div>
+              <div className="text-left">
+                <span className="text-sm font-bold text-white block">{t.title}</span>
+                <span className="text-[10px] text-emerald-400/70">{t.subtitle}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center gap-1">
+                <motion.span
+                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="w-1.5 h-1.5 bg-emerald-400 rounded-full"
+                />
+                {t.updated}
+              </span>
+              <motion.div
+                animate={{ y: [0, -2, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ChevronUp size={16} className="text-neutral-400" />
+              </motion.div>
+            </div>
+          </motion.button>
 
-      {/* Stock List */}
-      <div className="px-2 pb-2 space-y-1">
-        {performanceData.slice(0, 10).map((stock, index) => (
-          <StockRow key={stock.ticker} stock={stock} rank={index + 1} t={t} />
-        ))}
-      </div>
-    </div>
+          {/* Summary Stats */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="px-3 pb-2"
+          >
+            <div className="flex items-center gap-4 py-2 border-b border-neutral-800/50">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-neutral-500 uppercase">{t.avgReturn}</span>
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3, type: "spring" }}
+                  className={`text-lg font-bold ${avgReturn >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                >
+                  {avgReturn >= 0 ? '+' : ''}{avgReturn.toFixed(1)}%
+                </motion.span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-neutral-500 uppercase">{t.stocksUp}</span>
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.25, duration: 0.3, type: "spring" }}
+                  className="text-lg font-bold text-white"
+                >
+                  {winnersCount}<span className="text-neutral-500 text-sm">/{totalCount}</span>
+                </motion.span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Stock List with Stagger Animation */}
+          <div className="px-2 pb-2 space-y-1">
+            {performanceData.slice(0, 10).map((stock, index) => (
+              <motion.div
+                key={stock.ticker}
+                initial={{ opacity: 0, x: -15 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  delay: 0.15 + index * 0.04,
+                  duration: 0.25,
+                  ease: "easeOut"
+                }}
+              >
+                <StockRow stock={stock} rank={index + 1} t={t} />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -242,11 +313,16 @@ function StockRow({ stock, rank, t }: {
   };
 
   return (
-    <div className={`flex items-center justify-between py-2 px-2 rounded-lg transition-colors ${
-      isTopThree
-        ? 'bg-gradient-to-r from-amber-500/15 to-transparent border-l-2 border-amber-400'
-        : 'bg-neutral-800/30 hover:bg-neutral-800/50'
-    }`}>
+    <motion.div
+      whileHover={{ scale: 1.015, x: 3 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className={`flex items-center justify-between py-2 px-2 rounded-lg cursor-pointer ${
+        isTopThree
+          ? 'bg-gradient-to-r from-amber-500/15 to-transparent border-l-2 border-amber-400'
+          : 'bg-neutral-800/30 hover:bg-neutral-800/50'
+      }`}
+    >
       {/* Left: Rank + Ticker */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className={`text-xs w-5 font-bold ${isTopThree ? 'text-amber-400' : 'text-neutral-600'}`}>
@@ -263,7 +339,13 @@ function StockRow({ stock, rank, t }: {
       {/* Center: Price Journey */}
       <div className="text-[11px] text-neutral-400 flex items-center gap-1">
         <span>${stock.entryPrice.toFixed(2)}</span>
-        <span className="text-neutral-600">→</span>
+        <motion.span
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-neutral-600"
+        >
+          →
+        </motion.span>
         <span className={isPositive ? 'text-emerald-400' : 'text-red-400'}>${stock.currentPrice.toFixed(2)}</span>
       </div>
 
@@ -274,7 +356,7 @@ function StockRow({ stock, rank, t }: {
         {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
         <span>{isPositive ? '+' : ''}{stock.returnPercent.toFixed(1)}%</span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

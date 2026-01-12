@@ -232,7 +232,9 @@
       "Bash(npx vite build --config vite.config.ts)",
       "Bash(npx vite build:*)",
       "Bash(npm uninstall:*)",
-      "Bash(identify:*)"
+      "Bash(identify:*)",
+      "Bash(png)",
+      "Bash(insiderpulse)"
     ],
     "deny": [],
     "ask": []

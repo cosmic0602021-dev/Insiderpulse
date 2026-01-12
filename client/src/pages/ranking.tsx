@@ -174,16 +174,27 @@ export default function Ranking() {
     try {
       setSelectedTicker(ticker);
 
-      // Use allInsiders from ranking API (contains ALL trades, not de-duplicated)
-      const allTrades = (item as any).allInsiders || [];
-      const allInsidersNetBuying = (item as any).allInsidersNetBuying || item.netBuying;
+      // 새 구조: insiders에 내부자별 그룹화된 정보가 있음 (trades 배열 포함)
+      const insiders = item.insiders || [];
+      const totalNetBuying = (item as any).totalInsidersNetBuying || item.netBuying;
+
+      // insiders의 trades를 플랫하게 펼쳐서 모든 개별 거래 생성
+      const allTrades = insiders.flatMap((insider: any) =>
+        (insider.trades || []).map((trade: any) => ({
+          ...trade,
+          name: insider.name,
+          title: insider.title,
+          isInstitution: insider.isInstitution,
+          // 해당 내부자의 총 거래 횟수 추가 (UI에서 "N회 거래" 표시용)
+          insiderTradeCount: insider.tradeCount || 1,
+        }))
+      );
 
       // 디버그 로깅 (데이터 확인용)
       console.log(`[Modal] Opening for ${ticker}:`, {
-        allInsiders: allTrades.length,
-        insiders: item.insiders?.length || 0,
-        netBuying: item.netBuying,
-        allInsidersNetBuying
+        uniqueInsiders: insiders.length,
+        totalTrades: allTrades.length,
+        totalNetBuying
       });
 
       if (allTrades.length === 0) {
@@ -196,10 +207,11 @@ export default function Ranking() {
       const modalData = {
         ticker,
         companyName,
-        trades: allTrades, // All trades (not de-duplicated)
+        trades: allTrades, // 모든 개별 거래 (내부자 정보 포함)
+        insiders: insiders, // 내부자별 그룹화된 정보 (선택적 사용)
         currentPrice: item.currentPrice,
         marketCap: item.marketCap,
-        totalNetBuying: allInsidersNetBuying, // 모달에 표시되는 거래들의 합계와 일치
+        totalNetBuying: totalNetBuying, // 모달에 표시되는 거래들의 합계와 일치
       };
 
       setSelectedTradeData(modalData);
@@ -647,10 +659,22 @@ export default function Ranking() {
                     {/* 추천 이유 (단순화) */}
                     <div className="mt-2 max-w-full overflow-hidden">
                       <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700 truncate max-w-full inline-block">
-                        {(item.insiders?.length || 0) > 1
-                          ? t('ranking.recommendationSimple').replace('{count}', (item.insiders?.length || 0).toString())
-                          : t('ranking.recommendationSimpleSingle').replace('{amount}', `$${(item.netBuying/1000000).toFixed(1)}M`)
-                        }
+                        {(() => {
+                          const insiderCount = item.insiders?.length || 0;
+                          const totalTradeCount = item.insiders?.reduce((sum, i: any) => sum + (i.tradeCount || 1), 0) || 0;
+
+                          if (insiderCount > 1) {
+                            // "N명의 내부자가 매수"
+                            return t('ranking.recommendationSimple').replace('{count}', insiderCount.toString());
+                          } else if (insiderCount === 1 && totalTradeCount > 1) {
+                            // "1명의 내부자가 N회 매수"
+                            return t('ranking.recommendationSingleMultipleTrades').replace('{trades}', totalTradeCount.toString());
+                          } else {
+                            // "내부자가 $XM 매수"
+                            const netBuying = (item as any).totalInsidersNetBuying || item.netBuying;
+                            return t('ranking.recommendationSimpleSingle').replace('{amount}', `$${(netBuying/1000000).toFixed(1)}M`);
+                          }
+                        })()}
                       </Badge>
                     </div>
                   </div>
@@ -714,7 +738,7 @@ export default function Ranking() {
                 <div className="flex items-center gap-1 sm:gap-2">
                   <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency(item.netBuying)}</p>
+                    <p className="text-xs sm:text-sm font-medium truncate">{formatCurrency((item as any).totalInsidersNetBuying || item.netBuying)}</p>
                     <p className="text-xs text-muted-foreground truncate">{t('ranking.totalBuyAmount')}</p>
                     {/* Market cap ratio display */}
                     <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-0.5">
@@ -722,8 +746,8 @@ export default function Ranking() {
                         if (!item.marketCap || item.marketCap <= 0) {
                           return `${tModal.marketCapRatio}: -`;
                         }
-                        // 모달과 일관성을 위해 allInsidersNetBuying 사용
-                        const displayNetBuying = (item as any).allInsidersNetBuying || item.netBuying;
+                        // 모달과 일관성을 위해 totalInsidersNetBuying 사용
+                        const displayNetBuying = (item as any).totalInsidersNetBuying || item.netBuying;
                         const ratio = (displayNetBuying / item.marketCap) * 100;
                         let ratioStr;
                         if (ratio >= 10) ratioStr = Math.round(ratio) + '%';

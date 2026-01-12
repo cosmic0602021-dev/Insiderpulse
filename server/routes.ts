@@ -4565,17 +4565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return isBuy && hasValidName;
         });
 
-        // 2. 같은 이름의 내부자는 최신 거래만 선택 (중복 제거)
-        const insidersByName = new Map<string, typeof validBuyTrades[0]>();
-        validBuyTrades.forEach(t => {
-          const existing = insidersByName.get(t.traderName);
-          if (!existing || new Date(t.filedDate) > new Date(existing.filedDate)) {
-            insidersByName.set(t.traderName, t);
-          }
-        });
-
-        // 3. Map에서 배열로 변환 후 최신순 정렬
-        // 기관투자자 판별 함수 (LLC, LP, Inc., Fund, Capital, Advisor 등)
+        // 2. 기관투자자 판별 함수 (LLC, LP, Inc., Fund, Capital, Advisor 등)
         const isInstitutionalInvestor = (name: string, title: string): boolean => {
           const institutionalPatterns = [
             /\b(LLC|LP|L\.L\.C\.|L\.P\.|Inc\.|Corp\.|Ltd\.|Foundation|Trust)\b/i,
@@ -4590,43 +4580,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return nameMatches || titleIsPercentOnly;
         };
 
+        // 3. 내부자별로 모든 거래를 그룹화 (중복 제거 + 거래 내역 보존)
+        interface InsiderTradeDetail {
+          shares: number;
+          pricePerShare: number;
+          totalValue: number;
+          date: string;
+          tradeType: string;
+          secFilingUrl?: string;
+          accessionNumber?: string;
+        }
+        interface GroupedInsider {
+          name: string;
+          title: string;
+          trades: InsiderTradeDetail[];
+          tradeCount: number;
+          totalShares: number;
+          totalValue: number;
+          avgPricePerShare: number;
+          latestDate: string;
+          isInstitution: boolean;
+        }
+
+        const insidersByName = new Map<string, GroupedInsider>();
+        validBuyTrades.forEach(t => {
+          const tradeDetail: InsiderTradeDetail = {
+            shares: t.shares,
+            pricePerShare: t.pricePerShare,
+            totalValue: t.totalValue,
+            date: t.filedDate,
+            tradeType: t.tradeType,
+            secFilingUrl: t.secFilingUrl,
+            accessionNumber: t.accessionNumber,
+          };
+
+          const existing = insidersByName.get(t.traderName);
+          if (existing) {
+            existing.trades.push(tradeDetail);
+            existing.tradeCount++;
+            existing.totalShares += t.shares;
+            existing.totalValue += t.totalValue;
+            existing.avgPricePerShare = existing.totalValue / existing.totalShares;
+            if (new Date(t.filedDate) > new Date(existing.latestDate)) {
+              existing.latestDate = t.filedDate;
+            }
+          } else {
+            insidersByName.set(t.traderName, {
+              name: t.traderName,
+              title: t.traderTitle || 'Insider',
+              trades: [tradeDetail],
+              tradeCount: 1,
+              totalShares: t.shares,
+              totalValue: t.totalValue,
+              avgPricePerShare: t.pricePerShare,
+              latestDate: t.filedDate,
+              isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || ''),
+            });
+          }
+        });
+
+        // 4. 내부자 목록을 최신 거래 순으로 정렬
         const insiderDetails = Array.from(insidersByName.values())
-          .map(t => ({
-            name: t.traderName,
-            title: t.traderTitle || 'Insider',
-            shares: t.shares,
-            pricePerShare: t.pricePerShare,
-            totalValue: t.totalValue,
-            date: t.filedDate,
-            tradeType: t.tradeType,
-            secFilingUrl: t.secFilingUrl,
-            accessionNumber: t.accessionNumber,
-            isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || '')
+          .map(insider => ({
+            ...insider,
+            trades: insider.trades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
           }))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          .sort((a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime());
 
-        // 모달용: 중복 제거 안 된 모든 거래 (PROP 버그 수정)
-        const allInsiderTrades = validBuyTrades
-          .map(t => ({
-            name: t.traderName,
-            title: t.traderTitle || 'Insider',
-            shares: t.shares,
-            pricePerShare: t.pricePerShare,
-            totalValue: t.totalValue,
-            date: t.filedDate,
-            tradeType: t.tradeType,
-            secFilingUrl: t.secFilingUrl,
-            accessionNumber: t.accessionNumber,
-            isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || '')
-          }))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        // 5. 전체 순매수액 계산 (모든 내부자의 모든 거래 합산)
+        const totalInsidersNetBuying = insiderDetails.reduce((sum, insider) => sum + insider.totalValue, 0);
 
-        // 모달에 표시될 거래들의 실제 순매수액 계산 (시총대비 일관성을 위해)
-        const allInsidersNetBuying = allInsiderTrades.reduce((sum, t) => sum + t.totalValue, 0);
-
-        // 디버그 로깅 (PROP 데이터 확인용)
-        if (metrics.ticker === 'PROP' || allInsiderTrades.length !== insiderDetails.length) {
-          console.log(`[Rankings Debug] ${metrics.ticker}: validBuyTrades=${validBuyTrades.length}, allInsiderTrades=${allInsiderTrades.length}, insiderDetails=${insiderDetails.length}`);
+        // 디버그 로깅
+        const totalTradeCount = insiderDetails.reduce((sum, i) => sum + i.tradeCount, 0);
+        if (metrics.ticker === 'PROP' || totalTradeCount !== insiderDetails.length) {
+          console.log(`[Rankings Debug] ${metrics.ticker}: validBuyTrades=${validBuyTrades.length}, uniqueInsiders=${insiderDetails.length}, totalTradeCount=${totalTradeCount}`);
         }
 
         // Calculate percentage change from average buy price (marketCap already defined above)
@@ -4650,9 +4677,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),
           insiderActivity: `${totalTrades} trades in last 30 days`,
-          insiders: insiderDetails, // 📋 중복 제거된 Insider 상세 정보 (랭킹 카드용)
-          allInsiders: allInsiderTrades, // 📋 모든 거래 (모달용 - PROP 버그 수정)
-          allInsidersNetBuying: Math.round(allInsidersNetBuying), // 모달용 순매수액 (시총대비 일관성)
+          insiders: insiderDetails, // 📋 내부자별 그룹화된 정보 (거래 횟수, 총액, 개별 거래 포함)
+          totalInsidersNetBuying: Math.round(totalInsidersNetBuying), // 모든 내부자의 전체 거래 합산 (시총대비용)
           // 현재 주가 및 변동률 정보 추가
           currentPrice: currentPrice ? Math.round(currentPrice * 100) / 100 : undefined,
           priceChangePercent: priceChangePercent !== undefined ? Math.round(priceChangePercent * 10) / 10 : undefined,
