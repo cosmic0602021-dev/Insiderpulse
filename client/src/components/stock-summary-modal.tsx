@@ -683,8 +683,10 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
   if (!stock || !stats) return null;
 
-  const currentPrice = stockPrice?.currentPrice || stock.currentPrice;
-  const priceChange = ((currentPrice - stats.avgPrice) / stats.avgPrice) * 100;
+  const currentPrice = stockPrice?.currentPrice || stock.currentPrice || 0;
+  const priceChange = stats.avgPrice && stats.avgPrice > 0 && currentPrice > 0
+    ? ((currentPrice - stats.avgPrice) / stats.avgPrice) * 100
+    : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
