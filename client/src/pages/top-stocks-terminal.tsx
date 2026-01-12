@@ -181,8 +181,8 @@ export default function TopStocksTerminal() {
       currentPrice: currentPrice,
       priceChange: priceChange,
       avgBuyPrice: avgBuyPrice,
-      totalBuyAmount: parseNumeric(item.netBuying),
-      insiderCount: item.uniqueInsiders || item.insiders?.length || 0,
+      totalBuyAmount: (item as any).totalInsidersNetBuying || parseNumeric(item.netBuying),  // 필터링된 합계 우선
+      insiderCount: item.insiders?.length || item.uniqueInsiders || 0,  // 필터링된 배열 우선
       lastTradeDate: item.lastTradeDate || new Date().toISOString(),
       marketCap: item.marketCap ? Number(item.marketCap) : undefined,
       // 🔒 CRITICAL: Must pass comprehensiveAnalysis from ranking data to enable cross-user caching

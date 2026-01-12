@@ -126,14 +126,23 @@ class ApiClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
+    // credentials 설정: 허용된 도메인에서만 'include' 사용
+    // 그 외 (Replit 등)에서는 'omit'으로 CORS 에러 방지
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isAllowedOrigin = hostname === 'localhost' ||
+                            hostname === '127.0.0.1' ||
+                            hostname === 'insiderpulse.pro' ||
+                            hostname.includes('tossmini.com');
+    const credentialsMode = isAllowedOrigin ? 'include' : 'omit';
+
     try {
-      console.log(`🌐 [API CLIENT] Fetching: ${url}`);
+      console.log(`🌐 [API CLIENT] Fetching: ${url} (credentials: ${credentialsMode})`);
       const response = await fetch(url, {
         ...options,
         headers,
         signal: controller.signal,
         mode: 'cors',  // 명시적 CORS 모드
-        credentials: 'include',  // 세션 쿠키 전송 (토스 인증용)
+        credentials: credentialsMode,  // 허용된 도메인에서만 쿠키 전송
       });
 
       clearTimeout(timeoutId);

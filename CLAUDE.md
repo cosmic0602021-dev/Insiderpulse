@@ -73,3 +73,7 @@ npx ait deploy --api-key rhz8SlVm1muKVeprT3r7D-VAnb6WgJzl5CbCBr4U3-c --location 
 
 - Replit Autoscale 사용
 - 도메인: https://insiderpulse.pro
+
+### 배포 규칙 (중요!)
+- **앱인토스 (.ait)**: 자동 배포 가능 (`npx ait deploy` 명령 사용)
+- **insiderpulse.pro (웹앱)**: 수동 배포만! Claude가 자동으로 배포하지 말 것

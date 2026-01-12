@@ -472,7 +472,33 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     const buyers = stock.buyers;
     const totalShares = buyers.reduce((sum, b) => sum + b.shares, 0);
     const totalAmount = buyers.reduce((sum, b) => sum + b.amount, 0);
-    const avgPrice = totalAmount / totalShares;
+
+    // 🔧 avgBuyPrice 우선순위:
+    // 1. stock.avgBuyPrice (서버에서 계산된 값)
+    // 2. buyers의 price 평균 (fallback)
+    // 3. buyers의 amount/shares 계산 (최후 fallback)
+    let avgPrice = stock.avgBuyPrice;
+
+    // Fallback 1: buyers의 price 필드 평균
+    if (!avgPrice || avgPrice <= 0) {
+      const validPrices = buyers.filter(b => b.price && b.price > 0).map(b => b.price);
+      if (validPrices.length > 0) {
+        avgPrice = validPrices.reduce((sum, p) => sum + p, 0) / validPrices.length;
+      }
+    }
+
+    // Fallback 2: totalAmount / totalShares
+    if (!avgPrice || avgPrice <= 0) {
+      avgPrice = totalShares > 0 ? totalAmount / totalShares : 0;
+    }
+
+    console.log(`📊 [Modal] ${stock.ticker} avgPrice:`, {
+      serverAvgBuyPrice: stock.avgBuyPrice,
+      calculatedAvgPrice: avgPrice,
+      buyersCount: buyers.length,
+      totalShares,
+      totalAmount
+    });
 
     // Parse dates safely, filtering out invalid dates
     const validDates = buyers
@@ -487,11 +513,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
     const lastDate = validDates.length > 0 ? validDates[validDates.length - 1] : new Date();
 
     return {
-      // 서버에서 계산한 고유 내부자 수 사용 (한 명이 여러 번 매수해도 1명)
-      buyerCount: stock.insiderCount || buyers.length,
+      // buyers 배열 길이 직접 사용 (일관성 유지)
+      buyerCount: buyers.length,
       totalShares,
-      totalAmount,
-      avgPrice,
+      totalAmount: stock.totalBuyAmount || totalAmount,  // 서버 값 우선
+      avgPrice,  // stock.avgBuyPrice 사용
       firstDate,
       lastDate,
       currentPrice: stock.currentPrice,
@@ -645,6 +671,12 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   const priceHistory = useMemo(() => {
     if (!stock || !stats) return [];
 
+    // NaN/0 방어: avgPrice가 유효하지 않으면 빈 배열 반환
+    if (!stats.avgPrice || isNaN(stats.avgPrice) || stats.avgPrice <= 0) {
+      console.warn(`⚠️ [Modal] ${stock.ticker} priceHistory empty: avgPrice=${stats.avgPrice}`);
+      return [];
+    }
+
     const avgDate = new Date((stats.firstDate.getTime() + stats.lastDate.getTime()) / 2);
     const avgPrice = stats.avgPrice;
     const data = [];
@@ -683,10 +715,25 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
   if (!stock || !stats) return null;
 
-  const currentPrice = stockPrice?.currentPrice || stock.currentPrice || 0;
-  const priceChange = stats.avgPrice && stats.avgPrice > 0 && currentPrice > 0
-    ? ((currentPrice - stats.avgPrice) / stats.avgPrice) * 100
-    : 0;
+  // 현재가: stockPrice API > stock.currentPrice > 서버에서 계산된 priceChange로 역산
+  const currentPrice = stockPrice?.currentPrice || stock.currentPrice ||
+    (stats.avgPrice && stock.priceChange ? stats.avgPrice * (1 + stock.priceChange / 100) : 0);
+
+  // 수익률: 1. stock.priceChange (서버 계산) 2. 직접 계산
+  let priceChange = stock.priceChange;
+  if (priceChange === undefined || priceChange === null) {
+    priceChange = stats.avgPrice && stats.avgPrice > 0 && currentPrice > 0
+      ? ((currentPrice - stats.avgPrice) / stats.avgPrice) * 100
+      : 0;
+  }
+
+  console.log(`📈 [Modal] ${stock.ticker} prices:`, {
+    stockPriceApi: stockPrice?.currentPrice,
+    stockCurrentPrice: stock.currentPrice,
+    stockPriceChange: stock.priceChange,
+    calculatedPriceChange: priceChange,
+    avgPrice: stats.avgPrice
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -698,19 +745,25 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
           {/* Header - Compact */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-gradient-to-r from-emerald-950/20 to-transparent shrink-0">
             <div className="flex items-center gap-2">
-              {/* Company Logo */}
-              <div className="relative">
+              {/* Company Logo - Multiple fallback sources */}
+              <div className="relative w-9 h-9">
                 <img
-                  src={`https://financialmodelingprep.com/image-stock/${stock.ticker}.png`}
+                  src={`https://logo.clearbit.com/${stock.companyName?.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20)}.com`}
                   alt={stock.ticker}
-                  className="w-9 h-9 rounded bg-neutral-900 object-contain"
+                  className="w-9 h-9 rounded bg-neutral-900 object-contain absolute inset-0"
                   onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    // Fallback to financialmodelingprep
+                    e.currentTarget.src = `https://financialmodelingprep.com/image-stock/${stock.ticker}.png`;
+                    e.currentTarget.onerror = () => {
+                      // Final fallback: hide image, show ticker abbreviation
+                      e.currentTarget.style.display = 'none';
+                      const fallbackDiv = e.currentTarget.nextElementSibling;
+                      if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                    };
                   }}
                 />
                 <div className={`w-9 h-9 hidden items-center justify-center rounded border ${stock.rank <= 3 ? 'bg-amber-900/30 border-amber-700 text-amber-500' : 'bg-neutral-900 border-neutral-700 text-neutral-400'}`}>
-                  <span className="font-mono text-xs font-bold">{stock.ticker.slice(0, 2)}</span>
+                  <span className="font-mono text-xs font-bold">{stock.ticker?.slice(0, 2) || '??'}</span>
                 </div>
               </div>
               {/* Rank Badge */}
@@ -831,8 +884,8 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                  langKey === 'zh' ? '内部人士平均收益' :
                  'INSIDER AVG RETURN'}
               </div>
-              <div className={`text-base md:text-lg font-bold ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
+              <div className={`text-base md:text-lg font-bold ${isNaN(priceChange) ? 'text-neutral-500' : priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {isNaN(priceChange) ? '-' : `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%`}
               </div>
             </div>
           </div>
@@ -1219,16 +1272,39 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[9px] text-neutral-600 font-mono w-4">{idx + 1}</span>
-                      {/* 기관/개인 구분 아이콘 */}
-                      {buyer.isInstitution ? (
-                        <span className="text-[8px] px-1 py-0.5 bg-blue-900/50 text-blue-400 rounded font-bold" title={langKey === 'ko' ? '기관투자자' : 'Institution'}>
-                          {langKey === 'ko' ? '기관' : 'INST'}
-                        </span>
-                      ) : (
-                        <span className="text-[8px] px-1 py-0.5 bg-amber-900/50 text-amber-400 rounded font-bold" title={langKey === 'ko' ? '개인 내부자' : 'Individual'}>
-                          {langKey === 'ko' ? '개인' : 'INDV'}
-                        </span>
-                      )}
+                      {/* 상세 카테고리 배지 (6가지) */}
+                      {(() => {
+                        const categoryBadges: Record<string, { label: string; labelKo: string; color: string; title: string; titleKo: string }> = {
+                          'VC_PE': { label: 'VC', labelKo: 'VC', color: 'bg-purple-900/50 text-purple-400', title: 'Venture Capital / Private Equity', titleKo: '벤처캐피탈/사모펀드' },
+                          'HEDGE': { label: 'HEDGE', labelKo: '헤지', color: 'bg-blue-900/50 text-blue-400', title: 'Hedge Fund', titleKo: '헤지펀드' },
+                          'INSTITUTION': { label: 'INST', labelKo: '기관', color: 'bg-cyan-900/50 text-cyan-400', title: 'Institutional Investor', titleKo: '기관투자자' },
+                          'EXECUTIVE': { label: 'EXEC', labelKo: '임원', color: 'bg-orange-900/50 text-orange-400', title: 'Executive Officer', titleKo: '임원 (CEO/CFO 등)' },
+                          'DIRECTOR': { label: 'DIR', labelKo: '이사', color: 'bg-yellow-900/50 text-yellow-400', title: 'Board Director', titleKo: '이사회 멤버' },
+                          'LARGE_SHAREHOLDER': { label: '10%+', labelKo: '대주주', color: 'bg-pink-900/50 text-pink-400', title: 'Large Shareholder (10%+)', titleKo: '10% 이상 대주주' },
+                        };
+                        const categories = (buyer as any).categories as string[] | undefined;
+                        if (categories && categories.length > 0) {
+                          return categories.map((cat: string) => {
+                            const badge = categoryBadges[cat];
+                            if (!badge) return null;
+                            return (
+                              <span key={cat} className={`text-[8px] px-1 py-0.5 ${badge.color} rounded font-bold`} title={langKey === 'ko' ? badge.titleKo : badge.title}>
+                                {langKey === 'ko' ? badge.labelKo : badge.label}
+                              </span>
+                            );
+                          });
+                        }
+                        // Fallback: 기존 isInstitution 기반
+                        return buyer.isInstitution ? (
+                          <span className="text-[8px] px-1 py-0.5 bg-blue-900/50 text-blue-400 rounded font-bold" title={langKey === 'ko' ? '기관투자자' : 'Institution'}>
+                            {langKey === 'ko' ? '기관' : 'INST'}
+                          </span>
+                        ) : (
+                          <span className="text-[8px] px-1 py-0.5 bg-amber-900/50 text-amber-400 rounded font-bold" title={langKey === 'ko' ? '개인 내부자' : 'Individual'}>
+                            {langKey === 'ko' ? '개인' : 'INDV'}
+                          </span>
+                        );
+                      })()}
                       <span className="text-[11px] font-bold text-neutral-300 truncate">{buyer.name}</span>
                     </div>
                     <div className="flex items-center gap-2 ml-5">

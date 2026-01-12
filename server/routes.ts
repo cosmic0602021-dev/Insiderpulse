@@ -321,6 +321,7 @@ Only return the translated text, nothing else.`
 // Ranking tickers cache for AI analysis eligibility (5 min TTL)
 let rankingTickersCache: {
   tickers: string[];
+  tickerData: Map<string, { avgTradeValue: number }>;
   timestamp: number;
 } | null = null;
 const RANKING_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -345,11 +346,21 @@ async function fetchRankingTickers(): Promise<string[]> {
     }
 
     const data = await response.json();
-    const tickers = (data.rankings || []).map((r: any) => r.ticker).filter(Boolean);
+    const rankings = data.rankings || [];
+    const tickers = rankings.map((r: any) => r.ticker).filter(Boolean);
+
+    // Build ticker data map with avgTradeValue
+    const tickerData = new Map<string, { avgTradeValue: number }>();
+    rankings.forEach((r: any) => {
+      if (r.ticker) {
+        tickerData.set(r.ticker, { avgTradeValue: r.avgTradeValue || 0 });
+      }
+    });
 
     // Update cache
     rankingTickersCache = {
       tickers,
+      tickerData,
       timestamp: Date.now()
     };
 
@@ -367,6 +378,15 @@ async function fetchRankingTickers(): Promise<string[]> {
     // No cache available - throw error to deny analysis (fail-safe)
     throw new Error('Unable to fetch ranking tickers');
   }
+}
+
+// Helper function to get avgBuyPrice for a ticker from ranking cache
+function getTickerAvgBuyPrice(ticker: string): number | undefined {
+  if (rankingTickersCache && rankingTickersCache.tickerData) {
+    const data = rankingTickersCache.tickerData.get(ticker);
+    return data?.avgTradeValue;
+  }
+  return undefined;
 }
 
 // Global WebSocket server for real-time updates
@@ -3264,32 +3284,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'N/A'
       });
 
-      // 💰 LANGUAGE-SPECIFIC CACHE: Each language cached separately
-      // New structure: { en: {...}, ko: {...}, ja: {...} }
-      if (trade.comprehensiveAnalysis) {
-        const cachedData = trade.comprehensiveAnalysis as any;
-
-        // Check if this language version exists in cache
-        if (cachedData[language]) {
-          console.log(`✅ Using cached ${language} analysis - saved GPT API call`);
-          return res.json(cachedData[language]);
-        }
-
-        // Check for old format (has aiSummary at root level) - return as-is
-        if (cachedData.aiSummary) {
-          console.log(`✅ Using legacy cached analysis`);
-          return res.json(cachedData);
-        }
-
-        console.log(`📝 Language ${language} not cached, will generate...`);
-      }
-
       // Cost optimization: Only generate analysis for trades in current rankings (age-agnostic)
       // This replaces the old 7-day age restriction with ranking-based eligibility
+      // 🔧 FIX: Fetch ranking data FIRST to get current avgTradeValue for cache validation
+      let currentAvgBuyPrice: number | undefined;
       try {
         console.log(`🔍 Checking if ${trade.ticker} is eligible for AI analysis...`);
         const rankingTickers = await fetchRankingTickers();
         const isEligible = rankingTickers.includes(trade.ticker || '');
+
+        // Get current avgBuyPrice from ranking cache for price validation
+        currentAvgBuyPrice = getTickerAvgBuyPrice(trade.ticker || '');
+        console.log(`📊 Current avgBuyPrice for ${trade.ticker}: $${currentAvgBuyPrice?.toFixed(2) || 'N/A'}`);
 
         if (!isEligible) {
           console.log(`⚠️  ${trade.ticker} is not currently in rankings - analysis denied`);
@@ -3312,31 +3318,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           });
         }
-
-        console.log(`✅ ${trade.ticker} is in rankings - proceeding with AI analysis`);
       } catch (rankingError) {
-        // Ranking API failed - deny analysis to protect costs (fail-safe)
         console.error('❌ Ranking eligibility check failed:', rankingError);
-        return res.status(503).json({
-          error: 'RANKING_CHECK_FAILED',
-          errorType: 'temporary',
-          message: 'Unable to verify if stock is ranked. Please try again.',
-          retryable: true,
-          basicInfo: {
-            traderName: trade.traderName,
-            traderTitle: trade.traderTitle || 'Unknown',
-            companyName: trade.companyName,
-            ticker: trade.ticker || 'N/A',
-            shares: trade.shares,
-            pricePerShare: trade.pricePerShare,
-            totalValue: trade.totalValue,
-            tradeType: trade.tradeType,
-            filedDate: trade.filedDate,
-            secFilingUrl: trade.secFilingUrl,
-            ownershipPercentage: trade.ownershipPercentage || 0
-          }
-        });
+        // Continue to cache check - if cache exists, use it
       }
+
+      // 💰 LANGUAGE-SPECIFIC CACHE: Each language cached separately
+      // New structure: { en: {...}, ko: {...}, ja: {...} }
+      // 🔧 FIX: Validate cached price matches current avgBuyPrice (within 5% tolerance)
+      if (trade.comprehensiveAnalysis) {
+        const cachedData = trade.comprehensiveAnalysis as any;
+
+        // Check if this language version exists in cache
+        if (cachedData[language]) {
+          const cachedPrice = cachedData[language]?.basicInfo?.pricePerShare || 0;
+          const priceDiff = currentAvgBuyPrice && cachedPrice > 0
+            ? Math.abs(currentAvgBuyPrice - cachedPrice) / cachedPrice * 100
+            : 0;
+
+          // If price differs by more than 5%, regenerate analysis
+          if (priceDiff > 5) {
+            console.log(`🔄 Cache price ($${cachedPrice.toFixed(2)}) differs from current avgBuyPrice ($${currentAvgBuyPrice?.toFixed(2)}) by ${priceDiff.toFixed(1)}% - regenerating analysis`);
+          } else {
+            console.log(`✅ Using cached ${language} analysis - saved GPT API call`);
+            return res.json(cachedData[language]);
+          }
+        }
+
+        // Check for old format (has aiSummary at root level) - check price and regenerate if needed
+        if (cachedData.aiSummary && !cachedData[language]) {
+          const cachedPrice = cachedData.basicInfo?.pricePerShare || 0;
+          const priceDiff = currentAvgBuyPrice && cachedPrice > 0
+            ? Math.abs(currentAvgBuyPrice - cachedPrice) / cachedPrice * 100
+            : 0;
+
+          if (priceDiff > 5) {
+            console.log(`🔄 Legacy cache price differs - regenerating analysis`);
+          } else {
+            console.log(`✅ Using legacy cached analysis`);
+            return res.json(cachedData);
+          }
+        }
+
+        console.log(`📝 Language ${language} not cached or price mismatch, will generate...`);
+      }
+
+      console.log(`✅ ${trade.ticker} is in rankings - proceeding with AI analysis`);
+
+      // Note: Eligibility already checked above - no duplicate check needed
 
       // Fetch recent news for context (once for both AI analysis and newsAnalysis section)
       let recentNews: any[] = [];
@@ -3363,6 +3392,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate AI analysis (simplified: just 2-line summary)
+      // Use currentAvgBuyPrice (already fetched above) for consistency with modal display
+      const avgBuyPrice = currentAvgBuyPrice || getTickerAvgBuyPrice(trade.ticker || '');
+      console.log(`💰 Using avgBuyPrice for AI analysis: $${avgBuyPrice?.toFixed(2) || 'N/A'} (trade pricePerShare: $${trade.pricePerShare?.toFixed(2)})`);
+
       const aiService = new AIAnalysisService();
       const analysis = await aiService.analyzeInsiderTrade({
         companyName: trade.companyName,
@@ -3375,7 +3408,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: trade.totalValue,
         ownershipPercentage: trade.ownershipPercentage || 0,
         filedDate: trade.filedDate,
-        recentNews: recentNews.length > 0 ? recentNews : undefined
+        recentNews: recentNews.length > 0 ? recentNews : undefined,
+        avgBuyPrice: avgBuyPrice  // Pass aggregate avg price for consistency with modal
       });
 
       // Build simple news analysis
@@ -3407,10 +3441,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create simplified analysis object (English first)
+      // 🔧 Include basicInfo with avgBuyPrice for cache validation and consistency
       const englishAnalysis = {
         signalType: analysis.signalType,
         aiSummary: analysis.aiSummary,
-        newsAnalysis
+        newsAnalysis,
+        basicInfo: {
+          traderName: trade.traderName,
+          traderTitle: trade.traderTitle || 'Unknown',
+          companyName: trade.companyName,
+          ticker: trade.ticker || 'N/A',
+          shares: trade.shares,
+          pricePerShare: avgBuyPrice || trade.pricePerShare,  // Use avgBuyPrice for consistency with modal
+          totalValue: trade.totalValue,
+          tradeType: trade.tradeType,
+          filedDate: trade.filedDate,
+          secFilingUrl: trade.secFilingUrl,
+          ownershipPercentage: trade.ownershipPercentage || 0
+        },
+        analysisLanguage: 'en'
       };
 
       // Translate if needed
@@ -3437,7 +3486,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           localizedAnalysis = {
             signalType: analysis.signalType,
             aiSummary: translatedSummary,
-            newsAnalysis: translatedNews
+            newsAnalysis: translatedNews,
+            basicInfo: englishAnalysis.basicInfo,  // Same basicInfo for all languages
+            analysisLanguage: language
           };
           console.log(`✅ Analysis translated to ${language}`);
         } catch (translateError) {
@@ -4565,19 +4616,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return isBuy && hasValidName;
         });
 
-        // 2. 기관투자자 판별 함수 (LLC, LP, Inc., Fund, Capital, Advisor 등)
+        // 2. 내부자 분류 타입 및 함수 (6가지 카테고리)
+        type InsiderCategory = 'VC_PE' | 'HEDGE' | 'INSTITUTION' | 'EXECUTIVE' | 'DIRECTOR' | 'LARGE_SHAREHOLDER';
+
+        const classifyInsider = (name: string, title: string): InsiderCategory[] => {
+          const categories: InsiderCategory[] = [];
+
+          // 1. 기관 분류 (이름 기반)
+          const vcPePatterns = /\b(Ventures?|Equity|Horowitz|Sequoia|Andreessen|Greylock|Accel|Benchmark|Kleiner|Khosla|General.?Catalyst|Bessemer|NEA|Index.?Ventures|Lightspeed|Tiger.?Global|Coatue|a16z)\b/i;
+          const hedgePatterns = /\b(Hedge|Asset.?Management|Citadel|Bridgewater|Renaissance|Two.?Sigma|D\.?E\.?Shaw|Point72|Millennium|Elliott|Baupost)\b/i;
+          const institutionPatterns = /\b(LLC|LP|L\.L\.C\.|L\.P\.|Inc\.|Corp\.|Ltd\.|Foundation|Trust|Fund|Holdings?|Partners?|Advisors?|Management|Investments?|Associates?|Group|Company|Co\.|Corporation|Capital)\b/i;
+
+          if (vcPePatterns.test(name)) {
+            categories.push('VC_PE');
+          } else if (hedgePatterns.test(name)) {
+            categories.push('HEDGE');
+          } else if (institutionPatterns.test(name)) {
+            categories.push('INSTITUTION');
+          }
+
+          // 2. 직책 분류 (title 기반)
+          const executivePatterns = /\b(CEO|CFO|COO|CTO|CIO|CMO|President|Chief|Officer|VP|Vice.?President|SVP|EVP|General.?Counsel|Secretary|Treasurer)\b/i;
+          const directorPatterns = /\b(Dir|Director)\b/i;
+          const largeShareholderPattern = /\b(10%|5%|\d+%)\b/;
+
+          if (executivePatterns.test(title)) {
+            categories.push('EXECUTIVE');
+          }
+          if (directorPatterns.test(title)) {
+            categories.push('DIRECTOR');
+          }
+          // 대주주 판별: 퍼센트가 있으면 대주주로 추가
+          if (largeShareholderPattern.test(title)) {
+            categories.push('LARGE_SHAREHOLDER');
+          }
+
+          // 분류 불가능한 경우: 이름이 기관 같지 않고 직책도 없으면 기타 개인으로
+          if (categories.length === 0) {
+            // 이름에 쉼표가 있으면 개인(성, 이름 형식)
+            if (name.includes(',')) {
+              categories.push('EXECUTIVE'); // 기본적으로 임원으로 표시
+            } else {
+              categories.push('INSTITUTION');
+            }
+          }
+
+          return categories;
+        };
+
+        // 기존 호환성을 위한 isInstitution 계산 헬퍼
         const isInstitutionalInvestor = (name: string, title: string): boolean => {
-          const institutionalPatterns = [
-            /\b(LLC|LP|L\.L\.C\.|L\.P\.|Inc\.|Corp\.|Ltd\.|Foundation|Trust)\b/i,
-            /\b(Advisors?|Capital|Partners?|Fund|Holdings?|Management|Investments?)\b/i,
-            /\b(Associates?|Group|Company|Co\.|Corporation)\b/i,
-          ];
-          const titlePatterns = [/^10%$/, /^5%$/, /^\d+%$/]; // Just percentage = usually institution
-
-          const nameMatches = institutionalPatterns.some(p => p.test(name));
-          const titleIsPercentOnly = titlePatterns.some(p => p.test(title.trim()));
-
-          return nameMatches || titleIsPercentOnly;
+          const categories = classifyInsider(name, title);
+          return categories.some(c => ['VC_PE', 'HEDGE', 'INSTITUTION'].includes(c));
         };
 
         // 3. 내부자별로 모든 거래를 그룹화 (중복 제거 + 거래 내역 보존)
@@ -4600,6 +4690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avgPricePerShare: number;
           latestDate: string;
           isInstitution: boolean;
+          categories: InsiderCategory[];
         }
 
         const insidersByName = new Map<string, GroupedInsider>();
@@ -4625,6 +4716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               existing.latestDate = t.filedDate;
             }
           } else {
+            const categories = classifyInsider(t.traderName, t.traderTitle || '');
             insidersByName.set(t.traderName, {
               name: t.traderName,
               title: t.traderTitle || 'Insider',
@@ -4634,7 +4726,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalValue: t.totalValue,
               avgPricePerShare: t.pricePerShare,
               latestDate: t.filedDate,
-              isInstitution: isInstitutionalInvestor(t.traderName, t.traderTitle || ''),
+              isInstitution: categories.some(c => ['VC_PE', 'HEDGE', 'INSTITUTION'].includes(c)),
+              categories: categories,
             });
           }
         });
@@ -4672,7 +4765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTrades: totalTrades,
           buyTrades: metrics.buyCount,
           sellTrades: metrics.sellCount,
-          uniqueInsiders: metrics.uniqueInsiders.size,
+          uniqueInsiders: insiderDetails.length,  // 필터링된 배열 기준 (일관성)
           avgTradeValue: Math.round(metrics.avgTradeValue * 100) / 100, // Round to 2 decimals for per-share price
           netBuying: Math.round(metrics.netBuying),
           lastTradeDate: metrics.lastTradeDate?.toISOString(),

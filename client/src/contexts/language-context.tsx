@@ -3767,8 +3767,8 @@ const getInitialLanguage = (): Language => {
     return savedLanguage;
   }
 
-  // 브라우저 언어 사용 (동기적)
-  return detectBrowserLanguage();
+  // 배포된 웹앱은 기본 영어 (사용자가 별도 설정하지 않는 한)
+  return 'en';
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

@@ -11,6 +11,12 @@ const EN = {
     licenseFree: 'Upgrade License',
     licenseActive: 'License Active',
   },
+  nav: {
+    topStocks: 'TOP',
+    live: 'LIVE',
+    profile: 'ME',
+    settings: 'SET',
+  },
   sidebar: {
     modules: 'Modules',
     live: 'Live Trading',
@@ -281,6 +287,12 @@ const KO = {
     licenseFree: '라이선스 업그레이드',
     licenseActive: '라이선스 활성',
   },
+  nav: {
+    topStocks: '상위',
+    live: '실시간',
+    profile: '프로필',
+    settings: '설정',
+  },
   sidebar: {
     modules: '모듈',
     live: '실시간 거래',
@@ -549,6 +561,12 @@ const JA = {
     encryptedMessage: 'OUTSIDERユーザーには48時間遅延データのみ表示されます。',
     upgradeAction: 'リアルタイムデータのロック解除',
   },
+  nav: {
+    topStocks: 'TOP',
+    live: 'LIVE',
+    profile: '私',
+    settings: '設定',
+  },
   live: {
     ...EN.live,
     encryptedForOutsiders: 'OUTSIDER暗号化済み',
@@ -694,6 +712,12 @@ const ZH = {
     signalEncrypted: '信号加密',
     encryptedMessage: 'OUTSIDER 用户仅能查看延迟 48 小时的数据。',
     upgradeAction: '解锁实时数据',
+  },
+  nav: {
+    topStocks: '排行',
+    live: '实时',
+    profile: '我的',
+    settings: '设置',
   },
   live: {
     ...EN.live,

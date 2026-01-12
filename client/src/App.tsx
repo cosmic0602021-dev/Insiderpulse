@@ -301,39 +301,37 @@ function AppContent() {
           </main>
         </div>
 
-        {/* 앱인토스 하단 탭 네비게이션 */}
-        {ENV_CONFIG.isAppintos && (
-          <div className="h-14 border-t border-neutral-800 bg-[#0a0a0a] flex items-center justify-around px-2 shrink-0">
-            <button
-              onClick={() => handleViewChange(View.TOP_STOCKS)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.TOP_STOCKS ? 'text-emerald-500' : 'text-neutral-500'}`}
-            >
-              <LayoutDashboard size={20} />
-              <span className="text-[10px]">상위종목</span>
-            </button>
-            <button
-              onClick={() => handleViewChange(View.LIVE_TRADING)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.LIVE_TRADING ? 'text-emerald-500' : 'text-neutral-500'}`}
-            >
-              <Activity size={20} />
-              <span className="text-[10px]">실시간</span>
-            </button>
-            <button
-              onClick={() => handleViewChange(View.PROFILE)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.PROFILE ? 'text-emerald-500' : 'text-neutral-500'}`}
-            >
-              <User size={20} />
-              <span className="text-[10px]">프로필</span>
-            </button>
-            <button
-              onClick={() => handleViewChange(View.SETTINGS)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.SETTINGS ? 'text-emerald-500' : 'text-neutral-500'}`}
-            >
-              <Cog size={20} />
-              <span className="text-[10px]">설정</span>
-            </button>
-          </div>
-        )}
+        {/* 하단 탭 네비게이션 - 모바일에서 항상 표시 (앱인토스 + 웹) */}
+        <div className={`${ENV_CONFIG.isAppintos ? '' : 'md:hidden'} h-14 border-t border-neutral-800 bg-[#0a0a0a] flex items-center justify-around px-2 shrink-0`}>
+          <button
+            onClick={() => handleViewChange(View.TOP_STOCKS)}
+            className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.TOP_STOCKS ? 'text-emerald-500' : 'text-neutral-500'}`}
+          >
+            <LayoutDashboard size={20} />
+            <span className="text-[10px]">{TRANSLATIONS[terminalLang]?.nav?.topStocks || '상위'}</span>
+          </button>
+          <button
+            onClick={() => handleViewChange(View.LIVE_TRADING)}
+            className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.LIVE_TRADING ? 'text-emerald-500' : 'text-neutral-500'}`}
+          >
+            <Activity size={20} />
+            <span className="text-[10px]">{TRANSLATIONS[terminalLang]?.nav?.live || '실시간'}</span>
+          </button>
+          <button
+            onClick={() => handleViewChange(View.PROFILE)}
+            className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.PROFILE ? 'text-emerald-500' : 'text-neutral-500'}`}
+          >
+            <User size={20} />
+            <span className="text-[10px]">{TRANSLATIONS[terminalLang]?.nav?.profile || '프로필'}</span>
+          </button>
+          <button
+            onClick={() => handleViewChange(View.SETTINGS)}
+            className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.SETTINGS ? 'text-emerald-500' : 'text-neutral-500'}`}
+          >
+            <Cog size={20} />
+            <span className="text-[10px]">{TRANSLATIONS[terminalLang]?.nav?.settings || '설정'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
