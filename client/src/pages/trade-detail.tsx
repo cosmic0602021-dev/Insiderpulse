@@ -171,8 +171,10 @@ export default function TradeDetail() {
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
+                      if (target) {
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }
                     }}
                   />
                   <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm hidden">

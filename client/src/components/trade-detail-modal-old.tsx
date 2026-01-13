@@ -524,9 +524,11 @@ export function TradeDetailModal({
                       if (target.src.includes('parqet.com')) {
                         target.src = `https://eodhd.com/img/logos/US/${trade.ticker}.png`;
                       } else {
-                        target.style.display = 'none';
-                        const fallbackDiv = target.parentElement?.querySelector('.fallback-logo') as HTMLElement;
-                        if (fallbackDiv) fallbackDiv.style.display = 'flex';
+                        if (target) {
+                          target.style.display = 'none';
+                          const fallbackDiv = target.parentElement?.querySelector('.fallback-logo') as HTMLElement | null;
+                          if (fallbackDiv) fallbackDiv.style.display = 'flex';
+                        }
                       }
                     }}
                   />

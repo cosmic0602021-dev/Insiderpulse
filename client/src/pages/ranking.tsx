@@ -638,9 +638,11 @@ export default function Ranking() {
                           target.src = `https://eodhd.com/img/logos/US/${item.ticker}.png`;
                         } else {
                           // Final fallback to Building2 icon
-                          target.style.display = 'none';
-                          const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement;
-                          if (iconDiv) iconDiv.style.display = 'flex';
+                          if (target) {
+                            target.style.display = 'none';
+                            const iconDiv = target.parentElement?.querySelector('.fallback-icon') as HTMLElement | null;
+                            if (iconDiv) iconDiv.style.display = 'flex';
+                          }
                         }
                       }}
                     />

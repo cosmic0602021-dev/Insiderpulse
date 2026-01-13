@@ -756,9 +756,12 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
                     e.currentTarget.src = `https://financialmodelingprep.com/image-stock/${stock.ticker}.png`;
                     e.currentTarget.onerror = () => {
                       // Final fallback: hide image, show ticker abbreviation
-                      e.currentTarget.style.display = 'none';
-                      const fallbackDiv = e.currentTarget.nextElementSibling;
-                      if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                      const target = e.currentTarget;
+                      if (target) {
+                        target.style.display = 'none';
+                        const fallbackDiv = target.nextElementSibling;
+                        if (fallbackDiv) fallbackDiv.classList.remove('hidden');
+                      }
                     };
                   }}
                 />
