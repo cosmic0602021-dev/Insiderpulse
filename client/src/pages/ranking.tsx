@@ -135,9 +135,11 @@ export default function Ranking() {
       });
       return result;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: 'always',
-    placeholderData: (previousData) => previousData, // 이전 데이터 즉시 표시 - faster perceived loading
+    staleTime: 5 * 60 * 1000,        // 5분간 데이터를 fresh로 간주
+    gcTime: 15 * 60 * 1000,           // 15분간 메모리에 유지
+    refetchOnMount: false,             // fresh 데이터는 재fetch 안 함
+    refetchOnWindowFocus: false,       // 포커스 시 재fetch 안 함
+    placeholderData: (previousData) => previousData, // 캐시된 데이터 즉시 표시 - faster perceived loading
   });
 
   const handleRefresh = async () => {
@@ -440,7 +442,11 @@ export default function Ranking() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message={t('ranking.loading') || 'Loading rankings...'} />;
+    const loadingMessages = t('ranking.loadingMessages') as string[];
+    const randomMessage = loadingMessages?.[Math.floor(Math.random() * loadingMessages.length)]
+      || t('ranking.loading')
+      || 'Loading rankings...';
+    return <LoadingScreen message={randomMessage} />;
   }
 
   if (error) {
