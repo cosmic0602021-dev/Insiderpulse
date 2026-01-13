@@ -24,7 +24,6 @@ interface InsiderTradeData {
   ownershipPercentage: number;
   filedDate?: Date; // For historical analysis
   recentNews?: NewsContext[]; // Optional recent news for context
-  avgBuyPrice?: number; // Aggregate average buy price from all trades (for consistency with modal display)
 }
 
 // Simplified AI analysis result - just a 2-line summary
@@ -101,10 +100,8 @@ export class AIAnalysisService {
     const isExecutive = ['CEO', 'CFO', 'President', 'Chairman', 'Director'].some(title =>
       tradeData.traderTitle.toLowerCase().includes(title.toLowerCase())
     );
-    // Use avgBuyPrice if available (for consistency with modal display), otherwise fall back to pricePerShare
-    const displayPrice = tradeData.avgBuyPrice && tradeData.avgBuyPrice > 0
-      ? tradeData.avgBuyPrice.toFixed(2)
-      : tradeData.pricePerShare.toFixed(2);
+    // Always use individual trade's pricePerShare for accuracy and consistency with modal
+    const displayPrice = tradeData.pricePerShare.toFixed(2);
 
     return `
 Insider Trade Summary:

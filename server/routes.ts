@@ -3392,9 +3392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate AI analysis (simplified: just 2-line summary)
-      // Use currentAvgBuyPrice (already fetched above) for consistency with modal display
-      const avgBuyPrice = currentAvgBuyPrice || getTickerAvgBuyPrice(trade.ticker || '');
-      console.log(`💰 Using avgBuyPrice for AI analysis: $${avgBuyPrice?.toFixed(2) || 'N/A'} (trade pricePerShare: $${trade.pricePerShare?.toFixed(2)})`);
+      console.log(`💰 Using pricePerShare for AI analysis: $${trade.pricePerShare?.toFixed(2)}`);
 
       const aiService = new AIAnalysisService();
       const analysis = await aiService.analyzeInsiderTrade({
@@ -3408,8 +3406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: trade.totalValue,
         ownershipPercentage: trade.ownershipPercentage || 0,
         filedDate: trade.filedDate,
-        recentNews: recentNews.length > 0 ? recentNews : undefined,
-        avgBuyPrice: avgBuyPrice  // Pass aggregate avg price for consistency with modal
+        recentNews: recentNews.length > 0 ? recentNews : undefined
       });
 
       // Build simple news analysis
@@ -3441,7 +3438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create simplified analysis object (English first)
-      // 🔧 Include basicInfo with avgBuyPrice for cache validation and consistency
+      // Store basicInfo with individual trade data for client display
       const englishAnalysis = {
         signalType: analysis.signalType,
         aiSummary: analysis.aiSummary,
@@ -3452,7 +3449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           companyName: trade.companyName,
           ticker: trade.ticker || 'N/A',
           shares: trade.shares,
-          pricePerShare: avgBuyPrice || trade.pricePerShare,  // Use avgBuyPrice for consistency with modal
+          pricePerShare: trade.pricePerShare,  // Use individual trade's actual price
           totalValue: trade.totalValue,
           tradeType: trade.tradeType,
           filedDate: trade.filedDate,
