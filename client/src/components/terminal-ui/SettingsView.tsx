@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
 import { Settings, Globe, Monitor, CreditCard, Bell, BellOff, DollarSign } from 'lucide-react';
 import { useCurrency, type Currency } from '@/contexts/currency-context';
+import { useAuth } from '@/contexts/auth-context';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsViewProps {
   lang: Language;
@@ -12,6 +15,56 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
   const t = TRANSLATIONS[lang].settings;
   const { currency, setCurrency } = useCurrency();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // State
+  const [theme, setTheme] = useState<string>('system');
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
+  // Load theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    setTheme(savedTheme);
+  }, []);
+
+  // 테마 변경 핸들러
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    const isDark = newTheme === 'dark' ||
+      (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // 구독관리 핸들러
+  const handleManageSubscription = async () => {
+    setIsLoadingPortal(true);
+    try {
+      const response = await apiRequest('POST', '/api/create-portal-session', {});
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL received');
+      }
+    } catch (error: any) {
+      console.error('Error creating portal session:', error);
+      toast({
+        title: '오류',
+        description: '구독 관리 페이지를 열 수 없습니다.',
+        variant: 'destructive',
+      });
+      setIsLoadingPortal(false);
+    }
+  };
 
   const languages: { code: Language; label: string }[] = [
     { code: 'en', label: 'English' },
@@ -83,11 +136,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                     <h2 className="text-base font-bold text-neutral-300">{t.theme}</h2>
                 </div>
                 <div className="relative">
-                    <select 
+                    <select
+                        value={theme}
+                        onChange={(e) => handleThemeChange(e.target.value)}
                         className="w-full bg-[#050505] border border-neutral-800 text-neutral-300 p-3 text-sm focus:outline-none focus:border-neutral-600 appearance-none"
-                        disabled
                     >
-                       <option>System Default (Dark)</option>
+                       <option value="light">Light</option>
+                       <option value="dark">Dark</option>
+                       <option value="system">System Default</option>
                     </select>
                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs">▼</div>
                 </div>
@@ -106,8 +162,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <button className="flex items-center justify-center gap-2 p-3 border border-neutral-800 hover:bg-neutral-900 text-neutral-300 text-xs uppercase tracking-wide transition-colors">
-                        <CreditCard size={14} /> {t.manage}
+                    <button
+                        onClick={handleManageSubscription}
+                        disabled={isLoadingPortal}
+                        className="flex items-center justify-center gap-2 p-3 border border-neutral-800 hover:bg-neutral-900 text-neutral-300 text-xs uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoadingPortal ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-neutral-300 border-t-transparent rounded-full animate-spin"></div>
+                                로딩중...
+                            </>
+                        ) : (
+                            <>
+                                <CreditCard size={14} /> {t.manage}
+                            </>
+                        )}
                     </button>
                      <button className="flex items-center justify-center gap-2 p-3 border border-neutral-800 hover:bg-neutral-900 text-neutral-300 text-xs uppercase tracking-wide transition-colors">
                         <Settings size={14} /> {t.refresh}

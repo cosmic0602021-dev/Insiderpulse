@@ -325,23 +325,11 @@ export async function performTossLogin(): Promise<TossLoginResult> {
       debugLog('Step 2 FAILED: Token exchange error', { error: String(e) });
     }
 
-    // Step 3: 폴백 - localStorage에 기존 ID 있으면 사용, 없으면 새로 생성
-    // 주의: authorizationCode는 매번 다르므로 해시해도 소용없음
-    let userId = localStorage.getItem('appintos_user_id');
-    if (!userId) {
-      userId = `toss_anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      localStorage.setItem('appintos_user_id', userId);
-      debugLog('Step 3: Created new fallback ID', { userId });
-    } else {
-      debugLog('Step 3: Using existing localStorage ID', { userId });
-    }
-
+    // Step 3: 로그인 실패 - 폴백 ID 생성하지 않음
+    debugLog('Step 3: Login failed - no fallback');
     return {
-      success: true,
-      user: {
-        id: userId,
-        tossUserId: userId,
-      }
+      success: false,
+      error: '토스 로그인에 실패했습니다. 다시 시도해주세요.'
     };
   } catch (error) {
     debugLog('FATAL ERROR', { error: String(error) });

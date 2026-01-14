@@ -80,6 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('appintos_user_id', tossUser.id);
           } else {
             console.log('ℹ️ [AUTH] No Toss session found, user not logged in');
+            // localStorage 정리 - 잘못 저장된 데이터 제거
+            localStorage.removeItem('appintos_user_id');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authUser');
           }
         } catch (error) {
           console.log('⚠️ [AUTH] Toss session check failed:', error);

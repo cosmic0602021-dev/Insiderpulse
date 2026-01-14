@@ -188,34 +188,26 @@ function getRelativeWebSocketUrl(): string {
 }
 
 /**
- * 앱인토스 환경에서 자동으로 익명 사용자 ID 생성/반환
- * appLogin SDK 없이도 사용자 식별 가능
+ * 앱인토스 환경에서 저장된 사용자 ID 반환 (읽기 전용)
+ * 실제 토스 로그인 후에만 ID가 존재합니다
  */
-export function ensureAppintosUserId(): string | null {
+export function getAppintosUserId(): string | null {
   if (typeof window === 'undefined') return null;
 
   // 앱인토스 환경이 아니면 null
   if (!isAppintosEnvironment()) return null;
 
-  // 이미 ID가 있으면 반환
-  let userId = localStorage.getItem('appintos_user_id');
-  if (userId) {
-    console.log('[ENV] Existing Appintos user ID:', userId);
-    return userId;
-  }
-
-  // 새 ID 생성 및 저장
-  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  localStorage.setItem('appintos_user_id', userId);
-  console.log('[ENV] Created new Appintos user ID:', userId);
-  return userId;
+  // localStorage에서 읽기만 수행 (생성하지 않음)
+  const userId = localStorage.getItem('appintos_user_id');
+  console.log('[ENV] Getting Appintos user ID (read-only):', userId || 'none');
+  return userId || null;
 }
 
 /**
  * 앱인토스 환경에서 세션 확인 후 사용자 ID 반환 (비동기 버전)
  * 1. localStorage 확인
  * 2. 서버 세션 쿠키 확인
- * 3. 새 ID 생성 (최후의 수단)
+ * 3. 세션 없으면 null 반환 (ID 생성하지 않음)
  */
 export async function ensureAppintosUserIdAsync(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
@@ -242,11 +234,9 @@ export async function ensureAppintosUserIdAsync(): Promise<string | null> {
     console.log('[ENV] Session check failed:', e);
   }
 
-  // 3. 세션 없으면 새 ID 생성 (최후의 수단)
-  userId = `appintos_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  localStorage.setItem('appintos_user_id', userId);
-  console.log('[ENV] Created new Appintos user ID:', userId);
-  return userId;
+  // 3. 세션 없으면 null 반환 (임시 ID 생성하지 않음)
+  console.log('[ENV] No valid session, user not logged in');
+  return null;
 }
 
 // ✅ Proxy 제거, 직접 getter 사용하여 매번 재평가
@@ -265,7 +255,5 @@ export const ENV_CONFIG = {
   }
 };
 
-// 앱인토스 환경이면 앱 시작 시 자동으로 ID 생성
-if (typeof window !== 'undefined') {
-  ensureAppintosUserId();
-}
+// ❌ 삭제됨: 자동 ID 생성 제거 (토스 로그인 버그 수정)
+// 이제 실제 토스 로그인 후에만 ID가 생성됩니다

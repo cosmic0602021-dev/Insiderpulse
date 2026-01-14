@@ -6,7 +6,7 @@ import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Tic
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
 import { ENV_CONFIG } from '@/lib/environment';
-import { performTossLogin } from '@/lib/toss-login';
+import { performTossLogin, checkExistingTossSession } from '@/lib/toss-login';
 
 interface ProfileViewProps {
   lang: Language;
@@ -25,18 +25,36 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
   const [isTossLoggingIn, setIsTossLoggingIn] = useState(false);
   const [tossUserId, setTossUserId] = useState<string | null>(null);
 
-  // Check for existing Toss login on mount
+  // 앱 시작 시 서버 세션 검증
   useEffect(() => {
-    // 디버그 로그 (토스앱에서 확인용)
-    console.log('[ProfileView] isAppintos:', ENV_CONFIG.isAppintos);
-    console.log('[ProfileView] localStorage appintos_user_id:', localStorage.getItem('appintos_user_id'));
-
     if (ENV_CONFIG.isAppintos) {
-      const storedId = localStorage.getItem('appintos_user_id');
-      console.log('[ProfileView] Setting tossUserId:', storedId);
-      setTossUserId(storedId);
+      verifyTossAuthStatus();
     }
   }, []);
+
+  const verifyTossAuthStatus = async () => {
+    try {
+      console.log('[ProfileView] 🔍 Verifying Toss authentication...');
+
+      // 서버 세션 검증 (/api/toss-login/me 호출)
+      const tossUser = await checkExistingTossSession();
+
+      if (tossUser?.id) {
+        console.log('[ProfileView] ✅ User authenticated:', tossUser.id);
+        setTossUserId(tossUser.id);
+        localStorage.setItem('appintos_user_id', tossUser.id);
+      } else {
+        console.log('[ProfileView] ❌ User not authenticated');
+        setTossUserId(null);
+        // 기존에 잘못 저장된 데이터 정리
+        localStorage.removeItem('appintos_user_id');
+      }
+    } catch (error) {
+      console.error('[ProfileView] Auth verification failed:', error);
+      setTossUserId(null);
+      localStorage.removeItem('appintos_user_id');
+    }
+  };
 
   // Handle Toss Login
   const handleTossLogin = async () => {
@@ -201,6 +219,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                         <span className="text-emerald-500 text-sm">토스 인증됨</span>
+                                        <span className="text-xs text-neutral-600 ml-2">세션 활성</span>
                                     </div>
                                 </div>
                             </div>
