@@ -27,14 +27,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
 
   // 앱 시작 시 서버 세션 검증
   useEffect(() => {
+    console.log('[ProfileView] Component mounted');
+    console.log('[ProfileView] Is Appintos?', ENV_CONFIG.isAppintos);
+
     if (ENV_CONFIG.isAppintos) {
+      console.log('[ProfileView] Running in Appintos environment - checking auth');
       verifyTossAuthStatus();
+    } else {
+      console.log('[ProfileView] NOT in Appintos environment - skipping Toss auth');
+      alert('⚠️ 앱인토스 환경이 아닙니다!\nURL: ' + window.location.href);
     }
   }, []);
 
   const verifyTossAuthStatus = async () => {
     try {
       console.log('[ProfileView] 🔍 Verifying Toss authentication...');
+      console.log('[ProfileView] ENV_CONFIG.isAppintos:', ENV_CONFIG.isAppintos);
+      console.log('[ProfileView] window.location.href:', window.location.href);
 
       // 서버 세션 검증 (/api/toss-login/me 호출)
       const tossUser = await checkExistingTossSession();
@@ -43,16 +52,19 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
         console.log('[ProfileView] ✅ User authenticated:', tossUser.id);
         setTossUserId(tossUser.id);
         localStorage.setItem('appintos_user_id', tossUser.id);
+        alert(`✅ 토스 로그인 성공!\nUser ID: ${tossUser.id}`);
       } else {
-        console.log('[ProfileView] ❌ User not authenticated');
+        console.log('[ProfileView] ❌ User not authenticated - showing login button');
         setTossUserId(null);
         // 기존에 잘못 저장된 데이터 정리
         localStorage.removeItem('appintos_user_id');
+        alert('❌ 로그인 세션 없음 - 로그인 버튼 표시');
       }
     } catch (error) {
       console.error('[ProfileView] Auth verification failed:', error);
       setTossUserId(null);
       localStorage.removeItem('appintos_user_id');
+      alert(`⚠️ 인증 검증 실패:\n${error}`);
     }
   };
 

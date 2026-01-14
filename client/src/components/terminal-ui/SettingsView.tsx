@@ -6,6 +6,7 @@ import { useCurrency, type Currency } from '@/contexts/currency-context';
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface SettingsViewProps {
   lang: Language;
@@ -129,7 +130,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                 </div>
             </div>
 
-             {/* Theme Settings */}
+             {/* Theme Settings - 앱인토스에서 숨김 */}
+             {!ENV_CONFIG.isAppintos && (
              <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
                  <div className="flex items-center gap-3 mb-4">
                     <Monitor className="text-neutral-500" size={18} />
@@ -148,14 +150,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs">▼</div>
                 </div>
             </div>
+             )}
 
-            {/* Subscription Management Actions */}
+            {/* Subscription Management Actions - 앱인토스에서 숨김 */}
+            {!ENV_CONFIG.isAppintos && (
             <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
                  <div className="flex items-center gap-3 mb-2">
                     <CreditCard className="text-neutral-500" size={18} />
                     <h2 className="text-base font-bold text-neutral-300">{t.subManage}</h2>
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-6 text-xs border-b border-neutral-900 pb-4">
                     <span className="text-neutral-500">Current Plan: <span className="text-white">Insider Pro</span></span>
                     <span className="text-emerald-600">● Active</span>
@@ -182,12 +186,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                         <Settings size={14} /> {t.refresh}
                     </button>
                 </div>
-                
+
                 <div className="mt-4 bg-indigo-900/20 border border-indigo-900/50 p-3 flex items-center gap-3">
                      <div className="w-1 h-1 bg-indigo-400 rounded-full animate-pulse"></div>
                      <p className="text-[10px] text-indigo-200">Tip: If you cancel your subscription, you'll keep access until the end of your billing period.</p>
                 </div>
             </div>
+            )}
 
              {/* Notification Settings */}
              <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
