@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Zap, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useLanguage } from '@/contexts/language-context';
 import { ENV_CONFIG } from '@/lib/environment';
@@ -121,75 +121,26 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const winnersCount = performanceData.filter(item => item.returnPercent > 0).length;
   const totalCount = performanceData.length;
 
-  // Loading
+  // Loading - 펄스 글로우 애니메이션
   if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, type: "spring", stiffness: 200 }}
-        className={`bg-neutral-900/50 border border-neutral-800 rounded-lg p-6 ${className}`}
-      >
-        <div className="flex flex-col items-center justify-center py-8 gap-4">
-          <div className="relative">
-            {/* 메인 아이콘 - 바운스 + 회전 */}
-            <motion.div
-              animate={{
-                scale: [1, 1.2, 0.95, 1.1, 1],
-                rotate: [0, 5, -5, 3, 0],
-                y: [0, -8, 2, -4, 0]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="text-emerald-400"
-            >
-              <TrendingUp size={48} strokeWidth={1.5} />
-            </motion.div>
-            {/* 스파크 효과 */}
-            <motion.div
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-                rotate: [0, 180, 360]
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                delay: 0.3
-              }}
-              className="absolute -top-2 -right-2 text-amber-400"
-            >
-              <Sparkles size={16} />
-            </motion.div>
-            {/* 펄스 링 */}
-            <motion.div
-              animate={{
-                scale: [1, 2.5],
-                opacity: [0.5, 0]
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeOut"
-              }}
-              className="absolute inset-0 rounded-full border-2 border-emerald-400"
-            />
-          </div>
-          <motion.div
-            animate={{
-              opacity: [0.4, 1, 0.4],
-              y: [0, -3, 0]
-            }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-            className="text-emerald-400/80 text-xs font-medium"
-          >
-            {t.noData}
-          </motion.div>
+      <div className={`loading-pulse-card bg-gradient-to-r from-emerald-900/40 to-neutral-900/50
+                       border border-emerald-700/30 rounded-lg p-3
+                       flex items-center justify-between ${className}`}>
+        <div className="flex items-center gap-2">
+          <Zap size={14} className="text-emerald-400 loading-spin-slow" />
+          <span className="text-sm font-medium text-emerald-300">{t.title}</span>
         </div>
-      </motion.div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-emerald-400/70 flex items-center">
+            {t.noData.replace('...', '')}
+            <span className="loading-dot-1 ml-0.5">.</span>
+            <span className="loading-dot-2">.</span>
+            <span className="loading-dot-3">.</span>
+          </span>
+          <ChevronDown size={16} className="text-emerald-400/30" />
+        </div>
+      </div>
     );
   }
 

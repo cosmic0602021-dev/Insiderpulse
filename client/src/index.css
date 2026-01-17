@@ -603,75 +603,159 @@ body {
     animation: progress-flow 1.2s ease-in-out infinite;
   }
 
-  /* ECG/Heartbeat 로딩 애니메이션 */
-  @keyframes ecg-draw {
+  /* ECG/Heartbeat 로딩 애니메이션 - 연속 스캔라인 효과 */
+  @keyframes ecg-flow {
     0% {
-      stroke-dashoffset: 300;
+      transform: translateX(0%);
     }
     100% {
-      stroke-dashoffset: 0;
+      transform: translateX(-50%);
     }
   }
 
-  @keyframes ecg-glow {
+  @keyframes ecg-scan-glow {
     0%, 100% {
-      filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.6));
+      filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.6));
+    }
+    25% {
+      filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.9));
     }
     50% {
-      filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.9));
+      filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.7));
+    }
+    75% {
+      filter: drop-shadow(0 0 10px rgba(16, 185, 129, 1));
+    }
+  }
+
+  @keyframes ecg-peak-pulse {
+    0%, 40%, 100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
     }
   }
 
   .ecg-loader {
-    width: 140px;
-    height: 50px;
+    width: 180px;
+    height: 60px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(16, 185, 129, 0.03) 50%,
+      transparent 100%);
+    border-radius: 4px;
+  }
+
+  /* 배경 그리드 */
+  .ecg-loader::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px);
+    background-size: 20px 15px;
+  }
+
+  /* 스캔라인 효과 */
+  .ecg-loader::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.15));
+    animation: ecg-peak-pulse 0.8s ease-in-out infinite;
   }
 
   .ecg-loader svg {
-    width: 100%;
     height: 100%;
+    animation: ecg-flow 2.5s linear infinite, ecg-scan-glow 1.5s ease-in-out infinite;
   }
 
   .ecg-loader svg path {
     stroke: #10b981;
-    stroke-width: 2.5;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     fill: none;
-    stroke-dasharray: 300;
-    animation: ecg-draw 1.8s ease-in-out infinite, ecg-glow 1.8s ease-in-out infinite;
   }
 
-  /* 상승 차트 로딩 애니메이션 (성과 추적용) */
-  @keyframes chart-draw {
+  /* 피크 포인트 글로우 */
+  .ecg-loader .ecg-peak {
+    fill: #10b981;
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.9));
+  }
+
+  /* 스켈레톤 shimmer 로딩 애니메이션 */
+  @keyframes skeleton-shimmer {
     0% {
-      stroke-dashoffset: 200;
+      transform: translateX(-100%);
     }
     100% {
-      stroke-dashoffset: 0;
+      transform: translateX(100%);
     }
   }
 
-  @keyframes chart-glow {
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: #374151; /* neutral-700 */
+    border-radius: 4px;
+  }
+
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+
+  /* 펄스 글로우 로딩 애니메이션 */
+  @keyframes pulse-glow-border {
     0%, 100% {
-      filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.5));
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0);
     }
     50% {
-      filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8));
+      border-color: rgba(16, 185, 129, 0.6);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
     }
   }
 
-  @keyframes arrow-bounce {
-    0%, 100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    50% {
-      transform: translateY(-3px);
-      opacity: 0.7;
-    }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
+  @keyframes dot-pulse {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+
+  .loading-pulse-card {
+    animation: pulse-glow-border 2s ease-in-out infinite;
+  }
+
+  .loading-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  .loading-dot-1 { animation: dot-pulse 1.4s ease-in-out infinite; }
+  .loading-dot-2 { animation: dot-pulse 1.4s ease-in-out 0.2s infinite; }
+  .loading-dot-3 { animation: dot-pulse 1.4s ease-in-out 0.4s infinite; }
+
+  /* 기존 chart-loader도 유지 (호환성) */
   .chart-loader {
     width: 100px;
     height: 45px;
@@ -690,16 +774,15 @@ body {
     stroke-linejoin: round;
     fill: none;
     stroke-dasharray: 200;
-    animation: chart-draw 2s ease-out infinite, chart-glow 2s ease-in-out infinite;
+    animation: performance-chart-draw 2s ease-out infinite, performance-chart-glow 2s ease-in-out infinite;
   }
 
   .chart-loader .chart-arrow {
     fill: #34d399;
-    animation: arrow-bounce 1s ease-in-out infinite;
   }
 
   .chart-loader .chart-dot {
     fill: #34d399;
-    animation: pulse-dot 1.2s ease-in-out infinite;
+    animation: live-point-blink 1.2s ease-in-out infinite;
   }
 }

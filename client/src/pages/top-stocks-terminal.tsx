@@ -142,8 +142,10 @@ export default function TopStocksTerminal() {
     return (
       <div className="flex-1 flex flex-col items-center justify-start pt-[15vh] bg-[#050505] gap-5">
         <div className="ecg-loader">
-          <svg viewBox="0 0 140 50">
-            <path d="M0,25 L30,25 L35,25 L40,10 L45,40 L50,25 L55,25 L60,25 L70,20 L80,30 L90,25 L140,25" />
+          <svg viewBox="0 0 360 60" style={{ width: '360px' }}>
+            {/* 연속 흐르는 복잡한 ECG 파형 (2배 반복) */}
+            <path d="M0,30 L20,30 L25,30 L30,28 L35,32 L40,30 L50,30 L55,25 L60,35 L65,20 L70,50 L75,10 L80,45 L85,30 L95,30 L100,28 L105,32 L110,30 L120,30 L125,25 L130,30 L140,30 L145,28 L150,32 L155,30
+                   L180,30 L200,30 L205,30 L210,28 L215,32 L220,30 L230,30 L235,25 L240,35 L245,20 L250,50 L255,10 L260,45 L265,30 L275,30 L280,28 L285,32 L290,30 L300,30 L305,25 L310,30 L320,30 L325,28 L330,32 L335,30 L360,30" />
           </svg>
         </div>
         <div className="text-neutral-300 text-sm">
