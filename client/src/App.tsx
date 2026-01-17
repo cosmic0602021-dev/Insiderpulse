@@ -339,6 +339,7 @@ function AppContent() {
 
 export default function App() {
   // Keep-alive mechanism to prevent Replit autoscale spindown
+  // 초기 ping은 5초 후에 실행 (앱 로딩 속도 최적화)
   useEffect(() => {
     const keepAlive = async () => {
       try {
@@ -351,10 +352,13 @@ export default function App() {
     // Ping health endpoint every 2 minutes (reduced from 5 to prevent cold starts)
     const interval = setInterval(keepAlive, 2 * 60 * 1000);
 
-    // Initial ping
-    keepAlive();
+    // 초기 ping은 5초 지연 (앱 렌더링 우선)
+    const initialDelay = setTimeout(keepAlive, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialDelay);
+      clearInterval(interval);
+    };
   }, []);
 
   return (

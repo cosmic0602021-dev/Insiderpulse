@@ -6,42 +6,34 @@ import { isAppintosEnvironment } from './lib/environment';
 
 console.log('🚀 main.tsx loading...');
 
-// 🗑️ Service Worker 강제 해제 및 페이지 새로고침
-// SW가 요청을 가로채서 CORS 에러 발생 → SW 해제 후 새로고침으로 해결
+// 🗑️ Service Worker 비블로킹 해제 (앱 로딩 속도 최적화)
+// SW가 요청을 가로채서 CORS 에러 발생 가능 → 백그라운드에서 해제
 if ('serviceWorker' in navigator) {
-  const SW_CLEARED_KEY = 'sw_cleared_v2';
-  const wasCleared = sessionStorage.getItem(SW_CLEARED_KEY);
+  // 비블로킹: 앱 렌더링 후 백그라운드에서 SW 정리
+  setTimeout(() => {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      if (registrations.length > 0) {
+        console.log(`🗑️ [Background] Found ${registrations.length} Service Worker(s), unregistering...`);
 
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    if (registrations.length > 0 && !wasCleared) {
-      console.log(`🗑️ Found ${registrations.length} Service Worker(s), unregistering...`);
+        // 모든 SW 해제 (백그라운드)
+        registrations.forEach(r => {
+          console.log('🗑️ Unregistering:', r.scope);
+          r.unregister();
+        });
 
-      // 모든 SW 해제
-      Promise.all(registrations.map(r => {
-        console.log('🗑️ Unregistering:', r.scope);
-        return r.unregister();
-      })).then(() => {
-        // 캐시도 삭제
+        // 캐시도 삭제 (백그라운드)
         if ('caches' in window) {
           caches.keys().then(keys => {
             keys.forEach(key => caches.delete(key));
           });
         }
 
-        // 플래그 설정 후 새로고침 (무한 루프 방지)
-        sessionStorage.setItem(SW_CLEARED_KEY, 'true');
-        console.log('🔄 SW cleared, reloading page...');
-        window.location.reload();
-      });
-
-      return; // 새로고침 후 앱 초기화 진행
-    } else if (registrations.length > 0) {
-      // 이미 새로고침했지만 SW가 아직 있는 경우 (비동기 해제 중)
-      registrations.forEach(r => r.unregister());
-    }
-  }).catch((error) => {
-    console.warn('Failed to unregister Service Workers:', error);
-  });
+        console.log('✅ [Background] SW cleanup initiated');
+      }
+    }).catch((error) => {
+      console.warn('Failed to unregister Service Workers:', error);
+    });
+  }, 1000); // 1초 후 백그라운드에서 정리
 }
 
 // 앱인토스 브리지 초기화

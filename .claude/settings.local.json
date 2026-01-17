@@ -234,7 +234,12 @@
       "Bash(npm uninstall:*)",
       "Bash(identify:*)",
       "Bash(png)",
-      "Bash(insiderpulse)"
+      "Bash(insiderpulse)",
+      "Bash(nslookup:*)",
+      "Bash(host:*)",
+      "Bash(getent:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(openssl x509:*)"
     ],
     "deny": [],
     "ask": []

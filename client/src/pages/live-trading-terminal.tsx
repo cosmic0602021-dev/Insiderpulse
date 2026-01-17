@@ -79,6 +79,7 @@ export default function LiveTradingTerminal() {
   
   const [filter, setFilter] = useState<'All' | 'Buy' | 'Sell'>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadedCount, setLoadedCount] = useState(50);
@@ -87,6 +88,14 @@ export default function LiveTradingTerminal() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
   const [adClickCount, setAdClickCount] = useState(0);  // 앱인토스 광고 클릭 카운터
+
+  // 검색어 디바운스 (300ms 대기 후 서버 검색)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const langKey = language.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].live;
@@ -177,18 +186,40 @@ export default function LiveTradingTerminal() {
   // 전체거래: 모든 거래 포함 (Table I + Table II 파생상품)
   const allTrades = useMemo(() => {
     const rawTrades = allLoadedTrades.length > 0 ? allLoadedTrades : (tradesResponse?.trades || []);
-    
+
     if (transactionTypeFilter === 'core') {
       // 핵심거래만: isDerivative=false (파생상품 제외, 순수 주식 직접 거래만)
       const filtered = rawTrades.filter(trade => trade.isDerivative === false);
       console.log(`🔍 [Filter] Core trades (isDerivative=false): ${filtered.length}/${rawTrades.length}`);
       return filtered;
     }
-    
+
     // 전체거래: 모든 타입 포함 (파생상품 포함)
     console.log(`🔍 [Filter] All trades (including derivatives): ${rawTrades.length}`);
     return rawTrades;
   }, [allLoadedTrades, tradesResponse?.trades, transactionTypeFilter]);
+
+  // 서버 측 검색 쿼리 (debouncedSearch가 2자 이상일 때만 실행)
+  const { data: searchResponse, isFetching: isSearching } = useQuery({
+    queryKey: queryKeys.trades.search(debouncedSearch),
+    queryFn: async () => {
+      console.log('[LIVE TRADING TERMINAL] Server-side search for:', debouncedSearch);
+      // 서버에서 해당 티커/회사명으로 100개까지 검색 (30일 범위)
+      const response = await apiClient.getInsiderTradesWithAccess(
+        100,
+        0,
+        undefined,
+        undefined,
+        'filedDate',
+        ['ALL'],
+        debouncedSearch
+      );
+      console.log('[LIVE TRADING TERMINAL] Search response:', response.trades.length, 'trades found');
+      return response;
+    },
+    enabled: debouncedSearch.length >= 2,
+    staleTime: 60 * 1000, // 1분 캐시
+  });
 
   // WebSocket connection for real-time updates
   const wsUrl = getWebSocketUrl();
@@ -201,18 +232,34 @@ export default function LiveTradingTerminal() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allTrades]);
 
+  // 서버 검색 결과 처리 (transactionTypeFilter 적용)
+  const searchTrades = useMemo(() => {
+    if (debouncedSearch.length < 2 || !searchResponse?.trades) return [];
+
+    let trades = searchResponse.trades;
+
+    // transactionTypeFilter 적용
+    if (transactionTypeFilter === 'core') {
+      trades = trades.filter(trade => trade.isDerivative === false);
+    }
+
+    return trades.map(mapInsiderTradeToTerminal)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [debouncedSearch, searchResponse?.trades, transactionTypeFilter]);
+
   const filteredData = useMemo(() => {
-    let result = terminalTrades;
+    // 서버 측 검색 결과가 있으면 사용, 없으면 기본 데이터 사용
+    let result = debouncedSearch.length >= 2 ? searchTrades : terminalTrades;
 
     // Apply type filter
     if (filter !== 'All') {
       result = result.filter(t => t.type === filter);
     }
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(t => 
+    // 클라이언트 측 추가 필터링 (서버에서 ticker만 검색하므로, 회사명/내부자명으로도 필터)
+    if (debouncedSearch.length >= 2) {
+      const query = debouncedSearch.toLowerCase();
+      result = result.filter(t =>
         t.ticker.toLowerCase().includes(query) ||
         t.companyName.toLowerCase().includes(query) ||
         t.insider.toLowerCase().includes(query)
@@ -220,7 +267,7 @@ export default function LiveTradingTerminal() {
     }
 
     return result;
-  }, [terminalTrades, filter, searchQuery]);
+  }, [terminalTrades, searchTrades, filter, debouncedSearch]);
 
   const realTimeItems = isPro ? filteredData.slice(0, 3) : [];
   const historicalItems = isPro ? filteredData.slice(3) : filteredData;
@@ -322,15 +369,26 @@ export default function LiveTradingTerminal() {
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="relative w-full md:w-[500px] group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors" size={14} />
-            <input 
-              type="text" 
+            {isSearching && debouncedSearch.length >= 2 ? (
+              <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                <div className="w-3.5 h-3.5 border-2 border-neutral-500 border-t-emerald-500 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors" size={14} />
+            )}
+            <input
+              type="text"
               placeholder={t.query}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#0a0a0a] text-sm text-neutral-300 border border-neutral-800 pl-10 pr-4 py-3 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-600 transition-colors"
               data-testid="input-search"
             />
+            {debouncedSearch.length >= 2 && !isSearching && searchResponse?.trades && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-emerald-500 font-mono uppercase">
+                {filteredData.length} {language === 'ko' ? '결과' : 'found'}
+              </span>
+            )}
           </div>
           {/* Unified Filter Bar - All/Buy/Sell + Core/All Trades */}
           <div className="w-full flex justify-center">
@@ -555,8 +613,19 @@ export default function LiveTradingTerminal() {
 
         {/* No Results */}
         {!isLoading && !error && filteredData.length === 0 && (
-          <div className="p-8 text-center text-neutral-600 text-sm font-mono">
-            {t.noRecords}
+          <div className="p-8 text-center">
+            <p className="text-neutral-400 text-sm font-mono mb-2">
+              {debouncedSearch.length >= 2
+                ? (language === 'ko' ? '검색 결과가 없습니다' : 'No search results found')
+                : t.noRecords}
+            </p>
+            {debouncedSearch.length >= 2 && (
+              <p className="text-neutral-600 text-xs font-mono">
+                {language === 'ko'
+                  ? '다른 티커 심볼이나 회사명으로 검색해보세요'
+                  : 'Try a different ticker symbol or company name'}
+              </p>
+            )}
           </div>
         )}
       </div>

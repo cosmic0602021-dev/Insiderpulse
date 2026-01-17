@@ -237,7 +237,8 @@ class ApiClient {
     fromDate?: Date,
     toDate?: Date,
     sortBy?: string,
-    transactionTypes?: string[]
+    transactionTypes?: string[],
+    ticker?: string
   ): Promise<TradesResponse> => {
     const params = new URLSearchParams({
       limit: limit.toString(),
@@ -255,6 +256,9 @@ class ApiClient {
     }
     if (transactionTypes && transactionTypes.length > 0) {
       params.append('transactionTypes', transactionTypes.join(','));
+    }
+    if (ticker && ticker.trim()) {
+      params.append('ticker', ticker.trim().toUpperCase());
     }
 
     const url = `/trades?${params.toString()}`;
@@ -411,13 +415,14 @@ export const queryKeys = {
   stats: ['stats'] as const,
   trades: {
     all: ['trades'] as const,
-    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[] }) =>
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[]; ticker?: string }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
+    search: (ticker: string) => ['trades', 'search', ticker] as const,
   },
   tradesList: {
     all: ['trades', 'list'] as const,
-    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[] }) =>
+    list: (params: { limit?: number; offset?: number; from?: string; to?: string; sortBy?: string; transactionTypes?: string[]; ticker?: string }) =>
       ['trades', 'list', params] as const,
     detail: (id: string) => ['trades', 'detail', id] as const,
   },

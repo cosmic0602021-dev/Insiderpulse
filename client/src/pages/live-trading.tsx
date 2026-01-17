@@ -54,12 +54,21 @@ export default function LiveTrading() {
   const [selectedTrade, setSelectedTrade] = useState<InsiderTrade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [tradeTypeFilter, setTradeTypeFilter] = useState<'all' | 'buy' | 'sell'>('all');
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
   const [loadedCount, setLoadedCount] = useState(100);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [adClickCount, setAdClickCount] = useState(0); // 광고 클릭 카운터 (2클릭마다 광고)
+
+  // 검색어 디바운스 (300ms 대기 후 서버 검색)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Map filter type to transaction types array
   const getTransactionTypes = (filterType: 'core' | 'all'): string[] | undefined => {
@@ -210,6 +219,28 @@ export default function LiveTrading() {
   // Memoize allTrades to prevent unnecessary re-renders from empty array creation
   const allTrades = useMemo(() => tradesResponse?.trades || [], [tradesResponse?.trades]);
 
+  // 서버 측 검색 쿼리 (debouncedSearch가 2자 이상일 때만 실행)
+  const { data: searchResponse, isFetching: isSearching } = useQuery({
+    queryKey: queryKeys.trades.search(debouncedSearch),
+    queryFn: async () => {
+      console.log('[LIVE TRADING] Server-side search for:', debouncedSearch);
+      // 서버에서 해당 티커/회사명으로 100개까지 검색 (30일 범위)
+      const response = await apiClient.getInsiderTradesWithAccess(
+        100,
+        0,
+        undefined,
+        undefined,
+        'createdAt',
+        getTransactionTypes(transactionTypeFilter),
+        debouncedSearch
+      );
+      console.log('[LIVE TRADING] Search response:', response.trades.length, 'trades found');
+      return response;
+    },
+    enabled: debouncedSearch.length >= 2,
+    staleTime: 60 * 1000, // 1분 캐시
+  });
+
   const { data: stats } = useQuery({
     queryKey: queryKeys.stats,
     queryFn: apiClient.getTradingStats,
@@ -268,7 +299,10 @@ export default function LiveTrading() {
 
   // 검색 및 거래 타입 필터링
   const filteredTrades = useMemo(() => {
-    let filtered = validatedData.trades;
+    // 서버 측 검색 결과가 있으면 사용, 없으면 기본 데이터 사용
+    let filtered = (debouncedSearch.length >= 2 && searchResponse?.trades)
+      ? searchResponse.trades
+      : validatedData.trades;
 
     // 거래 타입 필터 적용
     if (tradeTypeFilter !== 'all') {
@@ -283,9 +317,10 @@ export default function LiveTrading() {
       });
     }
 
-    // 검색어 필터 적용
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    // 클라이언트 측 추가 필터링 (서버에서 ticker만 검색하므로, 회사명/내부자명으로도 필터)
+    // 서버 검색은 ticker만 지원하므로 회사명 등으로 추가 필터링
+    if (debouncedSearch.length >= 2) {
+      const query = debouncedSearch.toLowerCase();
       filtered = filtered.filter(trade => {
         return (
           trade.companyName?.toLowerCase().includes(query) ||
@@ -297,7 +332,7 @@ export default function LiveTrading() {
     }
 
     return filtered;
-  }, [validatedData.trades, searchQuery, tradeTypeFilter]);
+  }, [validatedData.trades, debouncedSearch, searchResponse?.trades, tradeTypeFilter]);
 
   // WebSocket 메시지 처리
   useEffect(() => {
@@ -527,12 +562,26 @@ export default function LiveTrading() {
 
           {/* 검색 결과 카운트 */}
           {(searchQuery || tradeTypeFilter !== 'all') && (
-            <div className="text-sm text-slate-400">
-              {filteredTrades.length}{t('search.tradesFound')}
-              {filteredTrades.length !== validatedData.trades.length && (
-                <span className="ml-1">
-                  {t('search.outOfTotal').replace('{total}', validatedData.trades.length.toString())}
-                </span>
+            <div className="text-sm text-slate-400 flex items-center gap-2">
+              {isSearching && debouncedSearch.length >= 2 ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>{language === 'ko' ? '검색 중...' : 'Searching...'}</span>
+                </>
+              ) : (
+                <>
+                  {filteredTrades.length}{t('search.tradesFound')}
+                  {debouncedSearch.length >= 2 && (
+                    <span className="ml-1 text-emerald-400">
+                      ({language === 'ko' ? '서버 검색 결과' : 'Server search results'})
+                    </span>
+                  )}
+                  {debouncedSearch.length < 2 && filteredTrades.length !== validatedData.trades.length && (
+                    <span className="ml-1">
+                      {t('search.outOfTotal').replace('{total}', validatedData.trades.length.toString())}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -565,10 +614,16 @@ export default function LiveTrading() {
             <div className="text-center py-8">
               <AlertTriangle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <p className="text-slate-400">
-                {searchQuery ? '검색 결과가 없습니다' : t('liveTrading.noValidatedTrades')}
+                {searchQuery
+                  ? (language === 'ko' ? '검색 결과가 없습니다' : 'No search results')
+                  : t('liveTrading.noValidatedTrades')}
               </p>
               <p className="text-sm text-slate-400 mt-2">
-                {searchQuery ? '다른 키워드로 검색해보세요' : t('liveTrading.collectorRunning')}
+                {searchQuery
+                  ? (language === 'ko'
+                      ? '다른 티커 심볼이나 회사명으로 검색해보세요 (예: AAPL, NVDA)'
+                      : 'Try searching with a different ticker symbol or company name (e.g., AAPL, NVDA)')
+                  : t('liveTrading.collectorRunning')}
               </p>
             </div>
           ) : (

@@ -4,7 +4,7 @@ import { apiClient } from '@/lib/api';
 import { useAuth } from './auth-context';
 
 interface AccessContextType {
-  accessLevel: AccessLevel | null;
+  accessLevel: AccessLevel; // 항상 기본값 존재 (guest mode)
   setAccessLevel: (accessLevel: AccessLevel) => void;
   isLoading: boolean;
   refreshAccessLevel: () => Promise<void>;
@@ -13,9 +13,14 @@ interface AccessContextType {
 const AccessContext = createContext<AccessContextType | undefined>(undefined);
 
 export function AccessProvider({ children }: { children: ReactNode }) {
-  const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, token, user, refreshUser } = useAuth();
+  // 기본값: guest mode로 즉시 시작 (비블로킹)
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>({
+    hasRealtimeAccess: false,
+    isDelayed: true,
+    delayHours: 48,
+  });
+  const [isLoading, setIsLoading] = useState(false); // 비블로킹: 즉시 false
+  const { isAuthenticated, token, user, refreshUser, isLoading: authLoading } = useAuth();
 
   const refreshAccessLevel = async () => {
     console.log('🔄 [ACCESS CONTEXT] Refreshing access level...');
@@ -127,16 +132,29 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // 인증 로딩 중에는 API 호출 건너뛰기 (비블로킹)
+    if (authLoading) {
+      console.log('🔄 [ACCESS CONTEXT] Waiting for auth to complete...');
+      return;
+    }
+
     console.log('🔄 [ACCESS CONTEXT] useEffect triggered - isAuthenticated:', isAuthenticated, ', token:', !!token);
 
+    // 백그라운드에서 access level 새로고침 (비블로킹)
     const loadAccessLevel = async () => {
+      // 인증되지 않은 경우 API 호출 없이 기본값 유지
+      if (!isAuthenticated) {
+        console.log('🔒 [ACCESS CONTEXT] Not authenticated, using default guest access');
+        return;
+      }
+
       setIsLoading(true);
       await refreshAccessLevel();
       setIsLoading(false);
     };
 
     loadAccessLevel();
-  }, [isAuthenticated, token, user?.subscriptionTier, user?.subscriptionStatus]); // Re-check when subscription changes
+  }, [authLoading, isAuthenticated, token, user?.subscriptionTier, user?.subscriptionStatus]); // Re-check when subscription changes
 
   return (
     <AccessContext.Provider value={{ accessLevel, setAccessLevel, isLoading, refreshAccessLevel }}>
