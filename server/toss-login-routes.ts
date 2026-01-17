@@ -193,11 +193,11 @@ router.post('/token', async (req, res) => {
     if (tokenResponse?.resultType === 'SUCCESS' && tokenResponse?.success) {
       // 중첩 형태 (resultType + success 객체)
       console.log('[TossLogin] Using nested response format (resultType + success)');
-      ({ accessToken, refreshToken, userKey, expiresIn } = tokenResponse.success);
+      ({ accessToken, refreshToken, expiresIn } = tokenResponse.success);
     } else if (tokenResponse?.accessToken) {
       // 직접 형태 (accessToken이 루트에 있음)
       console.log('[TossLogin] Using direct response format');
-      ({ accessToken, refreshToken, userKey, expiresIn } = tokenResponse);
+      ({ accessToken, refreshToken, expiresIn } = tokenResponse);
     } else if (tokenResponse?.error || tokenResponse?.resultType === 'FAIL') {
       // 명시적 에러 응답
       console.error('[TossLogin] Toss API returned error:', tokenResponse?.error);
@@ -215,11 +215,44 @@ router.post('/token', async (req, res) => {
       });
     }
 
-    if (!accessToken || !userKey) {
-      console.error('[TossLogin] Missing required fields - accessToken:', !!accessToken, 'userKey:', !!userKey);
+    if (!accessToken) {
+      console.error('[TossLogin] Missing accessToken');
       return res.status(500).json({
-        error: 'Invalid Toss API response - missing accessToken or userKey',
+        error: 'Invalid Toss API response - missing accessToken',
         rawResponse: tokenResponse,
+      });
+    }
+
+    // userKey는 /login-me API로 별도 조회 (토큰 교환 응답에는 userKey가 없음)
+    console.log('[TossLogin] Calling /login-me to get userKey...');
+    try {
+      const userInfoResponse = await callTossApi(
+        'GET',
+        '/api-partner/v1/apps-in-toss/user/oauth2/login-me',
+        undefined,
+        accessToken
+      );
+
+      console.log('[TossLogin] /login-me response:', JSON.stringify(userInfoResponse, null, 2).substring(0, 500));
+
+      if (userInfoResponse?.resultType === 'SUCCESS' && userInfoResponse?.success?.userKey) {
+        userKey = String(userInfoResponse.success.userKey);
+        console.log('[TossLogin] Got userKey:', userKey);
+      } else if (userInfoResponse?.userKey) {
+        userKey = String(userInfoResponse.userKey);
+        console.log('[TossLogin] Got userKey (direct format):', userKey);
+      } else {
+        console.error('[TossLogin] Failed to get userKey from /login-me:', userInfoResponse);
+        return res.status(500).json({
+          error: 'Failed to get userKey from Toss',
+          rawResponse: userInfoResponse,
+        });
+      }
+    } catch (loginMeError) {
+      console.error('[TossLogin] /login-me API call failed:', loginMeError);
+      return res.status(500).json({
+        error: 'Failed to get user info from Toss',
+        message: loginMeError instanceof Error ? loginMeError.message : 'Unknown error',
       });
     }
 
