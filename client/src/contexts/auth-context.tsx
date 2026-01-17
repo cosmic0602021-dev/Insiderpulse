@@ -33,75 +33,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load auth from localStorage on mount
   useEffect(() => {
     const initAuth = async () => {
-      // 앱인토스 환경: 토스 세션 확인 (서버 검증)
+      // 앱인토스 환경: 비블로킹 인증 (로딩 최적화)
       if (ENV_CONFIG.isAppintos) {
-        console.log('🔐 [AUTH] Appintos environment detected, verifying Toss session with server...');
+        console.log('🔐 [AUTH] Appintos environment detected, starting non-blocking auth...');
+        const startTime = performance.now();
 
-        // 서버 API를 통해 토스 세션 검증 (checkExistingTossSession이 서버 API 호출)
-        try {
-          const tossUser = await checkExistingTossSession();
-          if (tossUser) {
-            console.log('✅ [AUTH] Server verified Toss session:', tossUser.id);
-            // Create minimal User object for Toss login (frontend context only)
-            const userObj = {
-              id: tossUser.id,
-              email: tossUser.email || `${tossUser.id}@toss.user`,
-              password: '',
-              role: 'user',
-              emailVerified: true,
-              subscriptionTier: 'free',
-              subscriptionStatus: 'active',
-              hasUsedTrial: false,
-              createdAt: new Date(),
-            } as User;
+        // 1. localStorage에서 즉시 복원 (동기 - 블로킹 없음)
+        const savedUser = localStorage.getItem('authUser');
+        const savedUserId = localStorage.getItem('appintos_user_id');
 
-            setUser(userObj);
-            setToken(`toss_verified_${tossUser.id}`);
-            localStorage.setItem('authUser', JSON.stringify(userObj));
-            localStorage.setItem('appintos_user_id', tossUser.id);
-          } else {
-            console.log('ℹ️ [AUTH] No valid Toss session - attempting auto login...');
-            // 세션이 없으면 자동으로 토스 로그인 시도
-            localStorage.removeItem('authUser');
-            localStorage.removeItem('appintos_user_id');
-
-            // 자동 토스 로그인 시도
-            try {
-              console.log('🔐 [AUTH] Auto-triggering Toss login...');
-              const result = await performTossLogin();
-
-              if (result.success && result.user) {
-                console.log('✅ [AUTH] Auto Toss login successful:', result.user.id);
-                const autoUserObj = {
-                  id: result.user.id,
-                  email: result.user.email || `${result.user.id}@toss.user`,
-                  password: '',
-                  role: 'user',
-                  emailVerified: true,
-                  subscriptionTier: 'free',
-                  subscriptionStatus: 'active',
-                  hasUsedTrial: false,
-                  createdAt: new Date(),
-                } as User;
-
-                setUser(autoUserObj);
-                setToken(`toss_verified_${result.user.id}`);
-                localStorage.setItem('authUser', JSON.stringify(autoUserObj));
-                localStorage.setItem('appintos_user_id', result.user.id);
-              } else {
-                console.log('⚠️ [AUTH] Auto Toss login failed:', result.error);
-              }
-            } catch (autoLoginError) {
-              console.log('⚠️ [AUTH] Auto Toss login error:', autoLoginError);
-            }
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            console.log('⚡ [AUTH] Restored user from localStorage:', parsedUser.id);
+            setUser(parsedUser);
+            setToken(savedUserId ? `toss_verified_${savedUserId}` : null);
+          } catch (e) {
+            console.log('⚠️ [AUTH] Failed to parse saved user:', e);
           }
-        } catch (error) {
-          console.log('⚠️ [AUTH] Toss session check failed:', error);
-          localStorage.removeItem('authUser');
-          localStorage.removeItem('appintos_user_id');
         }
 
+        // 2. UI 즉시 표시 (서버 검증 대기 없이)
         setIsLoading(false);
+        console.log(`⚡ [AUTH] UI ready in ${(performance.now() - startTime).toFixed(0)}ms`);
+
+        // 3. 백그라운드에서 서버 세션 검증 (비블로킹)
+        checkExistingTossSession()
+          .then((tossUser) => {
+            if (tossUser) {
+              console.log('✅ [AUTH] Server verified Toss session:', tossUser.id);
+              // 서버 검증 성공 - 상태 업데이트
+              const userObj = {
+                id: tossUser.id,
+                email: tossUser.email || `${tossUser.id}@toss.user`,
+                password: '',
+                role: 'user',
+                emailVerified: true,
+                subscriptionTier: 'free',
+                subscriptionStatus: 'active',
+                hasUsedTrial: false,
+                createdAt: new Date(),
+              } as User;
+
+              setUser(userObj);
+              setToken(`toss_verified_${tossUser.id}`);
+              localStorage.setItem('authUser', JSON.stringify(userObj));
+              localStorage.setItem('appintos_user_id', tossUser.id);
+            } else if (savedUser) {
+              // 서버 세션 만료 - 로그아웃 처리
+              console.log('ℹ️ [AUTH] Server session expired, clearing local state');
+              setUser(null);
+              setToken(null);
+              localStorage.removeItem('authUser');
+              localStorage.removeItem('appintos_user_id');
+            } else {
+              // 세션 없음 - 비로그인 상태 유지 (자동 로그인 시도 안함)
+              console.log('ℹ️ [AUTH] No session - user needs to login manually');
+            }
+            console.log(`⚡ [AUTH] Background verification completed in ${(performance.now() - startTime).toFixed(0)}ms`);
+          })
+          .catch((error) => {
+            console.log('⚠️ [AUTH] Background session check failed:', error);
+            // 네트워크 오류 시 로컬 상태 유지 (오프라인 지원)
+          });
+
         return;
       }
 

@@ -4,8 +4,8 @@
  */
 
 // Build version for cache busting (updated on each deploy)
-export const BUILD_VERSION = '2025.0106.0400';
-export const BUILD_ID = 'v24-loading-animation-upgrade';
+export const BUILD_VERSION = '2026.0117.0100';
+export const BUILD_ID = 'v25-loading-optimization';
 console.log('[BUILD] Version:', BUILD_VERSION, 'ID:', BUILD_ID);
 
 // 환경 디버그 (앱 시작 시 바로 출력)
@@ -26,15 +26,15 @@ export interface EnvironmentConfig {
   environment: 'production' | 'development';
 }
 
-/**
- * Detect if running in Appintos environment
- */
-export function isAppintosEnvironment(): boolean {
-  // SSR 환경에서는 항상 false 반환
-  if (typeof window === 'undefined') {
-    return false;
-  }
+// 환경 감지 결과 캐싱 (성능 최적화)
+let _isAppintosCached: boolean | null = null;
+let _envConfigCached: EnvironmentConfig | null = null;
 
+/**
+ * 앱인토스 환경 감지 (내부 함수)
+ * 실제 감지 로직을 수행하며, 결과는 외부에서 캐싱됨
+ */
+function _detectAppintosInternal(): boolean {
   try {
     // 1. 프로토콜 확인 (intoss:// 또는 intoss-private://) - 최우선 감지
     const protocol = window.location.protocol;
@@ -140,29 +140,64 @@ export function isAppintosEnvironment(): boolean {
 }
 
 /**
+ * Detect if running in Appintos environment
+ * 첫 호출 시 결과를 캐싱하여 중복 계산 방지 (성능 최적화)
+ */
+export function isAppintosEnvironment(): boolean {
+  // 캐시된 결과가 있으면 즉시 반환 (O(1))
+  if (_isAppintosCached !== null) {
+    return _isAppintosCached;
+  }
+
+  // SSR 환경에서는 항상 false 반환 (캐싱 안함)
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // 첫 호출: 감지 수행 후 결과 캐싱
+  const result = _detectAppintosInternal();
+  _isAppintosCached = result;
+  console.log('🔍 [ENV] Environment detection cached:', result);
+  return result;
+}
+
+/**
  * Get environment configuration
+ * 첫 호출 시 결과를 캐싱하여 중복 계산 방지 (성능 최적화)
  */
 export function getEnvironmentConfig(): EnvironmentConfig {
+  // 캐시된 결과가 있으면 즉시 반환
+  if (_envConfigCached !== null) {
+    return _envConfigCached;
+  }
+
   const isAppintos = isAppintosEnvironment();
   const PRODUCTION_API_URL = 'https://insiderpulse.pro';
 
+  let config: EnvironmentConfig;
   if (isAppintos) {
     console.log('🔗 [ENV] Running in Appintos environment');
-    return {
+    config = {
       isAppintos: true,
       apiBaseUrl: `${PRODUCTION_API_URL}/api`,
       wsBaseUrl: `wss://insiderpulse.pro/api/ws`,
       environment: 'production',
     };
+  } else {
+    console.log('🌐 [ENV] Running in browser environment');
+    config = {
+      isAppintos: false,
+      apiBaseUrl: '/api',
+      wsBaseUrl: getRelativeWebSocketUrl(),
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    };
   }
 
-  console.log('🌐 [ENV] Running in browser environment');
-  return {
-    isAppintos: false,
-    apiBaseUrl: '/api',
-    wsBaseUrl: getRelativeWebSocketUrl(),
-    environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-  };
+  // 결과 캐싱 (SSR 환경이 아닌 경우만)
+  if (typeof window !== 'undefined') {
+    _envConfigCached = config;
+  }
+  return config;
 }
 
 /**
