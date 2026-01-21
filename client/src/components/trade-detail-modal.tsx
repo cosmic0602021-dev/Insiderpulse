@@ -1,5 +1,5 @@
 // Modified for App Store compliance: price target safe mode - removed all investment predictions
-import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp, Info, Bell, BellOff } from 'lucide-react';
+import { X, Heart, CheckCircle, AlertTriangle, BarChart3, Brain, Target, Newspaper, ExternalLink, TrendingUp, ChevronDown, ChevronUp, Info, Bell, BellOff, Bookmark } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -28,9 +28,17 @@ interface TradeDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   trade: InsiderTrade | null;
+  onAddToWatchlist?: (trade: InsiderTrade) => void;
+  isInWatchlist?: boolean;
 }
 
-export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalProps) {
+export function TradeDetailModal({
+  isOpen,
+  onClose,
+  trade,
+  onAddToWatchlist,
+  isInWatchlist = false
+}: TradeDetailModalProps) {
   const { language } = useLanguage();
   const { formatCurrency } = useCurrency();
   const [newsExpanded, setNewsExpanded] = useState(true);
@@ -392,6 +400,20 @@ export function TradeDetailModal({ isOpen, onClose, trade }: TradeDetailModalPro
             </div>
             <div className="flex items-center gap-2">
               <CurrencySelector />
+              {/* Watchlist button */}
+              {onAddToWatchlist && (
+                <button
+                  onClick={() => onAddToWatchlist(trade)}
+                  className="p-1.5 hover:bg-neutral-900 transition-colors"
+                  title={isInWatchlist ? '와치리스트에서 제거' : '와치리스트에 추가'}
+                  data-testid={isInWatchlist ? "button-remove-watchlist" : "button-add-watchlist"}
+                >
+                  <Bookmark
+                    size={16}
+                    className={`${isInWatchlist ? 'text-amber-500 fill-amber-500' : 'text-neutral-500'}`}
+                  />
+                </button>
+              )}
               {/* Notification subscription button (only for logged-in users) */}
               {isAuthenticated && (
                 <button

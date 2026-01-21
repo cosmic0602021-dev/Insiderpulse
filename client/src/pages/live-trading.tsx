@@ -627,7 +627,7 @@ export default function LiveTrading() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 relative z-10">
               {filteredTrades.map((trade) => {
                 const pricePerShare = trade.pricePerShare || (trade.totalValue / (trade.shares || 1));
                 const isRecent = trade.createdAt && new Date(trade.createdAt).getTime() > Date.now() - (24 * 60 * 60 * 1000); // 24시간 이내
@@ -655,7 +655,14 @@ export default function LiveTrading() {
                     className="p-4 sm:p-5 cursor-pointer"
                     onClick={() => handleTradeClick(trade)}
                   >
-                    <div className="flex gap-3 sm:gap-4 w-full" data-testid={`trade-card-${trade.id}`}>
+                    <div
+                      className="flex gap-3 sm:gap-4 w-full cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTradeClick(trade);
+                      }}
+                      data-testid={`trade-card-${trade.id}`}
+                    >
                       {/* 거래 타입 아이콘 - Enhanced with gradient */}
                       <div className={`flex-shrink-0 flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${getTradeTypeColor(trade.tradeType)} shadow-lg`}>
                         {getTradeTypeIcon(trade.tradeType)}

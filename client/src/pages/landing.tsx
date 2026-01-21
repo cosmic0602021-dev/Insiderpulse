@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
+import { ENV_CONFIG } from "@/lib/environment";
+import { performTossLogin } from "@/lib/toss-login";
 import { ArrowRight, Terminal, FileText, Hash, ShieldCheck, Building2, TrendingUp, TrendingDown } from "lucide-react";
 import { LandingDisclaimerModal } from "@/components/landing-disclaimer-modal";
 import {
@@ -343,16 +345,10 @@ const InstitutionalActivityBackground = () => {
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { user, loginWithToss, isLoading } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-
-  // Redirect authenticated users to ranking page (Top Insider Stocks)
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/ranking');
-    }
-  }, [isAuthenticated, navigate]);
+  const [isTossLoggingIn, setIsTossLoggingIn] = useState(false);
 
   const components = [
     <TradeLogBackground key="trade" />,
@@ -369,8 +365,45 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [components.length]);
 
-  // Check if disclaimer was already accepted
-  const handleEnter = () => {
+  // Initialize_System 버튼 클릭 시 토스 로그인 시도
+  const handleEnter = async () => {
+    console.log('[Landing] 🚀 Initialize_System clicked');
+
+    // 이미 로그인되어 있는지 확인
+    if (user) {
+      console.log('[Landing] ✅ Already logged in, navigating to ranking');
+      navigate('/ranking');
+      return;
+    }
+
+    // 앱인토스 환경: ProfileView와 동일한 방식으로 토스 로그인
+    if (ENV_CONFIG.isAppintos) {
+      console.log('[Landing] 📱 Appintos environment, attempting Toss login...');
+      setIsTossLoggingIn(true);
+
+      try {
+        const result = await performTossLogin();
+
+        if (result.success && result.user) {
+          console.log('[Landing] ✅ Toss login successful:', result.user.id);
+          // 성공 시 바로 /ranking으로 이동 (새로고침 불필요)
+          navigate('/ranking');
+          return;
+        } else {
+          console.log('[Landing] ❌ Toss login failed:', result.error);
+          alert(result.error || '토스 로그인에 실패했습니다.\n다시 시도해주세요.');
+          return;
+        }
+      } catch (error) {
+        console.error('[Landing] Toss login error:', error);
+        alert('로그인 중 오류가 발생했습니다.');
+        return;
+      } finally {
+        setIsTossLoggingIn(false);
+      }
+    }
+
+    // 웹 환경: disclaimer 로직
     const hasAccepted = localStorage.getItem('disclaimer-accepted');
     if (hasAccepted) {
       navigate('/ranking');
@@ -454,12 +487,27 @@ export default function LandingPage() {
         {/* 4. Entry Action */}
         <button
           onClick={handleEnter}
-          className="mt-12 group flex items-center gap-3 text-neutral-500 hover:text-emerald-500 transition-all duration-300"
+          disabled={isTossLoggingIn}
+          className="mt-12 group flex items-center gap-3 text-neutral-500 hover:text-emerald-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="button-initialize-system"
         >
-          <span className="text-xs font-mono tracking-[0.2em] uppercase border-b border-transparent group-hover:border-emerald-500/50 pb-1">Initialize_System</span>
-          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
+          {isTossLoggingIn ? (
+            <>
+              <span className="text-xs font-mono tracking-[0.2em] uppercase">
+                로그인 중...
+              </span>
+              <div className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            </>
+          ) : (
+            <>
+              <span className="text-xs font-mono tracking-[0.2em] uppercase border-b border-transparent group-hover:border-emerald-500/50 pb-1">
+                Initialize_System
+              </span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
+            </>
+          )}
         </button>
+
       </div>
 
       {/* Disclaimer Modal - Shows after Initialize_System button click */}

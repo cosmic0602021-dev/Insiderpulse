@@ -14,30 +14,60 @@ import { resolveApiUrl } from './queryClient';
 // 동적으로 로드된 appLogin 함수 캐시
 let appLoginApi: (() => Promise<{ authorizationCode: string; referrer: string }>) | undefined;
 
+// 중복 호출 방지 플래그
+let isLoginInProgress = false;
+
 /**
  * appLogin API를 동적으로 로드
+ * @returns { success: true } 또는 { success: false, error: string }
  */
-async function ensureAppLoginAPI(): Promise<boolean> {
-  if (appLoginApi) return true;
+async function ensureAppLoginAPI(): Promise<{ success: boolean; error?: string }> {
+  if (appLoginApi) {
+    console.log('[TossLogin] ✅ SDK already loaded (cached)');
+    return { success: true };
+  }
 
   try {
-    console.log('[TossLogin] Loading appLogin API dynamically...');
+    console.log('[TossLogin] Attempting to load @apps-in-toss/web-framework...');
+
+    // 방법 1: 동적 import
     const framework = await import('@apps-in-toss/web-framework') as any;
 
-    if (!framework.appLogin) {
-      console.error('[TossLogin] appLogin function not found in framework');
-      return false;
+    if (framework.appLogin) {
+      appLoginApi = framework.appLogin;
+      console.log('[TossLogin] ✅ SDK loaded via dynamic import');
+      return { success: true };
     }
 
-    appLoginApi = framework.appLogin;
-    console.log('[TossLogin] appLogin API loaded successfully');
-    return true;
-  } catch (error) {
-    console.error('[TossLogin] Failed to load appLogin API:', error);
-    if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`[TossLogin] API 로드 실패:\n${error instanceof Error ? error.message : String(error)}`);
+    // 방법 2: 전역 객체 확인 (토스앱이 주입하는 경우)
+    if (typeof window !== 'undefined') {
+      const globalFramework = (window as any).__AIT_FRAMEWORK__ || (window as any).AppsInToss;
+      if (globalFramework?.appLogin) {
+        appLoginApi = globalFramework.appLogin;
+        console.log('[TossLogin] ✅ SDK loaded from global object');
+        return { success: true };
+      }
     }
-    return false;
+
+    const error = 'appLogin function not found in framework';
+    console.error('[TossLogin]', error);
+    return { success: false, error };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[TossLogin] ❌ SDK dynamic import failed:', errorMsg);
+
+    // 방법 3: 동적 import 실패 시 전역 객체 fallback
+    if (typeof window !== 'undefined') {
+      console.log('[TossLogin] Trying global object fallback...');
+      const globalFramework = (window as any).__AIT_FRAMEWORK__ || (window as any).AppsInToss;
+      if (globalFramework?.appLogin) {
+        appLoginApi = globalFramework.appLogin;
+        console.log('[TossLogin] ✅ SDK loaded from global object (fallback)');
+        return { success: true };
+      }
+    }
+
+    return { success: false, error: `SDK 로드 실패: ${errorMsg}` };
   }
 }
 
@@ -83,7 +113,7 @@ export function isTossLoginAvailable(): boolean {
  * 서버 API를 호출하여 실제 토스 토큰 유효성 검증
  */
 export async function checkExistingTossSession(): Promise<TossUser | null> {
-  if (!ENV_CONFIG.isAppintos) return null;
+  // ENV_CONFIG.isAppintos 조건 제거 - 토큰 없으면 자연스럽게 null 반환
 
   try {
     // localStorage에서 토스 accessToken 확인
@@ -144,55 +174,50 @@ export async function checkExistingTossSession(): Promise<TossUser | null> {
 /**
  * Request Toss Login using appLogin SDK from @apps-in-toss/web-framework
  * This initiates the Toss OAuth flow and returns an authorization code
+ *
+ * @returns { authorizationCode, referrer } 또는 { error: string } 또는 null (사용자 취소)
  */
-export async function requestTossLogin(): Promise<{ authorizationCode: string; referrer: string } | null> {
-  if (!ENV_CONFIG.isAppintos) {
-    console.warn('[TossLogin] Not in Apps-in-Toss environment');
-    return null;
-  }
+export async function requestTossLogin(): Promise<
+  { authorizationCode: string; referrer: string } | { error: string } | null
+> {
+  console.log('[TossLogin] requestTossLogin() called');
 
   try {
     console.log('[TossLogin] Requesting Toss Login via SDK...');
 
-    // ✅ 동적으로 appLogin API 로드
-    const apiLoaded = await ensureAppLoginAPI();
-    if (!apiLoaded || !appLoginApi) {
-      console.error('[TossLogin] appLogin API not available');
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert('⚠️ [디버그] appLogin API 로드 실패\n\n@apps-in-toss/web-framework 패키지를 로드할 수 없습니다.\n\n가능한 원인:\n1. Granite 빌드 문제\n2. WebView 환경 아님\n3. 패키지 누락');
-      }
-      return null;
+    // 동적으로 appLogin API 로드 시도
+    const loadResult = await ensureAppLoginAPI();
+    if (!loadResult.success || !appLoginApi) {
+      console.log('[TossLogin] appLogin API not available:', loadResult.error);
+      // null 대신 에러 객체 반환
+      return { error: loadResult.error || 'SDK 로드 실패' };
     }
 
     // Call the appLogin SDK function (동적 import 사용)
+    console.log('[TossLogin] Calling appLogin() SDK function...');
     const result = await appLoginApi();
 
     if (result && result.authorizationCode) {
-      console.log('[TossLogin] Got authorization code, referrer:', result.referrer);
+      console.log('[TossLogin] ✅ Got authorization code, referrer:', result.referrer);
       return {
         authorizationCode: result.authorizationCode,
         referrer: result.referrer // 'sandbox' or 'DEFAULT'
       };
     }
 
-    console.warn('[TossLogin] No authorization code received');
-    return null;
+    console.warn('[TossLogin] No authorization code received (user may have cancelled)');
+    return null;  // 사용자 취소
   } catch (error: any) {
     // 상세 에러 로깅
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
     const errorCode = error?.code || 'NO_CODE';
-    console.error('[TossLogin] appLogin failed:', {
+    console.error('[TossLogin] ❌ appLogin failed:', {
       message: errorMessage,
       code: errorCode,
       error: error
     });
 
-    // 에러 메시지를 alert로 표시 (디버깅용)
-    if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`⚠️ [디버그] appLogin() 호출 실패\n\nCode: ${errorCode}\nMessage: ${errorMessage}`);
-    }
-
-    return null;
+    return { error: `appLogin 호출 실패: ${errorMessage} (코드: ${errorCode})` };
   }
 }
 
@@ -213,6 +238,7 @@ export async function exchangeTossToken(authorizationCode: string, referrer: str
       },
       body: JSON.stringify({ authorizationCode, referrer }),
       mode: 'cors',
+      // credentials 제거 - 토큰은 body로 받으므로 쿠키 불필요, CORS 단순화
     });
 
     const data = await response.json();
@@ -257,8 +283,18 @@ export async function exchangeTossToken(authorizationCode: string, referrer: str
     };
   } catch (error) {
     console.error('[TossLogin] Token exchange error:', error);
+    const url = resolveApiUrl('/api/toss-login/token');
+    const errorDetail = error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error);
+
     if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`[TossLogin] 토큰 교환 오류\n\n${error instanceof Error ? error.message : String(error)}`);
+      window.alert(
+        `[TossLogin] 토큰 교환 오류\n\n` +
+        `URL: ${url}\n` +
+        `Error: ${errorDetail}\n\n` +
+        `Origin: ${window.location.origin}`
+      );
     }
     return null;
   }
@@ -377,71 +413,68 @@ export async function disconnectTossLogin(): Promise<boolean> {
  * 실제 토스 OAuth 플로우를 수행
  */
 export async function performTossLogin(): Promise<TossLoginResult> {
-  const debugLog = (step: string, data?: any) => {
-    console.log(`[TossLogin] ${step}`, data);
-  };
+  console.log('[TossLogin] 🔐 performTossLogin started');
+
+  // 중복 호출 방지
+  if (isLoginInProgress) {
+    console.log('[TossLogin] ⚠️ Login already in progress, skipping');
+    return { success: false, error: 'Login already in progress' };
+  }
+
+  isLoginInProgress = true;
 
   try {
-    // Step 0: 기존 세션 확인 (서버 검증)
-    debugLog('Step 0: Checking existing session with server...');
-    const existingUser = await checkExistingTossSession();
-    if (existingUser) {
-      debugLog('Step 0 SUCCESS: Server verified existing session', { userId: existingUser.id });
-      return { success: true, user: existingUser };
-    }
+    // Step 0: 기존 세션 확인 (강화)
+    console.log('[TossLogin] Step 0: Checking existing session...');
+    const existingSession = await checkExistingTossSession();
 
-    debugLog('Step 1: Requesting authorization code from Toss SDK...');
-
-    // Step 1: Request authorization code from Toss SDK (appLogin)
-    const authResult = await requestTossLogin();
-
-    if (!authResult) {
-      debugLog('Step 1 FAILED: No auth result from appLogin');
-      return { success: false, error: '토스 로그인을 취소했거나 SDK 호출에 실패했습니다.' };
-    }
-
-    debugLog('Step 1 SUCCESS: Got auth code', {
-      codePrefix: authResult.authorizationCode.substring(0, 10) + '...',
-      referrer: authResult.referrer
-    });
-
-    // Step 2: 서버에서 실제 토스 OAuth 토큰 교환
-    debugLog('Step 2: Exchanging authorization code for tokens via server...');
-    const tokenResult = await exchangeTossToken(authResult.authorizationCode, authResult.referrer);
-
-    if (!tokenResult || !tokenResult.success || !tokenResult.userId) {
-      debugLog('Step 2 FAILED: Token exchange failed', tokenResult);
-
-      // 상세 에러 메시지 구성
-      let errorMsg = '토스 서버와의 토큰 교환에 실패했습니다.';
-      if (tokenResult?.error) {
-        errorMsg += `\n\n[에러]: ${tokenResult.error}`;
-      }
-      if (tokenResult?.message) {
-        errorMsg += `\n[원인]: ${tokenResult.message}`;
-      }
-      if (tokenResult?.rawResponse) {
-        errorMsg += `\n\n[토스 API 응답]\n${JSON.stringify(tokenResult.rawResponse, null, 2).substring(0, 300)}`;
-      }
-      if (tokenResult?.stack) {
-        // 스택 트레이스 첫 줄만 표시
-        const firstLine = tokenResult.stack.split('\n').slice(0, 2).join('\n');
-        errorMsg += `\n\n[스택]: ${firstLine}`;
-      }
-
+    if (existingSession) {
+      console.log('[TossLogin] ✅ Valid existing session found:', existingSession);
       return {
-        success: false,
-        error: errorMsg
+        success: true,
+        user: {
+          id: existingSession.id,
+          email: existingSession.email,
+          tossUserId: existingSession.tossUserId,
+        },
       };
     }
 
-    debugLog('Step 2 SUCCESS: Token exchange completed', {
-      userId: tokenResult.userId,
-      hasAccessToken: !!tokenResult.accessToken
-    });
+    console.log('[TossLogin] No valid session, proceeding with new login');
 
-    // Step 3: 로그인 성공
-    debugLog('Step 3: Login successful');
+    // Step 1: SDK 로드 및 appLogin() 호출
+    console.log('[TossLogin] Step 1: Loading SDK and calling appLogin...');
+    const authResult = await requestTossLogin();
+
+    // 에러 객체 처리
+    if (authResult && 'error' in authResult) {
+      console.log('[TossLogin] ⚠️ SDK error:', authResult.error);
+      return {
+        success: false,
+        error: authResult.error
+      };
+    }
+
+    // 사용자 취소 (null 반환)
+    if (!authResult) {
+      console.log('[TossLogin] ⚠️ No authorization code (user cancelled or error)');
+      return { success: false, error: 'User cancelled or SDK error' };
+    }
+
+    console.log('[TossLogin] ✅ Authorization code obtained');
+
+    // Step 2: 토큰 교환
+    console.log('[TossLogin] Step 2: Exchanging token...');
+    const tokenResult = await exchangeTossToken(authResult.authorizationCode, authResult.referrer);
+
+    if (!tokenResult || !tokenResult.success || !tokenResult.userId) {
+      console.log('[TossLogin] ❌ Token exchange failed');
+      return { success: false, error: 'Token exchange failed' };
+    }
+
+    console.log('[TossLogin] ✅ Token exchange successful, userId:', tokenResult.userId);
+
+    // Step 3: 성공
     return {
       success: true,
       user: {
@@ -449,12 +482,15 @@ export async function performTossLogin(): Promise<TossLoginResult> {
         tossUserId: tokenResult.userId,
         email: `${tokenResult.userId}@toss.user`,
       },
-      authorizationCode: authResult.authorizationCode,
-      referrer: authResult.referrer,
     };
 
   } catch (error) {
-    debugLog('FATAL ERROR', { error: String(error) });
-    return { success: false, error: '로그인 중 오류가 발생했습니다.' };
+    console.error('[TossLogin] ❌ Login error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  } finally {
+    isLoginInProgress = false;
   }
 }

@@ -33,6 +33,10 @@ export default defineConfig({
       },
     },
   },
+  // granite 빌드 시 AIT_BUILD=true 환경변수로 앱인토스 환경 강제 설정
+  define: {
+    'import.meta.env.VITE_FORCE_APPINTOS': process.env.AIT_BUILD === 'true' ? '"true"' : 'undefined',
+  },
   ssr: {
     // Don't externalize these packages in SSR build
     noExternal: ['wouter', '@tanstack/react-query'],

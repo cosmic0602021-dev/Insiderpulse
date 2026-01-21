@@ -26,23 +26,122 @@ const TOSS_API_BASE = 'https://apps-in-toss-api.toss.im';
 const CERT_PATH = path.join(process.cwd(), 'certs', 'mtls_public.crt');
 const KEY_PATH = path.join(process.cwd(), 'certs', 'mtls_private.key');
 
-// In-memory session storage (production에서는 Redis 등 사용 권장)
-// 토큰 기반 인증: accessToken을 키로 사용 (쿠키 사용 불가 - 앱인토스 문서 참조)
-const tossUserSessions = new Map<string, {
-  accessToken: string;
-  refreshToken: string;
-  userKey: string;
-  expiresAt: number;
-}>();
+// DB 기반 세션 관리 (서버 재시작 시에도 세션 유지)
 
-// accessToken으로 세션 찾기
-function findSessionByAccessToken(accessToken: string) {
-  for (const [, session] of tossUserSessions.entries()) {
-    if (session.accessToken === accessToken) {
-      return session;
-    }
+/**
+ * accessToken으로 세션 조회 (DB에서)
+ */
+async function findSessionByAccessToken(accessToken: string) {
+  try {
+    const [session] = await db.select()
+      .from(schema.tossUserSessions)
+      .where(eq(schema.tossUserSessions.accessToken, accessToken));
+
+    if (!session) return null;
+
+    return {
+      userKey: session.userKey,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken || '',
+      expiresAt: session.expiresAt.getTime(),
+    };
+  } catch (error) {
+    console.error('[TossLogin] DB session query error:', error);
+    return null;
   }
-  return null;
+}
+
+/**
+ * userKey로 세션 조회 (DB에서)
+ */
+async function findSessionByUserKey(userKey: string) {
+  try {
+    const [session] = await db.select()
+      .from(schema.tossUserSessions)
+      .where(eq(schema.tossUserSessions.userKey, userKey));
+
+    if (!session) return null;
+
+    return {
+      userKey: session.userKey,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken || '',
+      expiresAt: session.expiresAt.getTime(),
+    };
+  } catch (error) {
+    console.error('[TossLogin] DB session query error:', error);
+    return null;
+  }
+}
+
+/**
+ * 세션 저장/갱신 (DB에 upsert)
+ */
+async function saveTossSession(userKey: string, accessToken: string, refreshToken: string, expiresIn: number) {
+  try {
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+    // Drizzle ORM에서 onConflictDoUpdate 사용
+    await db.insert(schema.tossUserSessions).values({
+      userKey,
+      accessToken,
+      refreshToken,
+      expiresAt,
+    }).onConflictDoUpdate({
+      target: schema.tossUserSessions.userKey,
+      set: {
+        accessToken,
+        refreshToken,
+        expiresAt,
+        updatedAt: new Date()
+      },
+    });
+
+    console.log('[TossLogin] Session saved to DB for userKey:', userKey);
+    return true;
+  } catch (error) {
+    console.error('[TossLogin] DB session save error:', error);
+    return false;
+  }
+}
+
+/**
+ * 세션 삭제 (DB에서)
+ */
+async function deleteTossSession(userKey: string) {
+  try {
+    await db.delete(schema.tossUserSessions)
+      .where(eq(schema.tossUserSessions.userKey, userKey));
+    console.log('[TossLogin] Session deleted from DB for userKey:', userKey);
+    return true;
+  } catch (error) {
+    console.error('[TossLogin] DB session delete error:', error);
+    return false;
+  }
+}
+
+/**
+ * 세션 업데이트 (토큰 갱신 시)
+ */
+async function updateTossSession(userKey: string, accessToken: string, refreshToken: string | null, expiresIn: number) {
+  try {
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+
+    await db.update(schema.tossUserSessions)
+      .set({
+        accessToken,
+        ...(refreshToken ? { refreshToken } : {}),
+        expiresAt,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.tossUserSessions.userKey, userKey));
+
+    console.log('[TossLogin] Session updated in DB for userKey:', userKey);
+    return true;
+  } catch (error) {
+    console.error('[TossLogin] DB session update error:', error);
+    return false;
+  }
 }
 
 /**
@@ -258,13 +357,12 @@ router.post('/token', async (req, res) => {
 
     console.log('[TossLogin] Token exchange successful, userKey:', userKey);
 
-    // Store session with real Toss tokens (키는 userKey 사용)
-    tossUserSessions.set(userKey, {
-      accessToken,
-      refreshToken: refreshToken || '',
-      userKey,
-      expiresAt: Date.now() + (expiresIn || 3600) * 1000,
-    });
+    // DB에 세션 저장 (서버 재시작 시에도 유지)
+    const sessionSaved = await saveTossSession(userKey, accessToken, refreshToken || '', expiresIn || 3600);
+    if (!sessionSaved) {
+      console.error('[TossLogin] Failed to save session to DB');
+      // 세션 저장 실패해도 계속 진행 (사용자 경험 우선)
+    }
 
     // Check if user exists in our database, create if not
     let dbUser = await db.select().from(schema.users).where(eq(schema.users.id, `toss_${userKey}`)).limit(1);
@@ -321,12 +419,15 @@ router.get('/me', async (req, res) => {
     const accessToken = authHeader.substring(7); // "Bearer " 제거
     console.log('[TossLogin] /me: Checking token validity...');
 
-    // accessToken으로 세션 찾기
-    const session = findSessionByAccessToken(accessToken);
+    // accessToken으로 세션 찾기 (DB 조회)
+    const session = await findSessionByAccessToken(accessToken);
     if (!session) {
       console.log('[TossLogin] /me: Session not found for token');
       return res.status(401).json({ error: 'Invalid token' });
     }
+
+    // 현재 유효한 토큰 정보 (갱신될 수 있음)
+    let currentAccessToken = session.accessToken;
 
     // Check if session expired
     if (Date.now() > session.expiresAt) {
@@ -340,16 +441,18 @@ router.get('/me', async (req, res) => {
         );
 
         if (refreshResponse?.success?.accessToken) {
-          session.accessToken = refreshResponse.success.accessToken;
-          session.expiresAt = Date.now() + (refreshResponse.success.expiresIn || 3600) * 1000;
-          if (refreshResponse.success.refreshToken) {
-            session.refreshToken = refreshResponse.success.refreshToken;
-          }
+          const newAccessToken = refreshResponse.success.accessToken;
+          const newRefreshToken = refreshResponse.success.refreshToken || session.refreshToken;
+          const newExpiresIn = refreshResponse.success.expiresIn || 3600;
+
+          // DB에 갱신된 토큰 저장
+          await updateTossSession(session.userKey, newAccessToken, newRefreshToken, newExpiresIn);
+          currentAccessToken = newAccessToken;
           console.log('[TossLogin] /me: Token refreshed successfully');
         }
       } catch (refreshError) {
         console.error('[TossLogin] Token refresh failed:', refreshError);
-        tossUserSessions.delete(session.userKey);
+        await deleteTossSession(session.userKey);
         return res.status(401).json({ error: 'Session expired' });
       }
     }
@@ -374,7 +477,7 @@ router.get('/me', async (req, res) => {
         subscriptionStatus: dbUser[0].subscriptionStatus,
       },
       // 토큰이 갱신되었을 수 있으므로 현재 토큰 반환
-      accessToken: session.accessToken,
+      accessToken: currentAccessToken,
     });
 
   } catch (error) {
@@ -397,7 +500,7 @@ router.post('/refresh', async (req, res) => {
     let session = null;
     if (authHeader?.startsWith('Bearer ')) {
       const accessToken = authHeader.substring(7);
-      session = findSessionByAccessToken(accessToken);
+      session = await findSessionByAccessToken(accessToken);
     }
 
     const tokenToRefresh = refreshToken || session?.refreshToken;
@@ -418,12 +521,9 @@ router.post('/refresh', async (req, res) => {
       const newRefreshToken = refreshResponse.success.refreshToken;
       const newExpiresIn = refreshResponse.success.expiresIn || 3600;
 
+      // DB에 갱신된 토큰 저장
       if (session) {
-        session.accessToken = newAccessToken;
-        session.expiresAt = Date.now() + newExpiresIn * 1000;
-        if (newRefreshToken) {
-          session.refreshToken = newRefreshToken;
-        }
+        await updateTossSession(session.userKey, newAccessToken, newRefreshToken || session.refreshToken, newExpiresIn);
       }
 
       console.log('[TossLogin] Token refreshed successfully');
@@ -454,7 +554,7 @@ router.post('/disconnect', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       const accessToken = authHeader.substring(7);
-      const session = findSessionByAccessToken(accessToken);
+      const session = await findSessionByAccessToken(accessToken);
 
       if (session) {
         // Optionally call Toss API to revoke token
@@ -468,7 +568,8 @@ router.post('/disconnect', async (req, res) => {
           console.log('[TossLogin] Token revocation failed (ignoring):', e);
         }
 
-        tossUserSessions.delete(session.userKey);
+        // DB에서 세션 삭제
+        await deleteTossSession(session.userKey);
         console.log('[TossLogin] Session removed for userKey:', session.userKey);
       }
     }
@@ -495,10 +596,10 @@ router.post('/callback', async (req, res) => {
       reason, // UNLINK, WITHDRAWAL_TERMS, or WITHDRAWAL_TOSS
     });
 
-    // Find and remove any sessions for this user
-    for (const [sessionId, session] of tossUserSessions.entries()) {
-      if (session.userKey === userKey) {
-        tossUserSessions.delete(sessionId);
+    // DB에서 해당 userKey의 세션 삭제
+    if (userKey) {
+      const deleted = await deleteTossSession(userKey);
+      if (deleted) {
         console.log('[TossLogin] Removed session for disconnected user:', userKey);
       }
     }

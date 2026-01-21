@@ -45,8 +45,10 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const userAgent = req.headers['user-agent'] || '';
 
-  // 디버깅: 상세 로그 (토스앱 디버깅용)
-  console.log(`🌐 [CORS] origin: ${origin || 'undefined'}, UA: ${userAgent.substring(0, 80)}`);
+  // 디버깅: 상세 로그 (토스앱 디버깅용) - 프로덕션에서는 간략히
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🌐 [CORS] origin: ${origin || 'undefined'}, UA: ${userAgent.substring(0, 80)}`);
+  }
 
   // 토스앱 WebView 감지 (User-Agent 기반)
   const isTossApp = userAgent.includes('Toss') ||
@@ -57,25 +59,31 @@ app.use((req, res, next) => {
   const isMobileWebView = (userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('Android')) &&
                           (userAgent.includes('Mobile') || userAgent.includes('wv'));
 
-  // origin이 허용 목록에 있거나, 개발 환경에서는 모든 origin 허용
-  if (origin && (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV !== 'production')) {
+  // Case 1: 허용 목록에 있는 origin (credentials 사용 가능)
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-  // 토스앱 WebView: null origin 또는 origin 없음 (credentials 없이 허용)
+  // Case 2: 개발 환경에서는 모든 origin 허용 (credentials 사용 가능)
+  else if (origin && process.env.NODE_ENV !== 'production') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  // Case 3: origin이 null 또는 없음 (앱인토스 WebView)
+  // ⚠️ CORS 표준: wildcard(*) + credentials(true)는 함께 사용 불가!
+  // 토스앱에서는 토큰 기반 인증을 사용하므로 credentials 불필요
   else if (!origin || origin === 'null') {
     if (isTossApp || isMobileWebView) {
-      console.log(`📱 [CORS] Toss/Mobile WebView detected - allowing request`);
-      res.setHeader('Access-Control-Allow-Origin', '*');
-    } else {
-      // 일반 서버간 통신
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      console.log(`📱 [CORS] Toss/Mobile WebView detected - allowing request (no credentials)`);
     }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    // credentials 헤더 설정하지 않음 (wildcard와 함께 사용 불가)
   }
-  // 허용되지 않은 origin이지만, credentials 없이 허용 (토스앱 대응)
+  // Case 4: 허용되지 않은 origin (credentials 없이 허용)
   else if (origin) {
     console.log(`⚠️ [CORS] Unknown origin: ${origin} - allowing without credentials`);
     res.setHeader('Access-Control-Allow-Origin', origin);
+    // credentials 헤더 설정하지 않음 (보안)
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

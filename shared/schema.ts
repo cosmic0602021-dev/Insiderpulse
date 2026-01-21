@@ -403,3 +403,23 @@ export const insertRankingSnapshotSchema = createInsertSchema(rankingSnapshots).
 
 export type InsertRankingSnapshot = z.infer<typeof insertRankingSnapshotSchema>;
 export type RankingSnapshot = typeof rankingSnapshots.$inferSelect;
+
+// 5. Toss User Sessions - DB에 저장하여 서버 재시작 시에도 세션 유지
+export const tossUserSessions = pgTable("toss_user_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userKey: varchar("user_key", { length: 255 }).notNull().unique(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTossUserSessionSchema = createInsertSchema(tossUserSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTossUserSession = z.infer<typeof insertTossUserSessionSchema>;
+export type TossUserSession = typeof tossUserSessions.$inferSelect;

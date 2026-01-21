@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { getPlatformOS, getOperationalEnvironment, getSchemeUri } from '@apps-in-toss/web-framework';
 import { isAppintosEnvironment } from './lib/environment';
 
 console.log('🚀 main.tsx loading...');
@@ -37,10 +36,13 @@ if ('serviceWorker' in navigator) {
 }
 
 // 앱인토스 브리지 초기화
-function initializeAppintosBridge() {
+async function initializeAppintosBridge() {
   try {
-    // ✅ 조건 체크 제거 - 앱인토스 함수를 먼저 시도
+    // 동적 import로 변경
     console.log('🔗 Attempting Appintos bridge initialization...');
+
+    const { getPlatformOS, getOperationalEnvironment, getSchemeUri } =
+      await import('@apps-in-toss/web-framework');
 
     // 앱인토스 환경 정보 가져오기 (브리지 활성화)
     const platform = getPlatformOS(); // 'ios' | 'android' | throws error
@@ -49,7 +51,6 @@ function initializeAppintosBridge() {
 
     console.log('✅ Appintos bridge initialized:', { platform, env, schemeUri });
 
-    // ✅ 성공했으면 앱인토스 환경
     // URL에서 signature 추출 및 저장
     const urlParams = new URLSearchParams(window.location.search);
     const signature = urlParams.get('signature');
@@ -64,13 +65,14 @@ function initializeAppintosBridge() {
       console.log('🔑 Appintos signature stored');
     }
 
-    // ✅ 전역 플래그 설정 (environment.ts가 사용)
-    (window as any).__APPINTOS__ = { platform, env, schemeUri };
+    // 전역 플래그 설정 (environment.ts가 사용)
+    (window as any).__APPINTOS__ = { platform, env, schemeUri, signature: signature || undefined };
 
+    console.log('[ENV DEBUG] ✅ Appintos bridge initialized', (window as any).__APPINTOS__);
     return { success: true, mode: 'appintos', platform, env };
   } catch (error) {
-    // ✅ 에러 발생 → 브라우저 환경
-    console.log('📱 Not in Appintos environment (functions failed):', error);
+    // 에러 발생 → 브라우저 환경
+    console.log('📱 Not in Appintos environment (dynamic import failed):', error);
 
     // 서명 관련 에러인 경우 사용자에게 명확한 메시지 표시
     if (error instanceof Error && error.message.toLowerCase().includes('signature')) {
@@ -160,28 +162,31 @@ window.addEventListener('unhandledrejection', (event) => {
 
 console.log('🔍 Attempting to mount React app...');
 
-try {
-  // 앱인토스 브리지 초기화 (React 앱보다 먼저)
-  const bridgeResult = initializeAppintosBridge();
+// async IIFE로 감싸서 await 사용
+(async () => {
+  try {
+    // 앱인토스 브리지 초기화 (React 앱보다 먼저) - await 추가
+    const bridgeResult = await initializeAppintosBridge();
 
-  // 초기화 성공 시에만 앱 렌더링
-  if (bridgeResult.success) {
-    const root = document.getElementById("root");
-    if (!root) {
-      throw new Error("Root element not found");
+    // 초기화 성공 시에만 앱 렌더링
+    if (bridgeResult.success || bridgeResult.mode === 'browser') {
+      const root = document.getElementById("root");
+      if (!root) {
+        throw new Error("Root element not found");
+      }
+      console.log('✅ Root element found, rendering app...');
+      createRoot(root).render(<App />);
+      console.log('✅ App rendered successfully');
+    } else {
+      console.error('Cannot proceed without valid Appintos initialization');
+      // displayError는 initializeAppintosBridge에서 이미 호출됨
     }
-    console.log('✅ Root element found, rendering app...');
-    createRoot(root).render(<App />);
-    console.log('✅ App rendered successfully');
-  } else {
-    console.error('Cannot proceed without valid Appintos initialization');
-    // displayError는 initializeAppintosBridge에서 이미 호출됨
+  } catch (error) {
+    console.error('❌ App initialization error:', error);
+    displayError(
+      '❌ 앱 로딩 중 에러가 발생했습니다',
+      error instanceof Error ? error.stack || error.message : String(error),
+      '브라우저 콘솔(F12)을 확인해주세요.'
+    );
   }
-} catch (error) {
-  console.error('❌ App initialization error:', error);
-  displayError(
-    '❌ 앱 로딩 중 에러가 발생했습니다',
-    error instanceof Error ? error.stack || error.message : String(error),
-    '브라우저 콘솔(F12)을 확인해주세요.'
-  );
-}
+})();

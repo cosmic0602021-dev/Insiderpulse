@@ -154,10 +154,14 @@ export function isAppintosEnvironment(): boolean {
     return false;
   }
 
-  // 첫 호출: 감지 수행 후 결과 캐싱
+  // 첫 호출: 감지 수행
   const result = _detectAppintosInternal();
-  _isAppintosCached = result;
-  console.log('🔍 [ENV] Environment detection cached:', result);
+
+  // true일 때만 캐싱 (false는 다시 시도할 수 있게)
+  if (result) {
+    _isAppintosCached = result;
+    console.log('🔍 [ENV] Environment detection cached as TRUE');
+  }
   return result;
 }
 

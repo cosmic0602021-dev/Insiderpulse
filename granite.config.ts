@@ -14,7 +14,7 @@ export default defineConfig({
     publicUrl: 'https://insiderpulse.pro',
     commands: {
       dev: 'npm run dev',
-      build: 'vite build',
+      build: 'npm run build:ait',
     },
   },
   permissions: [],
