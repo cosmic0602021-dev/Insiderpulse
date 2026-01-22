@@ -11,6 +11,26 @@ import { resolveApiUrl } from './queryClient';
 // ✅ 정적 import 제거 - 동적 import로 변경하여 패키지 로드 실패 시에도 앱 작동
 // import { appLogin } from '@apps-in-toss/web-framework';
 
+/**
+ * Promise에 timeout을 추가하는 헬퍼 함수
+ * @param promise 실행할 Promise
+ * @param timeoutMs timeout 시간 (밀리초)
+ * @param timeoutError timeout 시 발생시킬 에러 메시지
+ * @returns Promise<T>
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutError: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(timeoutError)), timeoutMs)
+    ),
+  ]);
+}
+
 // 동적으로 로드된 appLogin 함수 캐시
 let appLoginApi: (() => Promise<{ authorizationCode: string; referrer: string }>) | undefined;
 
@@ -194,8 +214,12 @@ export async function requestTossLogin(): Promise<
     }
 
     // Call the appLogin SDK function (동적 import 사용)
-    console.log('[TossLogin] Calling appLogin() SDK function...');
-    const result = await appLoginApi();
+    console.log('[TossLogin] Calling appLogin() with 10s timeout...');
+    const result = await withTimeout(
+      appLoginApi(),
+      10000,  // 10초 timeout
+      'Toss login timeout (10s exceeded)'
+    );
 
     if (result && result.authorizationCode) {
       console.log('[TossLogin] ✅ Got authorization code, referrer:', result.referrer);
@@ -231,15 +255,19 @@ export async function exchangeTossToken(authorizationCode: string, referrer: str
   console.log('[TossLogin] Exchanging token via server API...');
 
   try {
-    const response = await fetch(resolveApiUrl('/api/toss-login/token'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ authorizationCode, referrer }),
-      mode: 'cors',
-      // credentials 제거 - 토큰은 body로 받으므로 쿠키 불필요, CORS 단순화
-    });
+    const response = await withTimeout(
+      fetch(resolveApiUrl('/api/toss-login/token'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ authorizationCode, referrer }),
+        mode: 'cors',
+        // credentials 제거 - 토큰은 body로 받으므로 쿠키 불필요, CORS 단순화
+      }),
+      15000,  // 15초 timeout
+      'Token exchange timeout (15s exceeded)'
+    );
 
     const data = await response.json();
 

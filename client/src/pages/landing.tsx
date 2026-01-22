@@ -349,6 +349,7 @@ export default function LandingPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [isTossLoggingIn, setIsTossLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const components = [
     <TradeLogBackground key="trade" />,
@@ -365,6 +366,27 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [components.length]);
 
+  // URL 파라미터로 로그인 초기화 (모바일 테스트용)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset_login') === 'true') {
+      console.log('[Landing] 🔄 URL 파라미터로 로그인 초기화 시작...');
+
+      // 모든 로그인 관련 localStorage 항목 삭제
+      localStorage.removeItem('toss_access_token');
+      localStorage.removeItem('toss_refresh_token');
+      localStorage.removeItem('appintos_user_id');
+      localStorage.removeItem('authUser');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('toss_user_key');
+
+      console.log('[Landing] ✅ 로그인 정보 초기화 완료!');
+
+      // URL에서 파라미터 제거하고 홈으로 리다이렉트
+      window.location.href = '/';
+    }
+  }, []);
+
   // Initialize_System 버튼 클릭 시 토스 로그인 시도
   const handleEnter = async () => {
     console.log('[Landing] 🚀 Initialize_System clicked');
@@ -380,6 +402,7 @@ export default function LandingPage() {
     if (ENV_CONFIG.isAppintos) {
       console.log('[Landing] 📱 Appintos environment, attempting Toss login...');
       setIsTossLoggingIn(true);
+      setLoginError(null);  // 이전 에러 메시지 초기화
 
       try {
         const result = await performTossLogin();
@@ -391,12 +414,13 @@ export default function LandingPage() {
           return;
         } else {
           console.log('[Landing] ❌ Toss login failed:', result.error);
-          alert(result.error || '토스 로그인에 실패했습니다.\n다시 시도해주세요.');
+          setLoginError(result.error || '토스 로그인에 실패했습니다.\n다시 시도해주세요.');
           return;
         }
       } catch (error) {
         console.error('[Landing] Toss login error:', error);
-        alert('로그인 중 오류가 발생했습니다.');
+        const errorMessage = error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.';
+        setLoginError(errorMessage);
         return;
       } finally {
         setIsTossLoggingIn(false);
@@ -510,9 +534,36 @@ export default function LandingPage() {
 
       </div>
 
+      {/* 토스 로그인 로딩 화면 */}
+      {isTossLoggingIn && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
+          <div className="text-emerald-500 text-sm font-mono mb-4">
+            SEC 공시 뒤지는 중...
+          </div>
+          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+
+          {/* 에러 메시지 표시 */}
+          {loginError && (
+            <div className="mt-6 p-4 bg-red-900/50 border border-red-500 rounded text-red-300 text-xs max-w-md">
+              <div className="font-bold mb-2">로그인 오류</div>
+              <div className="whitespace-pre-line">{loginError}</div>
+              <button
+                onClick={() => {
+                  setLoginError(null);
+                  setIsTossLoggingIn(false);
+                }}
+                className="mt-3 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs"
+              >
+                닫기
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Disclaimer Modal - Shows after Initialize_System button click */}
-      <LandingDisclaimerModal 
-        open={showDisclaimer} 
+      <LandingDisclaimerModal
+        open={showDisclaimer}
         onAccept={handleDisclaimerAccept}
         onClose={() => setShowDisclaimer(false)}
       />

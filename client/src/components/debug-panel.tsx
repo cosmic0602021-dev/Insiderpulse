@@ -118,6 +118,26 @@ export function DebugPanel() {
     setIsTestingApis(false);
   };
 
+  const resetLogin = () => {
+    if (!confirm('로그인 정보를 초기화하시겠습니까? 다음 로그인 시 동의 화면이 다시 표시됩니다.')) {
+      return;
+    }
+
+    // 모든 로그인 관련 localStorage 항목 삭제
+    localStorage.removeItem('toss_access_token');
+    localStorage.removeItem('toss_refresh_token');
+    localStorage.removeItem('appintos_user_id');
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('toss_user_key');
+
+    console.log('✅ 로그인 정보 초기화 완료!');
+    alert('로그인 정보가 초기화되었습니다. 페이지를 새로고침합니다.');
+
+    // 페이지 새로고침
+    window.location.href = '/';
+  };
+
   if (!debugInfo) return null;
 
   const StatusIcon = ({ status }: { status: 'pending' | 'success' | 'error' | boolean }) => {
@@ -226,6 +246,27 @@ export function DebugPanel() {
                 {debugInfo.tradesError && (
                   <div className="text-red-400 pl-6 text-[10px]">{debugInfo.tradesError}</div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* 로그인 초기화 버튼 */}
+            <Card className="bg-neutral-900 border-neutral-700">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">테스트 도구</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs space-y-2">
+                <Button
+                  onClick={resetLogin}
+                  variant="destructive"
+                  className="w-full h-8 text-xs"
+                >
+                  🔄 로그인 정보 초기화 (동의 화면 다시 보기)
+                </Button>
+                <div className="text-neutral-400 text-[10px]">
+                  ※ 클릭 시 모든 로그인 정보가 삭제되고 페이지가 새로고침됩니다.
+                  <br />
+                  다음 로그인 시 토스 동의 화면이 다시 표시됩니다.
+                </div>
               </CardContent>
             </Card>
 

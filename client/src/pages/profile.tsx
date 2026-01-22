@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { resolveApiUrl } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
+import { disconnectTossLogin } from '@/lib/toss-login';
+import { ENV_CONFIG } from '@/lib/environment';
 import {
   User,
   CreditCard,
@@ -12,7 +14,8 @@ import {
   XCircle,
   AlertCircle,
   Crown,
-  Ticket
+  Ticket,
+  LogOut
 } from 'lucide-react';
 import {
   formatTimeRemaining,
@@ -212,6 +215,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = async () => {
+    console.log('[Profile] 로그아웃 시작...');
+
+    // 토스 로그인 연결 해제
+    if (ENV_CONFIG.isAppintos) {
+      await disconnectTossLogin();
+    }
+
+    // 모든 로그인 정보 삭제
+    localStorage.removeItem('toss_access_token');
+    localStorage.removeItem('toss_refresh_token');
+    localStorage.removeItem('appintos_user_id');
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('toss_user_key');
+
+    console.log('[Profile] ✅ 로그아웃 완료, 홈으로 이동');
+
+    // 홈으로 이동
+    window.location.href = '/';
+  };
+
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[#050505]">
@@ -262,7 +287,7 @@ export default function ProfilePage() {
             <User className="text-neutral-500" size={20} />
             <h2 className="text-lg font-bold text-neutral-300">계정 정보</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
             <div>
               <div className="text-xs text-neutral-600 uppercase tracking-wider mb-1">이메일</div>
               <div className="text-neutral-300 font-mono font-medium">{user.email}</div>
@@ -274,6 +299,20 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* 로그아웃 버튼 */}
+          <button
+            onClick={handleLogout}
+            className="w-full py-3 border border-neutral-800 text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+            <LogOut size={14} />
+            로그아웃
+          </button>
+          {ENV_CONFIG.isAppintos && (
+            <div className="mt-2 text-center text-[10px] text-neutral-600">
+              로그아웃 후 다시 로그인하면 토스 동의 화면이 표시됩니다
+            </div>
+          )}
         </div>
 
         {/* Subscription Info */}
