@@ -557,15 +557,17 @@ router.post('/disconnect', async (req, res) => {
       const session = await findSessionByAccessToken(accessToken);
 
       if (session) {
-        // Optionally call Toss API to revoke token
+        // 토스 연동 해제 API 호출 (동의문 다시 표시를 위해 필수)
         try {
+          console.log('[TossLogin] Calling Toss unlink API for userKey:', session.userKey);
           await callTossApi(
             'POST',
-            '/api-partner/v1/apps-in-toss/user/oauth2/access/remove-by-access-token',
-            { accessToken: session.accessToken }
+            '/api-partner/v1/apps-in-toss/user/unlink',
+            { userKey: session.userKey }
           );
+          console.log('[TossLogin] Toss unlink successful');
         } catch (e) {
-          console.log('[TossLogin] Token revocation failed (ignoring):', e);
+          console.log('[TossLogin] Toss unlink failed (ignoring):', e);
         }
 
         // DB에서 세션 삭제

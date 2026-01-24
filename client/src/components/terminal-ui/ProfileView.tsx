@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
-import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Ticket, CheckCircle2, Sparkles, Zap, BarChart3, Shield, LogIn } from 'lucide-react';
+import { User, Crown, CreditCard, ExternalLink, AlertCircle, XCircle, Clock, Ticket, CheckCircle2, Sparkles, Zap, BarChart3, Shield, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
 import { ENV_CONFIG } from '@/lib/environment';
-import { performTossLogin, checkExistingTossSession } from '@/lib/toss-login';
+import { performTossLogin, checkExistingTossSession, disconnectTossLogin } from '@/lib/toss-login';
 
 interface ProfileViewProps {
   lang: Language;
@@ -77,7 +77,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
       setIsTossLoggingIn(false);
     }
   };
-  
+
+  // Handle Toss Logout
+  const handleLogout = async () => {
+    try {
+      await disconnectTossLogin();
+      setTossUserId(null);
+      // 홈으로 리다이렉트
+      window.location.reload();
+    } catch (error) {
+      console.error('[ProfileView] Logout error:', error);
+      // 오류가 나도 로컬 상태는 초기화
+      setTossUserId(null);
+      window.location.reload();
+    }
+  };
+
   const isPro = user?.subscriptionTier === 'insider_pro' || user?.subscriptionTier === 'insider';
   const isTrialing = user?.subscriptionStatus === 'trialing';
   const isActive = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing';
@@ -284,6 +299,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* 로그아웃 버튼 */}
+                    {tossUserId && (
+                        <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full py-3 border border-neutral-800 text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200 transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                            >
+                                <LogOut size={14} />
+                                로그아웃
+                            </button>
+                            <div className="mt-2 text-center text-[10px] text-neutral-600">
+                                로그아웃 후 다시 로그인하면 토스 동의 화면이 표시됩니다
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 

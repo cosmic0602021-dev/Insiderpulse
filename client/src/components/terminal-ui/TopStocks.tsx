@@ -9,6 +9,15 @@ import { PastPerformanceSection } from '@/components/past-performance-section';
 import { useRewardedAd } from '@/hooks/use-admob';
 import { loadRewardedAd } from '@/lib/admob';
 
+// localStorage 키 상수
+const UNLOCKED_STOCKS_KEY = 'insiderpulse_unlocked_stocks';
+const RANKINGS_HASH_KEY = 'insiderpulse_rankings_hash';
+
+// 종목 티커 해시 생성 함수
+function generateRankingsHash(stocks: StockRecommendation[]): string {
+  return stocks.map(s => s.ticker).sort().join(',');
+}
+
 // Fisher-Yates shuffle algorithm
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -84,8 +93,21 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
   const isAppintos = ENV_CONFIG.isAppintos;
   const { showRewardedAdWithCallback } = useRewardedAd();
 
-  // 앱인토스: 광고 시청 후 잠금 해제된 종목 추적
-  const [unlockedStocks, setUnlockedStocks] = useState<Set<string>>(new Set());
+  // 앱인토스: 광고 시청 후 잠금 해제된 종목 추적 (localStorage에서 복원)
+  const [unlockedStocks, setUnlockedStocks] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(UNLOCKED_STOCKS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed);
+        }
+      }
+    } catch (error) {
+      console.warn('[TopStocks] Failed to load unlocked stocks:', error);
+    }
+    return new Set();
+  });
 
   // 앱인토스: 컴포넌트 마운트 시 보상형 광고 프리로드
   useEffect(() => {
@@ -96,6 +118,33 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       });
     }
   }, [isAppintos]);
+
+  // 앱인토스: unlockedStocks 변경 시 localStorage에 저장
+  useEffect(() => {
+    if (!isAppintos) return;
+    try {
+      localStorage.setItem(UNLOCKED_STOCKS_KEY, JSON.stringify([...unlockedStocks]));
+    } catch (error) {
+      console.warn('[TopStocks] Failed to save unlocked stocks:', error);
+    }
+  }, [unlockedStocks, isAppintos]);
+
+  // 앱인토스: 종목 갱신 감지 및 잠금 리셋
+  useEffect(() => {
+    if (!isAppintos || !data || data.length === 0) return;
+
+    const currentHash = generateRankingsHash(data);
+    const prevHash = localStorage.getItem(RANKINGS_HASH_KEY);
+
+    if (prevHash && prevHash !== currentHash) {
+      // 종목이 갱신됨 - 잠금해제 상태 초기화
+      console.log('[TopStocks] Rankings refreshed, resetting unlocked stocks');
+      setUnlockedStocks(new Set());
+      localStorage.removeItem(UNLOCKED_STOCKS_KEY);
+    }
+
+    localStorage.setItem(RANKINGS_HASH_KEY, currentHash);
+  }, [data, isAppintos]);
 
   // Shuffle stocks for Appintos (so users don't just watch ad for #1)
   const shuffledData = useMemo(() => {

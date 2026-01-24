@@ -247,6 +247,7 @@ export default function TopStocksTerminal() {
         stock={selectedStock}
         isOpen={isSummaryModalOpen}
         onClose={handleCloseSummaryModal}
+        onSelectTrade={handleSelectTrade}
       />
     </div>
   );

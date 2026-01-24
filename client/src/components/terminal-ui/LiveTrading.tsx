@@ -14,6 +14,7 @@ interface LiveTradingProps {
 
 const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, isPro, onUpgrade }) => {
   const [filter, setFilter] = useState<'All' | 'Buy' | 'Sell'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const { formatCurrency } = useCurrency();
   const langKey = lang.toLowerCase() as 'en' | 'ko' | 'ja' | 'zh';
   const t = TRANSLATIONS[langKey].live;
@@ -23,7 +24,20 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
     return [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [data]);
 
-  const filteredData = sortedData.filter(t => filter === 'All' || t.type === filter);
+  const filteredData = useMemo(() => {
+    let result = sortedData.filter(t => filter === 'All' || t.type === filter);
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(t =>
+        t.ticker.toLowerCase().includes(query) ||
+        t.companyName.toLowerCase().includes(query) ||
+        t.insider.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [sortedData, filter, searchQuery]);
 
   const realTimeItems = filteredData.slice(0, 3);
   const historicalItems = filteredData.slice(3);
@@ -62,9 +76,11 @@ const LiveTrading: React.FC<LiveTradingProps> = ({ data, onSelectTrade, lang, is
            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                <div className="relative flex-1 w-full md:max-w-md group">
                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-700 group-focus-within:text-neutral-500 transition-colors" size={14} />
-                   <input 
-                        type="text" 
-                        placeholder={t.query} 
+                   <input
+                        type="text"
+                        placeholder={t.query}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-[#0a0a0a] text-xs text-neutral-300 border border-neutral-800 pl-10 pr-4 py-2.5 focus:outline-none focus:border-neutral-600 font-mono placeholder:text-neutral-800 transition-colors"
                    />
                </div>

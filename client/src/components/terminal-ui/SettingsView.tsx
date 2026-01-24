@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from './types';
 import { TRANSLATIONS } from '@/lib/translations';
-import { Settings, Globe, Monitor, CreditCard, Bell, BellOff, DollarSign } from 'lucide-react';
+import { Settings, Globe, Monitor, CreditCard, Bell, BellOff, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useCurrency, type Currency } from '@/contexts/currency-context';
 import { useAuth } from '@/contexts/auth-context';
 import { apiRequest } from '@/lib/queryClient';
@@ -206,10 +206,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                 </div>
             </div>
 
-            <div className="flex justify-end">
-                <button className="bg-white text-black px-6 py-2 text-xs font-bold uppercase hover:bg-neutral-200 transition-colors">
-                    {t.save}
-                </button>
+            <div className="flex justify-end items-center gap-2 text-xs text-neutral-500">
+                <CheckCircle2 size={12} className="text-emerald-500" />
+                <span>{lang === 'ko' ? '변경사항이 자동으로 저장됩니다' : 'Changes saved automatically'}</span>
             </div>
         </div>
     </div>

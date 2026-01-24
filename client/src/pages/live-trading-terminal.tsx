@@ -273,9 +273,18 @@ export default function LiveTradingTerminal() {
   const historicalItems = isPro ? filteredData.slice(3) : filteredData;
 
   const handleSelectTrade = async (trade: TerminalTrade) => {
-    // Find original InsiderTrade
-    const original = allTrades.find(t => t.id === trade.id);
-    if (!original) return;
+    // Find original InsiderTrade from allTrades first
+    let original = allTrades.find(t => t.id === trade.id);
+
+    // If not found in allTrades, search in searchResponse.trades (검색 결과에서 찾기)
+    if (!original && searchResponse?.trades) {
+      original = searchResponse.trades.find(t => t.id === trade.id);
+    }
+
+    if (!original) {
+      console.warn('[LiveTradingTerminal] Trade not found:', trade.id);
+      return;
+    }
 
     // 앱인토스: 2번째 클릭마다 전면형 광고 표시
     if (isAppintos) {
