@@ -74,6 +74,21 @@ export interface AuthResponse {
 class ApiClient {
   private token: string | null = null;
 
+  constructor() {
+    // 초기화 시 localStorage에서 토큰 자동 로드
+    this.loadTokenFromStorage();
+  }
+
+  private loadTokenFromStorage() {
+    if (typeof window !== 'undefined') {
+      const savedToken = localStorage.getItem('authToken');
+      if (savedToken) {
+        this.token = savedToken;
+        console.log('🔑 [API CLIENT] Token loaded from storage on init:', savedToken.substring(0, 20) + '...');
+      }
+    }
+  }
+
   setToken(token: string | null) {
     if (token) {
       console.log('🔑 [API CLIENT] Token set:', token.substring(0, 20) + '...');

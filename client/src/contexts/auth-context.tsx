@@ -39,13 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const hasTossToken = !!localStorage.getItem('toss_access_token');
 
       if (hasTossToken) {
-        console.log('[AUTH] 🔑 Existing token found, validating...');
+        console.log('[AUTH] 🔑 Toss token found, validating...');
 
         try {
           const tossUser = await checkExistingTossSession();
 
           if (tossUser) {
-            console.log('[AUTH] ✅ Valid session, restoring user');
+            console.log('[AUTH] ✅ Valid Toss session, restoring user');
             const userObj = {
               id: tossUser.id,
               email: tossUser.email || `${tossUser.id}@toss.user`,
@@ -64,13 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          console.log('[AUTH] ⚠️ Session invalid, clearing token');
+          console.log('[AUTH] ⚠️ Toss session invalid, clearing token');
           localStorage.removeItem('toss_access_token');
           localStorage.removeItem('toss_refresh_token');
           localStorage.removeItem('toss_user_key');
           localStorage.removeItem('authUser');
         } catch (error) {
-          console.log('[AUTH] ⚠️ Session check failed:', error);
+          console.log('[AUTH] ⚠️ Toss session check failed:', error);
           localStorage.removeItem('toss_access_token');
           localStorage.removeItem('toss_refresh_token');
           localStorage.removeItem('toss_user_key');
@@ -78,18 +78,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 웹 환경: 이메일 로그인 세션 확인
-      if (!ENV_CONFIG.isAppintos) {
-        const savedUser = localStorage.getItem('authUser');
-        if (savedUser) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            setUser(parsedUser);
-          } catch (e) {
-            console.error('Failed to parse saved user:', e);
+      // 웹 환경: 이메일 로그인 세션 확인 (토큰 검증 포함)
+      const savedToken = localStorage.getItem('authToken');
+      const savedUser = localStorage.getItem('authUser');
+
+      if (savedToken && savedUser) {
+        console.log('[AUTH] 🔑 Email login token found, validating...');
+
+        try {
+          // API Client에 토큰 설정
+          apiClient.setToken(savedToken);
+
+          // 서버에 토큰 유효성 검증 요청
+          const verifyResponse = await apiClient.verifyToken();
+
+          if (verifyResponse.success && verifyResponse.user) {
+            console.log('[AUTH] ✅ Valid email login session, restoring user');
+            const userObj = {
+              id: verifyResponse.user.id,
+              email: verifyResponse.user.email,
+              password: '',
+              role: 'user' as const,
+              emailVerified: true,
+              subscriptionTier: verifyResponse.user.subscriptionTier as 'free' | 'trial' | 'pro',
+              subscriptionStatus: (verifyResponse.user.subscriptionStatus || 'active') as 'active' | 'canceled' | 'past_due',
+              hasUsedTrial: verifyResponse.user.hasUsedTrial || false,
+              createdAt: new Date(),
+            };
+
+            setUser(userObj);
+            setToken(savedToken);
+
+            // 최신 사용자 정보로 localStorage 업데이트
+            localStorage.setItem('authUser', JSON.stringify(userObj));
+
+            console.log('[AUTH] 📊 User subscription:', {
+              tier: userObj.subscriptionTier,
+              status: userObj.subscriptionStatus,
+              hasUsedTrial: userObj.hasUsedTrial
+            });
+
+            setIsLoading(false);
+            return;
+          } else {
+            console.log('[AUTH] ⚠️ Token verification failed, clearing session');
+            // 토큰이 유효하지 않으면 로그아웃
+            localStorage.removeItem('authToken');
             localStorage.removeItem('authUser');
+            apiClient.setToken(null);
           }
+        } catch (error) {
+          console.log('[AUTH] ⚠️ Token verification error:', error);
+          // 검증 실패 시 토큰 제거
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+          apiClient.setToken(null);
         }
+      } else if (savedUser && !savedToken) {
+        // 사용자 정보만 있고 토큰이 없으면 정리
+        console.log('[AUTH] ⚠️ User data without token, clearing');
+        localStorage.removeItem('authUser');
       }
 
       // 기존 세션 없으면 로그인 안 함 (사용자가 버튼 클릭할 때까지 대기)
@@ -123,21 +171,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    console.log('🔓 [AUTH CONTEXT] Logging out user...');
+
     setUser(null);
     setToken(null);
+
+    // 모든 인증 관련 localStorage 정리
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
+
+    // 토스 로그인 데이터도 정리 (모든 환경에서)
+    localStorage.removeItem('toss_access_token');
+    localStorage.removeItem('toss_refresh_token');
+    localStorage.removeItem('toss_user_key');
+    localStorage.removeItem('appintos_user_id');
+
+    // API Client 토큰 제거
     apiClient.setToken(null);
 
-    // 토스 로그인 데이터도 정리
-    if (ENV_CONFIG.isAppintos) {
-      localStorage.removeItem('toss_access_token');
-      localStorage.removeItem('toss_refresh_token');
-      localStorage.removeItem('appintos_user_id');
-    }
-
+    // React Query 캐시 무효화
     queryClient.invalidateQueries({ queryKey: ['trades'] });
-    console.log('🔄 [AUTH CONTEXT] Logged out - invalidated trades cache');
+
+    console.log('✅ [AUTH CONTEXT] Logged out - all auth data cleared');
   };
 
   // Manual refresh user data from server
