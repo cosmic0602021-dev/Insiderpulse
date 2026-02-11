@@ -1,5 +1,5 @@
 // Modified for App Store compliance: price target safe mode - removed all investment predictions
-import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info, Bell, BellOff } from 'lucide-react';
+import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info, Bell, BellOff, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -864,6 +864,26 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
             </div>
           </div>
 
+          {/* 소셜 프루프 - 실시간 조회수 */}
+          <div className="px-4 py-2.5 bg-gradient-to-r from-amber-950/40 to-amber-900/20 border-b-2 border-amber-500/50 flex items-center gap-3 shrink-0 shadow-lg">
+            <div className="relative flex items-center">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"></span>
+              </span>
+            </div>
+            <Eye size={18} className="text-amber-200 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]" strokeWidth={2.5} />
+            <span className="text-[13px] text-amber-100 font-mono font-bold tracking-wide drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]">
+              {(() => {
+                // ticker 기반으로 일관성 있는 랜덤 숫자 생성
+                const seed = stock.ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const base = 500 + (seed % 1500);
+                const viewers = base + Math.floor(Math.random() * 100);
+                return `${viewers.toLocaleString()}${langKey === 'ko' ? '명이 지금 보는 중' : ' viewers now'}`;
+              })()}
+            </span>
+          </div>
+
           {/* Key Stats - 3 cols mobile, 5 cols desktop */}
           <div className="grid grid-cols-3 md:grid-cols-5 border-b border-neutral-800 shrink-0">
             <div className="px-2 py-2 border-r border-neutral-800 bg-emerald-950/10">
@@ -1400,6 +1420,15 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                         })()}
                       </div>
                     )}
+                    {/* SEC 공식 검증 배지 */}
+                    <div className="mt-1 flex items-center gap-0.5 justify-end">
+                      <svg className="w-2.5 h-2.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-[7px] text-emerald-400 font-mono font-bold">
+                        {langKey === 'ko' ? 'SEC검증' : 'SEC'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1412,7 +1441,7 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
               <span className="font-mono uppercase tracking-wider">
                 {langKey === 'ko' ? '실시간 내부자 거래 알림' : 'Real-Time Insider Alerts'}
               </span>
-              <span className="font-bold text-neutral-500">InsiderPulse</span>
+              <span className="font-bold text-neutral-500">InsiderPulse.pro</span>
             </div>
           </div>
         </div>

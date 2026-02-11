@@ -615,16 +615,16 @@ body {
 
   @keyframes ecg-scan-glow {
     0%, 100% {
-      filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.6));
+      filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.5));
+    }
+    15% {
+      filter: drop-shadow(0 0 12px rgba(16, 185, 129, 1));
     }
     25% {
-      filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.9));
+      filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.6));
     }
-    50% {
-      filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.7));
-    }
-    75% {
-      filter: drop-shadow(0 0 10px rgba(16, 185, 129, 1));
+    40% {
+      filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.5));
     }
   }
 
@@ -642,39 +642,25 @@ body {
     height: 60px;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(to bottom,
-      transparent 0%,
-      rgba(16, 185, 129, 0.03) 50%,
-      transparent 100%);
-    border-radius: 4px;
+    background: transparent;
+    /* 양옆 페이드 효과 */
+    mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
   }
 
-  /* 배경 그리드 */
+  /* 배경 그리드 - 제거됨 (미니멀 디자인) */
   .ecg-loader::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(to right, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px);
-    background-size: 20px 15px;
+    display: none;
   }
 
-  /* 스캔라인 효과 */
+  /* 스캔라인 효과 - 제거됨 (신호만 표시) */
   .ecg-loader::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 30px;
-    background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.15));
-    animation: ecg-peak-pulse 0.8s ease-in-out infinite;
+    display: none;
   }
 
   .ecg-loader svg {
     height: 100%;
-    animation: ecg-flow 2.5s linear infinite, ecg-scan-glow 1.5s ease-in-out infinite;
+    animation: ecg-flow 1.8s linear infinite, ecg-scan-glow 1.2s ease-out infinite;
   }
 
   .ecg-loader svg path {

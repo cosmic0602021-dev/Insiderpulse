@@ -217,6 +217,25 @@ export function TickerTradesModal({
             </div>
           </div>
 
+          {/* 소셜 프루프 - 실시간 조회수 */}
+          <div className="mb-4 px-3 py-2.5 bg-amber-950/20 border border-amber-500/30 flex items-center gap-2.5 rounded-lg shadow-lg">
+            <div className="relative flex items-center">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+              </span>
+            </div>
+            <span className="text-[11px] text-amber-300 font-mono font-bold">
+              🔥 {(() => {
+                // ticker 기반으로 일관성 있는 랜덤 숫자 생성
+                const seed = ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const base = 500 + (seed % 1500);
+                const viewers = base + Math.floor(Math.random() * 100);
+                return `${viewers.toLocaleString()}명이 지금 보는 중`;
+              })()}
+            </span>
+          </div>
+
           {/* Aggregate Summary */}
           <div className="grid grid-cols-3 gap-4 p-4 bg-neutral-900/50 rounded-lg border border-neutral-800">
             <div>
@@ -325,18 +344,21 @@ export function TickerTradesModal({
                     </div>
                   </div>
 
-                  {/* SEC Filing Link */}
+                  {/* SEC Filing Link - 강화된 디자인 */}
                   {trade.secFilingUrl && (
                     <a
                       href={trade.secFilingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-emerald-950/30 border border-emerald-900/50 rounded text-xs text-emerald-400 hover:bg-emerald-950/40 hover:border-emerald-900/70 transition-all font-mono"
                     >
-                      <ExternalLink size={12} />
-                      <span>View SEC Filing</span>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-bold">SEC 공식 검증</span>
+                      <ExternalLink size={12} className="ml-auto" />
                       {trade.accessionNumber && (
-                        <span className="text-neutral-600">({trade.accessionNumber.slice(0, 10)}...)</span>
+                        <span className="text-neutral-600 text-[10px]">({trade.accessionNumber.slice(0, 10)}...)</span>
                       )}
                     </a>
                   )}

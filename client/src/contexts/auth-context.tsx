@@ -35,8 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       console.log('[AUTH] 🚀 Initializing authentication...');
 
-      // 토스 토큰이 있으면 세션 검증 (앱인토스/웹 모두 동일)
-      const hasTossToken = !!localStorage.getItem('toss_access_token');
+      // 토스 토큰이 있으면 세션 검증 (앱인토스 환경에서만)
+      const hasTossToken = ENV_CONFIG.isAppintos && !!localStorage.getItem('toss_access_token');
 
       if (hasTossToken) {
         console.log('[AUTH] 🔑 Toss token found, validating...');
@@ -75,6 +75,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('toss_refresh_token');
           localStorage.removeItem('toss_user_key');
           localStorage.removeItem('authUser');
+        }
+      } else if (!ENV_CONFIG.isAppintos) {
+        // 웹 환경에서는 토스 토큰이 있으면 정리
+        if (localStorage.getItem('toss_access_token')) {
+          console.log('[AUTH] 🧹 Cleaning up Toss tokens in web environment');
+          localStorage.removeItem('toss_access_token');
+          localStorage.removeItem('toss_refresh_token');
+          localStorage.removeItem('appintos_user_id');
         }
       }
 

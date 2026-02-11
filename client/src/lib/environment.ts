@@ -157,11 +157,10 @@ export function isAppintosEnvironment(): boolean {
   // 첫 호출: 감지 수행
   const result = _detectAppintosInternal();
 
-  // true일 때만 캐싱 (false는 다시 시도할 수 있게)
-  if (result) {
-    _isAppintosCached = result;
-    console.log('🔍 [ENV] Environment detection cached as TRUE');
-  }
+  // 결과를 캐싱 (true/false 모두)
+  _isAppintosCached = result;
+  console.log(`🔍 [ENV] Environment detection cached as ${result ? 'TRUE (Appintos)' : 'FALSE (Web)'}`);
+
   return result;
 }
 

@@ -30,11 +30,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
     console.log('[ProfileView] Component mounted');
     console.log('[ProfileView] Is Appintos?', ENV_CONFIG.isAppintos);
 
+    // 명시적으로 null 초기화
+    setTossUserId(null);
+
     if (ENV_CONFIG.isAppintos) {
       console.log('[ProfileView] Running in Appintos environment - checking auth');
       verifyTossAuthStatus();
     } else {
-      console.log('[ProfileView] NOT in Appintos environment - skipping Toss auth');
+      console.log('[ProfileView] NOT in Appintos environment - clearing any stale data');
+      // 웹 환경에서는 토스 관련 localStorage 정리
+      localStorage.removeItem('toss_access_token');
+      localStorage.removeItem('toss_refresh_token');
+      localStorage.removeItem('appintos_user_id');
     }
   }, []);
 
@@ -51,10 +58,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, onRedeemCoupon }) => {
       } else {
         console.log('[ProfileView] ❌ No valid server session - user must login');
         setTossUserId(null);
+        // 세션 없으면 localStorage도 정리
+        localStorage.removeItem('toss_access_token');
+        localStorage.removeItem('toss_refresh_token');
+        localStorage.removeItem('appintos_user_id');
       }
     } catch (error) {
       console.error('[ProfileView] Auth verification failed:', error);
       setTossUserId(null);
+      // 에러 시에도 localStorage 정리
+      localStorage.removeItem('toss_access_token');
+      localStorage.removeItem('toss_refresh_token');
+      localStorage.removeItem('appintos_user_id');
     }
   };
 

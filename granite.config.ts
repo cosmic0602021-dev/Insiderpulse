@@ -17,5 +17,14 @@ export default defineConfig({
       build: 'npm run build:ait',
     },
   },
-  permissions: [],
+  permissions: [
+    {
+      name: 'clipboard',
+      access: 'read',
+    },
+    {
+      name: 'clipboard',
+      access: 'write',
+    },
+  ],
 });

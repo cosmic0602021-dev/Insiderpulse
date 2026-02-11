@@ -281,7 +281,7 @@ function AppContent() {
         </div>
         )}
 
-        <div className="flex-1 overflow-hidden relative w-full">
+        <div className={`flex-1 overflow-hidden relative w-full ${ENV_CONFIG.isAppintos ? 'pb-20' : ''}`}>
           <main className="h-full overflow-hidden w-full">
             {activeView === View.LIVE_TRADING && (
               <LiveTradingTerminal />
@@ -302,7 +302,7 @@ function AppContent() {
         </div>
 
         {/* 하단 탭 네비게이션 - 모바일에서 항상 표시 (앱인토스 + 웹) */}
-        <div className={`${ENV_CONFIG.isAppintos ? '' : 'md:hidden'} h-14 mx-4 mb-4 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-md bg-[#0a0a0a]/90 border border-neutral-800/50 flex items-center justify-around px-2 shrink-0`}>
+        <div className={`${ENV_CONFIG.isAppintos ? '' : 'md:hidden'} fixed bottom-0 left-0 right-0 h-14 mx-4 mb-4 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-md bg-[#0a0a0a]/90 border border-neutral-800/50 flex items-center justify-around px-2 z-50`}>
           <button
             onClick={() => handleViewChange(View.TOP_STOCKS)}
             className={`flex flex-col items-center gap-1 px-4 py-2 ${activeView === View.TOP_STOCKS ? 'text-emerald-500' : 'text-neutral-500'}`}

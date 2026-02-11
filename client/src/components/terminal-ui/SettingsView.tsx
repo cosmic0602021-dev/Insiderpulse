@@ -16,12 +16,13 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
   const t = TRANSLATIONS[lang].settings;
   const { currency, setCurrency } = useCurrency();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
 
   // State
   const [theme, setTheme] = useState<string>('system');
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
 
   // Load theme from localStorage
   useEffect(() => {
@@ -41,6 +42,36 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // 계정 새로고침 핸들러
+  const handleRefreshAccount = async () => {
+    setIsRefreshingAccount(true);
+    try {
+      const success = await refreshUser();
+
+      if (success) {
+        toast({
+          title: '계정 정보 갱신 완료',
+          description: '최신 구독 정보로 업데이트되었습니다.',
+        });
+      } else {
+        toast({
+          title: '갱신 실패',
+          description: '계정 정보를 불러올 수 없습니다.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Refresh account error:', error);
+      toast({
+        title: '오류',
+        description: '계정 갱신 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRefreshingAccount(false);
     }
   };
 
@@ -130,8 +161,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                 </div>
             </div>
 
-             {/* Theme Settings - 앱인토스에서 숨김 */}
-             {!ENV_CONFIG.isAppintos && (
+             {/* Theme Settings */}
              <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
                  <div className="flex items-center gap-3 mb-4">
                     <Monitor className="text-neutral-500" size={18} />
@@ -150,10 +180,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-xs">▼</div>
                 </div>
             </div>
-             )}
 
-            {/* Subscription Management Actions - 앱인토스에서 숨김 */}
-            {!ENV_CONFIG.isAppintos && (
+            {/* Subscription Management Actions */}
+            {ENV_CONFIG.isAppintos ? (
+              <div className="bg-emerald-900/20 border border-emerald-900/50 p-6 rounded-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <CreditCard className="text-emerald-500" size={18} />
+                  <h2 className="text-base font-bold text-emerald-300">무료 서비스</h2>
+                </div>
+                <p className="text-sm text-emerald-200 leading-relaxed">
+                  앱인토스에서는 InsiderPulse의 모든 기능을 무료로 이용하실 수 있습니다.
+                </p>
+              </div>
+            ) : (
             <div className="bg-[#0a0a0a] border border-neutral-900 p-6 rounded-sm">
                  <div className="flex items-center gap-3 mb-2">
                     <CreditCard className="text-neutral-500" size={18} />
@@ -182,8 +221,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({ lang, setLang }) => {
                             </>
                         )}
                     </button>
-                     <button className="flex items-center justify-center gap-2 p-3 border border-neutral-800 hover:bg-neutral-900 text-neutral-300 text-xs uppercase tracking-wide transition-colors">
-                        <Settings size={14} /> {t.refresh}
+                     <button
+                        onClick={handleRefreshAccount}
+                        disabled={isRefreshingAccount}
+                        className="flex items-center justify-center gap-2 p-3 border border-neutral-800 hover:bg-neutral-900 text-neutral-300 text-xs uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isRefreshingAccount ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-neutral-300 border-t-transparent rounded-full animate-spin"></div>
+                                새로고침 중...
+                            </>
+                        ) : (
+                            <>
+                                <Settings size={14} /> {t.refresh}
+                            </>
+                        )}
                     </button>
                 </div>
 

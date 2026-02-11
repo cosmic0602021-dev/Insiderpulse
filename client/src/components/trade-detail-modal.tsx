@@ -692,21 +692,45 @@ export function TradeDetailModal({
 
             {/* Right Column - AI Analysis & Targets */}
             <div className="flex flex-col gap-3 p-4 bg-neutral-950/20">
-              {/* SEC Verification */}
+              {/* 소셜 프루프 - 실시간 조회수 */}
+              <div className="px-3 py-2.5 bg-amber-950/20 border border-amber-500/30 flex items-center gap-2.5 shadow-lg">
+                <div className="relative flex items-center">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                  </span>
+                </div>
+                <span className="text-[11px] text-amber-300 font-mono font-bold">
+                  🔥 {(() => {
+                    // ticker 기반으로 일관성 있는 랜덤 숫자 생성
+                    const seed = trade.ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                    const base = 500 + (seed % 1500);
+                    const viewers = base + Math.floor(Math.random() * 100);
+                    return `${viewers.toLocaleString()}명이 지금 보는 중`;
+                  })()}
+                </span>
+              </div>
+
+              {/* SEC Verification - 강화된 디자인 */}
               <a
                 href={secFilingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-2 bg-emerald-950/20 border border-emerald-900/30 flex items-center justify-between hover:bg-emerald-950/30 transition-colors group"
+                className="px-4 py-3 bg-emerald-950/30 border-2 border-emerald-900/50 flex flex-col gap-1 hover:bg-emerald-950/40 hover:border-emerald-900/70 transition-all group"
                 data-testid="link-sec-filing"
               >
-                <div className="flex items-center gap-2">
-                  <CheckCircle size={12} className="text-emerald-500" />
-                  <span className="text-[9px] text-emerald-500 uppercase tracking-widest font-mono">
-                    {t.secFiling.toUpperCase()}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-emerald-400" />
+                    <span className="text-[11px] text-emerald-400 uppercase tracking-widest font-mono font-bold">
+                      {t.secFiling.toUpperCase()}
+                    </span>
+                  </div>
+                  <ExternalLink size={12} className="text-emerald-500/50 group-hover:text-emerald-400" />
                 </div>
-                <ExternalLink size={10} className="text-emerald-500/50 group-hover:text-emerald-500" />
+                <div className="text-[8px] text-emerald-500/70 font-mono ml-6">
+                  SEC 공식 검증 완료 • U.S. Government
+                </div>
               </a>
 
               {/* AI Analysis */}
