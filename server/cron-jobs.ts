@@ -248,6 +248,9 @@ export function startRankingSnapshotJob() {
       if (response.ok) {
         const result = await response.json();
         console.log(`[Cron] ✅ Ranking snapshot captured: ${result.message}`);
+
+        // 토스 앱인토스 푸시 알림 발송
+        await sendTossRankingNotification();
       } else {
         console.error(`[Cron] ❌ Failed to capture ranking snapshot: ${response.status}`);
       }
@@ -258,6 +261,54 @@ export function startRankingSnapshotJob() {
   });
 
   console.log("✅ Ranking snapshot cron job scheduled (daily at midnight ET)");
+}
+
+/**
+ * 토스 앱인토스 푸시 알림 발송
+ * 매일 오후 2시(KST) = UTC 5시 랭킹 갱신 후 자동 발송
+ */
+async function sendTossRankingNotification() {
+  try {
+    console.log("[Cron] 토스 푸시 알림 발송 시작...");
+
+    // TODO: 실제 사용자에게 발송하려면 DB에서 토스 userKey를 가져와야 함
+    // 현재는 환경 변수에 설정된 테스트 userKey 사용
+    const tossUserKey = process.env.TOSS_USER_KEY;
+
+    if (!tossUserKey) {
+      console.log("[Cron] ⚠️  TOSS_USER_KEY 환경 변수가 설정되지 않았습니다. 푸시 알림을 건너뜁니다.");
+      return;
+    }
+
+    const response = await fetch(
+      'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/messenger/send-message',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-toss-user-key': tossUserKey,
+        },
+        body: JSON.stringify({
+          templateSetCode: 'daily_ranking_update',
+          context: {
+            // 필요한 경우 여기에 동적 데이터 추가
+            // userName은 토스가 자동으로 추가
+          }
+        })
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`[Cron] ✅ 토스 푸시 알림 발송 성공:`, result);
+    } else {
+      const errorText = await response.text();
+      console.error(`[Cron] ❌ 토스 푸시 알림 발송 실패 (${response.status}):`, errorText);
+    }
+  } catch (error) {
+    console.error("[Cron] 토스 푸시 알림 발송 중 에러:", error);
+    // 에러가 나도 크론잡은 계속 실행
+  }
 }
 
 /**
