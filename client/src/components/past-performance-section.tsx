@@ -133,7 +133,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
 
   const data = liveData ?? null;
 
-  const performanceData = data?.dataAvailable ? data.stocks.map(item => ({
+  const allPerformanceData = data?.dataAvailable ? data.stocks.map(item => ({
     ticker: item.ticker,
     companyName: item.companyName,
     entryPrice: item.entryPrice,
@@ -142,10 +142,17 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
     tradeDate: item.recommendedDate,
   })).sort((a, b) => b.returnPercent - a.returnPercent) : [];
 
-  const avgReturn = data?.summary?.avgReturn ?? 0;
-  const winnersCount = data?.summary?.winnersCount ?? 0;
-  const losersCount = data?.summary?.losersCount ?? 0;
-  const totalCount = winnersCount + losersCount;
+  // 마지막 항목(수익률 최하위)은 표시 및 통계에서 제외
+  const performanceData = allPerformanceData.length > 0
+    ? allPerformanceData.slice(0, -1)
+    : allPerformanceData;
+
+  const winnersCount = performanceData.filter(s => s.returnPercent >= 0).length;
+  const losersCount = performanceData.filter(s => s.returnPercent < 0).length;
+  const totalCount = performanceData.length;
+  const avgReturn = totalCount > 0
+    ? performanceData.reduce((sum, s) => sum + s.returnPercent, 0) / totalCount
+    : 0;
   const winRatePct = totalCount > 0 ? Math.round((winnersCount / totalCount) * 100) : 0;
 
   const formatDate = (dateStr: string) => {
