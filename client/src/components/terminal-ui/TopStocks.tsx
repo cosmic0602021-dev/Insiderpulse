@@ -92,9 +92,10 @@ interface TopStocksProps {
   onUpgrade?: () => void;
   onSelectTrade?: (trade: Trade) => void;
   onViewDetails?: (stock: StockRecommendation) => void;
+  onPerformanceStockClick?: (ticker: string, stockData: any) => void;
 }
 
-const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails }) => {
+const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onSelectTrade, onViewDetails, onPerformanceStockClick }) => {
   const { formatCurrency } = useCurrency();
   const t = TRANSLATIONS[lang].top;
   const tData = TRANSLATIONS[lang].data;
@@ -407,7 +408,7 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
 
       {/* Past Performance Section - 헤더 바로 아래 */}
       <div className="px-3 sm:px-6 pt-4">
-        <PastPerformanceSection />
+        <PastPerformanceSection onStockClick={onPerformanceStockClick} />
       </div>
 
       {/* Content Area */}

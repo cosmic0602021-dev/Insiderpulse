@@ -1034,7 +1034,7 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                 <div className="flex items-center gap-1.5">
                   <span className="inline-block w-1 h-4 bg-emerald-500" />
                   <span className="text-[8px] font-mono text-emerald-600/70 uppercase tracking-widest">
-                    {langKey === 'ko' ? '토스 주식 내부자 거래 추적' :
+                    {langKey === 'ko' ? '주식 내부자 거래 추적' :
                      langKey === 'ja' ? '米国株インサイダー取引追跡' :
                      langKey === 'zh' ? '美股内部人士交易追踪' :
                      'US Insider Trading Tracker'}

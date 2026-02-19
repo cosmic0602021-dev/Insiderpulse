@@ -59,15 +59,30 @@ export class AIAnalysisService {
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst interpreting insider trades.
-                     Write 2-3 sentences of SPECIFIC, DATA-DRIVEN insight.
-                     Focus on: concrete numbers, unusual patterns, and what specifically makes this trade noteworthy.
-                     Do NOT start with the person's name or a restatement of the trade.
-                     Do NOT use vague qualitative language.
-                     STRICTLY FORBIDDEN phrases: "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment", "suggests confidence". These add zero value.
-                     Instead: mention specific thresholds (how many insiders simultaneously, exact % of market cap, trade size vs historical average for this company).
-                     If multiple insiders bought simultaneously, highlight this as statistically rare and explain what synchronized buying typically precedes.
-                     Always respond with valid JSON in the exact format specified.`
+            content: `You are an expert insider trading analyst who connects the dots between trades and real-world events.
+
+**Your mission:** Write 2-3 sentences that explain WHY this insider trade matters RIGHT NOW.
+
+**Requirements:**
+1. If recent news is provided (FDA approval, earnings, clinical trial, product launch, partnership, acquisition, etc.), you MUST connect the trade to these events
+2. Mention the insider's specific role and what it tells us (e.g., "CMO rarely buys in open market—suggests upcoming marketing campaign or product launch")
+3. Use concrete numbers: exact % of market cap, number of simultaneous insiders, trade size vs. sector average
+4. Explain timing: Is this before a catalyst? After a quiet period? During sector downturn?
+
+**STRICTLY FORBIDDEN vague phrases (these add zero value):**
+- "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment", "suggests confidence"
+
+**What makes a GOOD analysis:**
+- Connects insider's role to likely catalyst (e.g., "Chief Medical Officer's $400K purchase 3 weeks before FDA decision suggests positive Phase 3 data")
+- Cites specific statistics (e.g., "4 insiders buying simultaneously—a pattern seen in <2% of SEC filings—historically precedes major announcements within 60-90 days")
+- References recent news events when provided
+
+**What makes a BAD analysis:**
+- Generic statements like "Large buying signals confidence" or "Executive purchase reflects optimism"
+- No connection to real events or timing
+- Restating the obvious without adding insight
+
+Always respond with valid JSON in the exact format specified.`
           },
           {
             role: "user",
@@ -76,7 +91,7 @@ export class AIAnalysisService {
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
-        max_tokens: 300
+        max_tokens: 350
       });
 
       const content = response.choices[0].message.content;
@@ -120,33 +135,100 @@ export class AIAnalysisService {
       ? `← NOTABLE: ${insiderCount} insiders buying at same time`
       : '';
 
+    // 직책별 특수 의미 분석
+    const roleContext = this.getRoleSpecificContext(tradeData.traderTitle);
+
+    // 뉴스 컨텍스트 추가
+    let newsContext = '';
+    if (tradeData.recentNews && tradeData.recentNews.length > 0) {
+      const newsItems = tradeData.recentNews.slice(0, 5).map(news =>
+        `  • ${news.headline} (${news.sentiment}, ${new Date(news.publishedDate).toLocaleDateString()})`
+      ).join('\n');
+      newsContext = `\n\n**Recent News Context (Use this to explain WHY the insider bought NOW):**\n${newsItems}`;
+    }
+
+    // 타이밍 분석 - 분기 말, 월말 체크
+    const filingDateInfo = tradeData.filedDate
+      ? `\n- Filing Date: ${new Date(tradeData.filedDate).toLocaleDateString()}`
+      : '';
+    const timingHint = this.getTimingHint(tradeData.filedDate);
+
     return `
 Insider Trade Summary:
 - Company: ${tradeData.companyName} (${tradeData.ticker})
-- Insider(s): ${tradeData.traderName} (${tradeData.traderTitle})
+- Insider(s): ${tradeData.traderName} (${tradeData.traderTitle})${roleContext ? ` ${roleContext}` : ''}
 - Simultaneous Insiders Buying: ${insiderCount} person(s) ${simultaneousBuyingNote}
 - Action: ${tradeData.tradeType} ${tradeData.shares.toLocaleString()} shares at $${displayPrice}
 - Total Value: $${tradeValue}M ${marketCapRatioStr}
 - Executive Level: ${isExecutive ? 'Yes (C-suite/Director)' : 'No'}
-- High Conviction Signal: ${tradeData.isHighConviction ? 'YES ($1M+ or 3+ insiders)' : 'No'}
+- High Conviction Signal: ${tradeData.isHighConviction ? 'YES ($1M+ or 3+ insiders)' : 'No'}${filingDateInfo}${timingHint}${newsContext}
 
-Provide 2-3 SENTENCES of SPECIFIC insight. Focus on:
-1. Is this unusual? (exact number of insiders, trade size vs typical for this company)
-2. What does the timing/size specifically signal? (be concrete, not vague)
-3. Any exceptional patterns or red flags?
+**YOUR TASK: Write 2-3 sentences that answer "WHY THIS TRADE MATTERS RIGHT NOW"**
 
-STRICTLY FORBIDDEN: "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment"
+Focus on:
+1. **Role-specific meaning**: ${roleContext || 'What does this person\'s role tell us about why they bought?'}
+2. **News/Events correlation**: If recent news mentions FDA approval, earnings, product launch, clinical trial, partnership, etc. - CONNECT IT to why the insider bought now
+3. **Timing significance**: Is this before earnings? After a dip? During quiet period end?
+4. **Unusual patterns**: Size, number of insiders, % of market cap vs. typical for this sector
+
+STRICTLY FORBIDDEN phrases (add zero value):
+- "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment", "suggests confidence"
 
 **Response Format (JSON):**
 {
   "significanceScore": <1-100>,
   "signalType": "${tradeData.tradeType === 'BUY' ? 'BUY' : 'SELL'}",
-  "aiSummary": "<2-3 sentences. Specific data points only. No vague platitudes.>"
+  "aiSummary": "<2-3 sentences. MUST connect to real events/news if provided. Be specific about WHY NOW.>"
 }
 
-Example aiSummary (BAD): "CEO purchased $2.5M worth of shares. Large executive buying signals confidence in the company."
-Example aiSummary (GOOD): "With 4 insiders buying simultaneously—a pattern seen in fewer than 2% of SEC Form 4 filings—this cluster purchase totaling $3.2M (0.8% of market cap) is historically associated with pre-catalyst accumulation. The CFO's participation alongside three directors is particularly notable, as C-suite and board alignment on open-market purchases typically precedes major corporate announcements within 60-90 days."
+Example (BAD): "CMO purchased $500K worth of shares. Large executive buying signals confidence."
+Example (GOOD): "CMO's $500K purchase comes 2 weeks before phase 3 clinical trial results announcement—a rare move for marketing chiefs who typically avoid pre-catalyst exposure. The 0.12% market cap purchase suggests insider knowledge of positive trial outcomes, as CMO involvement in open-market buys is historically seen in only 3% of biotech Form 4s."
 `;
+  }
+
+  // 직책별 특수 컨텍스트 생성
+  private getRoleSpecificContext(title: string): string {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('cmo') || lowerTitle.includes('marketing')) {
+      return '← CMOs rarely buy in open market (suggests upcoming product/partnership news)';
+    }
+    if (lowerTitle.includes('cto') || lowerTitle.includes('technology')) {
+      return '← CTOs buy when confident in tech roadmap/patents';
+    }
+    if (lowerTitle.includes('cfo')) {
+      return '← CFO has best visibility into financials';
+    }
+    if (lowerTitle.includes('ceo')) {
+      return '← CEO has full company visibility';
+    }
+    if (lowerTitle.includes('chief medical') || lowerTitle.includes('chief science')) {
+      return '← Medical/Science chiefs buy before clinical/research catalysts';
+    }
+    if (lowerTitle.includes('general counsel') || lowerTitle.includes('legal')) {
+      return '← Legal chiefs buy when regulatory/M&A activity imminent';
+    }
+    return '';
+  }
+
+  // 타이밍 힌트 생성 (분기 말, 실적 발표 시즌 등)
+  private getTimingHint(filedDate?: Date): string {
+    if (!filedDate) return '';
+
+    const date = new Date(filedDate);
+    const month = date.getMonth(); // 0-11
+    const day = date.getDate();
+
+    // 분기 말 (3월, 6월, 9월, 12월)
+    if ([2, 5, 8, 11].includes(month) && day >= 20) {
+      return '\n- Timing: End of quarter (often precedes earnings)';
+    }
+
+    // 분기 초 (1월, 4월, 7월, 10월)
+    if ([0, 3, 6, 9].includes(month) && day <= 15) {
+      return '\n- Timing: Start of quarter (post-earnings window)';
+    }
+
+    return '';
   }
 
   private validateAnalysisResult(result: any): AIAnalysisResult {
@@ -165,26 +247,59 @@ Example aiSummary (GOOD): "With 4 insiders buying simultaneously—a pattern see
     );
     const isLargeTrade = tradeData.totalValue > 1000000;
     const isBuy = tradeData.tradeType === 'BUY';
+    const insiderCount = tradeData.insiderCount || 1;
 
     // Calculate significance score
     let significanceScore = 50;
     if (isExecutive) significanceScore += 20;
     if (isLargeTrade) significanceScore += 15;
     if (tradeData.ownershipPercentage > 1) significanceScore += 10;
+    if (insiderCount >= 3) significanceScore += 15;
+    if (tradeData.marketCapRatio && tradeData.marketCapRatio > 0.5) significanceScore += 10;
 
     const signalType = isBuy ? 'BUY' : 'SELL';
     const tradeValue = (tradeData.totalValue / 1000000).toFixed(2);
-    const role = isExecutive ? tradeData.traderTitle : 'Insider';
     const action = isBuy ? 'purchased' : 'sold';
 
-    // Generate simple 2-line summary
-    const aiSummary = `${role} ${action} $${tradeValue}M worth of ${tradeData.ticker} shares. ${
-      isLargeTrade && isBuy
-        ? 'Large insider buying may indicate confidence in company prospects.'
-        : isLargeTrade && !isBuy
-        ? 'Significant insider selling warrants attention from investors.'
-        : 'Transaction recorded in SEC Form 4 filing.'
-    }`;
+    // 직책별 특수 컨텍스트
+    const roleContext = this.getRoleSpecificContext(tradeData.traderTitle);
+    const roleInsight = roleContext ? roleContext.replace('←', '').trim() : '';
+
+    // Generate improved fallback summary
+    let aiSummary = '';
+
+    // 클러스터 매수 (3명 이상)
+    if (insiderCount >= 3 && isBuy) {
+      const mcapStr = tradeData.marketCapRatio
+        ? ` (${tradeData.marketCapRatio.toFixed(2)}% of market cap)`
+        : '';
+      aiSummary = `${insiderCount}명의 내부자가 동시에 총 $${tradeValue}M 매수${mcapStr}—통계적으로 전체 SEC Form 4 신고의 2% 미만에서만 나타나는 희귀 패턴. ${roleInsight || '다수 내부자의 동시 매수는 역사적으로 60-90일 내 주요 기업 발표를 앞두고 나타나는 경향이 있습니다.'}`;
+    }
+    // 대규모 매수 (단일 내부자)
+    else if (isLargeTrade && isBuy) {
+      const mcapStr = tradeData.marketCapRatio
+        ? ` 시가총액의 ${tradeData.marketCapRatio.toFixed(2)}%에 해당하며`
+        : '';
+      const rolePrefix = isExecutive
+        ? `${tradeData.traderTitle}의 $${tradeValue}M 매수는`
+        : `내부자의 $${tradeValue}M 매수는`;
+      aiSummary = `${rolePrefix}${mcapStr} 고액 내부자 거래 기준($1M+)을 충족합니다. ${roleInsight || '이 규모의 공개 시장 매수는 내부자의 강한 확신을 나타내는 지표로 간주됩니다.'}`;
+    }
+    // 임원 매수
+    else if (isExecutive && isBuy) {
+      aiSummary = `${tradeData.traderTitle}의 $${tradeValue}M 매수 기록. ${roleInsight || 'C-레벨 임원의 공개 시장 매수는 회사 전반에 대한 가시성을 바탕으로 한 의사결정을 반영합니다.'}`;
+    }
+    // 일반 매수
+    else if (isBuy) {
+      aiSummary = `내부자가 자기 자본으로 $${tradeValue}M을 직접 투자. ${roleInsight || 'SEC Form 4 신고를 통해 검증된 거래입니다.'}`;
+    }
+    // 매도
+    else {
+      const sellReason = isLargeTrade
+        ? '대규모 내부자 매도는 포트폴리오 재조정, 개인적 유동성 필요, 또는 밸류에이션 우려를 나타낼 수 있습니다.'
+        : '내부자 매도는 다양한 개인적 사유로 발생할 수 있습니다.';
+      aiSummary = `${tradeData.traderTitle}의 $${tradeValue}M 매도. ${sellReason}`;
+    }
 
     return {
       significanceScore: Math.min(100, Math.max(1, significanceScore)),

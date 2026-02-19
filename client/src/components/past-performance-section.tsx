@@ -113,7 +113,7 @@ const translations = {
   },
 };
 
-export function PastPerformanceSection({ className = '' }: { className?: string }) {
+export function PastPerformanceSection({ className = '', onStockClick }: { className?: string; onStockClick?: (ticker: string, stockData: any) => void }) {
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
   const [isExpanded, setIsExpanded] = useState(true);
@@ -245,7 +245,21 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
         </button>
       ) : (
         /* 펼친 상태 - 풀 디자인 */
-        <div className="border border-neutral-700 bg-neutral-950 overflow-hidden" style={{ animation: 'slideDown 0.3s ease forwards' }}>
+        <div className="border border-neutral-700 bg-neutral-950 overflow-hidden" style={{ animation: 'ppContainerIn 0.45s ease both' }}>
+          <style>{`
+            @keyframes ppContainerIn {
+              from { opacity: 0; transform: translateY(-10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes ppStatIn {
+              from { opacity: 0; transform: translateY(10px) scale(0.95); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+            @keyframes ppRowIn {
+              from { opacity: 0; transform: translateX(-8px); }
+              to { opacity: 1; transform: translateX(0); }
+            }
+          `}</style>
 
           {/* ── 헤더 배너 ── */}
           <div className="relative overflow-hidden"
@@ -280,7 +294,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
               {/* ── 3개 핵심 스탯 ── */}
               <div className="grid grid-cols-3 gap-2">
                 {/* 승률 */}
-                <div className="bg-black/40 border border-emerald-900/50 px-3 py-2">
+                <div className="bg-black/40 border border-emerald-900/50 px-3 py-2" style={{ animation: 'ppStatIn 0.5s ease both', animationDelay: '0.1s' }}>
                   <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-1">{t.winRate}</div>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-2xl font-black font-mono leading-none ${winRatePct >= 70 ? 'text-emerald-400' : winRatePct >= 50 ? 'text-amber-400' : 'text-red-400'}`}>
@@ -294,7 +308,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
                 </div>
 
                 {/* 평균 수익률 */}
-                <div className={`bg-black/40 border px-3 py-2 ${avgReturn >= 0 ? 'border-emerald-900/50' : 'border-red-900/50'}`}>
+                <div className={`bg-black/40 border px-3 py-2 ${avgReturn >= 0 ? 'border-emerald-900/50' : 'border-red-900/50'}`} style={{ animation: 'ppStatIn 0.5s ease both', animationDelay: '0.19s' }}>
                   <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-1">
                     {language === 'ko' ? '평균 수익률' : language === 'ja' ? '平均リターン' : language === 'zh' ? '平均收益' : 'AVG RETURN'}
                   </div>
@@ -311,7 +325,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
 
                 {/* 최고 수익률 */}
                 {performanceData[0] && (
-                  <div className="bg-black/40 border border-amber-900/40 px-3 py-2">
+                  <div className="bg-black/40 border border-amber-900/40 px-3 py-2" style={{ animation: 'ppStatIn 0.5s ease both', animationDelay: '0.28s' }}>
                     <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest mb-1">
                       {language === 'ko' ? '최고 수익' : 'BEST PICK'}
                     </div>
@@ -337,13 +351,15 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
               return (
                 <div
                   key={stock.ticker}
-                  className={`flex items-center px-3 py-2.5 ${
+                  onClick={() => onStockClick?.(stock.ticker, { rank, ticker: stock.ticker, companyName: stock.companyName, entryPrice: stock.entryPrice, currentPrice: stock.currentPrice, returnPercent: stock.returnPercent, tradeDate: stock.tradeDate })}
+                  className={`flex items-center px-3 py-2.5 ${onStockClick ? 'cursor-pointer' : ''} ${
                     isTop3
-                      ? 'bg-gradient-to-r from-amber-950/40 to-transparent border-l-2 border-amber-700/50'
+                      ? 'bg-gradient-to-r from-amber-950/40 to-transparent border-l-2 border-amber-700/50 hover:from-amber-950/60'
                       : isPos
                       ? 'border-l border-emerald-900/30 hover:bg-neutral-900/40'
                       : 'opacity-80 hover:bg-neutral-900/40'
                   }`}
+                  style={{ animation: 'ppRowIn 0.4s ease both', animationDelay: `${0.32 + Math.min(index, 9) * 0.06}s` }}
                 >
                   {/* 랭크 */}
                   <span className={`text-[11px] font-mono font-bold w-6 shrink-0 ${isTop3 ? 'text-amber-400' : 'text-neutral-600'}`}>

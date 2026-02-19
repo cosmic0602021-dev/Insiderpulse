@@ -136,6 +136,22 @@ export default function TopStocksTerminal() {
     setSelectedStock(null);
   };
 
+  const handlePerformanceStockClick = (ticker: string, stockData: any) => {
+    const stock: StockRecommendation = {
+      rank: stockData.rank || 1,
+      ticker,
+      companyName: stockData.companyName || ticker,
+      insiderCount: 0,
+      avgBuyPrice: stockData.entryPrice || 0,
+      currentPrice: stockData.currentPrice || 0,
+      priceChange: stockData.returnPercent || 0,
+      totalBuyAmount: 0,
+      lastTradeDate: stockData.tradeDate || new Date().toISOString(),
+      buyers: [],
+    };
+    handleViewDetails(stock);
+  };
+
   // Fetch ranking data using apiRequest with auth header
   const { data: rankingData, isLoading, error } = useQuery<RankingResponse>({
     queryKey: ['/api/rankings', language],
@@ -279,6 +295,7 @@ export default function TopStocksTerminal() {
           onUpgrade={handleUpgrade}
           onSelectTrade={handleSelectTrade}
           onViewDetails={handleViewDetails}
+          onPerformanceStockClick={handlePerformanceStockClick}
         />
       </div>
       {selectedTrade && (
