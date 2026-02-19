@@ -334,7 +334,7 @@ class PastPerformanceService {
       return cached.data;
     }
 
-    console.log('[PastPerformance] Computing live performance (top 10 / 1 week)...');
+    console.log('[PastPerformance] Computing live performance (all picks / 1 week)...');
 
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -372,11 +372,10 @@ class PastPerformanceService {
       }
     }
 
-    // 내부자 매도 종목 제외 후 수익률 상위 10개 선택
+    // 내부자 매도 종목 제외 후 수익률 순 정렬 (전체 종목, slice 없음)
     const eligibleStocks = stockPerformances
       .filter(s => !s.hadInsiderSell && s.exitPrice > 0)
-      .sort((a, b) => b.returnPercent - a.returnPercent)
-      .slice(0, 10);
+      .sort((a, b) => b.returnPercent - a.returnPercent);
 
     const winners = eligibleStocks.filter(s => s.returnPercent > 0);
     const losers = eligibleStocks.filter(s => s.returnPercent <= 0);
@@ -405,7 +404,7 @@ class PastPerformanceService {
     };
 
     this.cache.set(cacheKey, { data: response, timestamp: Date.now() });
-    console.log(`[PastPerformance] Live top10: avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
+    console.log(`[PastPerformance] Live all picks (${eligibleStocks.length}): avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
     return response;
   }
 

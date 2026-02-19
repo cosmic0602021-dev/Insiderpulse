@@ -201,20 +201,20 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const isLive = data?.period?.type === 'live' || (data?.period?.monthsAgo === 0);
 
   const shockLine = language === 'ko'
-    ? '최근 1주일 추천 종목 · 수익률 상위 10개'
+    ? '최근 1주일 추천 종목 전체 성과'
     : language === 'ja'
-    ? '直近1週間の推奨銘柄 · 上位10銘柄'
+    ? '直近1週間の推奨銘柄 · 全銘柄成績'
     : language === 'zh'
-    ? '近1周推荐股票 · 收益率前10名'
-    : 'Best 10 picks from last week · live returns';
+    ? '近1周推荐股票 · 全部表现'
+    : 'All picks from last week · real returns';
 
   const trackLabel = language === 'ko'
-    ? '1주일 수익률 TOP 10'
+    ? '1주일 성과 추적'
     : language === 'ja'
-    ? '1週間リターン TOP 10'
+    ? '1週間パフォーマンス'
     : language === 'zh'
-    ? '1周收益率 TOP 10'
-    : '1-WEEK TOP 10 PICKS';
+    ? '1周整体表现'
+    : '1-WEEK PERFORMANCE';
 
   return (
     <div className={`${className}`}>
@@ -283,7 +283,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
                   <div className="w-full h-1 bg-neutral-800 rounded-full mt-1.5 overflow-hidden">
                     <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${winRatePct}%` }} />
                   </div>
-                  <div className="text-[9px] font-mono text-neutral-500 mt-0.5">{winnersCount}/{totalCount} {t.winners}</div>
+                  <div className="text-[9px] font-mono text-neutral-500 mt-0.5">{winnersCount}/{totalCount} picks up</div>
                 </div>
 
                 {/* 평균 수익률 */}
