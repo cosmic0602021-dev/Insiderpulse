@@ -24,6 +24,9 @@ interface InsiderTradeData {
   ownershipPercentage: number;
   filedDate?: Date; // For historical analysis
   recentNews?: NewsContext[]; // Optional recent news for context
+  insiderCount?: number;      // 동시에 매수한 내부자 수
+  marketCapRatio?: number;    // 시총 대비 거래 비율 (%)
+  isHighConviction?: boolean; // $1M 이상 or 3인 이상
 }
 
 // Simplified AI analysis result - just a 2-line summary
@@ -56,9 +59,14 @@ export class AIAnalysisService {
         messages: [
           {
             role: "system",
-            content: `You are an expert financial analyst. Provide a VERY BRIEF 2-sentence summary of insider trading activity.
-                     Focus on: WHO (role), WHAT (action), and WHY it matters.
-                     Keep it simple and factual. No lengthy analysis needed.
+            content: `You are an expert financial analyst interpreting insider trades.
+                     Write 2-3 sentences of SPECIFIC, DATA-DRIVEN insight.
+                     Focus on: concrete numbers, unusual patterns, and what specifically makes this trade noteworthy.
+                     Do NOT start with the person's name or a restatement of the trade.
+                     Do NOT use vague qualitative language.
+                     STRICTLY FORBIDDEN phrases: "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment", "suggests confidence". These add zero value.
+                     Instead: mention specific thresholds (how many insiders simultaneously, exact % of market cap, trade size vs historical average for this company).
+                     If multiple insiders bought simultaneously, highlight this as statistically rare and explain what synchronized buying typically precedes.
                      Always respond with valid JSON in the exact format specified.`
           },
           {
@@ -102,25 +110,42 @@ export class AIAnalysisService {
     );
     // Always use individual trade's pricePerShare for accuracy and consistency with modal
     const displayPrice = tradeData.pricePerShare.toFixed(2);
+    const insiderCount = tradeData.insiderCount || 1;
+    const marketCapRatioStr = tradeData.marketCapRatio
+      ? `(${tradeData.marketCapRatio.toFixed(2)}% of market cap)`
+      : '';
+    const simultaneousBuyingNote = insiderCount >= 3
+      ? `← STATISTICALLY RARE: ${insiderCount} insiders buying simultaneously`
+      : insiderCount >= 2
+      ? `← NOTABLE: ${insiderCount} insiders buying at same time`
+      : '';
 
     return `
 Insider Trade Summary:
 - Company: ${tradeData.companyName} (${tradeData.ticker})
-- Insider: ${tradeData.traderName} (${tradeData.traderTitle})
+- Insider(s): ${tradeData.traderName} (${tradeData.traderTitle})
+- Simultaneous Insiders Buying: ${insiderCount} person(s) ${simultaneousBuyingNote}
 - Action: ${tradeData.tradeType} ${tradeData.shares.toLocaleString()} shares at $${displayPrice}
-- Total Value: $${tradeValue}M
-- Executive Level: ${isExecutive ? 'Yes' : 'No'}
+- Total Value: $${tradeValue}M ${marketCapRatioStr}
+- Executive Level: ${isExecutive ? 'Yes (C-suite/Director)' : 'No'}
+- High Conviction Signal: ${tradeData.isHighConviction ? 'YES ($1M+ or 3+ insiders)' : 'No'}
 
-Provide a 2-SENTENCE summary explaining this insider trade. Be concise and factual.
+Provide 2-3 SENTENCES of SPECIFIC insight. Focus on:
+1. Is this unusual? (exact number of insiders, trade size vs typical for this company)
+2. What does the timing/size specifically signal? (be concrete, not vague)
+3. Any exceptional patterns or red flags?
+
+STRICTLY FORBIDDEN: "demonstrates confidence", "signals conviction", "indicates strong belief", "reflects optimism", "shows commitment"
 
 **Response Format (JSON):**
 {
   "significanceScore": <1-100>,
   "signalType": "${tradeData.tradeType === 'BUY' ? 'BUY' : 'SELL'}",
-  "aiSummary": "<2 sentences max. First sentence: what happened. Second sentence: why it matters.>"
+  "aiSummary": "<2-3 sentences. Specific data points only. No vague platitudes.>"
 }
 
-Example aiSummary: "CEO purchased $2.5M worth of shares, increasing stake by 15%. Large executive buying often signals confidence in near-term company prospects."
+Example aiSummary (BAD): "CEO purchased $2.5M worth of shares. Large executive buying signals confidence in the company."
+Example aiSummary (GOOD): "With 4 insiders buying simultaneously—a pattern seen in fewer than 2% of SEC Form 4 filings—this cluster purchase totaling $3.2M (0.8% of market cap) is historically associated with pre-catalyst accumulation. The CFO's participation alongside three directors is particularly notable, as C-suite and board alignment on open-market purchases typically precedes major corporate announcements within 60-90 days."
 `;
   }
 

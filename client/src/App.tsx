@@ -158,8 +158,13 @@ function AppContent() {
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location);
 
-  // 언어 초기화 대기 화면 - hasInitialized가 이제 항상 true이므로 표시되지 않음
-  // (IP 감지는 백그라운드에서 실행, 브라우저 언어로 즉시 렌더링)
+  // 웹 환경에서 미인증 사용자가 앱 라우트에 접근하면 자동으로 로그인 모달 표시
+  const { isLoading: authLoading } = useAuth();
+  useEffect(() => {
+    if (!ENV_CONFIG.isAppintos && !authLoading && !isAuthenticated && !isPublicRoute) {
+      openAuthModal('login');
+    }
+  }, [authLoading, isAuthenticated, isPublicRoute]);
 
   if (isPublicRoute) {
     return <PublicRouter />;

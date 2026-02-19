@@ -345,7 +345,7 @@ const InstitutionalActivityBackground = () => {
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
-  const { user, loginWithToss, isLoading } = useAuth();
+  const { user, loginWithToss, isLoading, openAuthModal } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [isTossLoggingIn, setIsTossLoggingIn] = useState(false);
@@ -365,6 +365,17 @@ export default function LandingPage() {
     }, 1200);
     return () => clearInterval(interval);
   }, [components.length]);
+
+  // 웹 환경: 미인증 사용자에게 자동으로 로그인 모달 표시
+  useEffect(() => {
+    if (!ENV_CONFIG.isAppintos && !isLoading && !user) {
+      openAuthModal('login');
+    }
+    // 이미 로그인된 경우 바로 앱으로 이동
+    if (user) {
+      navigate('/ranking');
+    }
+  }, [isLoading, user]);
 
   // URL 파라미터로 로그인 초기화 (모바일 테스트용)
   useEffect(() => {

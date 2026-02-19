@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { TickerTradesModal } from '@/components/ticker-trades-modal';
-import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown } from 'lucide-react';
+import { RefreshCw, Star, TrendingUp, TrendingDown, DollarSign, Activity, X, Bookmark, Bell, Check, Building2, Share2, Calendar, Lock, Crown, Users, Zap, Clock } from 'lucide-react';
 import { useLanguage } from '@/contexts/language-context';
 import { useAccess } from '@/contexts/access-context';
 import { apiClient, queryKeys } from '@/lib/api';
@@ -523,21 +523,37 @@ export default function Ranking() {
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 sm:space-y-6">
 
-      {/* Last Updated */}
+      {/* Last Updated + 데이터 지연 알림 */}
       {data && (
-        <div className="text-right text-xs text-muted-foreground">
-          {t('ranking.lastUpdated')}: {new Date(data.generatedAt).toLocaleString(
-            language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US',
-            {
-              timeZone: 'America/New_York',
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true
-            }
-          )} ET
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-xs text-muted-foreground">
+            {t('ranking.lastUpdated')}: {new Date(data.generatedAt).toLocaleString(
+              language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : language === 'zh' ? 'zh-CN' : 'en-US',
+              {
+                timeZone: 'America/New_York',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              }
+            )} ET
+          </div>
+          {!isPremium && (
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-500/80 bg-amber-950/30 border border-amber-900/40 px-2.5 py-1 rounded-lg">
+              <Clock className="h-3 w-3" />
+              <span>{language === 'ko' ? '데이터 48시간 지연' : '48h delayed data'}</span>
+              {!ENV_CONFIG.isAppintos && (
+                <button
+                  onClick={() => setLocation('/premium-checkout')}
+                  className="ml-1 text-amber-400 hover:text-amber-300 underline underline-offset-2"
+                >
+                  {language === 'ko' ? '실시간 보기 →' : 'Go realtime →'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -812,165 +828,150 @@ export default function Ranking() {
                 )}
               </div>
 
-              {/* 내부자 상세 정보 섹션 */}
+              {/* 내부자 상세 정보 섹션 - 리디자인 */}
               {item.insiders && item.insiders.length > 0 ? (
-                <div className="mt-4 border-t pt-4">
-                  <h4 className="text-base font-semibold mb-3 text-purple-700 dark:text-purple-400 flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <h4 className="text-xs font-semibold mb-3 text-slate-400 flex items-center gap-2 uppercase tracking-wider">
+                    <Users className="h-3.5 w-3.5" />
                     {t('ranking.simultaneousBuyers')}
-                    <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full text-sm">
-                      {item.insiders.length}
+                    <span className="ml-auto font-mono text-slate-500 bg-white/5 px-2 py-0.5 rounded text-[10px]">
+                      {item.insiders.length}명
                     </span>
                   </h4>
-                  <div className="space-y-3">
-                    {item.insiders.slice(0, 4).map((insider, index) => (
-                      <div
-                        key={`${insider.name}-${index}`}
-                        className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation(); // 카드 클릭 이벤트 방지
-                          // insider 데이터를 TradeDetailModal 형식으로 변환
-                          // Use real price from ranking item (from API), fallback to insider price
-                          const currentPrice = item.currentPrice || insider.pricePerShare;
-                          const priceTargets = {
-                            conservative: insider.pricePerShare * 1.05,
-                            realistic: insider.pricePerShare * 1.15,
-                            optimistic: insider.pricePerShare * 1.25
-                          };
+                  <div className="space-y-2">
+                    {item.insiders.slice(0, 4).map((insider, index) => {
+                      const isBuy = insider.tradeType === 'BUY' || insider.tradeType === 'PURCHASE';
+                      const priceChange = item.enhancedTrade?.currentPrice
+                        ? ((item.enhancedTrade.currentPrice - insider.pricePerShare) / insider.pricePerShare) * 100
+                        : (item.currentPrice
+                            ? ((item.currentPrice - insider.pricePerShare) / insider.pricePerShare) * 100
+                            : null);
+                      const tradeValueFormatted = insider.totalValue >= 1000000
+                        ? `$${(insider.totalValue / 1000000).toFixed(1)}M`
+                        : `$${(insider.totalValue / 1000).toFixed(0)}K`;
 
-                          const insiderTradeData = {
-                            ticker: item.ticker,
-                            companyName: item.companyName,
-                            traderName: insider.name,
-                            traderTitle: insider.title,
-                            tradeType: insider.tradeType,
-                            shares: insider.shares,
-                            pricePerShare: insider.pricePerShare,
-                            totalValue: insider.totalValue,
-                            filedDate: insider.date,
-                            secFilingUrl: insider.secFilingUrl,
-                            currentPrice,
-                            marketCap: item.marketCap,
-                            dataQuality: 75,
-                            aiInsight: t('ranking.aiAnalysis.executiveSummary')
-                              .replace('{name}', insider.name)
-                              .replace('{title}', insider.title)
-                              .replace('{company}', item.companyName)
-                              .replace('{shares}', insider.shares.toLocaleString())
-                              .replace('{price}', insider.pricePerShare.toFixed(2)),
-                            comprehensiveAnalysis: {
-                              signalType: insider.tradeType === 'BUY' ? 'BUY' : 'SELL',
-                              aiSummary: t('ranking.aiAnalysis.executiveSummary')
+                      return (
+                        <div
+                          key={`${insider.name}-${index}`}
+                          className={`relative rounded-xl overflow-hidden cursor-pointer border transition-all duration-200 ${
+                            isBuy
+                              ? 'bg-[#061410] border-green-900/40 hover:border-green-600/50'
+                              : 'bg-[#140606] border-red-900/40 hover:border-red-600/50'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const currentPrice = item.currentPrice || insider.pricePerShare;
+                            const insiderTradeData = {
+                              ticker: item.ticker,
+                              companyName: item.companyName,
+                              traderName: insider.name,
+                              traderTitle: insider.title,
+                              tradeType: insider.tradeType,
+                              shares: insider.shares,
+                              pricePerShare: insider.pricePerShare,
+                              totalValue: insider.totalValue,
+                              filedDate: insider.date,
+                              secFilingUrl: insider.secFilingUrl,
+                              currentPrice,
+                              marketCap: item.marketCap,
+                              dataQuality: 75,
+                              aiInsight: t('ranking.aiAnalysis.executiveSummary')
                                 .replace('{name}', insider.name)
                                 .replace('{title}', insider.title)
                                 .replace('{company}', item.companyName)
                                 .replace('{shares}', insider.shares.toLocaleString())
                                 .replace('{price}', insider.pricePerShare.toFixed(2)),
-                              newsAnalysis: null
-                            }
-                          };
-                          setSelectedTradeData(insiderTradeData);
-                          setShowTradeModal(true);
-                        }}
-                      >
-                        {/* 이름과 직책 */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-base">{insider.name}</span>
-                              <Badge
-                                variant="secondary"
-                                className="text-xs px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              >
-                                {t('filter.buy')}
-                              </Badge>
+                              comprehensiveAnalysis: {
+                                signalType: insider.tradeType === 'BUY' ? 'BUY' : 'SELL',
+                                aiSummary: t('ranking.aiAnalysis.executiveSummary')
+                                  .replace('{name}', insider.name)
+                                  .replace('{title}', insider.title)
+                                  .replace('{company}', item.companyName)
+                                  .replace('{shares}', insider.shares.toLocaleString())
+                                  .replace('{price}', insider.pricePerShare.toFixed(2)),
+                                newsAnalysis: null
+                              }
+                            };
+                            setSelectedTradeData(insiderTradeData);
+                            setShowTradeModal(true);
+                          }}
+                        >
+                          {/* 좌측 색상 강조 바 */}
+                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${isBuy ? 'bg-green-500' : 'bg-red-500'}`} />
+
+                          <div className="p-3 pl-4">
+                            {/* 헤더: 이름 + 거래 타입 배지 */}
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-sm text-white truncate">{insider.name}</p>
+                                <p className="text-[11px] text-slate-500 truncate">{insider.title}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {/* 거래 총액 (가장 눈에 띄게) */}
+                                <span className={`text-sm font-bold ${isBuy ? 'text-green-400' : 'text-red-400'}`}>
+                                  {tradeValueFormatted}
+                                </span>
+                                <Badge
+                                  className={`text-[10px] px-1.5 py-0 h-5 ${
+                                    isBuy
+                                      ? 'bg-green-900/40 text-green-400 border-green-700/50'
+                                      : 'bg-red-900/40 text-red-400 border-red-700/50'
+                                  }`}
+                                >
+                                  {isBuy ? t('filter.buy') : t('filter.sell')}
+                                </Badge>
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">{insider.title}</p>
+
+                            {/* 세부 메트릭 행 */}
+                            <div className="flex items-center gap-4 text-[11px]">
+                              <div>
+                                <span className="text-slate-500">{t('ranking.buyPrice')} </span>
+                                <span className="text-slate-300 font-medium">${insider.pricePerShare.toFixed(2)}</span>
+                                {priceChange !== null && (
+                                  <span className={`ml-1 font-semibold ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-slate-500">{t('ranking.shareCount')} </span>
+                                <span className="text-slate-300 font-medium">{insider.shares.toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {/* 날짜 */}
+                            <div className="mt-2 flex items-center gap-1 text-[10px] text-slate-600">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatTimeAgo(insider.date)}</span>
+                            </div>
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        {/* 거래 상세 정보 */}
-                        <div className="grid grid-cols-3 gap-3 text-xs">
-                          <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">{t('ranking.buyPrice')}</p>
-                            <p className="font-semibold text-sm text-blue-600 dark:text-blue-400">
-                              ${insider.pricePerShare.toFixed(2)}
-                            </p>
-                            {item.enhancedTrade?.currentPrice && (
-                              (() => {
-                                const priceChange = item.enhancedTrade.currentPrice - insider.pricePerShare;
-                                const percentChange = ((priceChange / insider.pricePerShare) * 100);
-                                const isGain = priceChange > 0;
-
-                                return (
-                                  <div className="flex flex-col gap-0.5">
-                                    <p className={`text-[10px] mt-1 font-medium flex items-center gap-0.5 ${
-                                      isGain
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : 'text-red-600 dark:text-red-400'
-                                    }`}>
-                                      {isGain ? (
-                                        <TrendingUp className="h-2.5 w-2.5" />
-                                      ) : (
-                                        <TrendingDown className="h-2.5 w-2.5" />
-                                      )}
-                                      {isGain ? '+' : ''}{percentChange.toFixed(1)}%
-                                    </p>
-                                    {/* 가격 수집 시간 표시 */}
-                                    {(item.enhancedTrade as any)?.priceLastUpdated && (
-                                      <p className="text-[9px] text-muted-foreground">
-                                        {formatTimeAgo((item.enhancedTrade as any).priceLastUpdated)}
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              })()
+                  {/* 패턴 감지 표시 */}
+                  {item.detectedPatterns && item.detectedPatterns.length > 0 && (
+                    <div className="mt-3 p-3 rounded-lg bg-amber-950/30 border border-amber-900/30">
+                      <p className="text-[11px] font-semibold text-amber-400 mb-2 flex items-center gap-1.5">
+                        <Zap className="h-3.5 w-3.5" />
+                        감지된 패턴
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.detectedPatterns.map((pattern, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <Badge className="text-[10px] bg-amber-900/30 text-amber-300 border-amber-700/50">
+                              {pattern.type}
+                            </Badge>
+                            {pattern.description && (
+                              <span className="text-[10px] text-slate-500">{pattern.description}</span>
                             )}
                           </div>
-                          <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">{t('ranking.shareCount')}</p>
-                            <p className="font-semibold text-sm">
-                              {insider.shares.toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="bg-white dark:bg-gray-900 rounded p-2.5">
-                            <p className="text-muted-foreground mb-1">{t('ranking.totalAmount')}</p>
-                            <p className="font-semibold text-sm text-green-600 dark:text-green-400">
-                              ${(insider.totalValue / 1000).toFixed(0)}K
-                            </p>
-                            {/* Market cap ratio for individual insider */}
-                            <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">
-                              {(() => {
-                                if (!item.marketCap || item.marketCap <= 0) {
-                                  return `${tModal.marketCapRatio}: -`;
-                                }
-                                const ratio = (insider.totalValue / item.marketCap) * 100;
-                                let ratioStr;
-                                if (ratio >= 10) ratioStr = Math.round(ratio) + '%';
-                                else if (ratio >= 1) ratioStr = ratio.toFixed(1) + '%';
-                                else if (ratio >= 0.01) ratioStr = ratio.toFixed(2) + '%';
-                                else if (ratio >= 0.001) ratioStr = ratio.toFixed(3) + '%';
-                                else if (ratio >= 0.0001) ratioStr = ratio.toFixed(4) + '%';
-                                else if (ratio >= 0.00001) ratioStr = ratio.toFixed(5) + '%';
-                                else if (ratio >= 0.000001) ratioStr = ratio.toFixed(6) + '%';
-                                else if (ratio > 0) ratioStr = ratio.toExponential(2) + '%';
-                                else ratioStr = '0%';
-                                return `${tModal.marketCapRatio}: ${ratioStr}`;
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* 거래 시간 */}
-                        <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>{t('ranking.tradeDate')} {formatTimeAgo(insider.date)}</span>
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : null}
             </CardContent>

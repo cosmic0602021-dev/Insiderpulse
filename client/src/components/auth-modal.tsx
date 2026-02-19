@@ -716,16 +716,34 @@ export function AuthModal() {
             </button>
           </form>
 
-          <div className="mt-10 flex justify-between items-center border-t border-neutral-900 pt-6">
-            <button 
-              onClick={() => setIsLogin(!isLogin)} 
-              className="text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold"
-              data-testid="button-toggle-mode"
-            >
-              {isLogin ? t.noAccount : t.hasAccount}
-            </button>
-            
-            <div className="flex items-center gap-2 text-neutral-700">
+          <div className="mt-8 border-t border-neutral-900 pt-6">
+            {isLogin ? (
+              /* 로그인 상태: 하단에 회원가입 링크 */
+              <div className="text-center space-y-3">
+                <p className="text-[11px] text-neutral-500 font-mono">
+                  {language === 'ko' ? '계정이 없으신가요?' : language === 'ja' ? 'アカウントをお持ちでないですか？' : language === 'zh' ? '没有账户？' : "Don't have an account?"}
+                </p>
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className="w-full py-2.5 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-colors text-[11px] font-mono uppercase tracking-widest"
+                  data-testid="button-toggle-mode"
+                >
+                  {language === 'ko' ? '계정 만들기' : language === 'ja' ? 'アカウント作成' : language === 'zh' ? '创建账户' : 'Create Account'}
+                </button>
+              </div>
+            ) : (
+              /* 회원가입 상태: 하단에 로그인 링크 */
+              <div className="text-center">
+                <button
+                  onClick={() => setIsLogin(true)}
+                  className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors font-mono"
+                  data-testid="button-toggle-mode"
+                >
+                  {language === 'ko' ? '이미 계정이 있으신가요? 로그인' : language === 'ja' ? 'すでにアカウントをお持ちですか？ログイン' : language === 'zh' ? '已有账户？登录' : 'Already have an account? Login'}
+                </button>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-2 text-neutral-700 mt-4">
               <ShieldCheck size={12} />
               <span className="text-[9px] font-mono">AES-256 ENCRYPTION</span>
             </div>

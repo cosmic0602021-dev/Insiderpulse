@@ -239,7 +239,10 @@
       "Bash(host:*)",
       "Bash(getent:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(openssl x509:*)"
+      "Bash(openssl x509:*)",
+      "Bash(head -5 grep -rn \"Live Performance\\\\|Returns from past stock\" /home/runner/workspace/client/)",
+      "Bash(head -5 grep -n \"neon\\\\|postgres\\\\|DATABASE\" /home/runner/workspace/server/index.ts)",
+      "Bash(1 grep -n \"language\\\\|Language\\\\|useLanguage\" /home/runner/workspace/client/src/pages/top-stocks-terminal.tsx)"
     ],
     "deny": [],
     "ask": []

@@ -88,6 +88,29 @@ export default function LiveTradingTerminal() {
   const [hasMoreData, setHasMoreData] = useState(true);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<'core' | 'all'>('core');
   const [adClickCount, setAdClickCount] = useState(0);  // 앱인토스 광고 클릭 카운터
+  const [visitStreak, setVisitStreak] = useState(0);
+  const [newTradesSince, setNewTradesSince] = useState(0);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  // 방문 추적 (스트릭 + 재방문 배너)
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastDay = localStorage.getItem('ip_lastVisitDay');
+    const streak = parseInt(localStorage.getItem('ip_visitStreak') || '1');
+    const lastCount = parseInt(localStorage.getItem('ip_lastTradeCount') || '0');
+    if (lastDay !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const newStreak = lastDay === yesterday.toDateString() ? streak + 1 : 1;
+      localStorage.setItem('ip_visitStreak', String(newStreak));
+      localStorage.setItem('ip_lastVisitDay', today);
+      setVisitStreak(newStreak);
+    } else {
+      setVisitStreak(streak);
+    }
+    if (lastCount > 0) setShowWelcome(true);
+  }, []);
 
   // 검색어 디바운스 (300ms 대기 후 서버 검색)
   useEffect(() => {
@@ -269,6 +292,19 @@ export default function LiveTradingTerminal() {
     return result;
   }, [terminalTrades, searchTrades, filter, debouncedSearch]);
 
+  // 마지막 방문 이후 새 거래 카운트 계산
+  useEffect(() => {
+    if (filteredData.length === 0) return;
+    const lastCount = parseInt(localStorage.getItem('ip_lastTradeCount') || '0');
+    if (showWelcome && lastCount > 0) {
+      setNewTradesSince(Math.max(0, filteredData.length - lastCount));
+    }
+    const timer = setTimeout(() => {
+      localStorage.setItem('ip_lastTradeCount', String(filteredData.length));
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [filteredData.length, showWelcome]);
+
   const realTimeItems = isPro ? filteredData.slice(0, 3) : [];
   const historicalItems = isPro ? filteredData.slice(3) : filteredData;
 
@@ -286,13 +322,13 @@ export default function LiveTradingTerminal() {
       return;
     }
 
-    // 앱인토스: 2번째 클릭마다 전면형 광고 표시
+    // 앱인토스: 3번째 클릭마다 전면형 광고 표시 (UX 균형)
     if (isAppintos) {
       const newCount = adClickCount + 1;
       setAdClickCount(newCount);
 
-      if (newCount % 2 === 0) {
-        // 2, 4, 6번째 클릭: 광고 표시 후 모달 열기
+      if (newCount % 3 === 0) {
+        // 3, 6, 9번째 클릭: 광고 표시 후 모달 열기
         try {
           console.log('[LiveTrading] Showing interstitial ad (click count:', newCount, ')');
           await showInterstitialAd();
@@ -350,7 +386,7 @@ export default function LiveTradingTerminal() {
 
       {/* Header */}
       <div className="p-6 border-b border-neutral-900">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
           <div>
             <h1 className="text-3xl font-light text-neutral-200 tracking-tight flex items-center gap-3">
               {t.header}
@@ -374,6 +410,38 @@ export default function LiveTradingTerminal() {
             </p>
           </div>
         </div>
+
+        {/* 웰컴 배너 - 재방문 후킹 */}
+        {showWelcome && !welcomeDismissed && (
+          <div className="mb-4 flex items-center justify-between gap-3 px-3 py-2.5 border border-neutral-800 bg-neutral-900/50">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-base flex-shrink-0">
+                {visitStreak >= 7 ? '🔥' : visitStreak >= 3 ? '⚡' : ''}
+              </span>
+              <div className="min-w-0">
+                {visitStreak > 1 && (
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-emerald-600 mb-0.5">
+                    {visitStreak}-DAY STREAK
+                  </p>
+                )}
+                <p className="text-[11px] text-neutral-400 font-mono truncate">
+                  {newTradesSince > 0
+                    ? (language === 'ko'
+                        ? `마지막 방문 이후 ${newTradesSince}건의 새 거래 포착`
+                        : `${newTradesSince} new trades since last visit`)
+                    : (language === 'ko' ? '다시 오셨군요. 최신 거래를 확인하세요' : 'Welcome back. Check latest trades')}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setWelcomeDismissed(true)}
+              className="text-neutral-700 hover:text-neutral-400 flex-shrink-0 text-xs font-mono"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
 
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
@@ -464,7 +532,7 @@ export default function LiveTradingTerminal() {
               </svg>
             </div>
             <div className="text-neutral-300 text-sm">
-              {[
+              {(language === 'ko' ? [
                 '내부자 소식 엿듣는 중...',
                 '월가 찐친한테 연락 중...',
                 'SEC 공시 뒤지는 중...',
@@ -501,8 +569,76 @@ export default function LiveTradingTerminal() {
                 'C레벨 프라이빗 제트 항로 추적 중...',
                 '투자은행 신입 퇴근 시간 집계 중...',
                 '컨퍼런스콜 배경 소음 분석 중...',
-                '법무팀 에너지 드링크 소비량 측정 중...'
-              ][Math.floor(Math.random() * 36)]}
+              ] : language === 'ja' ? [
+                'インサイダー情報を盗み聞き中...',
+                'ウォール街の内部情報を入手中...',
+                'SEC開示書類を精査中...',
+                '億万長者のポートフォリオを解析中...',
+                '役員室の会話を傍受中...',
+                '秘密情報源に接触中...',
+                'CEOのSNSを監視中...',
+                'ヘッジファンドの動向を追跡中...',
+                'ゴールドマンの内部文書を解読中...',
+                'バフェットの朝食メニューを分析中...',
+                'イーロンの深夜ツイートを待機中...',
+                '機関投資家の動向を監視中...',
+                'JPモルガンVIPラウンジに潜入中...',
+                'ファンドマネージャーのゴルフ場を偵察中...',
+                'アナリストの残業時間を集計中...',
+              ] : language === 'zh' ? [
+                '正在窃听内部人士消息...',
+                '正在联系华尔街线人...',
+                '正在翻查SEC公示文件...',
+                '正在偷看亿万富翁投资组合...',
+                '正在监听高管私下对话...',
+                '正在接触秘密信息源...',
+                '正在追踪CEO推文...',
+                '正在追踪对冲基金动向...',
+                '正在解读高盛内部文件...',
+                '正在分析巴菲特早餐菜单...',
+                '正在等待马斯克深夜推文...',
+                '正在监控机构投资者动向...',
+                '正在潜入摩根大通VIP休息室...',
+                '正在侦察基金经理高尔夫球场...',
+                '正在统计分析师加班次数...',
+              ] : [
+                'Tapping into insider networks...',
+                'Decoding SEC filings in real time...',
+                'Scanning executive trading activity...',
+                'Tracking smart money moves...',
+                'Monitoring C-suite buy signals...',
+                'Checking executive portfolio changes...',
+                'Analyzing insider conviction trades...',
+                'Spotting hedge fund manager at the wine bar...',
+                'Intercepting Goldman boardroom chatter...',
+                'Profiling Buffett\'s breakfast habits...',
+                'Waiting for Elon\'s 3am tweet...',
+                'Tailing institutional investors at lunch...',
+                'Infiltrating JPMorgan VIP lounge...',
+                'Surveilling fund manager\'s golf game...',
+                'Counting analyst overtime hours...',
+                'Tracking CFO\'s secret sighs...',
+                'Reading between the lines of earnings calls...',
+                'Counting luxury cars in the executive lot...',
+                'Listening in on Pentagon economic briefings...',
+                'Obtaining private equity meeting minutes...',
+                'Befriending BlackRock HQ janitor...',
+                'Reading executive facial expressions pre-earnings...',
+                'Predicting results from shareholder lunch menu...',
+                'Monitoring IR team\'s late-night food orders...',
+                'Measuring CFO\'s under-eye dark circles...',
+                'Analyzing HQ conference room booking patterns...',
+                'Checking exec gym attendance rates...',
+                'Backtracking M&A team\'s taxi receipts...',
+                'Counting accounting firm overtime lights...',
+                'Detecting sudden surge in office coffee orders...',
+                'Digging through board meeting wastebaskets...',
+                'Tracking C-level private jet flight paths...',
+                'Logging investment bank analyst exit times...',
+                'Analyzing conference call background noise...',
+                'Measuring legal team\'s energy drink intake...',
+                'Cross-referencing insider Form 4 filings...',
+              ])[Math.floor(Math.random() * (language === 'ja' || language === 'zh' ? 15 : language === 'ko' ? 36 : 36))]}
             </div>
           </div>
         )}

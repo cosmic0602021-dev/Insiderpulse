@@ -23,6 +23,11 @@ body {
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* LIGHT MODE - Professional Finance Dashboard */
 :root {
   --button-outline: rgba(0,0,0, .08);

@@ -1,5 +1,5 @@
 // Modified for App Store compliance: price target safe mode - removed all investment predictions
-import { X, AlertTriangle, Brain, Target, TrendingUp, Users, ChevronDown, ChevronUp, Info, Bell, BellOff, Eye } from 'lucide-react';
+import { X, AlertTriangle, Brain, Users, Bell, BellOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { ComposedChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Area, ReferenceDot, CartesianGrid } from 'recharts';
@@ -43,8 +43,22 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
   const [stockPrice, setStockPrice] = useState<StockPriceData | null>(null);
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
+  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(true);
   const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
+
+  // SEC 공시 모달 상태
+  const [secFilingModalUrl, setSecFilingModalUrl] = useState<string | null>(null);
+
+  // 앱인토스: 언락 셀레브레이션 배너 (1.5초 표시)
+  const [showUnlockBanner, setShowUnlockBanner] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && ENV_CONFIG.isAppintos) {
+      setShowUnlockBanner(true);
+      const t = setTimeout(() => setShowUnlockBanner(false), 1800);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
   // Notification subscription state
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -706,14 +720,16 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
         : `${Math.abs(currentPriceChange).toFixed(1)}% below entry - potential accumulation zone`);
     }
 
-    // 요약 문장 생성
+    // 요약 문장 생성 - 스토리 형식
+    const firstName = stock.buyers[0]?.name || (langKey === 'ko' ? '내부자' : 'Insider');
+    const amountStr = formatCurrency(stats.totalAmount, false);
     const summary = langKey === 'ko'
-      ? `${stats.buyerCount}명 내부자의 집단 매수 활동이 SEC에 보고되었습니다.`
+      ? `${firstName}가 자기 돈 ${amountStr}을 직접 투자했습니다. 회사 내부를 가장 잘 아는 사람의 베팅.`
       : langKey === 'ja'
-      ? `${stats.buyerCount}名のインサイダーによる集団購入活動がSECに報告されました。`
+      ? `${firstName}が自己資金${amountStr}を直接投資。会社内部を最もよく知る人物のベット。`
       : langKey === 'zh'
-      ? `${stats.buyerCount}位内部人士的集体买入活动已向SEC报告。`
-      : `Cluster buying activity by ${stats.buyerCount} insiders reported to SEC.`;
+      ? `${firstName}直接投入${amountStr}自有资金。最了解公司内部的人的押注。`
+      : `${firstName} directly invested ${amountStr} of personal funds. A bet from someone who knows this company best.`;
 
     return { summary, insights };
   }, [stock, stats, langKey]);
@@ -786,8 +802,9 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
   });
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1200px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1200px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden data-[state=open]:slide-in-from-bottom-full data-[state=open]:duration-500 data-[state=closed]:slide-out-to-bottom-full data-[state=closed]:duration-300">
         <VisuallyHidden>
           <DialogTitle>{stock.companyName} - Cluster Buy Summary</DialogTitle>
         </VisuallyHidden>
@@ -864,195 +881,238 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
             </div>
           </div>
 
-          {/* 소셜 프루프 - 실시간 조회수 */}
-          <div className="px-4 py-2.5 bg-gradient-to-r from-amber-950/40 to-amber-900/20 border-b-2 border-amber-500/50 flex items-center gap-3 shrink-0 shadow-lg">
-            <div className="relative flex items-center">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"></span>
-              </span>
-            </div>
-            <Eye size={18} className="text-amber-200 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]" strokeWidth={2.5} />
-            <span className="text-[13px] text-amber-100 font-mono font-bold tracking-wide drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]">
-              {(() => {
-                // ticker 기반으로 일관성 있는 랜덤 숫자 생성
-                const seed = stock.ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const base = 500 + (seed % 1500);
-                const viewers = base + Math.floor(Math.random() * 100);
-                return `${viewers.toLocaleString()}${langKey === 'ko' ? '명이 지금 보는 중' : ' viewers now'}`;
-              })()}
-            </span>
-          </div>
-
-          {/* Key Stats - 3 cols mobile, 5 cols desktop */}
-          <div className="grid grid-cols-3 md:grid-cols-5 border-b border-neutral-800 shrink-0">
-            <div className="px-2 py-2 border-r border-neutral-800 bg-emerald-950/10">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5 flex items-center gap-0.5">
-                <Users size={7} />
-                {langKey === 'ko' ? '내부자' : 'INSIDERS'}
+          {/* 앱인토스: 언락 셀레브레이션 배너 */}
+          {ENV_CONFIG.isAppintos && showUnlockBanner && (
+            <div className="px-4 py-3 flex items-center gap-3 shrink-0 border-b border-emerald-900/50 animate-in fade-in-0 slide-in-from-top-2 duration-500"
+              style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.15) 0%, rgba(5,5,5,0) 100%)' }}>
+              <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
               </div>
-              <div className="text-lg md:text-xl font-bold text-emerald-500">
-                {stats.buyerCount}{langKey === 'ko' ? '명' : ''}
+              <div>
+                <p className="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
+                  {langKey === 'ko' ? '종목 잠금 해제됨' : 'STOCK UNLOCKED'}
+                </p>
+                <p className="text-[9px] text-emerald-600 font-mono">
+                  {langKey === 'ko' ? '내부자 거래 정보를 확인하세요' : 'View insider trading details below'}
+                </p>
               </div>
             </div>
+          )}
 
-            <div className="px-2 py-2 border-r border-neutral-800">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '평균가' : 'AVG'}
-              </div>
-              <div className="text-base md:text-lg font-light text-neutral-200">
-                {formatCurrency(stats.avgPrice)}
-              </div>
-            </div>
+          {/* ZONE 2: Hero Card - 스크린샷 바이럴 핵심 */}
+          {stats && (
+            <div className="mx-3 my-3 border border-emerald-800/60 bg-gradient-to-br from-emerald-950/50 via-neutral-950 to-neutral-950 relative overflow-hidden shrink-0">
 
-            <div className="px-2 py-2 md:border-r border-neutral-800">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '현재가' : 'NOW'}
-              </div>
-              <div className={`text-base md:text-lg font-light ${priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {formatCurrency(currentPrice)}
-              </div>
-            </div>
+              {/* 배경 격자 패턴 - Bloomberg Terminal 느낌 */}
+              <div className="absolute inset-0 opacity-[0.03]"
+                style={{ backgroundImage: 'repeating-linear-gradient(0deg, #10b981 0px, transparent 1px, transparent 24px), repeating-linear-gradient(90deg, #10b981 0px, transparent 1px, transparent 24px)' }}
+              />
 
-            <div className="px-2 py-2 border-r border-t md:border-t-0 border-neutral-800 col-span-1">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '총액' : 'TOTAL'}
-              </div>
-              <div className="text-base md:text-lg font-light text-emerald-500">
-                {formatCurrency(stats.totalAmount, false)}
-              </div>
-              {(() => {
-                const marketCap = stock?.marketCap;
-                if (marketCap && marketCap > 0 && stats) {
-                  const ratio = (stats.totalAmount / marketCap) * 100;
-                  let percentStr;
-                  if (ratio >= 10) percentStr = Math.round(ratio) + '%';
-                  else if (ratio >= 1) percentStr = ratio.toFixed(1) + '%';
-                  else if (ratio >= 0.01) percentStr = ratio.toFixed(2) + '%';
-                  else if (ratio >= 0.001) percentStr = ratio.toFixed(3) + '%';
-                  else if (ratio >= 0.0001) percentStr = ratio.toFixed(4) + '%';
-                  else if (ratio >= 0.00001) percentStr = ratio.toFixed(5) + '%';
-                  else if (ratio >= 0.000001) percentStr = ratio.toFixed(6) + '%';
-                  else if (ratio > 0) percentStr = ratio.toExponential(2) + '%';
-                  else percentStr = '0%';
-
-                  const prefix = langKey === 'ko' ? '시총대비 ' :
-                                langKey === 'ja' ? '時価総額比 ' :
-                                langKey === 'zh' ? '市值比 ' :
-                                'vs Cap: ';
-                  return (
-                    <div className="text-[8px] md:text-[9px] text-amber-400 font-mono mt-0.5 font-bold">
-                      {prefix + percentStr}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-
-            <div className="px-2 py-2 border-t md:border-t-0 border-neutral-800 col-span-2 md:col-span-1">
-              <div className="text-[6px] md:text-[7px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-                {langKey === 'ko' ? '내부자 평균 수익률' : 
-                 langKey === 'ja' ? '内部者平均リターン' :
-                 langKey === 'zh' ? '内部人士平均收益' :
-                 'INSIDER AVG RETURN'}
-              </div>
-              <div className={`text-base md:text-lg font-bold ${isNaN(priceChange) ? 'text-neutral-500' : priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {isNaN(priceChange) ? '-' : `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%`}
-              </div>
-            </div>
-          </div>
-
-          {/* Chart - Compact */}
-          <div className="p-2 border-b border-neutral-800 shrink-0">
-            <ResponsiveContainer width="100%" height={140}>
-              <ComposedChart data={priceHistory} margin={{ left: 0, right: 10, top: 15, bottom: 0 }}>
-                <defs>
-                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#333" strokeDasharray="3 3" strokeOpacity={0.3} />
-                <XAxis dataKey="date" stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} />
-                <YAxis stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} domain={['auto', 'auto']} width={45} />
-                <Tooltip contentStyle={{ background: '#0a0a0a', border: '1px solid #262626', fontSize: '9px', fontFamily: 'monospace', padding: '4px' }} />
-                {/* Average Buy Price Reference Line - More prominent */}
-                <ReferenceLine
-                  y={stats.avgPrice}
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  strokeDasharray="4 2"
-                  label={{
-                    value: `${langKey === 'ko' ? '평균 매수가' : 'AVG BUY'}: $${stats.avgPrice.toFixed(2)}`,
-                    position: 'top',
-                    fill: '#f59e0b',
-                    fontSize: 9,
-                    fontFamily: 'monospace',
-                    fontWeight: 'bold'
-                  }}
-                />
-                <Area type="monotone" dataKey="marketPrice" fill={`url(#${gradientId})`} fillOpacity={1} stroke="none" />
-                <Line type="monotone" dataKey="marketPrice" stroke="#10b981" strokeWidth={2} dot={false} />
-                <ReferenceDot x={priceHistory.find(p => p.isClusterCenter)?.date} y={stats.avgPrice} r={5} fill="#f59e0b" stroke="#0a0a0a" strokeWidth={2} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Signal + AI Analysis - Compact row */}
-          <div className="grid grid-cols-2 gap-2 p-2 border-b border-neutral-800 shrink-0">
-            {/* Signal */}
-            <div className="bg-emerald-950/30 border border-emerald-900/50 p-2 flex flex-col justify-center">
-              <div className="flex items-center gap-1 mb-1">
-                <TrendingUp size={10} className="text-emerald-500" />
-                <span className="text-[8px] text-emerald-500/70 uppercase font-mono">Signal</span>
-              </div>
-              <div className="text-lg font-bold text-emerald-500">
-                {(tData as any)[comprehensiveAnalysis?.signal] || comprehensiveAnalysis?.signal || tTop.strongBuy}
-              </div>
-              <div className="text-[8px] text-emerald-500/60 font-mono">
-                {comprehensiveAnalysis?.confidence || aiAnalysis?.confidence}% {langKey === 'ko' ? '신뢰도' : 'conf'}
-              </div>
-            </div>
-
-            {/* Sector/Industry Info */}
-            <div className="border border-neutral-800 bg-neutral-950/30 p-2 flex flex-col justify-center">
-              <div className="flex items-center gap-1 mb-1">
-                <Target size={9} className="text-blue-500" />
-                <span className="text-[8px] text-blue-500/70 uppercase font-mono">
-                  {langKey === 'ko' ? '업종' : langKey === 'ja' ? '業種' : langKey === 'zh' ? '行业' : 'Sector'}
+              {/* 상단 태그 바 */}
+              <div className="flex items-center justify-between px-3 pt-2.5 pb-2 border-b border-emerald-900/40 relative">
+                <span className="text-[9px] font-mono font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
+                  {langKey === 'ko' ? `내부자 ${stats.buyerCount}명 집중 매수` :
+                   langKey === 'ja' ? `インサイダー集中買い` :
+                   langKey === 'zh' ? `内部人士集中买入` :
+                   'INSIDER BUYING ALERT'}
+                </span>
+                <span className={`text-[9px] font-mono font-bold px-2 py-0.5 border ${stock.rank <= 3 ? 'border-amber-700 text-amber-400' : 'border-neutral-700 text-neutral-400'}`}>
+                  #{stock.rank} RANKED
                 </span>
               </div>
-              <div className="text-sm font-bold text-blue-400">
-                {stock.sector || stockPrice?.sector || '-'}
-              </div>
-            </div>
-          </div>
 
-          {/* AI Insight - Collapsible */}
-          <div className="border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0">
-            <div
-              className="px-2 py-2 flex items-center justify-between cursor-pointer hover:bg-purple-950/20 transition-colors"
-              onClick={() => !isLoadingAnalysis && setIsAnalysisExpanded(!isAnalysisExpanded)}
-            >
-              <div className="flex items-center gap-1.5">
-                <Brain size={12} className="text-purple-400" />
-                <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">
-                  {langKey === 'ko' ? 'AI 분석결과' : 'AI ANALYSIS'}
-                </span>
-              </div>
-              {!isLoadingAnalysis && (comprehensiveAnalysis?.aiSummary || comprehensiveAnalysis?.executiveSummary) && (
-                <div className="flex items-center gap-1 text-purple-400/60">
-                  <span className="text-[8px] font-mono uppercase">
-                    {isAnalysisExpanded ? (langKey === 'ko' ? '접기' : 'Less') : (langKey === 'ko' ? '더보기' : 'More')}
-                  </span>
-                  {isAnalysisExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              {/* 메인 영역 */}
+              <div className="px-3 pt-3 pb-2 relative">
+                <p className="text-[11px] font-mono text-neutral-300 tracking-[0.2em] mb-1">{stock.ticker}</p>
+
+                {/* 내부자 이름 - 스토리의 주인공 */}
+                {stock.buyers.length > 0 && (
+                  <div className="text-base font-bold text-white mb-2 leading-tight">
+                    {stock.buyers[0].name}
+                    {stock.buyers[0].relation && (
+                      <span className="text-neutral-400 text-sm font-normal"> ({(tData as any)[stock.buyers[0].relation] || stock.buyers[0].relation})</span>
+                    )}
+                    {stats.buyerCount > 1 && (
+                      <span className="text-neutral-500 text-sm font-normal"> +{stats.buyerCount - 1}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* 핵심 두 숫자: 매수금액(히어로 왼쪽) + 수익률(보조 오른쪽) */}
+                <div className="flex items-end justify-between mb-2">
+                  {/* 왼쪽: 매수금액이 진짜 히어로 */}
+                  <div>
+                    <p className="text-4xl font-black font-mono leading-none text-white">
+                      {formatCurrency(stats.totalAmount, false)}
+                    </p>
+                    <p className="text-[9px] font-mono text-neutral-200 mt-0.5 uppercase tracking-wide flex items-center gap-2">
+                      <span>
+                        {langKey === 'ko' ? '내부자 총 매수금액' :
+                         langKey === 'ja' ? '合計買付金額' :
+                         langKey === 'zh' ? '内部人总买入' :
+                         'TOTAL INSIDER BUY'}
+                      </span>
+                      {stock.marketCap && stock.marketCap > 0 && (() => {
+                        const ratio = (stats.totalAmount / stock.marketCap) * 100;
+                        const ratioStr = ratio >= 1 ? ratio.toFixed(1) + '%'
+                                       : ratio >= 0.01 ? ratio.toFixed(2) + '%'
+                                       : ratio.toFixed(3) + '%';
+                        return (
+                          <span className="text-amber-300 text-[8px] font-bold">
+                            {langKey === 'ko' ? `시총의 ${ratioStr}` : `${ratioStr} OF MKTCAP`}
+                          </span>
+                        );
+                      })()}
+                    </p>
+                    {stats.avgPrice > 0 && (
+                      <div className="mt-2 flex items-baseline gap-1.5">
+                        <span className="text-[9px] font-mono text-neutral-200 uppercase tracking-wide">
+                          {langKey === 'ko' ? '내부자 평균 매수가' :
+                           langKey === 'ja' ? '平均買付単価' :
+                           langKey === 'zh' ? '平均买入价' :
+                           'AVG INSIDER PRICE'}
+                        </span>
+                        <span className="text-[15px] font-black font-mono text-amber-400 leading-none">
+                          {formatCurrency(stats.avgPrice)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {/* 오른쪽: 수익률은 보조 */}
+                  <div className="text-right">
+                    <p className={`text-2xl font-black font-mono leading-none ${isNaN(priceChange) ? 'text-neutral-500' : priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isNaN(priceChange) ? '-' : `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(1)}%`}
+                      {!isNaN(priceChange) && <span className="text-base ml-0.5">{priceChange >= 0 ? '▲' : '▼'}</span>}
+                    </p>
+                    <p className="text-[9px] font-mono text-neutral-500 mt-0.5 uppercase tracking-wide">
+                      {langKey === 'ko' ? '매수 후 수익률' :
+                       langKey === 'ja' ? '買い後リターン' :
+                       langKey === 'zh' ? '买入后收益' :
+                       'SINCE BUY'}
+                    </p>
+                  </div>
                 </div>
-              )}
+
+                {/* SEC 공시 보기 버튼 */}
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-[9px] font-mono font-bold px-2 py-1 bg-blue-950/60 border border-blue-800/60 text-blue-400 flex items-center gap-1 hover:bg-blue-900/60 hover:text-blue-300 transition-colors cursor-pointer"
+                    onClick={() => {
+                      const buyer = stock.buyers?.[0];
+                      let url = buyer?.secFilingUrl;
+                      if (!url && buyer?.accessionNumber) {
+                        const parts = buyer.accessionNumber.split('-');
+                        if (parts.length >= 3) {
+                          const cik = Number(parts[0]);
+                          const accessionNoDashes = buyer.accessionNumber.replace(/-/g, '');
+                          url = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNoDashes}/xslF345X05/primarydocument.xml`;
+                        }
+                      }
+                      if (!url) {
+                        url = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${stock.ticker}&type=4&dateb=&owner=include&count=10`;
+                      }
+                      setSecFilingModalUrl(url);
+                    }}
+                  >
+                    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {langKey === 'ko' ? 'SEC 공시 보기' :
+                     langKey === 'ja' ? 'SEC届出確認' :
+                     langKey === 'zh' ? 'SEC备案查看' :
+                     'VIEW SEC FILING'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 하단: 인사이더펄스 브랜드 */}
+              <div className="flex items-center justify-between px-3 py-2 border-t border-emerald-900/30 relative overflow-hidden"
+                style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.08) 0%, rgba(5,5,5,0.95) 100%)' }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-1 h-4 bg-emerald-500" />
+                  <span className="text-[8px] font-mono text-emerald-600/70 uppercase tracking-widest">
+                    {langKey === 'ko' ? '토스 주식 내부자 거래 추적' :
+                     langKey === 'ja' ? '米国株インサイダー取引追跡' :
+                     langKey === 'zh' ? '美股内部人士交易追踪' :
+                     'US Insider Trading Tracker'}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-0">
+                  <span className="text-[13px] font-black text-emerald-400 tracking-tight leading-none">insider</span>
+                  <span className="text-[13px] font-black text-white tracking-tight leading-none">pulse</span>
+                </div>
+              </div>
             </div>
-            <div className="px-2 pb-2">
+          )}
+
+          {/* Chart */}
+          <div className="border-b border-neutral-800 shrink-0">
+            {priceHistory.length > 0 ? (
+              <>
+                {stats.avgPrice > 0 && (
+                  <div className="px-2 pt-1.5 flex items-center gap-1.5">
+                    <span className="inline-block w-4 border-t-2 border-dashed border-amber-500" />
+                    <span className="text-[8px] font-mono text-amber-500">
+                      {langKey === 'ko' ? '내부자 평균 매수가' :
+                       langKey === 'ja' ? '平均買付単価' :
+                       langKey === 'zh' ? '平均买入价' :
+                       'AVG INSIDER PRICE'}: {formatCurrency(stats.avgPrice)}
+                    </span>
+                  </div>
+                )}
+              <ResponsiveContainer width="100%" height={110} style={{ padding: '0 8px 8px' }}>
+                <ComposedChart data={priceHistory} margin={{ left: 0, right: 10, top: 8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#064e3b" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#333" strokeDasharray="3 3" strokeOpacity={0.3} />
+                  <XAxis dataKey="date" stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} />
+                  <YAxis stroke="#444" style={{ fontSize: '8px', fontFamily: 'monospace' }} tick={{ fill: '#525252' }} domain={['auto', 'auto']} width={45} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const val = payload[0]?.value;
+                      return (
+                        <div className="bg-neutral-950 border border-neutral-800 px-2 py-1 text-[9px] font-mono text-neutral-300">
+                          ${typeof val === 'number' ? val.toFixed(2) : val}
+                        </div>
+                      );
+                    }}
+                  />
+                  {/* Average Buy Price Reference Line */}
+                  <ReferenceLine
+                    y={stats.avgPrice}
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                  />
+                  <Area type="monotone" dataKey="marketPrice" fill={`url(#${gradientId})`} fillOpacity={1} stroke="none" isAnimationActive={true} animationDuration={1200} />
+                  <Line type="monotone" dataKey="marketPrice" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={true} animationDuration={1200} />
+                  <ReferenceDot x={priceHistory.find(p => p.isClusterCenter)?.date} y={stats.avgPrice} r={8} fill="#f59e0b" stroke="#0a0a0a" strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              </>
+            ) : (
+              <div className="h-[110px] flex items-center justify-center">
+                <span className="text-[10px] text-neutral-600 font-mono">
+                  {langKey === 'ko' ? '차트 데이터 없음' : 'No chart data'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ZONE 4: AI Insight - 컴팩트 (제목 없이, 1-2줄) */}
+          <div className="border-b border-neutral-800 bg-gradient-to-r from-purple-950/30 to-neutral-950/30 shrink-0">
+            <div className="px-2 py-1.5 flex items-start gap-1.5">
+              <Brain size={11} className="text-purple-400 shrink-0 mt-0.5" />
               {isLoadingAnalysis ? (
-                <div className="pl-5 flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-[10px] text-purple-400 font-mono">
                     {langKey === 'ko' ? 'AI 분석 중...' :
@@ -1062,275 +1122,86 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                   </span>
                 </div>
               ) : (comprehensiveAnalysis?.aiSummary || comprehensiveAnalysis?.executiveSummary) ? (
-                <div className="pl-5 space-y-2">
-                  {/* Executive Summary */}
-                  <p className="text-[11px] md:text-xs text-white leading-relaxed font-medium">
-                    {comprehensiveAnalysis.aiSummary || comprehensiveAnalysis.executiveSummary}
-                  </p>
-
-                  {/* Expanded Analysis */}
-                  {isAnalysisExpanded && (
-                    <div className="space-y-2.5 pt-1 border-t border-neutral-800/50">
-                      {/* Key Insights */}
-                      {comprehensiveAnalysis.riskAssessment?.factors && comprehensiveAnalysis.riskAssessment.factors.length > 0 && (
-                        <div className="space-y-1">
-                          <h4 className="text-[9px] font-semibold text-purple-400 uppercase tracking-wide">
-                            {langKey === 'ko' ? '📊 주요 인사이트' :
-                             langKey === 'ja' ? '📊 主要インサイト' :
-                             langKey === 'zh' ? '📊 关键见解' :
-                             '📊 Key Insights'}
-                          </h4>
-                          <ul className="space-y-1.5">
-                            {comprehensiveAnalysis.riskAssessment.factors.map((insight: string, idx: number) => (
-                              <li key={idx} className="text-[10px] text-neutral-300 leading-relaxed pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-purple-500">
-                                {insight}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* News Analysis */}
-                      {comprehensiveAnalysis.newsAnalysis && comprehensiveAnalysis.newsAnalysis.totalNews > 0 && (
-                        <div className="space-y-1">
-                          <h4 className="text-[9px] font-semibold text-blue-400 uppercase tracking-wide">
-                            {langKey === 'ko' ? '📰 뉴스 분석 (최근 30일)' :
-                             langKey === 'ja' ? '📰 ニュース分析（過去30日）' :
-                             langKey === 'zh' ? '📰 新闻分析（最近30天）' :
-                             '📰 News Analysis (30 days)'}
-                          </h4>
-                          <div className="flex items-center gap-3 text-[9px]">
-                            <span className="text-green-400">✓ {comprehensiveAnalysis.newsAnalysis.positiveCount} {langKey === 'ko' ? '긍정' : 'Positive'}</span>
-                            <span className="text-neutral-400">○ {comprehensiveAnalysis.newsAnalysis.totalNews - comprehensiveAnalysis.newsAnalysis.positiveCount - comprehensiveAnalysis.newsAnalysis.negativeCount} {langKey === 'ko' ? '중립' : 'Neutral'}</span>
-                            <span className="text-red-400">✗ {comprehensiveAnalysis.newsAnalysis.negativeCount} {langKey === 'ko' ? '부정' : 'Negative'}</span>
-                          </div>
-                          {comprehensiveAnalysis.newsAnalysis.majorNews && comprehensiveAnalysis.newsAnalysis.majorNews.length > 0 && (
-                            <div className="space-y-1 mt-1.5">
-                              {comprehensiveAnalysis.newsAnalysis.majorNews.slice(0, 3).map((news: any, idx: number) => (
-                                <div key={idx} className="text-[9px] text-neutral-400 pl-3 border-l-2 border-neutral-700">
-                                  <span className={`font-semibold ${news.sentiment === 'BULLISH' ? 'text-green-400' : news.sentiment === 'BEARISH' ? 'text-red-400' : 'text-neutral-300'}`}>
-                                    {news.title}
-                                  </span>
-                                  {news.summary && <p className="text-neutral-500 mt-0.5">{news.summary}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Risk Assessment & Catalysts */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {comprehensiveAnalysis.riskAssessment && (
-                          <div className="space-y-1">
-                            <h4 className="text-[9px] font-semibold text-amber-400 uppercase tracking-wide">
-                              {langKey === 'ko' ? '⚠️ 리스크' :
-                               langKey === 'ja' ? '⚠️ リスク' :
-                               langKey === 'zh' ? '⚠️ 风险' :
-                               '⚠️ Risk'}
-                            </h4>
-                            <div className={`inline-block px-2 py-0.5 rounded text-[9px] font-semibold ${
-                              comprehensiveAnalysis.riskAssessment.level === 'HIGH' ? 'bg-red-900/30 text-red-400' :
-                              comprehensiveAnalysis.riskAssessment.level === 'MEDIUM' ? 'bg-amber-900/30 text-amber-400' :
-                              'bg-green-900/30 text-green-400'
-                            }`}>
-                              {comprehensiveAnalysis.riskAssessment.level}
-                            </div>
-                          </div>
-                        )}
-
-                        {comprehensiveAnalysis.timeHorizon && (
-                          <div className="space-y-1">
-                            <h4 className="text-[9px] font-semibold text-cyan-400 uppercase tracking-wide">
-                              {langKey === 'ko' ? '⏱️ 시간' :
-                               langKey === 'ja' ? '⏱️ 期間' :
-                               langKey === 'zh' ? '⏱️ 时间' :
-                               '⏱️ Horizon'}
-                            </h4>
-                            <p className="text-[9px] text-neutral-300 font-medium">{comprehensiveAnalysis.timeHorizon}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Market Context */}
-                      {comprehensiveAnalysis.marketContext?.reasoning && (
-                        <div className="space-y-1">
-                          <h4 className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wide">
-                            {langKey === 'ko' ? '📈 시장 컨텍스트' :
-                             langKey === 'ja' ? '📈 市場コンテキスト' :
-                             langKey === 'zh' ? '📈 市场背景' :
-                             '📈 Market Context'}
-                          </h4>
-                          <p className="text-[10px] text-neutral-300 leading-relaxed">
-                            {comprehensiveAnalysis.marketContext.reasoning}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Confidence Score */}
-                      {comprehensiveAnalysis.confidence && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <span className="text-[9px] text-neutral-500">
-                            {langKey === 'ko' ? '신뢰도:' :
-                             langKey === 'ja' ? '信頼度:' :
-                             langKey === 'zh' ? '可信度:' :
-                             'Confidence:'}
-                          </span>
-                          <div className="flex-1 bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className={`h-full ${comprehensiveAnalysis.confidence >= 70 ? 'bg-green-500' : comprehensiveAnalysis.confidence >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
-                              style={{ width: `${comprehensiveAnalysis.confidence}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-[9px] font-semibold text-neutral-300">{comprehensiveAnalysis.confidence}%</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <p className="text-[11px] text-white leading-relaxed font-medium line-clamp-4">
+                  {comprehensiveAnalysis.aiSummary || comprehensiveAnalysis.executiveSummary}
+                </p>
               ) : comprehensiveAnalysis?.notRanked ? (
-                <div className="pl-5 space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-1">
-                      <p className="text-[10px] leading-relaxed text-amber-400">
-                        {langKey === 'ko' ? '현재 랭킹에 없는 종목입니다.' :
-                         langKey === 'ja' ? 'ランキング外の銘柄です。' :
-                         langKey === 'zh' ? '当前未排名的股票。' :
-                         'Not currently in rankings.'}
-                      </p>
-                      <p className="text-[8px] text-neutral-500 italic">
-                        {langKey === 'ko' ? '💡 랭킹 페이지에서 AI 분석 제공 종목을 확인하세요.' :
-                         langKey === 'ja' ? '💡 ランキングページでAI分析対象銘柄を確認してください。' :
-                         langKey === 'zh' ? '💡 在排名页面查看AI分析股票。' :
-                         '💡 Check the Rankings page for stocks with AI analysis.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-[10px] leading-relaxed text-amber-400">
+                  {langKey === 'ko' ? '현재 랭킹에 없는 종목입니다.' :
+                   langKey === 'ja' ? 'ランキング外の銘柄です。' :
+                   langKey === 'zh' ? '当前未排名的股票。' :
+                   'Not currently in rankings.'}
+                </p>
               ) : analysisError ? (
-                <div className="pl-5 space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    {analysisError.type === 'not_ranked' ? (
-                      <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                    ) : (
-                      <AlertTriangle size={12} className="text-red-500 shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1 space-y-1">
-                      <p className={`text-[10px] leading-relaxed ${
-                        analysisError.type === 'not_ranked' ? 'text-amber-400' : 'text-red-400'
-                      }`}>
-                        {analysisError.message}
-                      </p>
-
-                      {analysisError.retryable && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAnalysisError(null);
-                            setComprehensiveAnalysis(null);
-                            setIsLoadingAnalysis(true);
-                            // Trigger re-fetch
-                            const fetchAgain = async () => {
-                              try {
-                                const tradesResponse = await fetch(resolveApiUrl(`/api/trades?ticker=${stock?.ticker}&limit=1`));
-                                if (!tradesResponse.ok) throw new Error(`Trades API returned ${tradesResponse.status}`);
-                                const tradesData = await tradesResponse.json();
-                                if (!tradesData.trades?.length) {
-                                  setAnalysisError({
-                                    type: 'not_available',
-                                    message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' : 'No trade data found.',
-                                    retryable: false
-                                  });
-                                  setIsLoadingAnalysis(false);
-                                  return;
-                                }
-                                const tradeId = tradesData.trades[0].id;
-                                const controller = new AbortController();
-                                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                                try {
-                                  const analysisResponse = await fetch(resolveApiUrl(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`), { signal: controller.signal });
-                                  clearTimeout(timeoutId);
-                                  if (!analysisResponse.ok) {
-                                    if (analysisResponse.status === 503) {
-                                      setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '일시적인 서버 오류입니다.' : 'Temporary server error.', retryable: true });
-                                      setIsLoadingAnalysis(false);
-                                      return;
-                                    }
-                                    throw new Error(`Analysis API returned ${analysisResponse.status}`);
-                                  }
-                                  const analysisData = await analysisResponse.json();
-                                  if (analysisData.notRanked) {
-                                    setComprehensiveAnalysis(analysisData);
-                                    setIsLoadingAnalysis(false);
-                                    return;
-                                  }
-                                  if (analysisData.error) {
-                                    setAnalysisError({ type: analysisData.errorType === 'temporary' ? 'temporary_error' : 'not_available', message: analysisData.message, retryable: analysisData.retryable || false });
-                                    setIsLoadingAnalysis(false);
-                                    return;
-                                  }
-                                  setComprehensiveAnalysis(analysisData);
-                                  setAnalysisError(null);
-                                } catch (fetchError: any) {
-                                  clearTimeout(timeoutId);
-                                  if (fetchError.name === 'AbortError') {
-                                    setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '요청 시간이 초과되었습니다.' : 'Request timed out.', retryable: true });
-                                  } else {
-                                    throw fetchError;
-                                  }
-                                }
-                              } catch (error) {
-                                console.error('Failed to fetch analysis:', error);
-                                setAnalysisError({ type: 'network_error', message: language === 'ko' ? '네트워크 오류가 발생했습니다.' : 'Network error occurred.', retryable: true });
-                              } finally {
+                <div className="flex-1 flex items-start gap-1.5">
+                  <AlertTriangle size={11} className={`shrink-0 mt-0.5 ${analysisError.type === 'not_ranked' ? 'text-amber-500' : 'text-red-500'}`} />
+                  <div className="flex-1 space-y-1">
+                    <p className={`text-[10px] leading-relaxed line-clamp-2 ${analysisError.type === 'not_ranked' ? 'text-amber-400' : 'text-red-400'}`}>
+                      {analysisError.message}
+                    </p>
+                    {analysisError.retryable && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAnalysisError(null);
+                          setComprehensiveAnalysis(null);
+                          setIsLoadingAnalysis(true);
+                          const fetchAgain = async () => {
+                            try {
+                              const tradesResponse = await fetch(resolveApiUrl(`/api/trades?ticker=${stock?.ticker}&limit=1`));
+                              if (!tradesResponse.ok) throw new Error(`Trades API returned ${tradesResponse.status}`);
+                              const tradesData = await tradesResponse.json();
+                              if (!tradesData.trades?.length) {
+                                setAnalysisError({ type: 'not_available', message: language === 'ko' ? '거래 데이터를 찾을 수 없습니다.' : 'No trade data found.', retryable: false });
                                 setIsLoadingAnalysis(false);
+                                return;
                               }
-                            };
-                            fetchAgain();
-                          }}
-                          className="text-[9px] px-2 py-1 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/50 text-purple-300 rounded transition-colors"
-                        >
-                          {langKey === 'ko' ? '다시 시도' :
-                           langKey === 'ja' ? '再試行' :
-                           langKey === 'zh' ? '重试' :
-                           'Retry'}
-                        </button>
-                      )}
-                    </div>
+                              const tradeId = tradesData.trades[0].id;
+                              const controller = new AbortController();
+                              const timeoutId = setTimeout(() => controller.abort(), 30000);
+                              try {
+                                const analysisResponse = await fetch(resolveApiUrl(`/api/trades/${tradeId}/comprehensive-analysis?language=${language}`), { signal: controller.signal });
+                                clearTimeout(timeoutId);
+                                if (!analysisResponse.ok) {
+                                  if (analysisResponse.status === 503) { setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '일시적인 서버 오류입니다.' : 'Temporary server error.', retryable: true }); setIsLoadingAnalysis(false); return; }
+                                  throw new Error(`Analysis API returned ${analysisResponse.status}`);
+                                }
+                                const analysisData = await analysisResponse.json();
+                                if (analysisData.notRanked) { setComprehensiveAnalysis(analysisData); setIsLoadingAnalysis(false); return; }
+                                if (analysisData.error) { setAnalysisError({ type: analysisData.errorType === 'temporary' ? 'temporary_error' : 'not_available', message: analysisData.message, retryable: analysisData.retryable || false }); setIsLoadingAnalysis(false); return; }
+                                setComprehensiveAnalysis(analysisData);
+                                setAnalysisError(null);
+                              } catch (fetchError: any) {
+                                clearTimeout(timeoutId);
+                                if (fetchError.name === 'AbortError') { setAnalysisError({ type: 'temporary_error', message: language === 'ko' ? '요청 시간이 초과되었습니다.' : 'Request timed out.', retryable: true }); }
+                                else { throw fetchError; }
+                              }
+                            } catch (error) {
+                              console.error('Failed to fetch analysis:', error);
+                              setAnalysisError({ type: 'network_error', message: language === 'ko' ? '네트워크 오류가 발생했습니다.' : 'Network error occurred.', retryable: true });
+                            } finally {
+                              setIsLoadingAnalysis(false);
+                            }
+                          };
+                          fetchAgain();
+                        }}
+                        className="text-[9px] px-2 py-1 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/50 text-purple-300 rounded transition-colors"
+                      >
+                        {langKey === 'ko' ? '다시 시도' : langKey === 'ja' ? '再試行' : langKey === 'zh' ? '重试' : 'Retry'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
-                <div className="pl-5 space-y-2">
-                  <p className="text-[11px] text-white leading-relaxed font-medium">
-                    {analysisInsights.summary}
-                  </p>
-                  {analysisInsights.insights.length > 0 && (
-                    <ul className="space-y-1.5 mt-2">
-                      {analysisInsights.insights.map((insight, idx) => (
-                        <li key={idx} className="text-[10px] text-neutral-300 leading-relaxed flex items-start gap-1.5">
-                          <span className="text-purple-400 mt-0.5">•</span>
-                          <span>{insight}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <p className="text-[8px] text-neutral-500 italic mt-2 border-t border-neutral-800 pt-2">
-                    {langKey === 'ko'
-                      ? '* SEC Form 4 공시 데이터 기반 실시간 분석'
-                      : langKey === 'ja'
-                      ? '* SEC Form 4提出書類に基づくリアルタイム分析'
-                      : langKey === 'zh'
-                      ? '* 基于SEC Form 4申报数据的实时分析'
-                      : '* Real-time analysis based on SEC Form 4 filings'}
-                  </p>
-                </div>
+                <p className="text-[11px] text-white leading-relaxed font-medium line-clamp-2">
+                  {analysisInsights.summary}
+                </p>
               )}
             </div>
           </div>
 
-          {/* Buyers List - Simplified for mobile */}
-          <div className="flex-1 overflow-y-auto p-2">
+          {/* Buyers List - 최대 3명 고정 (스크롤 없이) */}
+          <div className="shrink-0 p-2">
             <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-neutral-800">
               <Users size={10} className="text-emerald-600" />
               <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">
@@ -1435,17 +1306,57 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
             </div>
           </div>
 
-          {/* Footer - Branding */}
-          <div className="px-2 py-1.5 border-t border-neutral-800 bg-neutral-950/50 shrink-0">
-            <div className="flex items-center justify-between text-[8px] text-neutral-600">
-              <span className="font-mono uppercase tracking-wider">
-                {langKey === 'ko' ? '실시간 내부자 거래 알림' : 'Real-Time Insider Alerts'}
-              </span>
-              <span className="font-bold text-neutral-500">InsiderPulse.pro</span>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* SEC 공시 모달 (iframe) */}
+    {secFilingModalUrl && (
+      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/85" onClick={() => setSecFilingModalUrl(null)}>
+        <div
+          className="w-full max-w-2xl bg-neutral-950 border border-neutral-700 flex flex-col shadow-2xl"
+          style={{ height: '80vh', maxHeight: '700px' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 헤더 */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 shrink-0">
+            <div className="flex items-center gap-2">
+              <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[11px] font-mono font-bold text-neutral-200 uppercase tracking-widest">SEC Form 4</span>
+              <span className="text-[9px] font-mono text-neutral-500">U.S. Government Official Filing</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <a
+                href={secFilingModalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-mono text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+              >
+                {langKey === 'ko' ? '새 탭으로' : 'Open tab'}
+                <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                </svg>
+              </a>
+              <button
+                onClick={() => setSecFilingModalUrl(null)}
+                className="p-1 hover:bg-neutral-800 transition-colors"
+              >
+                <X size={14} className="text-neutral-400" />
+              </button>
+            </div>
+          </div>
+          {/* iframe */}
+          <iframe
+            src={secFilingModalUrl}
+            className="flex-1 w-full bg-white"
+            title="SEC Filing"
+            sandbox="allow-same-origin allow-scripts allow-popups"
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }

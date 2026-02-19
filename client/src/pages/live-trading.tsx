@@ -61,6 +61,10 @@ export default function LiveTrading() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [adClickCount, setAdClickCount] = useState(0); // 광고 클릭 카운터 (2클릭마다 광고)
+  const [visitStreak, setVisitStreak] = useState(0);
+  const [newTradesSinceLastVisit, setNewTradesSinceLastVisit] = useState(0);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [welcomeBannerDismissed, setWelcomeBannerDismissed] = useState(false);
 
   // 검색어 디바운스 (300ms 대기 후 서버 검색)
   useEffect(() => {
@@ -89,6 +93,30 @@ export default function LiveTrading() {
       }
     } catch (error) {
       console.error('Failed to load watchlist:', error);
+    }
+  }, []);
+
+  // 방문 추적 (재방문 후킹 - 스트릭 및 새 거래 카운트)
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastVisitDay = localStorage.getItem('insiderpulse_lastVisitDay');
+    const savedStreak = parseInt(localStorage.getItem('insiderpulse_visitStreak') || '1');
+    const lastSeenCount = parseInt(localStorage.getItem('insiderpulse_lastSeenCount') || '0');
+
+    if (lastVisitDay !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isConsecutive = lastVisitDay === yesterday.toDateString();
+      const newStreak = isConsecutive ? savedStreak + 1 : 1;
+      localStorage.setItem('insiderpulse_visitStreak', String(newStreak));
+      localStorage.setItem('insiderpulse_lastVisitDay', today);
+      setVisitStreak(newStreak);
+    } else {
+      setVisitStreak(savedStreak);
+    }
+
+    if (lastSeenCount > 0) {
+      setShowWelcomeBanner(true);
     }
   }, []);
 
@@ -334,6 +362,20 @@ export default function LiveTrading() {
     return filtered;
   }, [validatedData.trades, debouncedSearch, searchResponse?.trades, tradeTypeFilter]);
 
+  // 마지막 방문 이후 새 거래 건수 계산
+  useEffect(() => {
+    if (filteredTrades.length === 0) return;
+    const lastSeenCount = parseInt(localStorage.getItem('insiderpulse_lastSeenCount') || '0');
+    if (showWelcomeBanner && lastSeenCount > 0) {
+      setNewTradesSinceLastVisit(Math.max(0, filteredTrades.length - lastSeenCount));
+    }
+    // 5초 후 현재 거래 수를 저장해 다음 방문 때 비교
+    const timer = setTimeout(() => {
+      localStorage.setItem('insiderpulse_lastSeenCount', String(filteredTrades.length));
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [filteredTrades.length, showWelcomeBanner]);
+
   // WebSocket 메시지 처리
   useEffect(() => {
     if (lastMessage) {
@@ -453,9 +495,42 @@ export default function LiveTrading() {
         <TrialExpiredBanner onUpgrade={handleUpgrade} />
       )}
 
-      {/* Free Zone Banner - 48h delay notice (not shown in Appintos) */}
-      {!ENV_CONFIG.isAppintos && accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && (
+      {/* Free Zone Banner - 48h delay notice (앱인토스 포함 모든 환경에서 표시) */}
+      {accessLevel && !accessLevel.hasRealtimeAccess && !accessLevel.isTrialing && !accessLevel.hasUsedTrial && accessLevel.delayHours > 0 && (
         <FreeZoneBanner delayHours={accessLevel.delayHours} />
+      )}
+
+      {/* 웰컴 배너 - 재방문 후킹 (마지막 방문 이후 새 거래 알림) */}
+      {showWelcomeBanner && !welcomeBannerDismissed && (
+        <div className="relative p-4 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/20 to-blue-900/20 backdrop-blur-xl flex items-center gap-3">
+          <button
+            onClick={() => setWelcomeBannerDismissed(true)}
+            className="absolute top-2 right-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl">
+            {visitStreak >= 7 ? '🔥' : visitStreak >= 3 ? '⚡' : '👋'}
+          </div>
+          <div className="flex-1 min-w-0 pr-6">
+            {visitStreak > 1 && (
+              <p className="text-xs text-purple-400 font-medium mb-0.5 flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                {language === 'ko' ? `${visitStreak}일 연속 방문 중` : `${visitStreak}-day streak`}
+              </p>
+            )}
+            <p className="text-sm text-white font-medium">
+              {newTradesSinceLastVisit > 0
+                ? (language === 'ko'
+                    ? `마지막 방문 이후 ${newTradesSinceLastVisit}건의 새 내부자 거래가 포착됐습니다`
+                    : `${newTradesSinceLastVisit} new insider trades since your last visit`)
+                : (language === 'ko'
+                    ? '다시 오셨군요! 최신 내부자 거래를 확인하세요'
+                    : 'Welcome back! Check out the latest insider trades')
+              }
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Header - Glass morphism */}
@@ -602,8 +677,9 @@ export default function LiveTrading() {
           <CardTitle className="flex items-center gap-2 text-white">
             <Shield className="h-5 w-5 text-white" />
             {t('liveTrading.verifiedTradesList')}
-            {!ENV_CONFIG.isAppintos && accessLevel && !accessLevel.hasRealtimeAccess && (
-              <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">
+            {accessLevel && !accessLevel.hasRealtimeAccess && (
+              <Badge variant="outline" className="text-xs text-amber-400 border-amber-500/50 bg-amber-500/10">
+                <Clock className="h-3 w-3 mr-1" />
                 {t('freeZone.delayedData')}
               </Badge>
             )}
@@ -647,12 +723,14 @@ export default function LiveTrading() {
                   });
                 }
 
+                const isInWatchlist = watchlist.includes(trade.ticker || '');
+
                 return (
                   <GlassCard
                     key={trade.id}
                     variant="default"
                     hover={true}
-                    className="p-4 sm:p-5 cursor-pointer"
+                    className={`p-4 sm:p-5 cursor-pointer ${isInWatchlist ? 'ring-1 ring-amber-500/40' : ''}`}
                     onClick={() => handleTradeClick(trade)}
                   >
                     <div
@@ -675,6 +753,11 @@ export default function LiveTrading() {
                           <div className="flex items-center gap-2 flex-wrap min-w-0">
                             <h3 className="font-bold text-lg sm:text-xl leading-tight text-white">{trade.companyName}</h3>
                             <Badge className="font-mono text-xs sm:text-sm bg-white/10 text-slate-300 border-white/20 backdrop-blur-xl">{trade.ticker}</Badge>
+                            {isInWatchlist && isRecent && (
+                              <Badge className="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/40 px-1.5 py-0.5 animate-pulse">
+                                NEW
+                              </Badge>
+                            )}
                           </div>
                           {hasPercentChange && (
                             <div className="flex flex-col items-end gap-0.5 flex-shrink-0">

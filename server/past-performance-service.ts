@@ -34,6 +34,7 @@ interface HistoricalPerformanceResponse {
     monthsAgo: number;
     snapshotDate: string;
     evaluationDate: string;
+    type?: 'live' | 'historical';
   };
   summary: PerformanceSummary;
   stocks: StockPerformance[];
@@ -120,7 +121,14 @@ class PastPerformanceService {
     stockPerformances.sort((a, b) => a.rank - b.rank);
 
     // Calculate summary
-    const validStocks = stockPerformances.filter(s => s.exitPrice > 0);
+    // - 내부자 매도 주식 제외: 매도 신호 = 사용자가 팔아야 하는 종목이므로 매수 성과 지표에서 제외
+    // - fallback 케이스 제외: exitPrice === entryPrice인 경우 = 주가 조회 실패로 entryPrice로 fallback된 것
+    const validStocks = stockPerformances.filter(s => {
+      if (s.hadInsiderSell) return false; // 내부자 매도 있는 종목 제외
+      if (s.exitPrice <= 0) return false;
+      const diff = Math.abs(s.exitPrice - s.entryPrice) / (s.entryPrice || 1);
+      return diff > 0.001; // 0.1% 미만 변동 = fallback 추정 → 제외
+    });
     const winners = validStocks.filter(s => s.returnPercent > 0);
     const losers = validStocks.filter(s => s.returnPercent <= 0);
 
@@ -138,6 +146,9 @@ class PastPerformanceService {
       return sum + (investmentPerStock * (1 + s.returnPercent / 100));
     }, 0);
 
+    // 내부자 매도 종목은 응답 stocks 배열에서도 제외 (매수 신호 기준 성과만 표시)
+    const displayStocks = stockPerformances.filter(s => !s.hadInsiderSell);
+
     const response: HistoricalPerformanceResponse = {
       period: {
         monthsAgo,
@@ -151,14 +162,14 @@ class PastPerformanceService {
         losersCount: losers.length,
         hypotheticalGain: Math.round(hypotheticalGain * 100) / 100,
       },
-      stocks: stockPerformances,
+      stocks: displayStocks,
       dataAvailable: true,
     };
 
     // Cache the result
     this.cache.set(cacheKey, { data: response, timestamp: Date.now() });
 
-    console.log(`[PastPerformance] Computed: avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
+    console.log(`[PastPerformance] Computed (${monthsAgo}m): avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
     return response;
   }
 
@@ -307,6 +318,101 @@ class PastPerformanceService {
     });
 
     return price ? parseFloat(price.currentPrice) : null;
+  }
+
+  /**
+   * 최근 30일 스냅샷 기반 실시간 성과 추적
+   * - 가장 오래된 추천일 기준으로 현재 수익률 계산
+   * - 추천 이후 내부자 매도 종목 자동 제외
+   */
+  async getLivePerformance(): Promise<HistoricalPerformanceResponse> {
+    const cacheKey = 'live_performance';
+    const cached = this.cache.get(cacheKey);
+    // 실시간 성과는 5분 캐시
+    if (cached && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
+      console.log('[PastPerformance] Cache hit for live performance');
+      return cached.data;
+    }
+
+    console.log('[PastPerformance] Computing live performance from recent snapshots...');
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const today = new Date().toISOString().split('T')[0];
+
+    // 최근 30일 스냅샷 전체 조회
+    const snapshots = await db.query.rankingSnapshots.findMany({
+      where: gte(rankingSnapshots.snapshotDate, thirtyDaysAgo.toISOString().split('T')[0]),
+      orderBy: [rankingSnapshots.snapshotDate, rankingSnapshots.rank],
+    });
+
+    if (!snapshots || snapshots.length === 0) {
+      return {
+        period: { monthsAgo: 0, snapshotDate: today, evaluationDate: today, type: 'live' },
+        summary: { avgReturn: 0, winRate: 0, winnersCount: 0, losersCount: 0, hypotheticalGain: 1000 },
+        stocks: [],
+        dataAvailable: false,
+        message: 'No recent snapshot data available.',
+      };
+    }
+
+    // 티커별로 가장 오래된(최초) 스냅샷만 선택 → 첫 추천일 기준
+    const tickerMap = new Map<string, typeof rankingSnapshots.$inferSelect>();
+    for (const snap of snapshots) {
+      if (!tickerMap.has(snap.ticker)) {
+        tickerMap.set(snap.ticker, snap);
+      }
+    }
+
+    const stockPerformances: StockPerformance[] = [];
+    for (const [, snapshot] of tickerMap) {
+      const performance = await this.calculateStockPerformance(snapshot, snapshot.snapshotDate, today);
+      if (performance) {
+        stockPerformances.push(performance);
+      }
+    }
+
+    // 내부자 매도 종목 + fallback 종목 제외 (유효 종목만)
+    const validStocks = stockPerformances.filter(s => {
+      if (s.hadInsiderSell) return false;
+      if (s.exitPrice <= 0) return false;
+      return true;
+    });
+
+    const winners = validStocks.filter(s => s.returnPercent > 0);
+    const losers = validStocks.filter(s => s.returnPercent <= 0);
+    const avgReturn = validStocks.length > 0
+      ? validStocks.reduce((sum, s) => sum + s.returnPercent, 0) / validStocks.length
+      : 0;
+    const winRate = validStocks.length > 0 ? winners.length / validStocks.length : 0;
+
+    const investmentPerStock = 1000 / Math.max(validStocks.length, 1);
+    const hypotheticalGain = validStocks.reduce(
+      (sum, s) => sum + investmentPerStock * (1 + s.returnPercent / 100),
+      0
+    );
+
+    // 표시 종목: 매도 없는 것만, 수익률 높은 순 정렬
+    const displayStocks = stockPerformances
+      .filter(s => !s.hadInsiderSell)
+      .sort((a, b) => b.returnPercent - a.returnPercent);
+
+    const response: HistoricalPerformanceResponse = {
+      period: { monthsAgo: 0, snapshotDate: thirtyDaysAgo.toISOString().split('T')[0], evaluationDate: today, type: 'live' },
+      summary: {
+        avgReturn: Math.round(avgReturn * 100) / 100,
+        winRate: Math.round(winRate * 100) / 100,
+        winnersCount: winners.length,
+        losersCount: losers.length,
+        hypotheticalGain: Math.round(hypotheticalGain * 100) / 100,
+      },
+      stocks: displayStocks,
+      dataAvailable: displayStocks.length > 0,
+    };
+
+    this.cache.set(cacheKey, { data: response, timestamp: Date.now() });
+    console.log(`[PastPerformance] Live: ${displayStocks.length} stocks, avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
+    return response;
   }
 
   /**

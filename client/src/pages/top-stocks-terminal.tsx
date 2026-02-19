@@ -7,10 +7,11 @@ import { apiRequest } from '@/lib/queryClient';
 import { type Language } from '@/lib/translations';
 import { TradeDetailModal } from '@/components/trade-detail-modal';
 import { StockSummaryModal } from '@/components/stock-summary-modal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import type { InsiderTrade } from '@shared/schema';
 import type { StockRecommendation } from '@/components/terminal-ui/types';
+import { ENV_CONFIG } from '@/lib/environment';
 
 interface RankingInsider {
   name: string;
@@ -70,6 +71,18 @@ export default function TopStocksTerminal() {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
 
   const isPro = accessLevel?.hasRealtimeAccess || false;
+
+  // 앱인토스: 최초 1회 온보딩 하단 시트
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!ENV_CONFIG.isAppintos) return;
+    const seen = localStorage.getItem('ip_onboarding_seen');
+    if (!seen) {
+      setShowOnboarding(true);
+      localStorage.setItem('ip_onboarding_seen', '1');
+    }
+  }, []);
 
   const handleUpgrade = () => {
     if (!isAuthenticated) {
@@ -149,7 +162,39 @@ export default function TopStocksTerminal() {
           </svg>
         </div>
         <div className="text-neutral-300 text-sm">
-          {['내부자 소식 엿듣는 중...', '월가 찐친한테 연락 중...', 'SEC 공시 뒤지는 중...', '억만장자 포트폴리오 훔쳐보는 중...', '내부자들 뒷담화 듣는 중...', '비밀 정보원 접선 중...', 'CEO 트위터 스토킹 중...'][Math.floor(Math.random() * 7)]}
+          {(language === 'ko' ? [
+            '내부자 소식 엿듣는 중...',
+            '월가 찐친한테 연락 중...',
+            'SEC 공시 뒤지는 중...',
+            '억만장자 포트폴리오 훔쳐보는 중...',
+            '내부자들 뒷담화 듣는 중...',
+            '비밀 정보원 접선 중...',
+            'CEO 트위터 스토킹 중...',
+          ] : language === 'ja' ? [
+            'インサイダー情報を盗み聞き中...',
+            'ウォール街の秘密ルートを開拓中...',
+            'SEC開示書類を精査中...',
+            '億万長者のポートフォリオを覗き見中...',
+            '役員室の会話を傍受中...',
+            '秘密情報源に接触中...',
+            'CEOのSNSを監視中...',
+          ] : language === 'zh' ? [
+            '正在窃听内部人士消息...',
+            '正在联系华尔街线人...',
+            '正在翻查SEC公示文件...',
+            '正在偷看亿万富翁投资组合...',
+            '正在监听高管私下对话...',
+            '正在接触秘密信息源...',
+            '正在追踪CEO推文...',
+          ] : [
+            'Tapping into insider networks...',
+            'Decoding SEC filings...',
+            'Scanning executive trading activity...',
+            'Tracking smart money moves...',
+            'Monitoring insider buy signals...',
+            'Checking C-suite portfolio changes...',
+            'Analyzing insider conviction trades...',
+          ])[Math.floor(Math.random() * 7)]}
         </div>
       </div>
     );
@@ -249,6 +294,56 @@ export default function TopStocksTerminal() {
         onClose={handleCloseSummaryModal}
         onSelectTrade={handleSelectTrade}
       />
+
+      {/* 앱인토스: 최초 1회 온보딩 하단 시트 */}
+      {ENV_CONFIG.isAppintos && showOnboarding && (
+        <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full bg-[#111] border-t border-neutral-800 p-6 pb-24 animate-in slide-in-from-bottom">
+            <div className="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-5" />
+            <h2 className="text-base font-bold text-neutral-100 mb-1 font-mono uppercase tracking-wider">
+              {language === 'ko' ? '인사이더펄스 사용 방법' : 'How InsiderPulse Works'}
+            </h2>
+            <p className="text-[11px] text-neutral-500 font-mono mb-5">
+              {language === 'ko'
+                ? 'SEC에 보고된 임원/이사 자사주 매매를 실시간 추적합니다'
+                : 'Track executive insider stock purchases reported to the SEC'}
+            </p>
+            <div className="space-y-3 mb-6">
+              {[
+                {
+                  icon: '🔒',
+                  title: language === 'ko' ? '종목 잠금 해제' : 'Unlock Stocks',
+                  desc: language === 'ko' ? '짧은 광고를 보면 각 종목의 내부자 거래 상세 정보를 볼 수 있어요' : 'Watch a short ad to reveal each stock\'s insider trading details'
+                },
+                {
+                  icon: '📊',
+                  title: language === 'ko' ? '실시간 내부자 거래' : 'Live Insider Trades',
+                  desc: language === 'ko' ? 'SEC에 실시간 보고되는 내부자 거래를 확인하세요' : 'See insider trades as they\'re filed with the SEC'
+                },
+                {
+                  icon: '💡',
+                  title: language === 'ko' ? '왜 중요한가요?' : 'Why Does This Matter?',
+                  desc: language === 'ko' ? '임원이 자사주를 사면 회사 전망에 자신감이 있다는 신호입니다' : 'When executives buy their own stock, it signals confidence in the company'
+                }
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-lg shrink-0">{item.icon}</span>
+                  <div>
+                    <p className="text-[12px] font-bold text-neutral-200 mb-0.5">{item.title}</p>
+                    <p className="text-[10px] text-neutral-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowOnboarding(false)}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[13px] font-mono uppercase tracking-wider transition-colors"
+            >
+              {language === 'ko' ? '시작하기' : 'Get Started'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

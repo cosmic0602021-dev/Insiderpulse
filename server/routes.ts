@@ -1931,11 +1931,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('✅ Password verified successfully');
 
-      // Generate JWT token
+      // Generate JWT token - 30일 유효 (자동 로그인 유지)
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '30d' }
       );
 
       // Track login session for geographic analytics
@@ -5012,6 +5012,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: 'Failed to fetch historical performance',
         dataAvailable: false
       });
+    }
+  });
+
+  // 실시간 성과 추적: 최근 30일 스냅샷 기반, 내부자 매도 종목 자동 제외
+  app.get('/api/rankings/live-performance', async (req, res) => {
+    try {
+      console.log('[Rankings] Fetching live performance...');
+      const data = await pastPerformanceService.getLivePerformance();
+      return res.json(data);
+    } catch (error) {
+      console.error('[Rankings] Error fetching live performance:', error);
+      return res.status(500).json({ error: 'Failed to fetch live performance', dataAvailable: false });
+    }
+  });
+
+  // 여러 기간 중 가장 높은 승률/수익률 기간을 자동 선택
+  app.get('/api/rankings/best-performance', async (req, res) => {
+    try {
+      console.log('[Rankings] Finding best performance period...');
+
+      const [perf1m, perf3m] = await Promise.all([
+        pastPerformanceService.getHistoricalPerformance(1),
+        pastPerformanceService.getHistoricalPerformance(3),
+      ]);
+
+      // 데이터 있는 것 중 승률 우선, 동점이면 평균 수익률 비교
+      const candidates = [perf1m, perf3m].filter(p => p.dataAvailable && p.stocks.length > 0);
+
+      if (candidates.length === 0) {
+        return res.json({ ...perf1m, dataAvailable: false });
+      }
+
+      const best = candidates.reduce((a, b) => {
+        if (a.summary.winRate !== b.summary.winRate) {
+          return a.summary.winRate > b.summary.winRate ? a : b;
+        }
+        return a.summary.avgReturn > b.summary.avgReturn ? a : b;
+      });
+
+      console.log(`[Rankings] Best period: ${best.period.monthsAgo}m (winRate=${(best.summary.winRate * 100).toFixed(0)}%, avg=${best.summary.avgReturn.toFixed(1)}%)`);
+
+      return res.json(best);
+    } catch (error) {
+      console.error('[Rankings] Error finding best performance:', error);
+      return res.status(500).json({ error: 'Failed', dataAvailable: false });
     }
   });
 
