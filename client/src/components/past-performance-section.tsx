@@ -208,7 +208,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const isLive = data?.period?.type === 'live' || (data?.period?.monthsAgo === 0);
 
   const shockLine = language === 'ko'
-    ? '최근 1주일 추천 종목 전체 성과'
+    ? '최근 일주일 추천 종목 전체 성과'
     : language === 'ja'
     ? '直近1週間の推奨銘柄 · 全銘柄成績'
     : language === 'zh'
@@ -216,7 +216,7 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
     : 'All picks from last week · real returns';
 
   const trackLabel = language === 'ko'
-    ? '1주일 성과 추적'
+    ? '일주일 성과 추적'
     : language === 'ja'
     ? '1週間パフォーマンス'
     : language === 'zh'
