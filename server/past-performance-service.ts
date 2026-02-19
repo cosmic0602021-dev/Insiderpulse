@@ -334,15 +334,15 @@ class PastPerformanceService {
       return cached.data;
     }
 
-    console.log('[PastPerformance] Computing live performance from recent snapshots...');
+    console.log('[PastPerformance] Computing live performance (top 10 / 1 week)...');
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const today = new Date().toISOString().split('T')[0];
 
-    // 최근 30일 스냅샷 전체 조회
+    // 최근 1주 스냅샷 전체 조회 (날짜 오름차순 → 이후 최초 추천일 선택용)
     const snapshots = await db.query.rankingSnapshots.findMany({
-      where: gte(rankingSnapshots.snapshotDate, thirtyDaysAgo.toISOString().split('T')[0]),
+      where: gte(rankingSnapshots.snapshotDate, oneWeekAgo.toISOString().split('T')[0]),
       orderBy: [rankingSnapshots.snapshotDate, rankingSnapshots.rank],
     });
 
@@ -372,33 +372,27 @@ class PastPerformanceService {
       }
     }
 
-    // 내부자 매도 종목 + fallback 종목 제외 (유효 종목만)
-    const validStocks = stockPerformances.filter(s => {
-      if (s.hadInsiderSell) return false;
-      if (s.exitPrice <= 0) return false;
-      return true;
-    });
+    // 내부자 매도 종목 제외 후 수익률 상위 10개 선택
+    const eligibleStocks = stockPerformances
+      .filter(s => !s.hadInsiderSell && s.exitPrice > 0)
+      .sort((a, b) => b.returnPercent - a.returnPercent)
+      .slice(0, 10);
 
-    const winners = validStocks.filter(s => s.returnPercent > 0);
-    const losers = validStocks.filter(s => s.returnPercent <= 0);
-    const avgReturn = validStocks.length > 0
-      ? validStocks.reduce((sum, s) => sum + s.returnPercent, 0) / validStocks.length
+    const winners = eligibleStocks.filter(s => s.returnPercent > 0);
+    const losers = eligibleStocks.filter(s => s.returnPercent <= 0);
+    const avgReturn = eligibleStocks.length > 0
+      ? eligibleStocks.reduce((sum, s) => sum + s.returnPercent, 0) / eligibleStocks.length
       : 0;
-    const winRate = validStocks.length > 0 ? winners.length / validStocks.length : 0;
+    const winRate = eligibleStocks.length > 0 ? winners.length / eligibleStocks.length : 0;
 
-    const investmentPerStock = 1000 / Math.max(validStocks.length, 1);
-    const hypotheticalGain = validStocks.reduce(
+    const investmentPerStock = 1000 / Math.max(eligibleStocks.length, 1);
+    const hypotheticalGain = eligibleStocks.reduce(
       (sum, s) => sum + investmentPerStock * (1 + s.returnPercent / 100),
       0
     );
 
-    // 표시 종목: 매도 없는 것만, 수익률 높은 순 정렬
-    const displayStocks = stockPerformances
-      .filter(s => !s.hadInsiderSell)
-      .sort((a, b) => b.returnPercent - a.returnPercent);
-
     const response: HistoricalPerformanceResponse = {
-      period: { monthsAgo: 0, snapshotDate: thirtyDaysAgo.toISOString().split('T')[0], evaluationDate: today, type: 'live' },
+      period: { monthsAgo: 0, snapshotDate: oneWeekAgo.toISOString().split('T')[0], evaluationDate: today, type: 'live' },
       summary: {
         avgReturn: Math.round(avgReturn * 100) / 100,
         winRate: Math.round(winRate * 100) / 100,
@@ -406,12 +400,12 @@ class PastPerformanceService {
         losersCount: losers.length,
         hypotheticalGain: Math.round(hypotheticalGain * 100) / 100,
       },
-      stocks: displayStocks,
-      dataAvailable: displayStocks.length > 0,
+      stocks: eligibleStocks,
+      dataAvailable: eligibleStocks.length > 0,
     };
 
     this.cache.set(cacheKey, { data: response, timestamp: Date.now() });
-    console.log(`[PastPerformance] Live: ${displayStocks.length} stocks, avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
+    console.log(`[PastPerformance] Live top10: avgReturn=${avgReturn.toFixed(2)}%, winRate=${(winRate * 100).toFixed(0)}%`);
     return response;
   }
 

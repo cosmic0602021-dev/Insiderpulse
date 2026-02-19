@@ -201,20 +201,20 @@ export function PastPerformanceSection({ className = '' }: { className?: string 
   const isLive = data?.period?.type === 'live' || (data?.period?.monthsAgo === 0);
 
   const shockLine = language === 'ko'
-    ? '지난 추천 종목 · 실시간 수익률'
+    ? '최근 1주일 추천 종목 · 수익률 상위 10개'
     : language === 'ja'
-    ? '推奨銘柄 · リアルタイム収益率'
+    ? '直近1週間の推奨銘柄 · 上位10銘柄'
     : language === 'zh'
-    ? '推荐股票 · 实时收益率'
-    : 'Returns from past stock recommendations';
+    ? '近1周推荐股票 · 收益率前10名'
+    : 'Best 10 picks from last week · live returns';
 
   const trackLabel = language === 'ko'
-    ? '실시간 성과 추적'
+    ? '1주일 수익률 TOP 10'
     : language === 'ja'
-    ? 'ライブ実績トラッカー'
+    ? '1週間リターン TOP 10'
     : language === 'zh'
-    ? '实时业绩追踪'
-    : 'Live Performance Tracker';
+    ? '1周收益率 TOP 10'
+    : '1-WEEK TOP 10 PICKS';
 
   return (
     <div className={`${className}`}>
