@@ -173,7 +173,7 @@ export function TickerTradesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl lg:max-w-7xl max-h-[90vh] overflow-hidden bg-[#0a0a0a] border border-neutral-800 p-0">
+      <DialogContent className="w-[95vw] max-w-[95vw] md:w-auto md:max-w-[900px] lg:max-w-[1000px] xl:max-w-[1200px] max-h-[90vh] overflow-hidden bg-[#0a0a0a] border border-neutral-800 p-0">
         <VisuallyHidden>
           <DialogTitle>{companyName} - All Insider Trades</DialogTitle>
         </VisuallyHidden>

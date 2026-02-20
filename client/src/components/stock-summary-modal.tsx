@@ -804,7 +804,7 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1400px] xl:max-w-[1600px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden data-[state=open]:slide-in-from-bottom-full data-[state=open]:duration-500 data-[state=closed]:slide-out-to-bottom-full data-[state=closed]:duration-300">
+      <DialogContent className="w-[95vw] max-w-[95vw] md:w-auto md:max-w-[900px] lg:max-w-[1100px] xl:max-w-[1300px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden data-[state=open]:slide-in-from-bottom-full data-[state=open]:duration-500 data-[state=closed]:slide-out-to-bottom-full data-[state=closed]:duration-300">
         <VisuallyHidden>
           <DialogTitle>{stock.companyName} - Cluster Buy Summary</DialogTitle>
         </VisuallyHidden>
