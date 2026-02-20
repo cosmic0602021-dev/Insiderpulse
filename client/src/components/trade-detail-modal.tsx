@@ -604,20 +604,22 @@ export function TradeDetailModal({
                         fillOpacity={1}
                         stroke="none"
                         isAnimationActive={true}
-                        animationDuration={4000}
+                        animationDuration={800}
+                        animationBegin={0}
                         animationEasing="ease-out"
                         baseLine={0}
                       />
-                      {/* Market price line with 4s animation */}
-                      <Line 
-                        type="monotone" 
-                        dataKey="marketPrice" 
-                        stroke="#10b981" 
-                        strokeWidth={2.5} 
+                      {/* Market price line with smooth animation */}
+                      <Line
+                        type="monotone"
+                        dataKey="marketPrice"
+                        stroke="#10b981"
+                        strokeWidth={2.5}
                         dot={false}
                         isAnimationActive={true}
-                        animationDuration={4000}
-                        animationEasing="ease-in-out"
+                        animationDuration={800}
+                        animationBegin={0}
+                        animationEasing="ease-out"
                       />
                       {/* Small dot at insider trade point */}
                       <ReferenceDot 

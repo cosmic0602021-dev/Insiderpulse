@@ -1092,8 +1092,8 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                     strokeWidth={2}
                     strokeDasharray="4 2"
                   />
-                  <Area type="monotone" dataKey="marketPrice" fill={`url(#${gradientId})`} fillOpacity={1} stroke="none" isAnimationActive={true} animationDuration={1200} />
-                  <Line type="monotone" dataKey="marketPrice" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={true} animationDuration={1200} />
+                  <Area type="monotone" dataKey="marketPrice" fill={`url(#${gradientId})`} fillOpacity={1} stroke="none" isAnimationActive={true} animationDuration={800} animationBegin={0} animationEasing="ease-out" />
+                  <Line type="monotone" dataKey="marketPrice" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={true} animationDuration={800} animationBegin={0} animationEasing="ease-out" />
                   <ReferenceDot x={priceHistory.find(p => p.isClusterCenter)?.date} y={stats.avgPrice} r={8} fill="#f59e0b" stroke="#0a0a0a" strokeWidth={2} />
                 </ComposedChart>
               </ResponsiveContainer>
