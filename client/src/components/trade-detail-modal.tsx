@@ -374,7 +374,7 @@ export function TradeDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] lg:max-w-[1200px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden">
+      <DialogContent className="max-w-[90vw] lg:max-w-[1400px] xl:max-w-[1600px] w-full h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden">
         <VisuallyHidden>
           <DialogTitle>{trade?.companyName || 'Trade Details'}</DialogTitle>
         </VisuallyHidden>
@@ -507,7 +507,7 @@ export function TradeDetailModal({
           </div>
 
           {/* Main Content Grid - Compressed Layout */}
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-auto">
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px] overflow-auto">
             {/* Left Column - Price Analysis */}
             <div className="border-r border-neutral-800 flex flex-col">
               {/* Insider Info Row - Single row, 3 columns */}
@@ -534,7 +534,7 @@ export function TradeDetailModal({
               
               {/* Chart Section - Responsive width */}
               <div className="flex-1 p-3 flex flex-col">
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={300}>
                   <ComposedChart data={priceHistory} margin={{ left: 10, right: 20, top: 10, bottom: 5 }}>
                     <defs>
                       {/* Strong gradient effect with unique ID to avoid conflicts */}

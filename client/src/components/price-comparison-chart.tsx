@@ -76,7 +76,7 @@ const PriceComparisonChart = memo(function PriceComparisonChart({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Chart */}
-        <div className="h-64">
+        <div className="h-64 lg:h-80 xl:h-96">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />

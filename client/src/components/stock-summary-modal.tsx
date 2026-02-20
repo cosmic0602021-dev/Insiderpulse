@@ -804,7 +804,7 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
   return (
     <>
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1200px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden data-[state=open]:slide-in-from-bottom-full data-[state=open]:duration-500 data-[state=closed]:slide-out-to-bottom-full data-[state=closed]:duration-300">
+      <DialogContent className="w-[95vw] max-w-[95vw] lg:max-w-[1400px] xl:max-w-[1600px] h-[90vh] max-h-[90vh] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden overflow-hidden data-[state=open]:slide-in-from-bottom-full data-[state=open]:duration-500 data-[state=closed]:slide-out-to-bottom-full data-[state=closed]:duration-300">
         <VisuallyHidden>
           <DialogTitle>{stock.companyName} - Cluster Buy Summary</DialogTitle>
         </VisuallyHidden>
@@ -1063,7 +1063,7 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                     </span>
                   </div>
                 )}
-              <ResponsiveContainer width="100%" height={110} style={{ padding: '0 8px 8px' }}>
+              <ResponsiveContainer width="100%" height={200} style={{ padding: '0 8px 8px' }}>
                 <ComposedChart data={priceHistory} margin={{ left: 0, right: 10, top: 8, bottom: 0 }}>
                   <defs>
                     <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
