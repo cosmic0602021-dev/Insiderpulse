@@ -374,7 +374,7 @@ export function TradeDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] md:w-auto md:max-w-[900px] lg:max-w-[1100px] xl:max-w-[1300px] h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden">
+      <DialogContent className="w-[95vw] max-w-[95vw] md:w-[900px] lg:w-[1100px] xl:w-[1300px] h-[90vh] max-h-[900px] bg-[#0a0a0a] border-neutral-800 p-0 flex flex-col [&>button]:hidden">
         <VisuallyHidden>
           <DialogTitle>{trade?.companyName || 'Trade Details'}</DialogTitle>
         </VisuallyHidden>
