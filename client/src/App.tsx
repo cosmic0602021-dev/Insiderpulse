@@ -1,6 +1,7 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient, resolveApiUrl } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
@@ -370,12 +371,22 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LanguageProvider>
-          <CurrencyProvider>
-            <AccessProvider>
-              {ENV_CONFIG.isAppintos ? (
-                <AdMobProvider>
+      <HelmetProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <CurrencyProvider>
+              <AccessProvider>
+                {ENV_CONFIG.isAppintos ? (
+                  <AdMobProvider>
+                    <TooltipProvider>
+                      <AppContent />
+                      <DisclaimerModal />
+                      <AuthModal />
+                      <PWAInstallPrompt />
+                      <Toaster />
+                    </TooltipProvider>
+                  </AdMobProvider>
+                ) : (
                   <TooltipProvider>
                     <AppContent />
                     <DisclaimerModal />
@@ -383,20 +394,12 @@ export default function App() {
                     <PWAInstallPrompt />
                     <Toaster />
                   </TooltipProvider>
-                </AdMobProvider>
-              ) : (
-                <TooltipProvider>
-                  <AppContent />
-                  <DisclaimerModal />
-                  <AuthModal />
-                  <PWAInstallPrompt />
-                  <Toaster />
-                </TooltipProvider>
-              )}
-            </AccessProvider>
-          </CurrencyProvider>
-        </LanguageProvider>
-      </AuthProvider>
+                )}
+              </AccessProvider>
+            </CurrencyProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </HelmetProvider>
     </QueryClientProvider>
   );
 }
