@@ -1002,18 +1002,28 @@ export function StockSummaryModal({ isOpen, onClose, stock, onSelectTrade }: Sto
                     className="text-[9px] font-mono font-bold px-2 py-1 bg-blue-950/60 border border-blue-800/60 text-blue-400 flex items-center gap-1 hover:bg-blue-900/60 hover:text-blue-300 transition-colors cursor-pointer"
                     onClick={() => {
                       const buyer = stock.buyers?.[0];
+                      // Use pre-stored URL if available (most reliable)
                       let url = buyer?.secFilingUrl;
+
+                      // Fallback: Generate from accessionNumber
                       if (!url && buyer?.accessionNumber) {
-                        const parts = buyer.accessionNumber.split('-');
+                        const accessionNumber = buyer.accessionNumber;
+                        const parts = accessionNumber.split('-');
                         if (parts.length >= 3) {
-                          const cik = Number(parts[0]);
-                          const accessionNoDashes = buyer.accessionNumber.replace(/-/g, '');
-                          url = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNoDashes}/xslF345X05/primarydocument.xml`;
+                          // CIK is the first part (keep leading zeros for directory path)
+                          const cik = parts[0];
+                          // Remove dashes for file path
+                          const accessionNoDashes = accessionNumber.replace(/-/g, '');
+                          // Try primary document URL
+                          url = `https://www.sec.gov/cgi-bin/viewer?action=view&cik=${cik}&accession_number=${accessionNumber}&xbrl_type=v`;
                         }
                       }
+
+                      // Final fallback: Browse all Form 4 filings for this ticker
                       if (!url) {
-                        url = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${stock.ticker}&type=4&dateb=&owner=include&count=10`;
+                        url = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${stock.ticker}&type=4&dateb=&owner=include&count=40`;
                       }
+
                       setSecFilingModalUrl(url);
                     }}
                   >
