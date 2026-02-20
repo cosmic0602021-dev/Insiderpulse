@@ -36,6 +36,7 @@ import StartTrialPage from "@/pages/start-trial";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin-dashboard";
 import LandingPage from "@/pages/landing";
+import StockLanding from '@/pages/stock-landing';
 import ProfilePage from "@/pages/profile";
 import TerminalSidebar from "@/components/terminal-ui/Sidebar";
 import ProfileView from '@/components/terminal-ui/ProfileView';
@@ -54,6 +55,7 @@ function PublicRouter() {
     <Switch>
       <Route path="/debug" component={DebugNetwork} />
       <Route path="/" component={LandingPage} />
+      <Route path="/stocks/:ticker" component={StockLanding} />
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
@@ -156,7 +158,7 @@ function AppContent() {
   // React Query가 staleTime 기반으로 자동 관리하도록 위임
 
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
-  const isPublicRoute = publicPaths.includes(location);
+  const isPublicRoute = publicPaths.includes(location) || location.startsWith('/stocks/');
 
   // 웹 환경에서 미인증 사용자가 앱 라우트에 접근하면 자동으로 로그인 모달 표시
   const { isLoading: authLoading } = useAuth();
