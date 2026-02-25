@@ -414,153 +414,120 @@ const TopStocks: React.FC<TopStocksProps> = ({ data, lang, isPro, onUpgrade, onS
       {/* Content Area */}
       <div className="p-3 sm:p-6 relative">
 
-          {/* TOP TIER (Restricted for OUTSIDER) - Ranks 1-3 (or all 6 for Appintos) */}
+          {/* TOP TIER - Ranks 1-3 (or all 6 for Appintos) */}
           <div className="relative mb-4">
-             {!isPro ? (
-               isAppintos ? (
-                 /* Appintos: Individual locked cards with ad unlock */
-                 <div className="grid gap-2">
-                   {topTier.map((stock, idx) => (
-                     unlockedStocks.has(stock.ticker) ? (
-                       /* 잠금 해제된 카드 - 언락 플래시 애니메이션 포함 */
-                       <div
-                         key={stock.ticker}
-                         style={justUnlocked.has(stock.ticker) ? {
-                           outline: '1px solid rgba(16,185,129,0.6)',
-                           boxShadow: '0 0 16px rgba(16,185,129,0.25)',
-                           transition: 'all 0.7s ease'
-                         } : { transition: 'all 0.7s ease' }}
-                       >
-                         <StockCard stock={stock} />
-                       </div>
-                     ) : (
-                       /* 잠긴 카드 - 리디자인: 총액 힌트 + CTA 크기 키움 */
-                       <button
-                         key={stock.ticker}
-                         onClick={() => {
-                           showRewardedAdWithCallback(
-                             // 성공: 광고 끝까지 시청 → 잠금 해제 + 플래시 피드백
-                             () => {
-                               setUnlockedStocks(prev => new Set([...prev, stock.ticker]));
-                               setJustUnlocked(prev => new Set([...prev, stock.ticker]));
-                               setTimeout(() => {
-                                 setJustUnlocked(prev => {
-                                   const next = new Set(prev);
-                                   next.delete(stock.ticker);
-                                   return next;
-                                 });
-                               }, 2000);
-                               if (onViewDetails) {
-                                 setTimeout(() => onViewDetails(stock), 200);
-                               }
-                             },
-                             // 취소: 광고 중간에 닫음 → 잠금 유지
-                             () => {
-                               console.log('[TopStocks] Ad cancelled, stock remains locked');
+             {!isPro && isAppintos ? (
+               /* Appintos: Individual locked cards with ad unlock */
+               <div className="grid gap-2">
+                 {topTier.map((stock, idx) => (
+                   unlockedStocks.has(stock.ticker) ? (
+                     /* 잠금 해제된 카드 - 언락 플래시 애니메이션 포함 */
+                     <div
+                       key={stock.ticker}
+                       style={justUnlocked.has(stock.ticker) ? {
+                         outline: '1px solid rgba(16,185,129,0.6)',
+                         boxShadow: '0 0 16px rgba(16,185,129,0.25)',
+                         transition: 'all 0.7s ease'
+                       } : { transition: 'all 0.7s ease' }}
+                     >
+                       <StockCard stock={stock} />
+                     </div>
+                   ) : (
+                     /* 잠긴 카드 - 리디자인: 총액 힌트 + CTA 크기 키움 */
+                     <button
+                       key={stock.ticker}
+                       onClick={() => {
+                         showRewardedAdWithCallback(
+                           // 성공: 광고 끝까지 시청 → 잠금 해제 + 플래시 피드백
+                           () => {
+                             setUnlockedStocks(prev => new Set([...prev, stock.ticker]));
+                             setJustUnlocked(prev => new Set([...prev, stock.ticker]));
+                             setTimeout(() => {
+                               setJustUnlocked(prev => {
+                                 const next = new Set(prev);
+                                 next.delete(stock.ticker);
+                                 return next;
+                               });
+                             }, 2000);
+                             if (onViewDetails) {
+                               setTimeout(() => onViewDetails(stock), 200);
                              }
-                           );
-                         }}
-                         className="w-full text-left group relative overflow-hidden"
-                       >
-                         {/* 좌측 액센트 라인 */}
-                         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-700/50 group-hover:bg-emerald-500/80 transition-colors" />
+                           },
+                           // 취소: 광고 중간에 닫음 → 잠금 유지
+                           () => {
+                             console.log('[TopStocks] Ad cancelled, stock remains locked');
+                           }
+                         );
+                       }}
+                       className="w-full text-left group relative overflow-hidden"
+                     >
+                       {/* 좌측 액센트 라인 */}
+                       <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-700/50 group-hover:bg-emerald-500/80 transition-colors" />
 
-                         <div className="bg-[#0d0d0d] border border-neutral-800/80 group-hover:border-emerald-800/40 ml-[3px] transition-all">
-                           {/* 헤더: 블러 티커 + 배지 */}
-                           <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                             <div className="flex items-center gap-2.5">
-                               <span className="text-base font-bold text-neutral-300 blur-sm select-none font-mono tracking-widest">
-                                 {stock.ticker}
-                               </span>
-                               <span className="text-[8px] font-mono uppercase tracking-widest text-neutral-600 border border-neutral-800 px-1.5 py-0.5">
-                                 CLASSIFIED
-                               </span>
-                             </div>
-                             {/* 고액/다수 내부자 카드에만 STRONG 배지 */}
-                             {(stock.totalBuyAmount > 500000 || stock.insiderCount >= 2 || idx === 0) && (
-                               <span className="text-[8px] font-mono uppercase tracking-widest text-amber-500 border border-amber-900/40 bg-amber-950/20 px-1.5 py-0.5">
-                                 {stock.insiderCount >= 3 ? 'CLUSTER' : 'STRONG'}
-                               </span>
-                             )}
-                           </div>
-
-                           {/* 지표 행: 블러 총액 + 내부자수 + 신호 */}
-                           <div className="px-4 pb-3 flex items-end gap-5">
-                             <div>
-                               <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">
-                                 {lang === 'ko' ? '총 매수액' : 'TOTAL BUY'}
-                               </p>
-                               <p className="text-sm font-mono font-bold text-emerald-500 blur-[3px] select-none">
-                                 {formatMaskedAmount(stock.totalBuyAmount)}
-                               </p>
-                             </div>
-                             <div>
-                               <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">
-                                 {lang === 'ko' ? '내부자' : 'INSIDERS'}
-                               </p>
-                               <p className="text-sm font-mono font-bold text-neutral-300">
-                                 {stock.insiderCount}{lang === 'ko' ? '명' : ''}
-                               </p>
-                             </div>
-                             <div>
-                               <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">SIGNAL</p>
-                               <p className="text-[10px] font-mono text-emerald-500/80 uppercase tracking-wider">
-                                 {getStockHint(stock, lang)}
-                               </p>
-                             </div>
-                           </div>
-
-                           {/* CTA 영역 - 크고 명확하게 */}
-                           <div className="border-t border-neutral-800/60 px-4 py-3 flex items-center justify-between group-hover:bg-emerald-950/10 transition-colors">
-                             <div className="flex items-center gap-2">
-                               <PlayCircle size={15} className="text-emerald-600 group-hover:text-emerald-400 transition-colors" />
-                               <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 group-hover:text-emerald-300 transition-colors">
-                                 {lang === 'ko' ? '광고 시청 후 종목 공개' : 'Watch Ad to Reveal'}
-                               </span>
-                             </div>
-                             <span className="text-[9px] font-mono text-neutral-700 uppercase tracking-widest">
-                               {lang === 'ko' ? '무료' : 'FREE'}
+                       <div className="bg-[#0d0d0d] border border-neutral-800/80 group-hover:border-emerald-800/40 ml-[3px] transition-all">
+                         {/* 헤더: 블러 티커 + 배지 */}
+                         <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                           <div className="flex items-center gap-2.5">
+                             <span className="text-base font-bold text-neutral-300 blur-sm select-none font-mono tracking-widest">
+                               {stock.ticker}
+                             </span>
+                             <span className="text-[8px] font-mono uppercase tracking-widest text-neutral-600 border border-neutral-800 px-1.5 py-0.5">
+                               CLASSIFIED
                              </span>
                            </div>
+                           {/* 고액/다수 내부자 카드에만 STRONG 배지 */}
+                           {(stock.totalBuyAmount > 500000 || stock.insiderCount >= 2 || idx === 0) && (
+                             <span className="text-[8px] font-mono uppercase tracking-widest text-amber-500 border border-amber-900/40 bg-amber-950/20 px-1.5 py-0.5">
+                               {stock.insiderCount >= 3 ? 'CLUSTER' : 'STRONG'}
+                             </span>
+                           )}
                          </div>
-                       </button>
-                     )
-                   ))}
-                 </div>
-               ) : (
-                 /* insiderpulse.pro: Full overlay lock with upgrade CTA */
-                 <>
-                   {/* Lock Overlay for Top 3 */}
-                   <div className="absolute inset-0 z-20 flex items-center justify-center">
-                     <div className="bg-[#0a0a0a]/95 backdrop-blur-md border border-neutral-800 p-3 text-center shadow-2xl rounded-sm">
-                       <div className="flex items-center justify-center gap-2 mb-2">
-                         <Lock size={14} className="text-amber-600" />
-                         <span className="text-xs font-bold text-neutral-200 uppercase">{t.restricted}</span>
+
+                         {/* 지표 행: 블러 총액 + 내부자수 + 신호 */}
+                         <div className="px-4 pb-3 flex items-end gap-5">
+                           <div>
+                             <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">
+                               {lang === 'ko' ? '총 매수액' : 'TOTAL BUY'}
+                             </p>
+                             <p className="text-sm font-mono font-bold text-emerald-500 blur-[3px] select-none">
+                               {formatMaskedAmount(stock.totalBuyAmount)}
+                             </p>
+                           </div>
+                           <div>
+                             <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">
+                               {lang === 'ko' ? '내부자' : 'INSIDERS'}
+                             </p>
+                             <p className="text-sm font-mono font-bold text-neutral-300">
+                               {stock.insiderCount}{lang === 'ko' ? '명' : ''}
+                             </p>
+                           </div>
+                           <div>
+                             <p className="text-[8px] text-neutral-600 uppercase tracking-wider mb-1">SIGNAL</p>
+                             <p className="text-[10px] font-mono text-emerald-500/80 uppercase tracking-wider">
+                               {getStockHint(stock, lang)}
+                             </p>
+                           </div>
+                         </div>
+
+                         {/* CTA 영역 - 크고 명확하게 */}
+                         <div className="border-t border-neutral-800/60 px-4 py-3 flex items-center justify-between group-hover:bg-emerald-950/10 transition-colors">
+                           <div className="flex items-center gap-2">
+                             <PlayCircle size={15} className="text-emerald-600 group-hover:text-emerald-400 transition-colors" />
+                             <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400 group-hover:text-emerald-300 transition-colors">
+                               {lang === 'ko' ? '광고 시청 후 종목 공개' : 'Watch Ad to Reveal'}
+                             </span>
+                           </div>
+                           <span className="text-[9px] font-mono text-neutral-700 uppercase tracking-widest">
+                             {lang === 'ko' ? '무료' : 'FREE'}
+                           </span>
+                         </div>
                        </div>
-                       <button
-                         onClick={onUpgrade}
-                         className="w-full py-1.5 px-4 bg-white hover:bg-neutral-200 text-black font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-1"
-                       >
-                         <ScanLine size={12} />
-                         {t.cta}
-                       </button>
-                     </div>
-                   </div>
-                   {/* Compact blurred rows */}
-                   <div className="flex flex-col gap-1 opacity-25 pointer-events-none select-none filter blur-[3px]">
-                     {topTier.map(stock => (
-                       <div key={stock.ticker} className="bg-[#0a0a0a] border border-neutral-800 p-2 flex items-center gap-3">
-                         <span className="text-lg font-black text-amber-500 w-6">0{stock.rank}</span>
-                         <span className="text-sm font-bold text-neutral-200">{stock.ticker}</span>
-                         <span className="text-[10px] text-neutral-500 truncate flex-1">{stock.companyName}</span>
-                         <span className="text-[10px] text-emerald-500 font-bold">{t.strongBuy}</span>
-                       </div>
-                     ))}
-                   </div>
-                 </>
-               )
+                     </button>
+                   )
+                 ))}
+               </div>
              ) : (
-               /* Pro users see full cards */
+               /* Web & Pro users: See full cards (48-hour delayed data for free web users) */
                <div className="grid gap-4">
                  {topTier.map(stock => <StockCard key={stock.ticker} stock={stock} />)}
                </div>

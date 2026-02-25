@@ -161,13 +161,17 @@ function AppContent() {
   const publicPaths = ['/', '/signup', '/login', '/forgot-password', '/reset-password', '/verify-code', '/verify-email', '/start-trial', '/premium-checkout'];
   const isPublicRoute = publicPaths.includes(location) || location.startsWith('/stocks/');
 
-  // 웹 환경에서 미인증 사용자가 앱 라우트에 접근하면 자동으로 로그인 모달 표시
+  // 웹 환경에서 미인증 사용자는 개인 페이지만 로그인 필요 (데이터 페이지는 48시간 지연으로 무료 접근)
   const { isLoading: authLoading } = useAuth();
   useEffect(() => {
-    if (!ENV_CONFIG.isAppintos && !authLoading && !isAuthenticated && !isPublicRoute) {
+    // 프로필, 설정, 알림만 로그인 필수
+    const loginRequiredPaths = ['/profile', '/settings', '/admin', '/notifications', '/payment-success', '/premium-checkout'];
+    const needsLogin = loginRequiredPaths.some(path => location.startsWith(path));
+
+    if (!ENV_CONFIG.isAppintos && !authLoading && !isAuthenticated && needsLogin) {
       openAuthModal('login');
     }
-  }, [authLoading, isAuthenticated, isPublicRoute]);
+  }, [authLoading, isAuthenticated, location]);
 
   if (isPublicRoute) {
     return <PublicRouter />;

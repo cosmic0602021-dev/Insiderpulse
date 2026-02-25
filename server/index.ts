@@ -3,8 +3,8 @@ import fs from "fs";
 import { createServer } from "http";
 import "dotenv/config";
 
-// 🔧 CRITICAL: Force production DATABASE_URL (override Replit auto-injection)
-process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
+// 🔧 Use Replit PostgreSQL (환경변수에서 자동 주입됨)
+// DATABASE_URL 환경변수를 그대로 사용
 
 // 🔧 Stripe: STRIPE_SECRET_KEY must be set in Replit Secrets dashboard for production
 

@@ -1,8 +1,6 @@
-// 🔧 CRITICAL: Force production DATABASE_URL before any DB operations
-process.env.DATABASE_URL = "postgresql://neondb_owner:npg_pO2GuI4kVjUy@ep-ancient-cloud-a50dgue7.us-east-2.aws.neon.tech/neondb?sslmode=require";
-
 import { type User, type InsertUser, type InsiderTrade, type InsertInsiderTrade, type TradingStats, type StockPrice, type InsertStockPrice, type StockPriceHistory, type InsertStockPriceHistory, type Alert, type InsertAlert } from "@shared/schema";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { users, insiderTrades, stockPrices, stockPriceHistory, alerts, exchangeRates } from "@shared/schema";
 import * as schema from "@shared/schema";
 import { eq, desc, count, sum, avg, sql, inArray, gte, lte, and } from "drizzle-orm";
@@ -10,7 +8,9 @@ import type { IStorage } from "./storage";
 import { validateAndCorrectTicker } from './ticker-validator';
 import { aiAnalysisService } from './ai-analysis';
 
-export const db = drizzle(process.env.DATABASE_URL!, { schema });
+// Replit PostgreSQL 연결
+const queryClient = postgres(process.env.DATABASE_URL!);
+export const db = drizzle(queryClient, { schema });
 
 export class DatabaseStorage implements IStorage {
   // User methods

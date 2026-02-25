@@ -3844,8 +3844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 점수 순으로 정렬하고 상위 항목 반환
       const sortedRankings = rankings
-        .filter(r => r.netBuying > 0) // CRITICAL: Only recommend stocks with net buying (매수 > 매도)
-        .filter(r => r.buyTrades > 0) // Must have at least 1 buy trade
+        // 필터 완화: buyTrades > 0 또는 점수가 충분히 높으면 표시
+        .filter(r => r.buyTrades > 0 || r.score >= 30)
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
