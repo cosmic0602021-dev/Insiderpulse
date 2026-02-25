@@ -148,43 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('authUser');
       }
 
-      // 앱인토스 환경에서는 자동 토스 로그인 시도
-      if (ENV_CONFIG.isAppintos) {
-        console.log('[AUTH] 🔐 No session in Appintos, auto-login with Toss...');
-        setIsLoading(false); // UI는 먼저 렌더링하고
-
-        // 로그인은 비동기로 처리 (UI 블로킹 방지)
-        setTimeout(async () => {
-          try {
-            const result = await performTossLogin();
-            if (result.success && result.user) {
-              console.log('[AUTH] ✅ Auto Toss login successful');
-              const userObj = {
-                id: result.user.id,
-                email: result.user.email || `${result.user.id}@toss.user`,
-                password: '',
-                role: 'user' as const,
-                emailVerified: true,
-                subscriptionTier: 'free' as const,
-                subscriptionStatus: 'active' as const,
-                hasUsedTrial: false,
-                createdAt: new Date(),
-              };
-              setUser(userObj);
-              setToken(`toss_verified_${result.user.id}`);
-              localStorage.setItem('authUser', JSON.stringify(userObj));
-              queryClient.invalidateQueries();
-            } else {
-              console.log('[AUTH] ⚠️ Auto Toss login failed:', result.error);
-            }
-          } catch (error) {
-            console.log('[AUTH] ⚠️ Auto Toss login error:', error);
-          }
-        }, 500); // 500ms 지연 (UI 렌더링 우선)
-        return;
-      }
-
-      // 웹 환경: 기존 세션 없으면 로그인 안 함 (사용자가 버튼 클릭할 때까지 대기)
+      // 기존 세션 없으면 로그인 안 함 (사용자가 버튼 클릭할 때까지 대기)
       console.log('[AUTH] ℹ️ No existing session, waiting for user action');
       setIsLoading(false);
     };

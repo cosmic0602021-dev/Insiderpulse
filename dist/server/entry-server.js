@@ -5595,38 +5595,6 @@ function AuthProvider({ children }) {
         console.log("[AUTH] ⚠️ User data without token, clearing");
         localStorage.removeItem("authUser");
       }
-      if (ENV_CONFIG.isAppintos) {
-        console.log("[AUTH] 🔐 No session in Appintos, auto-login with Toss...");
-        setIsLoading(false);
-        setTimeout(async () => {
-          try {
-            const result = await performTossLogin();
-            if (result.success && result.user) {
-              console.log("[AUTH] ✅ Auto Toss login successful");
-              const userObj = {
-                id: result.user.id,
-                email: result.user.email || `${result.user.id}@toss.user`,
-                password: "",
-                role: "user",
-                emailVerified: true,
-                subscriptionTier: "free",
-                subscriptionStatus: "active",
-                hasUsedTrial: false,
-                createdAt: /* @__PURE__ */ new Date()
-              };
-              setUser(userObj);
-              setToken(`toss_verified_${result.user.id}`);
-              localStorage.setItem("authUser", JSON.stringify(userObj));
-              queryClient.invalidateQueries();
-            } else {
-              console.log("[AUTH] ⚠️ Auto Toss login failed:", result.error);
-            }
-          } catch (error) {
-            console.log("[AUTH] ⚠️ Auto Toss login error:", error);
-          }
-        }, 500);
-        return;
-      }
       console.log("[AUTH] ℹ️ No existing session, waiting for user action");
       setIsLoading(false);
     };
