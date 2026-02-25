@@ -3844,8 +3844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 점수 순으로 정렬하고 상위 항목 반환
       const sortedRankings = rankings
-        // 필터 완화: buyTrades > 0 또는 점수가 충분히 높으면 표시
-        .filter(r => r.buyTrades > 0 || r.score >= 30)
+        // 필터 완화: 거래가 있으면 모두 표시 (매도만 있어도 표시)
+        .filter(r => r.totalTrades > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
